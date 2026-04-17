@@ -1,8 +1,24 @@
 import { useRef } from 'react';
 import 'amazon-connect-chatjs';
-import { useChatStore } from '../store/chatStore';
+import { useChatStore, ChatStore } from '../store/chatStore';
 import { post } from '../api/client';
 import { MOCK_CLIENT } from '../data/mock-client';
+
+const ESCALATION_PHRASES = [
+  'connect you with a live agent',
+  'chat now, or would a callback',
+  'transfer you to',
+  'speak with an agent',
+  'live representative',
+];
+
+function checkEscalation(text: string, store: ChatStore): void {
+  const lower = text.toLowerCase();
+  if (ESCALATION_PHRASES.some(p => lower.includes(p))) {
+    store.transitionTo('ESCALATION_OFFERED');
+    store.setEscalationWaitTime(3);
+  }
+}
 
 declare global {
   // kept for legacy type compat only — not used at runtime
@@ -27,6 +43,8 @@ interface StartChatResponse {
 export function useChatSession() {
   const store = useChatStore();
   const sessionRef = useRef<unknown>(null);
+  // Timer: if Connect/Lex doesn't reply in 3 s, call /autopilot-turn directly
+  const botReplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function openChat(currentPage: string) {
     if (store.state !== 'CLOSED') return;
@@ -73,13 +91,13 @@ export function useChatSession() {
 
         store.addMessage({ role, content: data.Content });
 
-        // Detect escalation intent from bot message
-        if (role === 'BOT' && (
-          data.Content.toLowerCase().includes('connect you with a live agent') ||
-          data.Content.toLowerCase().includes('chat now, or would a callback')
-        )) {
-          store.transitionTo('ESCALATION_OFFERED');
-          store.setEscalationWaitTime(3);  // demo: ~3 min wait
+        // A real Connect/Lex reply arrived — cancel any pending fallback timer
+        if (role === 'BOT') {
+          if (botReplyTimerRef.current) {
+            clearTimeout(botReplyTimerRef.current);
+            botReplyTimerRef.current = null;
+          }
+          checkEscalation(data.Content, store);
         }
 
         // Detect agent joined
@@ -113,7 +131,40 @@ export function useChatSession() {
     const session = sessionRef.current as { sendMessage: (m: { message: string; contentType: string }) => Promise<void> } | null;
     if (!session) return;
     store.addMessage({ role: 'CUSTOMER', content: text });
-    await session.sendMessage({ message: text, contentType: 'text/plain' });
+
+    // Start fallback timer: if Connect/Lex doesn't reply within 3 s, call autopilot-turn directly
+    if (botReplyTimerRef.current) clearTimeout(botReplyTimerRef.current);
+    botReplyTimerRef.current = setTimeout(async () => {
+      botReplyTimerRef.current = null;
+      const currentMessages = useChatStore.getState().messages;
+      const lastMsg = currentMessages[currentMessages.length - 1];
+      if (!lastMsg || lastMsg.role !== 'CUSTOMER') return; // bot already replied
+      try {
+        store.setTyping(true);
+        const result = await post<{ response: string; confidence: number; shouldExitAutopilot: boolean }>(
+          '/autopilot-turn',
+          {
+            transcript: currentMessages.filter(m => m.role !== 'SYSTEM'),
+            clientProfile: MOCK_CLIENT,
+            currentIntent: 'general inquiry',
+          },
+        );
+        store.setTyping(false);
+        if (result.response) {
+          store.addMessage({ role: 'BOT', content: result.response });
+          checkEscalation(result.response, store);
+        }
+      } catch (e) {
+        store.setTyping(false);
+        console.warn('Fallback bot response failed', e);
+      }
+    }, 3000);
+
+    try {
+      await session.sendMessage({ message: text, contentType: 'text/plain' });
+    } catch {
+      // WebSocket may be closed (placeholder contact flow disconnects immediately); fallback timer will handle the response
+    }
   }
 
   return { openChat, sendMessage };

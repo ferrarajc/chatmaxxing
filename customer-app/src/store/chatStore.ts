@@ -5,7 +5,7 @@ import { nanoid } from './nanoid';
 // Tiny nanoid replacement (no external dep)
 export { nanoid };
 
-interface ChatStore {
+export interface ChatStore {
   state: ChatState;
   contactId: string | null;
   participantToken: string | null;
