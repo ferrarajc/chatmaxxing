@@ -30,8 +30,8 @@ async function waitForTopics(page: import('@playwright/test').Page) {
 
 /** Waits for a bot response after the customer sends a message. */
 async function waitForBotReply(page: import('@playwright/test').Page) {
-  // A BOT message has the 🤖 Bot label
-  await expect(page.getByText(/🤖 Bot/i).first()).toBeVisible({ timeout: 30000 });
+  // BOT message avatars render a div with exactly '🤖' (distinct from '🤖 Virtual Assistant' in the header)
+  await expect(page.getByText('🤖', { exact: true }).first()).toBeVisible({ timeout: 30000 });
 }
 
 // ── 1. Full open → close cycle ────────────────────────────────────────────────
@@ -86,11 +86,12 @@ test.describe('Greeting and connection', () => {
     await openChat(page);
     await waitForTopics(page);
     await expect(page.getByRole('button', { name: /something else/i })).toBeVisible({ timeout: 5000 });
-    // Verify there are at least 4 topic buttons beyond "Something else"
-    const topicButtons = page.locator('button').filter({
-      hasText: /balance|fund|invest|account|portfolio|performance|transaction|trade|holding|activity|advisor/i,
-    });
-    expect(await topicButtons.count()).toBeGreaterThanOrEqual(4);
+    // The "Something else" button's parent flex div contains ALL topic buttons.
+    // It always has exactly 4 predicted topics + "Something else" = 5 buttons.
+    const somethingElse = page.getByRole('button', { name: /something else/i });
+    const buttonFlex = somethingElse.locator('..');
+    const count = await buttonFlex.locator('button').count();
+    expect(count).toBe(5); // 4 predicted topics + "Something else"
   });
 });
 
@@ -251,6 +252,10 @@ test.describe('Chat persistence across navigation', () => {
 // ── 6. Escalation and callback flows ─────────────────────────────────────────
 
 test.describe('Escalation panel and callback scheduler', () => {
+  // Each test in this block may wait up to 40s for the Lex/Connect escalation
+  // pipeline. The extra 25s gives test.skip() time to run if escalation doesn't fire.
+  test.describe.configure({ timeout: 65000 });
+
   /**
    * Helper: type a phrase that triggers the EscalateAgent Lex intent and wait
    * for the escalation panel to appear (state → ESCALATION_OFFERED).
@@ -263,7 +268,7 @@ test.describe('Escalation panel and callback scheduler', () => {
     await page.getByRole('button', { name: 'Send' }).click();
     // Look for either the "Chat with an agent" button OR "Request a callback" button
     const escalationPanel = page.getByRole('button', { name: /chat with an agent|request a callback/i }).first();
-    const appeared = await escalationPanel.waitFor({ timeout: 40000 }).then(() => true).catch(() => false);
+    const appeared = await escalationPanel.waitFor({ timeout: 35000 }).then(() => true).catch(() => false);
     return appeared;
   }
 
