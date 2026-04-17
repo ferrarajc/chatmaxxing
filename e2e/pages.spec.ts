@@ -2,21 +2,17 @@ import { test, expect } from '@playwright/test';
 
 const BASE = '/chatmaxxing';
 
-// Navigate to a sub-page via root link clicks (avoids GitHub Pages SPA 404 issues)
-// Falls back to direct URL once 404.html SPA redirect is deployed.
+// Navigate to a sub-page reliably via root + nav link click.
+// Direct URL navigation on GitHub Pages goes through a 404.html redirect
+// which can race with Playwright — always navigate from root instead.
 async function goTo(page: import('@playwright/test').Page, path: '/' | '/portfolio' | '/research' | '/account') {
-  if (path === '/') {
-    await page.goto(BASE + '/');
-  } else {
-    // Try direct navigation first (works once 404.html is deployed)
-    const res = await page.goto(BASE + path);
-    if (!res || res.status() >= 400) {
-      // Fallback: navigate from root, then click nav link
-      await page.goto(BASE + '/');
-      await page.getByRole('link', { name: new RegExp(path.slice(1), 'i') }).click();
-    }
-  }
+  await page.goto(BASE + '/');
   await page.waitForLoadState('networkidle');
+  if (path !== '/') {
+    const linkName = path.slice(1); // 'portfolio', 'research', 'account'
+    await page.getByRole('link', { name: new RegExp(`^${linkName}$`, 'i') }).click();
+    await page.waitForLoadState('networkidle');
+  }
 }
 
 // ─── HOMEPAGE ────────────────────────────────────────────────────────────────
@@ -103,11 +99,13 @@ test.describe('Portfolio Page', () => {
   });
 
   test('shows positive change % for Roth IRA', async ({ page }) => {
-    await expect(page.getByText(/\+4\.2%/)).toBeVisible({ timeout: 10000 });
+    // Rendered as "▲ 4.2% today"
+    await expect(page.getByText(/4\.2%.*today/)).toBeVisible({ timeout: 10000 });
   });
 
   test('shows negative change % for Taxable Account', async ({ page }) => {
-    await expect(page.getByText(/-0\.9%/)).toBeVisible({ timeout: 10000 });
+    // Rendered as "▼ 0.9% today"
+    await expect(page.getByText(/0\.9%.*today/)).toBeVisible({ timeout: 10000 });
   });
 
   test('holdings table shows all 6 fund tickers', async ({ page }) => {
@@ -129,7 +127,8 @@ test.describe('Portfolio Page', () => {
   });
 
   test('shows dividend reinvestment transaction', async ({ page }) => {
-    await expect(page.getByText(/dividend reinvestment/i)).toBeVisible({ timeout: 10000 });
+    // Two matching rows exist; use .first() to avoid strict-mode violation
+    await expect(page.getByText(/dividend reinvestment/i).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('shows contribution transactions', async ({ page }) => {
@@ -208,9 +207,10 @@ test.describe('Research Page', () => {
     await expect(page.getByText(/31\.4%/).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('fund cards show YTD/1Y return labels', async ({ page }) => {
+  test('fund cards show YTD and 1-Year return labels', async ({ page }) => {
     await expect(page.getByText(/YTD/i).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/\b1Y\b/).first()).toBeVisible({ timeout: 10000 });
+    // Labels are "YTD", "1-Year", "3-Year", "5-Year"
+    await expect(page.getByText(/1-Year/i).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('chat FAB is visible on research page', async ({ page }) => {

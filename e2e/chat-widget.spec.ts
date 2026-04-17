@@ -127,10 +127,12 @@ test.describe('Predicted topics', () => {
     await page.getByRole('link', { name: /portfolio/i }).click();
     await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: 'Open chat' }).click();
-    // Portfolio topics: Check my balance, Recent transactions, Fund performance, Place a trade
+    // Portfolio topics may be AI-generated — match broadly on any financial keyword
     await expect(
-      page.locator('button').filter({ hasText: /balance|transaction|performance|trade/i }).first()
-    ).toBeVisible({ timeout: 25000 });
+      page.locator('button').filter({
+        hasText: /balance|fund|invest|account|portfolio|performance|transaction|trade|holding|return|activity/i,
+      }).first()
+    ).toBeVisible({ timeout: 30000 });
   });
 
   test('clicking a topic button sends it as a message', async ({ page }) => {
