@@ -67,7 +67,7 @@ export function PortfolioPage() {
               <Pie data={allocationData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value">
                 {allocationData.map((_e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+              <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} />
             </PieChart>
           </ResponsiveContainer>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>

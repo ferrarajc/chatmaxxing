@@ -1,8 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cr from 'aws-cdk-lib/custom-resources';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as path from 'path';
 import { Construct } from 'constructs';
 
 export class DataStack extends cdk.Stack {
@@ -43,57 +41,39 @@ export class DataStack extends cdk.Stack {
       sortKey: { name: 'status', type: dynamodb.AttributeType.STRING },
     });
 
-    // ── Seed Lambda (runs once on deploy to insert Alex Johnson) ───
-    const seedFn = new lambda.Function(this, 'SeedFn', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
-      handler: 'index.handler',
-      code: lambda.Code.fromInline(`
-const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
-const { marshall } = require('@aws-sdk/util-dynamodb');
-exports.handler = async () => {
-  const client = new DynamoDBClient({});
-  const item = {
-    clientId: 'demo-client-001',
-    name: 'Alex Johnson',
-    phone: '4842384838',
-    accounts: [
-      { type: 'Roth IRA', balance: 45230, id: 'acc-001' },
-      { type: 'Traditional IRA', balance: 128450, id: 'acc-002' },
-      { type: 'Taxable Account', balance: 67890, id: 'acc-003' },
-    ],
-    totalBalance: 241570,
-    recentChatHistory: [
-      { date: '2025-03-10', topic: 'Fund performance', summary: 'Asked about BobsFunds 500 Index YTD returns' },
-      { date: '2025-02-14', topic: 'RMD rules', summary: 'Asked about required minimum distributions for Traditional IRA' },
-    ],
-  };
-  await client.send(new PutItemCommand({
-    TableName: process.env.CLIENTS_TABLE,
-    Item: marshall(item, { removeUndefinedValues: true }),
-    ConditionExpression: 'attribute_not_exists(clientId)',
-  }));
-  return { status: 'seeded' };
-};
-      `),
-      timeout: cdk.Duration.seconds(30),
-      environment: { CLIENTS_TABLE: this.clientsTable.tableName },
-    });
-    this.clientsTable.grantWriteData(seedFn);
-
-    // Custom resource triggers the seed fn on deploy
+    // ── Seed Alex Johnson directly via AwsCustomResource → DynamoDB PutItem ──
     new cr.AwsCustomResource(this, 'SeedTrigger', {
       onCreate: {
-        service: 'Lambda',
-        action: 'invoke',
+        service: 'DynamoDB',
+        action: 'putItem',
         parameters: {
-          FunctionName: seedFn.functionName,
-          InvocationType: 'RequestResponse',
+          TableName: this.clientsTable.tableName,
+          Item: {
+            clientId:     { S: 'demo-client-001' },
+            name:         { S: 'Alex Johnson' },
+            phone:        { S: '4842384838' },
+            totalBalance: { N: '241570' },
+            accounts: {
+              L: [
+                { M: { type: { S: 'Roth IRA' },         balance: { N: '45230'  }, id: { S: 'acc-001' } } },
+                { M: { type: { S: 'Traditional IRA' },   balance: { N: '128450' }, id: { S: 'acc-002' } } },
+                { M: { type: { S: 'Taxable Account' },   balance: { N: '67890'  }, id: { S: 'acc-003' } } },
+              ],
+            },
+            recentChatHistory: {
+              L: [
+                { M: { date: { S: '2025-03-10' }, topic: { S: 'Fund performance' }, summary: { S: 'Asked about BobsFunds 500 Index YTD returns' } } },
+                { M: { date: { S: '2025-02-14' }, topic: { S: 'RMD rules' },        summary: { S: 'Asked about required minimum distributions for Traditional IRA' } } },
+              ],
+            },
+          },
+          ConditionExpression: 'attribute_not_exists(clientId)',
         },
-        physicalResourceId: cr.PhysicalResourceId.of('SeedTrigger'),
+        physicalResourceId: cr.PhysicalResourceId.of('SeedAlexJohnson'),
+        ignoreErrorCodesMatching: 'ConditionalCheckFailedException',
       },
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: [seedFn.functionArn],
+        resources: [this.clientsTable.tableArn],
       }),
     });
 

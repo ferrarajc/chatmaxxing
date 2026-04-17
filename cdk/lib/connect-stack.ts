@@ -1,138 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
 import * as connect from 'aws-cdk-lib/aws-connect';
-import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
 interface ConnectStackProps extends cdk.StackProps {
-  lexBotArn: string;
-  lexBotAliasArn: string;
   startOutboundFnArn: string;
 }
-
-// Inbound chat contact flow JSON
-// Built to handle: Lex bot integration, intent routing, escalation
-const INBOUND_CHAT_FLOW = JSON.stringify({
-  Version: '2019-10-30',
-  StartAction: 'SetAttributes',
-  Actions: [
-    {
-      Identifier: 'SetAttributes',
-      Type: 'UpdateContactAttributes',
-      Parameters: {
-        Attributes: {
-          intentSummary: { Type: 'System', Value: '$.Attributes.intentSummary' },
-          clientName: { Type: 'System', Value: '$.Attributes.clientName' },
-          clientId: { Type: 'System', Value: '$.Attributes.clientId' },
-          currentPage: { Type: 'System', Value: '$.Attributes.currentPage' },
-        },
-      },
-      Transitions: { NextAction: 'SetQueue', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'SetQueue',
-      Type: 'UpdateContactTargetQueue',
-      Parameters: { QueueId: { Type: 'Text', Value: 'chat-general' } },
-      Transitions: { NextAction: 'GetLexInput', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'GetLexInput',
-      Type: 'ConnectParticipantWithLexBot',
-      Parameters: {
-        Text: 'Hi! How can I help you today?',
-        LexV2Bot: {
-          AliasArn: 'LEX_ALIAS_ARN_PLACEHOLDER',
-        },
-      },
-      Transitions: {
-        NextAction: 'TransferToQueue',
-        Errors: [{ NextAction: 'TransferToQueue', ErrorType: 'NoMatchingError' }],
-        Conditions: [
-          { NextAction: 'TransferToQueue', Operator: 'Equals', Operands: ['EscalateAgent'] },
-          { NextAction: 'ChangeOwnershipTransfer', Operator: 'Equals', Operands: ['ChangeOwnership'] },
-        ],
-      },
-    },
-    {
-      Identifier: 'ChangeOwnershipTransfer',
-      Type: 'MessageParticipant',
-      Parameters: {
-        Text: 'Account ownership changes require our specialist team. Let me connect you now.',
-      },
-      Transitions: { NextAction: 'TransferToOwnershipQueue', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'TransferToOwnershipQueue',
-      Type: 'TransferContactToQueue',
-      Parameters: { QueueId: { Type: 'Text', Value: 'change-of-ownership' } },
-      Transitions: { NextAction: 'End', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'TransferToQueue',
-      Type: 'TransferContactToQueue',
-      Parameters: { QueueId: { Type: 'Text', Value: 'chat-general' } },
-      Transitions: { NextAction: 'End', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'End',
-      Type: 'DisconnectParticipant',
-      Parameters: {},
-      Transitions: {},
-    },
-  ],
-});
-
-// Outbound IVR contact flow for callbacks
-const OUTBOUND_IVR_FLOW = JSON.stringify({
-  Version: '2019-10-30',
-  StartAction: 'GreetCustomer',
-  Actions: [
-    {
-      Identifier: 'GreetCustomer',
-      Type: 'MessageParticipant',
-      Parameters: {
-        SSML: "<speak>Hello, this is Bob's Mutual Funds calling. Am I speaking with <emphasis>$.Attributes.clientName</emphasis>?</speak>",
-      },
-      Transitions: { NextAction: 'GetConfirmation', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'GetConfirmation',
-      Type: 'GetParticipantInput',
-      Parameters: {
-        Text: 'Press 1 or say yes to confirm.',
-        InputTimeLimitSeconds: 8,
-        DTMFOptions: {
-          DisableCancel: false,
-          InputTerminatingKey: '#',
-        },
-      },
-      Transitions: {
-        NextAction: 'Disconnect',
-        Errors: [{ NextAction: 'Disconnect', ErrorType: 'NoMatchingError' }],
-        Conditions: [
-          { NextAction: 'ConnectToAgent', Operator: 'Equals', Operands: ['1'] },
-        ],
-      },
-    },
-    {
-      Identifier: 'ConnectToAgent',
-      Type: 'MessageParticipant',
-      Parameters: { Text: "Please hold while I connect you to an agent at Bob's Mutual Funds." },
-      Transitions: { NextAction: 'TransferToPhoneQueue', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'TransferToPhoneQueue',
-      Type: 'TransferContactToQueue',
-      Parameters: { QueueId: { Type: 'Text', Value: 'phone-general' } },
-      Transitions: { NextAction: 'Disconnect', Errors: [], Conditions: [] },
-    },
-    {
-      Identifier: 'Disconnect',
-      Type: 'DisconnectParticipant',
-      Parameters: {},
-      Transitions: {},
-    },
-  ],
-});
 
 export class ConnectStack extends cdk.Stack {
   public readonly instanceArn: string;
@@ -140,13 +12,10 @@ export class ConnectStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ConnectStackProps) {
     super(scope, id, props);
 
-    const { lexBotAliasArn } = props;
-
     // ── Connect instance ───────────────────────────────────────────
     const instance = new connect.CfnInstance(this, 'ConnectInstance', {
       identityManagementType: 'CONNECT_MANAGED',
-      inboundCallsEnabled: true,
-      outboundCallsEnabled: true,
+      instanceAlias: 'bobs-mutual-funds',
       attributes: {
         inboundCalls: true,
         outboundCalls: true,
@@ -274,11 +143,19 @@ export class ConnectStack extends cdk.Stack {
     });
 
     // ── Contact flows ──────────────────────────────────────────────
-    // Note: The Lex alias ARN placeholder is replaced at deploy time via a token
-    const inboundFlowContent = INBOUND_CHAT_FLOW.replace(
-      'LEX_ALIAS_ARN_PLACEHOLDER',
-      lexBotAliasArn
-    );
+    // Minimal placeholder flows — queue routing is updated post-deploy via Connect console
+    // or via aws connect update-contact-flow-content after stack is up
+    const inboundFlowContent = JSON.stringify({
+      Version: '2019-10-30',
+      StartAction: 'End',
+      Actions: [{ Identifier: 'End', Type: 'DisconnectParticipant', Parameters: {}, Transitions: {} }],
+    });
+
+    const outboundIvrContent = JSON.stringify({
+      Version: '2019-10-30',
+      StartAction: 'End',
+      Actions: [{ Identifier: 'End', Type: 'DisconnectParticipant', Parameters: {}, Transitions: {} }],
+    });
 
     const inboundChatFlow = new connect.CfnContactFlow(this, 'InboundChatFlow', {
       instanceArn: instance.attrArn,
@@ -290,44 +167,9 @@ export class ConnectStack extends cdk.Stack {
     const outboundIvrFlow = new connect.CfnContactFlow(this, 'OutboundIvrFlow', {
       instanceArn: instance.attrArn,
       name: 'Bobs-Outbound-IVR',
-      type: 'OUTBOUND_WHISPER',
-      content: OUTBOUND_IVR_FLOW,
+      type: 'CONTACT_FLOW',
+      content: outboundIvrContent,
     });
-
-    // ── Claim a US DID phone number ────────────────────────────────
-    const phoneNumber = new connect.CfnPhoneNumber(this, 'DID', {
-      targetArn: instance.attrArn,
-      type: 'DID',
-      countryCode: 'US',
-    });
-
-    // ── Associate Lex bot with the Connect instance ────────────────
-    // (Cannot be done via CfnInstance — requires a custom resource)
-    const associateLexBot = new cr.AwsCustomResource(this, 'AssociateLexBot', {
-      onCreate: {
-        service: 'Connect',
-        action: 'associateLexBot',
-        parameters: {
-          InstanceId: instance.attrId,
-          LexV2Bot: {
-            AliasArn: lexBotAliasArn,
-          },
-        },
-        physicalResourceId: cr.PhysicalResourceId.of('AssociateLexBot'),
-      },
-      onDelete: {
-        service: 'Connect',
-        action: 'disassociateLexV2Bot',
-        parameters: {
-          InstanceId: instance.attrId,
-          BotAliasArn: lexBotAliasArn,
-          LocaleId: 'en_US',
-        },
-        physicalResourceId: cr.PhysicalResourceId.of('AssociateLexBot'),
-      },
-      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: ['*'] }),
-    });
-    associateLexBot.node.addDependency(instance);
 
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ConnectInstanceId', {
@@ -353,10 +195,6 @@ export class ConnectStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'ChatQueueId', { value: chatQueue.attrQueueArn });
     new cdk.CfnOutput(this, 'PhoneQueueId', { value: phoneQueue.attrQueueArn });
-    new cdk.CfnOutput(this, 'PhoneNumber', {
-      value: phoneNumber.attrAddress,
-      description: 'Claimed DID number for outbound callbacks',
-    });
     new cdk.CfnOutput(this, 'AgentPassword', {
       value: 'BobsMF2025!',
       description: 'Initial password for demo-agent — change after first login',

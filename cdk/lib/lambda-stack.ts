@@ -5,7 +5,6 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as path from 'path';
 import { Construct } from 'constructs';
 
@@ -47,7 +46,7 @@ export class LambdaStack extends cdk.Stack {
     this.executeCallbackFn = new NodejsFunction(this, 'ExecuteCallbackFn', {
       functionName: 'bobs-execute-callback',
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'execute-callback/handler.ts'),
       timeout: cdk.Duration.seconds(30),
@@ -58,7 +57,7 @@ export class LambdaStack extends cdk.Stack {
         OUTBOUND_FLOW_ID: 'PLACEHOLDER',
         PHONE_QUEUE_ID: 'PLACEHOLDER',
       },
-      bundling: { minify: true, externalModules: ['@aws-sdk/*'] },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     callbacksTable.grantReadWriteData(this.executeCallbackFn);
     this.executeCallbackFn.addToRolePolicy(new iam.PolicyStatement({
@@ -74,7 +73,7 @@ export class LambdaStack extends cdk.Stack {
     const startChatFn = new NodejsFunction(this, 'StartChatFn', {
       functionName: 'bobs-start-chat',
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'start-chat/handler.ts'),
       timeout: cdk.Duration.seconds(29),
@@ -84,7 +83,7 @@ export class LambdaStack extends cdk.Stack {
         CONNECT_INSTANCE_ID: 'PLACEHOLDER',
         CONNECT_CHAT_FLOW_ID: 'PLACEHOLDER',
       },
-      bundling: { minify: true, externalModules: ['@aws-sdk/*'] },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     chatSessionsTable.grantWriteData(startChatFn);
     startChatFn.addToRolePolicy(new iam.PolicyStatement({
@@ -96,13 +95,13 @@ export class LambdaStack extends cdk.Stack {
     this.predictIntentFn = new NodejsFunction(this, 'PredictIntentFn', {
       functionName: 'bobs-predict-intent',
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'predict-intent/handler.ts'),
       timeout: cdk.Duration.seconds(29),
       memorySize: 256,
       environment: baseEnv,
-      bundling: { minify: true, externalModules: ['@aws-sdk/*'] },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     clientsTable.grantReadData(this.predictIntentFn);
     chatSessionsTable.grantReadData(this.predictIntentFn);
@@ -120,13 +119,13 @@ export class LambdaStack extends cdk.Stack {
     const nextBestResponseFn = new NodejsFunction(this, 'NextBestResponseFn', {
       functionName: 'bobs-next-best-response',
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'next-best-response/handler.ts'),
       timeout: cdk.Duration.seconds(29),
       memorySize: 256,
       environment: baseEnv,
-      bundling: { minify: true, externalModules: ['@aws-sdk/*'] },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     nextBestResponseFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
@@ -137,7 +136,7 @@ export class LambdaStack extends cdk.Stack {
     const scheduleCallbackFn = new NodejsFunction(this, 'ScheduleCallbackFn', {
       functionName: 'bobs-schedule-callback',
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'schedule-callback/handler.ts'),
       timeout: cdk.Duration.seconds(29),
@@ -147,7 +146,7 @@ export class LambdaStack extends cdk.Stack {
         SCHEDULER_ROLE_ARN: schedulerRole.roleArn,
         EXECUTE_CALLBACK_FN_ARN: this.executeCallbackFn.functionArn,
       },
-      bundling: { minify: true, externalModules: ['@aws-sdk/*'] },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     callbacksTable.grantWriteData(scheduleCallbackFn);
     scheduleCallbackFn.addToRolePolicy(new iam.PolicyStatement({
@@ -159,13 +158,13 @@ export class LambdaStack extends cdk.Stack {
     const autopilotTurnFn = new NodejsFunction(this, 'AutopilotTurnFn', {
       functionName: 'bobs-autopilot-turn',
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'autopilot-turn/handler.ts'),
       timeout: cdk.Duration.seconds(29),
       memorySize: 256,
       environment: baseEnv,
-      bundling: { minify: true, externalModules: ['@aws-sdk/*'] },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     autopilotTurnFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
@@ -180,13 +179,13 @@ export class LambdaStack extends cdk.Stack {
     const agentConnectionFn = new NodejsFunction(this, 'AgentConnectionFn', {
       functionName: 'bobs-agent-connection',
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'agent-connection/handler.ts'),
       timeout: cdk.Duration.seconds(29),
       memorySize: 256,
       environment: baseEnv,
-      bundling: { minify: true, externalModules: ['@aws-sdk/*'] },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     agentConnectionFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['connect:*'],

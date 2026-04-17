@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lex from 'aws-cdk-lib/aws-lex';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
 interface LexStackProps extends cdk.StackProps {
@@ -66,7 +67,7 @@ export class LexStack extends cdk.Stack {
       roleArn: lexRole.roleArn,
       dataPrivacy: { ChildDirected: false },
       idleSessionTtlInSeconds: 300,
-      autoBuildBotLocales: false,
+      autoBuildBotLocales: true,
       botLocales: [
         {
           localeId: 'en_US',
@@ -178,12 +179,8 @@ export class LexStack extends cdk.Stack {
             ]),
             {
               name: 'FallbackIntent',
-              sampleUtterances: [],
-              slots: [],
-              slotPriorities: [],
               parentIntentSignature: 'AMAZON.FallbackIntent',
               fulfillmentCodeHook: fulfillmentHook,
-              dialogCodeHook: { enabled: true },
             },
           ],
           voiceSettings: { voiceId: 'Joanna', engine: 'neural' },
@@ -225,10 +222,36 @@ export class LexStack extends cdk.Stack {
     });
     botAlias.addDependency(botVersion);
 
+    // ── Resource policy: let Amazon Connect invoke this bot alias ──────
+    const lexConnectPolicy = new cr.AwsCustomResource(this, 'LexConnectPolicy', {
+      onCreate: {
+        service: 'LexModelsV2',
+        action: 'createResourcePolicy',
+        parameters: {
+          resourceArn: botAlias.attrArn,
+          policy: cdk.Fn.sub(
+            '{"Version":"2012-10-17","Statement":[{"Sid":"AllowConnect","Effect":"Allow","Principal":{"Service":"connect.amazonaws.com"},"Action":["lex:RecognizeText","lex:RecognizeUtterance","lex:StartConversation","lex:DeleteSession","lex:PutSession"],"Resource":"${AliasArn}","Condition":{"StringEquals":{"aws:SourceAccount":"${AccountId}"},"ArnLike":{"aws:SourceArn":"arn:aws:connect:${Region}:${AccountId}:instance/*"}}}]}',
+            { AliasArn: botAlias.attrArn, AccountId: this.account, Region: this.region },
+          ),
+        },
+        physicalResourceId: cr.PhysicalResourceId.of('LexConnectPolicy'),
+      },
+      onDelete: {
+        service: 'LexModelsV2',
+        action: 'deleteResourcePolicy',
+        parameters: {
+          resourceArn: botAlias.attrArn,
+        },
+        physicalResourceId: cr.PhysicalResourceId.of('LexConnectPolicy'),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: ['*'] }),
+    });
+    lexConnectPolicy.node.addDependency(botAlias);
+
     this.botArn = `arn:aws:lex:${this.region}:${this.account}:bot/${bot.ref}`;
-    this.botAliasArn = `arn:aws:lex:${this.region}:${this.account}:bot-alias/${bot.ref}/${botAlias.ref}`;
+    this.botAliasArn = botAlias.attrArn;
     this.botId = bot.ref;
-    this.botAliasId = botAlias.ref;
+    this.botAliasId = botAlias.attrBotAliasId;
 
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'BotId', {
@@ -236,7 +259,7 @@ export class LexStack extends cdk.Stack {
       description: 'Lex Bot ID — needed for Connect association',
     });
     new cdk.CfnOutput(this, 'BotAliasId', {
-      value: botAlias.ref,
+      value: botAlias.attrBotAliasId,
       description: 'Lex Bot Alias ID — needed for Connect association',
     });
   }

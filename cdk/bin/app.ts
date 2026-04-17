@@ -31,8 +31,6 @@ lexStack.addDependency(lambdaStack);
 
 const connectStack = new ConnectStack(app, 'BobsConnectStack', {
   env,
-  lexBotArn: lexStack.botArn,
-  lexBotAliasArn: lexStack.botAliasArn,
   startOutboundFnArn: lambdaStack.executeCallbackFn.functionArn,
 });
 connectStack.addDependency(lexStack);
