@@ -40,6 +40,10 @@ export const handler = async (
       connectionToken?: string;
     } = JSON.parse(event.body ?? '{}');
 
+    if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
+      return jsonResponse(400, { error: 'transcript is required and must be a non-empty array' });
+    }
+
     const profile: ClientProfile = clientProfile ?? {
       clientId: 'demo-client-001',
       name: 'Alex Johnson',

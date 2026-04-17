@@ -11,5 +11,8 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "deploy": "cd cdk && npx cdk deploy --all"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
   }
 }
