@@ -48,9 +48,9 @@ export const handler = async (
     );
 
     return jsonResponse(200, {
-      participantToken: response.ParticipantCredentials?.ParticipantToken,
+      participantToken: response.ParticipantToken,
       contactId: response.ContactId,
-      participantId: response.ParticipantCredentials?.ParticipantId,
+      participantId: response.ParticipantId,
     });
   } catch (err) {
     console.error('start-chat error', err);

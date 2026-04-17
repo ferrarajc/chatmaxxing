@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import 'amazon-connect-chatjs';
 import { useChatStore } from '../store/chatStore';
 import { post } from '../api/client';
 import { MOCK_CLIENT } from '../data/mock-client';
 
 declare global {
-  // amazon-connect-chatjs is loaded as a UMD global in index.html
+  // kept for legacy type compat only — not used at runtime
   interface Window {
     connect: {
       ChatSession: {
@@ -40,19 +41,19 @@ export function useChatSession() {
       });
 
       // Configure chatjs
-      window.connect.ChatSession.setGlobalConfig({
-        loggerConfig: { level: window.connect.ChatSession.LogLevel.ERROR },
+      window.connect!.ChatSession.setGlobalConfig({
+        loggerConfig: { level: 'ERROR' },
         region: import.meta.env.VITE_AWS_REGION ?? 'us-east-1',
       });
 
-      const session = window.connect.ChatSession.create({
+      const session = window.connect!.ChatSession.create({
         chatDetails: {
           contactId: data.contactId,
           participantId: data.participantId,
           participantToken: data.participantToken,
         },
         options: { region: import.meta.env.VITE_AWS_REGION ?? 'us-east-1' },
-        type: window.connect.ChatSession.SessionTypes.CUSTOMER,
+        type: window.connect!.ChatSession.SessionTypes.CUSTOMER,
       }) as {
         connect: () => Promise<void>;
         onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string } }) => void) => void;
