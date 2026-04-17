@@ -1,0 +1,15 @@
+{
+  "name": "chatmaxxing",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "cdk",
+    "lambda",
+    "customer-app",
+    "agent-app"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "deploy": "cd cdk && npx cdk deploy --all"
+  }
+}

@@ -1,0 +1,90 @@
+export const MOCK_CLIENT = {
+  clientId: 'demo-client-001',
+  name: 'Alex Johnson',
+  phone: '4842384838',
+  displayPhone: '(484) 238-4838',
+  accounts: [
+    { type: 'Roth IRA',          balance: 45230,  id: 'acc-001', change: +4.2 },
+    { type: 'Traditional IRA',   balance: 128450, id: 'acc-002', change: +2.8 },
+    { type: 'Taxable Account',   balance: 67890,  id: 'acc-003', change: -0.9 },
+  ],
+  totalBalance: 241570,
+  holdings: [
+    { name: "BobsFunds 500 Index",        ticker: "BF500", shares: 142.3, price: 218.40, change: +1.2, value: 31072 },
+    { name: "BobsFunds Growth",           ticker: "BFGR",  shares: 88.1,  price: 341.20, change: +2.1, value: 30060 },
+    { name: "BobsFunds Bond Income",      ticker: "BFBI",  shares: 210.0, price: 98.30,  change: -0.3, value: 20643 },
+    { name: "BobsFunds International",    ticker: "BFIN",  shares: 55.4,  price: 87.60,  change: +0.7, value: 4853  },
+    { name: "BobsFunds ESG Leaders",      ticker: "BFESG", shares: 31.2,  price: 156.90, change: +1.8, value: 4895  },
+    { name: "BobsFunds Short-Term Treas", ticker: "BFST",  shares: 499.8, price: 100.10, change: +0.1, value: 50030 },
+  ],
+  transactions: [
+    { date: '2025-04-10', description: 'Dividend reinvestment - BF500', amount: +124.20, account: 'Roth IRA' },
+    { date: '2025-04-01', description: 'Contribution', amount: +583.33, account: 'Roth IRA' },
+    { date: '2025-03-28', description: 'Purchase - BobsFunds Growth', amount: -5000.00, account: 'Taxable Account' },
+    { date: '2025-03-15', description: 'Dividend reinvestment - BFBI', amount: +62.40, account: 'Traditional IRA' },
+    { date: '2025-03-01', description: 'Contribution', amount: +583.33, account: 'Roth IRA' },
+  ],
+};
+
+export const FUNDS = [
+  {
+    name: 'BobsFunds 500 Index',
+    ticker: 'BF500',
+    category: 'Large Cap Blend',
+    description: 'Tracks the performance of 500 large-cap US companies.',
+    returns: { ytd: 8.4, oneYear: 24.1, threeYear: 9.8, fiveYear: 13.2 },
+    expenseRatio: 0.03,
+    minInvestment: 1,
+  },
+  {
+    name: 'BobsFunds Growth',
+    ticker: 'BFGR',
+    category: 'Large Cap Growth',
+    description: 'High-growth US companies with strong earnings momentum.',
+    returns: { ytd: 11.2, oneYear: 31.4, threeYear: 12.1, fiveYear: 18.7 },
+    expenseRatio: 0.25,
+    minInvestment: 1,
+  },
+  {
+    name: 'BobsFunds Bond Income',
+    ticker: 'BFBI',
+    category: 'Intermediate Bond',
+    description: 'Investment-grade corporate and government bonds.',
+    returns: { ytd: 1.8, oneYear: 4.2, threeYear: 2.1, fiveYear: 3.8 },
+    expenseRatio: 0.10,
+    minInvestment: 1,
+  },
+  {
+    name: 'BobsFunds International',
+    ticker: 'BFIN',
+    category: 'International Blend',
+    description: 'Diversified exposure to developed international markets.',
+    returns: { ytd: 6.3, oneYear: 15.3, threeYear: 6.4, fiveYear: 9.1 },
+    expenseRatio: 0.20,
+    minInvestment: 1,
+  },
+  {
+    name: 'BobsFunds ESG Leaders',
+    ticker: 'BFESG',
+    category: 'Large Cap ESG',
+    description: 'Companies with top environmental, social & governance scores.',
+    returns: { ytd: 7.9, oneYear: 22.7, threeYear: 9.3, fiveYear: 12.8 },
+    expenseRatio: 0.18,
+    minInvestment: 1,
+  },
+  {
+    name: 'BobsFunds Short-Term Treasury',
+    ticker: 'BFST',
+    category: 'Short-Term Bond',
+    description: 'US Treasury securities with maturities of 1-3 years.',
+    returns: { ytd: 1.9, oneYear: 5.1, threeYear: 3.2, fiveYear: 2.9 },
+    expenseRatio: 0.08,
+    minInvestment: 1,
+  },
+];
+
+export const MARKET_DATA = [
+  { name: 'S&P 500',  value: '5,248.33', change: '+0.83%', up: true },
+  { name: 'Dow Jones', value: '39,127.14', change: '+0.44%', up: true },
+  { name: 'NASDAQ',   value: '16,394.21', change: '+1.02%', up: true },
+];

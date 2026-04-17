@@ -1,0 +1,19 @@
+{
+  "name": "chatmaxxing-lambda",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.0.0",
+    "@aws-sdk/client-connect": "^3.0.0",
+    "@aws-sdk/client-connectparticipant": "^3.0.0",
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/client-scheduler": "^3.0.0",
+    "@aws-sdk/util-dynamodb": "^3.0.0",
+    "date-fns-tz": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/node": "^20.0.0",
+    "typescript": "~5.7.0"
+  }
+}
