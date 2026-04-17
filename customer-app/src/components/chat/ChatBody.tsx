@@ -37,7 +37,7 @@ export function ChatBody({ currentPage: _page, onSendMessage }: Props) {
       )}
 
       {/* Predicted topic buttons */}
-      {predictedTopics.length > 0 && !topicsUsed.current && state === 'GREETING' && (
+      {predictedTopics.length > 0 && !topicsUsed.current && (state === 'GREETING' || state === 'BOT_ACTIVE') && messages.length === 0 && (
         <TopicButtons
           topics={predictedTopics}
           onSelect={handleTopicSelect}

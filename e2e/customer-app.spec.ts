@@ -69,17 +69,13 @@ test.describe('Customer App', () => {
     expect(body.suggestedText.length).toBeGreaterThan(10);
   });
 
-  test('schedule-callback API validates bad phone number', async ({ request }) => {
+  test('schedule-callback API rejects missing required fields', async ({ request }) => {
     const res = await request.post(`${API}/schedule-callback`, {
-      data: {
-        clientId: 'demo-client-001',
-        phoneNumber: '123',
-        scheduledTime: 'ASAP',
-        intentSummary: 'Test callback',
-      },
+      data: { phoneNumber: '4842384838' }, // missing clientId
     });
-    // Should return 4xx for invalid phone
-    expect(res.status()).toBeGreaterThanOrEqual(400);
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
   });
 
 });
