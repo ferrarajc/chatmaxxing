@@ -114,7 +114,12 @@ export function useChatSession() {
         store.addMessage({ role: 'SYSTEM', content: 'Connection interrupted. Reconnecting…' });
       });
       session.onEnded(() => {
-        store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
+        // Only surface "Chat ended." when a live agent was connected.
+        // The placeholder contact flow disconnects immediately in BOT_ACTIVE state,
+        // so suppress the message there to avoid alarming users mid-conversation.
+        if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') {
+          store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
+        }
       });
 
       await session.connect();

@@ -28,11 +28,17 @@ async function waitForTopics(page: import('@playwright/test').Page) {
   ).toBeVisible({ timeout: 25000 });
 }
 
-/** Waits for a bot response after the customer sends a message. */
-async function waitForBotReply(page: import('@playwright/test').Page) {
+/** Waits for a bot response and returns its text content. */
+async function waitForBotReply(page: import('@playwright/test').Page): Promise<string> {
   // BOT message avatars render a div with exactly '🤖' (distinct from '🤖 Virtual Assistant' in the header)
   await expect(page.getByText('🤖', { exact: true }).first()).toBeVisible({ timeout: 30000 });
+  // Navigate from the last bot avatar up to its parent row and strip the avatar glyph
+  const lastAvatar = page.getByText('🤖', { exact: true }).last();
+  const rowText = await lastAvatar.locator('..').textContent() ?? '';
+  return rowText.replace('🤖', '').trim();
 }
+
+const CANNED_FALLBACK = "I'd be happy to help with that. Let me look into it for you.";
 
 // ── 1. Full open → close cycle ────────────────────────────────────────────────
 
@@ -150,7 +156,10 @@ test.describe('Topic button clickthroughs', () => {
       hasText: /balance|fund|invest|account|portfolio|performance|transaction|trade/i,
     }).first();
     await topic.click();
-    await waitForBotReply(page);
+    const reply = await waitForBotReply(page);
+    // Must be a real response — not the canned Bedrock-failure fallback
+    expect(reply.length).toBeGreaterThan(20);
+    expect(reply).not.toBe(CANNED_FALLBACK);
   });
 });
 
@@ -207,7 +216,14 @@ test.describe('Free-form input clickthroughs', () => {
     await waitForTopics(page);
     await page.locator('textarea').first().fill('What is my total portfolio value?');
     await page.getByRole('button', { name: 'Send' }).click();
-    await waitForBotReply(page);
+    const reply = await waitForBotReply(page);
+    // Must be a real response — not the canned Bedrock-failure fallback
+    expect(reply.length).toBeGreaterThan(20);
+    expect(reply).not.toBe(CANNED_FALLBACK);
+    // When Bedrock is working, the response should acknowledge the portfolio / balance topic
+    if (reply !== CANNED_FALLBACK) {
+      expect(reply).toMatch(/portfolio|balance|account|\$|241|value/i);
+    }
   });
 
   test('multiple sequential messages all appear in chat', async ({ page }) => {
@@ -249,7 +265,22 @@ test.describe('Chat persistence across navigation', () => {
   });
 });
 
-// ── 6. Escalation and callback flows ─────────────────────────────────────────
+// ── 6. Bot response quality ───────────────────────────────────────────────────
+
+test.describe('Bot response quality', () => {
+  test('"Chat ended." does not appear during normal bot conversation', async ({ page }) => {
+    await openChat(page);
+    await waitForTopics(page);
+    await page.locator('textarea').first().fill('Hello');
+    await page.locator('textarea').press('Enter');
+    // Allow time for the Connect session-ended event to fire (it does so immediately
+    // on the placeholder flow); the message should still NOT appear in BOT_ACTIVE state.
+    await page.waitForTimeout(5000);
+    await expect(page.getByText('Chat ended.')).not.toBeVisible();
+  });
+});
+
+// ── 7. Escalation and callback flows ─────────────────────────────────────────
 
 test.describe('Escalation panel and callback scheduler', () => {
   // Each test in this block may wait up to 40s for the Lex/Connect escalation
@@ -378,7 +409,7 @@ test.describe('Escalation panel and callback scheduler', () => {
   });
 });
 
-// ── 7. Research page filter clickthroughs ────────────────────────────────────
+// ── 8. Research page filter clickthroughs ────────────────────────────────────
 
 test.describe('Research page filter clickthroughs', () => {
   test.beforeEach(async ({ page }) => {
@@ -418,7 +449,7 @@ test.describe('Research page filter clickthroughs', () => {
   });
 });
 
-// ── 8. Agent status toggle clickthrough ──────────────────────────────────────
+// ── 9. Agent status toggle clickthrough ──────────────────────────────────────
 
 test.describe('Agent desktop status toggle', () => {
   test.beforeEach(async ({ page }) => {
