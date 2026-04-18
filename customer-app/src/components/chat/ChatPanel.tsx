@@ -39,7 +39,9 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent }: Pro
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>Bob's Mutual Funds</div>
           <div style={{ fontSize: 12, opacity: 0.85 }}>
-            {state === 'CONNECTED_TO_AGENT' ? '🟢 Agent connected' : '🤖 Virtual Assistant'}
+            {state === 'CONNECTED_TO_AGENT' ? '🟢 Agent connected'
+              : state === 'WAITING_FOR_AGENT' ? '⏳ Connecting to an agent…'
+              : '🤖 Virtual Assistant'}
           </div>
         </div>
         <button
@@ -72,7 +74,7 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent }: Pro
             )}
             <ChatInput
               onSend={onSendMessage}
-              disabled={state === 'GREETING' || state === 'CALLBACK_SCHEDULED'}
+              disabled={state === 'GREETING' || state === 'CALLBACK_SCHEDULED' || state === 'WAITING_FOR_AGENT'}
             />
           </>
         )}

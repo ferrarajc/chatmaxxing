@@ -3,6 +3,7 @@ export type ChatState =
   | 'GREETING'
   | 'BOT_ACTIVE'
   | 'ESCALATION_OFFERED'
+  | 'WAITING_FOR_AGENT'
   | 'CONNECTED_TO_AGENT'
   | 'CALLBACK_SCHEDULED';
 

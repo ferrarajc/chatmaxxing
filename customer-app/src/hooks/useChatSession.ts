@@ -161,42 +161,26 @@ export function useChatSession() {
   }
 
   async function escalateToAgent() {
-    // Clear any pending bot timer — agent mode suppresses the autopilot
+    // Guard: only callable from ESCALATION_OFFERED state
+    if (useChatStore.getState().state !== 'ESCALATION_OFFERED') return;
+
+    // Cancel any pending fallback bot timer
     if (botReplyTimerRef.current) {
       clearTimeout(botReplyTimerRef.current);
       botReplyTimerRef.current = null;
     }
 
     store.addMessage({ role: 'SYSTEM', content: 'Connecting you to a live agent…' });
+    store.transitionTo('WAITING_FOR_AGENT');
 
-    // Disconnect the bot-mode chatjs session (flow already ended on Connect side)
-    try { sessionRef.current?.disconnect(); } catch { /* ignore */ }
-    sessionRef.current = null;
-
-    // Build a brief transcript summary to pass as context
-    const msgs = useChatStore.getState().messages.filter(m => m.role !== 'SYSTEM');
-    const summary = msgs.slice(-6).map(m => `${m.role}: ${m.content}`).join(' | ');
-
-    try {
-      const data = await post<StartChatResponse>('/start-chat', {
-        clientId: MOCK_CLIENT.clientId,
-        clientName: MOCK_CLIENT.name,
-        currentPage: 'escalation',
-        escalate: true,
-        intentSummary: summary.slice(0, 500),
-      });
-
-      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
-      sessionRef.current = session;
-      await session.connect();
-      store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
-      // State stays BOT_ACTIVE (set by onConnectionEstablished) — hides the
-      // escalation panel so the user can't accidentally click "Chat with agent" twice.
-      // Header and system message tell them an agent is being connected.
-    } catch (err) {
-      console.error('Escalation failed', err);
-      store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
-    }
+    // ── Do NOT disconnect the session or create a new contact. ──────────────
+    // The Lex EscalateAgent intent already caused the Contact Flow to transfer
+    // this contact to the agent queue. The existing chatjs session is still
+    // open on that same contact. When the agent accepts and sends their first
+    // message, onMessage fires with ParticipantRole === 'AGENT', which
+    // transitions state to CONNECTED_TO_AGENT and shows the live-agent header.
+    // Creating a new contact here would put the customer on a DIFFERENT contact
+    // than the one the agent accepted, breaking all message delivery.
   }
 
   async function sendMessage(text: string) {
@@ -205,7 +189,8 @@ export function useChatSession() {
     const currentState = useChatStore.getState().state;
     store.addMessage({ role: 'CUSTOMER', content: text });
 
-    if (currentState !== 'CONNECTED_TO_AGENT') {
+    const isAgentMode = currentState === 'CONNECTED_TO_AGENT' || currentState === 'WAITING_FOR_AGENT';
+    if (!isAgentMode) {
       // Start fallback timer: if Connect/Lex doesn't reply within 3 s, call autopilot-turn directly
       if (botReplyTimerRef.current) clearTimeout(botReplyTimerRef.current);
       botReplyTimerRef.current = setTimeout(async () => {
@@ -213,8 +198,9 @@ export function useChatSession() {
         const currentMessages = useChatStore.getState().messages;
         const lastMsg = currentMessages[currentMessages.length - 1];
         if (!lastMsg || lastMsg.role !== 'CUSTOMER') return; // bot or agent already replied
-        // Suppress if escalated to agent while timer was pending
-        if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') return;
+        // Suppress if an agent is connected or we're waiting for one to join
+        const liveState = useChatStore.getState().state;
+        if (liveState === 'CONNECTED_TO_AGENT' || liveState === 'WAITING_FOR_AGENT') return;
         try {
           store.setTyping(true);
           const result = await post<{ response: string; confidence: number; shouldExitAutopilot: boolean }>(
