@@ -2,6 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { ConnectClient, StartChatContactCommand } from '@aws-sdk/client-connect';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
+import { invokeNovaMicro } from '../shared/bedrock-client';
 import { jsonResponse } from '../shared/types';
 
 const connectClient = new ConnectClient({ region: process.env.AWS_REGION });
@@ -14,6 +15,24 @@ export const handler = async (
 
     if (!clientId || !clientName) {
       return jsonResponse(400, { error: 'clientId and clientName are required' });
+    }
+
+    // Generate a short AI label when escalating so the agent sees a concise summary
+    // rather than the raw pipe-separated transcript.
+    let intentLabel = '';
+    if (escalate && intentSummary) {
+      try {
+        const raw = await invokeNovaMicro(
+          intentSummary,
+          `Summarize the following customer chat transcript in ONE sentence of at most 80 characters.
+Start with the client's first name if present, e.g. "Alex asked about...".
+Return only the plain text summary — no quotes, no JSON.`,
+          60,
+        );
+        intentLabel = raw.trim().replace(/^["']|["']$/g, '').slice(0, 100);
+      } catch (e) {
+        console.warn('Intent label generation failed', e);
+      }
     }
 
     // Use agent-routing flow when escalating; bot-disconnect flow otherwise
@@ -31,6 +50,7 @@ export const handler = async (
           clientName,
           currentPage: currentPage ?? 'home',
           intentSummary: intentSummary ?? '',
+          intentLabel,
         },
         ChatDurationInMinutes: 60,
         SupportedMessagingContentTypes: ['text/plain', 'text/markdown'],

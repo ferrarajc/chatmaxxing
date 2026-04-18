@@ -19,10 +19,32 @@ export function AISupport({ slot }: Props) {
     store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
   };
 
+  const toggleAutopilot = () => {
+    store.patchSlot(slot.contactId, { isAutopilot: !slot.isAutopilot });
+  };
+
   return (
-    <div style={{ padding: '10px 12px', background: '#f8fafc', fontSize: 12 }}>
-      <div style={{ fontWeight: 700, color: '#374151', marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.5px' }}>
-        🤖 AI Suggestions
+    <div style={{ padding: '6px 12px 10px', background: '#f8fafc', fontSize: 12 }}>
+      {/* Header row: label + autopilot toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ fontWeight: 700, color: '#374151', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+          AI Suggestions
+        </div>
+        <button
+          onClick={toggleAutopilot}
+          title="Autopilot"
+          style={{
+            width: 22, height: 22, borderRadius: '50%', border: 'none',
+            background: slot.isAutopilot ? '#22c55e' : 'transparent',
+            outline: slot.isAutopilot ? 'none' : '1.5px solid #9ca3af',
+            color: slot.isAutopilot ? '#fff' : '#6b7280',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, padding: 0, flexShrink: 0,
+            transition: 'background .15s, outline .15s, color .15s',
+          }}
+        >
+          ✈
+        </button>
       </div>
 
       {/* Next best response */}
@@ -38,9 +60,7 @@ export function AISupport({ slot }: Props) {
             }}
           >Insert ↑</button>
         </div>
-      ) : (
-        <div style={{ color: '#9ca3af', fontSize: 12, marginBottom: 8 }}>Waiting for next message…</div>
-      )}
+      ) : null}
 
       {/* Resources */}
       {slot.suggestedResources.length > 0 && (

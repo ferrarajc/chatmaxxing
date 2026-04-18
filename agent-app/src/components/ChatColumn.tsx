@@ -100,12 +100,23 @@ export function ChatColumn({ slotIndex, slot }: Props) {
 
   const handleSend = () => {
     if (!inputText.trim() || !slot) return;
-    // In a real impl, this calls the Connect Participant Service to send the message.
-    // For the demo: append locally and mark response time.
-    store.appendMessage(slot.contactId, { role: 'AGENT', content: inputText.trim() });
-    store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
+    const text = inputText.trim();
     setInputText('');
-    // TODO: send via ChatJS session (wired in production via chatjs WebSocket)
+    // Append locally for instant feedback
+    store.appendMessage(slot.contactId, { role: 'AGENT', content: text });
+    store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
+    // Send via ConnectParticipant REST API (bearer token — no SigV4 required)
+    if (slot.connectionToken) {
+      const region = import.meta.env.VITE_AWS_REGION ?? 'us-east-1';
+      fetch(`https://participant.connect.${region}.amazonaws.com/participant/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Amz-Bearer': slot.connectionToken,
+        },
+        body: JSON.stringify({ Content: text, ContentType: 'text/plain' }),
+      }).catch(e => console.warn('Agent send failed:', e));
+    }
   };
 
   const outline = slot?.isAutopilot ? '2.5px solid #22c55e' : '2px solid #e2e8f0';
@@ -141,28 +152,19 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         <>
           {/* Static header */}
           <div style={{
-            padding: '10px 14px', borderBottom: '1px solid #e5e7eb',
+            padding: '8px 14px', borderBottom: '1px solid #e5e7eb',
             background: '#f8fafc', flexShrink: 0,
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{slot.clientName}</div>
-                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>{slot.intentSummary}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{slot.clientName}</div>
+                <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.2, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {slot.intentSummary}
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                <ResponseTimer lastAgentMessageAt={slot.lastAgentMessageAt} />
-                <button
-                  onClick={() => store.patchSlot(slot.contactId, { isAutopilot: !slot.isAutopilot })}
-                  style={{
-                    fontSize: 11, padding: '2px 8px', borderRadius: 10, border: 'none',
-                    background: slot.isAutopilot ? '#22c55e' : '#e5e7eb',
-                    color: slot.isAutopilot ? '#fff' : '#6b7280',
-                    cursor: 'pointer', fontWeight: 600,
-                  }}
-                >
-                  {slot.isAutopilot ? '🤖 Autopilot ON' : 'Autopilot OFF'}
-                </button>
-              </div>
+              <ResponseTimer lastEventAt={
+                Math.max(slot.lastAgentMessageAt ?? 0, slot.lastCustomerMessageAt ?? 0) || null
+              } />
             </div>
           </div>
 
