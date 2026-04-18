@@ -1,6 +1,23 @@
 import { useEffect, useRef } from 'react';
 import { useAgentStore } from '../store/agentStore';
 import { post } from '../api/client';
+import { ChatMessage } from '../types';
+
+/** Parse the pipe-separated "ROLE: content | ROLE: content" string from intentSummary */
+function parseHistory(raw: string): ChatMessage[] {
+  if (!raw) return [];
+  return raw.split(' | ').flatMap((part, i) => {
+    const colonIdx = part.indexOf(': ');
+    if (colonIdx === -1) return [];
+    const rawRole = part.slice(0, colonIdx).toUpperCase();
+    const content = part.slice(colonIdx + 2).trim();
+    if (!content) return [];
+    const role = (['CUSTOMER', 'BOT', 'AGENT', 'SYSTEM'].includes(rawRole)
+      ? rawRole
+      : 'BOT') as ChatMessage['role'];
+    return [{ id: `pre-${i}`, timestamp: Date.now() - (20 - i) * 1000, role, content }];
+  });
+}
 
 declare global {
   interface Window {
@@ -61,9 +78,9 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
     window.connect.core.initCCP(ccpContainerRef.current, {
       ccpUrl,
-      loginPopup: true,
-      loginPopupAutoClose: true,
-      loginOptions: { autoClose: true, height: 600, width: 400, top: 0, left: 0 },
+      // loginPopup:false renders the login page inside the iframe itself —
+      // no browser popup required, which avoids popup-blocker issues.
+      loginPopup: false,
       softphone: { allowFramedSoftphone: true },
       chat: { disableMultipleChatWindows: false },
     });
@@ -78,13 +95,20 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         // Store the live contact reference so the Accept/Skip buttons can reach it
         contactRefs.current.set(contactId, contact);
 
+        const rawHistory = attrs.intentSummary?.value ?? '';
+        const initialMessages = parseHistory(rawHistory);
+        // intentSummary shown in the header is the raw string (or a friendly label)
+        const intentLabel = initialMessages.length > 0
+          ? rawHistory.slice(0, 120)
+          : (rawHistory || 'General inquiry');
+
         const idx = store.addContact({
           contactId,
           clientId: attrs.clientId?.value ?? 'demo-client-001',
           clientName: attrs.clientName?.value ?? 'Alex Johnson',
-          intentSummary: attrs.intentSummary?.value ?? 'General inquiry',
+          intentSummary: intentLabel,
           status: 'incoming',
-        });
+        }, initialMessages);
 
         if (idx === null) {
           // All 4 slots full — reject
