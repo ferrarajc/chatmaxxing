@@ -36,7 +36,7 @@ export const handler = async (
     }: {
       transcript: ChatMessage[];
       clientProfile: ClientProfile;
-      currentIntent: string;
+      currentIntent?: string;
       connectionToken?: string;
     } = JSON.parse(event.body ?? '{}');
 
@@ -75,6 +75,18 @@ export const handler = async (
       response = parsed.response ?? '';
       confidence = parsed.confidence ?? 0.5;
       shouldExitAutopilot = parsed.shouldExitAutopilot ?? (confidence < 0.7);
+
+      // Business-rule hard override: trade execution and account modifications always
+      // require a human agent — do not let AI judgment override this.
+      const TRADE_INTENTS = ['PlaceOrder', 'ChangeOwnership', 'Transfer'];
+      const tradeKeywords = /\b(buy|sell|purchase|trade|transfer|place.?order|liquidat|redeem)\b/i;
+      const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
+      if (
+        TRADE_INTENTS.some(i => (currentIntent ?? '').includes(i)) ||
+        tradeKeywords.test(lastCustomerMsg)
+      ) {
+        shouldExitAutopilot = true;
+      }
     } catch (e) {
       console.warn('Bedrock autopilot failed', e);
       shouldExitAutopilot = true;

@@ -107,11 +107,11 @@ test.describe('Predicted topics', () => {
     await waitForTopics(page);
     // Wait a moment for all buttons to render
     await page.waitForTimeout(1000);
-    const topicButtons = page.locator('button').filter({
-      hasText: /balance|fund|invest|account|portfolio|performance|transaction|trade|compare|advisor|activity|something else/i,
-    });
-    const count = await topicButtons.count();
-    // Should have 4 predicted topics + "Something else" = 5
+    // Find all buttons within the topic section container (identified by its label text).
+    // This is robust regardless of the exact topic wording returned by the AI.
+    const topicSection = page.locator('div').filter({ hasText: /I think you might be here about/i }).last();
+    const count = await topicSection.locator('button').count();
+    // Should have 4 predicted topics + "Something else" = 5 total
     expect(count).toBeGreaterThanOrEqual(4);
   });
 

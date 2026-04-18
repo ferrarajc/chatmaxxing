@@ -30,12 +30,31 @@ async function waitForTopics(page: import('@playwright/test').Page) {
 
 /** Waits for a bot response and returns its text content. */
 async function waitForBotReply(page: import('@playwright/test').Page): Promise<string> {
-  // BOT message avatars render a div with exactly '🤖' (distinct from '🤖 Virtual Assistant' in the header)
-  await expect(page.getByText('🤖', { exact: true }).first()).toBeVisible({ timeout: 30000 });
-  // Navigate from the last bot avatar up to its parent row and strip the avatar glyph
-  const lastAvatar = page.getByText('🤖', { exact: true }).last();
-  const rowText = await lastAvatar.locator('..').textContent() ?? '';
-  return rowText.replace('🤖', '').trim();
+  // Wait until at least one bot message with real text (not typing-indicator dots) is present.
+  // The TypingIndicator renders a 🤖 avatar + animated dots + a <style>@keyframes</style> tag.
+  // We detect a real message by finding a 🤖 avatar whose next sibling div has text > 10 chars
+  // and does NOT contain @keyframes (which would indicate it's the CSS style tag's textContent).
+  await page.waitForFunction(() => {
+    const avatars = [...document.querySelectorAll('div')].filter(
+      el => el.childElementCount === 0 && el.textContent === '🤖'
+    );
+    return avatars.some(a => {
+      const sib = a.nextElementSibling as HTMLElement | null;
+      const t = sib?.textContent ?? '';
+      return t.length > 10 && !t.includes('@keyframes');
+    });
+  }, { timeout: 30000 });
+
+  // Extract the last real bot message text
+  return page.evaluate(() => {
+    const avatars = [...document.querySelectorAll('div')].filter(
+      el => el.childElementCount === 0 && el.textContent === '🤖'
+    );
+    const messages = avatars
+      .map(a => (a.nextElementSibling as HTMLElement | null)?.textContent?.trim() ?? '')
+      .filter(t => t.length > 10 && !t.includes('@keyframes'));
+    return messages[messages.length - 1] ?? '';
+  });
 }
 
 const CANNED_FALLBACK = "I'd be happy to help with that. Let me look into it for you.";

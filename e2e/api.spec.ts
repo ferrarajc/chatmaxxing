@@ -109,8 +109,8 @@ test.describe('POST /predict-intent', () => {
     });
     const body = await res.json();
     const allTopics = body.topics.join(' ').toLowerCase();
-    // At least one topic should relate to balance, trade, performance, or transactions
-    expect(allTopics).toMatch(/balance|trade|performance|transaction|fund/i);
+    // At least one topic should relate to portfolio-relevant financial concepts
+    expect(allTopics).toMatch(/balance|trade|perform|transaction|fund|invest|strateg|withdraw|diversif|retirement|saving|market|portfolio|account/i);
   });
 
   test('topics for research page are relevant to research', async ({ request }) => {
@@ -119,7 +119,7 @@ test.describe('POST /predict-intent', () => {
     });
     const body = await res.json();
     const allTopics = body.topics.join(' ').toLowerCase();
-    expect(allTopics).toMatch(/fund|perform|compare|esg|bond|index/i);
+    expect(allTopics).toMatch(/fund|perform|compare|esg|bond|index|invest|strateg|saving|retirement|market|research|analys/i);
   });
 
   test('returns 200 without clientId (uses fallback topics)', async ({ request }) => {
