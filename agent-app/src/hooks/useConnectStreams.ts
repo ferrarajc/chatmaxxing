@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
+import 'amazon-connect-chatjs';
 import { useAgentStore } from '../store/agentStore';
-import { post } from '../api/client';
 import { ChatMessage } from '../types';
 
 declare global {
@@ -18,6 +18,8 @@ interface ConnectContact {
   getContactId: () => string;
   getType: () => string;
   getAttributes: () => Record<string, { value: string }>;
+  getAgentConnection: () => ConnectConnection;
+  getConnections: () => ConnectConnection[];
   accept: (opts?: unknown) => void;
   reject: (opts?: unknown) => void;
   clear: (opts?: unknown) => void;
@@ -25,12 +27,13 @@ interface ConnectContact {
   onConnected: (cb: () => void) => void;
   onEnded: (cb: () => void) => void;
   onDestroy: (cb: () => void) => void;
-  getConnections: () => ConnectConnection[];
 }
 
 interface ConnectConnection {
   getType: () => string;
-  getParticipantToken: () => string | undefined;
+  getMediaType: () => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getMediaController: () => Promise<any>;
 }
 
 interface ConnectAgent {
@@ -54,20 +57,17 @@ function parseHistory(raw: string): ChatMessage[] {
   });
 }
 
+/**
+ * Module-level Map of contactId → chatjs AgentChatSession.
+ * Exported so ChatColumn can call session.sendMessage() directly.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const agentChatSessions = new Map<string, any>();
+
 export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElement | null>) {
   const store = useAgentStore();
   const autoAcceptTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const contactRefs = useRef<Map<string, ConnectContact>>(new Map());
-  // Agent-side WebSocket sessions keyed by contactId
-  const agentWs = useRef<Map<string, WebSocket>>(new Map());
-  const agentHeartbeats = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
-
-  const closeAgentWs = (contactId: string) => {
-    const hb = agentHeartbeats.current.get(contactId);
-    if (hb) { clearInterval(hb); agentHeartbeats.current.delete(contactId); }
-    const ws = agentWs.current.get(contactId);
-    if (ws) { try { ws.close(); } catch { /* ignore */ } agentWs.current.delete(contactId); }
-  };
 
   useEffect(() => {
     if (!ccpContainerRef.current) return;
@@ -128,68 +128,33 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
         store.patchSlot(contactId, { status: 'active' });
 
-        // Get agent participant token → create connection → open WebSocket
+        // ── Establish agent chat session via chatjs getMediaController() ──────
         try {
-          const connections = contact.getConnections();
-          const agentConn = connections.find(c => c.getType() === 'agent');
-          const participantToken = agentConn?.getParticipantToken?.();
-
-          if (participantToken) {
-            const result = await post<{ connectionToken: string; websocketUrl: string }>(
-              '/agent-connection',
-              { participantToken },
-            );
-            store.patchSlot(contactId, { connectionToken: result.connectionToken });
-
-            // ── Open bidirectional WebSocket ──────────────────────────────────
-            if (result.websocketUrl) {
-              const ws = new WebSocket(result.websocketUrl);
-              agentWs.current.set(contactId, ws);
-
-              ws.onopen = () => {
-                // Subscribe to chat messages
-                ws.send(JSON.stringify({
-                  topic: 'aws/subscribe',
-                  content: JSON.stringify({ topics: ['aws/chat'] }),
-                }));
-                // Heartbeat every 10 s to keep connection alive
-                const hb = setInterval(() => {
-                  if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ topic: 'aws/heartbeat' }));
-                  }
-                }, 10000);
-                agentHeartbeats.current.set(contactId, hb);
-              };
-
-              ws.onmessage = (event) => {
-                try {
-                  const envelope = JSON.parse(event.data as string);
-                  if (envelope.topic !== 'aws/chat') return;
-                  const msg = JSON.parse(envelope.content ?? '{}');
-                  if (msg.Type !== 'MESSAGE') return;
-                  // Suppress echoes of our own sent messages
-                  if (msg.ParticipantRole === 'AGENT') return;
-
-                  const role = msg.ParticipantRole === 'CUSTOMER'
-                    ? 'CUSTOMER' as const
-                    : 'BOT' as const;
-                  // Use getState() to avoid stale closure
-                  useAgentStore.getState().appendMessage(contactId, {
-                    role,
-                    content: msg.Content,
-                  });
-                  useAgentStore.getState().patchSlot(contactId, {
-                    lastCustomerMessageAt: Date.now(),
-                  });
-                } catch { /* ignore malformed frames */ }
-              };
-
-              ws.onerror = () => console.warn('Agent WebSocket error for', contactId);
-              ws.onclose = () => agentWs.current.delete(contactId);
-            }
+          const agentConn = contact.getAgentConnection();
+          if (!agentConn) {
+            console.warn('No agent connection for', contactId);
+            return;
           }
+
+          const chatSession = await agentConn.getMediaController();
+          if (!chatSession) {
+            console.warn('getMediaController() returned null for', contactId);
+            return;
+          }
+
+          agentChatSessions.set(contactId, chatSession);
+
+          // Receive messages from the customer (and suppress our own AGENT echoes)
+          chatSession.onMessage(({ data: msg }: { data: { Type: string; ParticipantRole: string; Content: string } }) => {
+            if (msg?.Type !== 'MESSAGE') return;
+            if (msg.ParticipantRole === 'AGENT') return; // suppress echo of own sent messages
+            const role = msg.ParticipantRole === 'CUSTOMER' ? 'CUSTOMER' as const : 'BOT' as const;
+            useAgentStore.getState().appendMessage(contactId, { role, content: msg.Content });
+            useAgentStore.getState().patchSlot(contactId, { lastCustomerMessageAt: Date.now() });
+          });
+
         } catch (e) {
-          console.warn('Could not establish agent participant connection', e);
+          console.warn('Could not establish agent chat session', e);
         }
       });
 
@@ -197,14 +162,14 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         const timer = autoAcceptTimers.current.get(contactId);
         if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
         contactRefs.current.delete(contactId);
-        closeAgentWs(contactId);
+        agentChatSessions.delete(contactId);
         store.patchSlot(contactId, { status: 'ended' });
         setTimeout(() => store.clearSlot(contactId), 3000);
       });
 
       contact.onDestroy(() => {
         contactRefs.current.delete(contactId);
-        closeAgentWs(contactId);
+        agentChatSessions.delete(contactId);
         store.clearSlot(contactId);
       });
     });
@@ -226,6 +191,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       const contact = contactRefs.current.get(contactId);
       if (contact) contact.reject({});
       contactRefs.current.delete(contactId);
+      agentChatSessions.delete(contactId);
       store.clearSlot(contactId);
     };
 

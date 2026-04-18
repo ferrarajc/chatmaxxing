@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ContactSlot, ChatMessage } from '../types';
 import { useAgentStore } from '../store/agentStore';
+import { agentChatSessions } from '../hooks/useConnectStreams';
 import { post } from '../api/client';
 import { IncomingAlert } from './IncomingAlert';
 import { ResponseTimer } from './ResponseTimer';
@@ -69,7 +70,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
               transcript: slot.messages,
               clientProfile: MOCK_CLIENT_PROFILE,
               currentIntent: slot.intentSummary,
-              connectionToken: slot.connectionToken,
+              // connectionToken removed — browser sends via chatjs
             },
           );
           if (result.shouldExitAutopilot) {
@@ -77,8 +78,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
               isAutopilot: false,
               suggestedText: result.response,
             });
+          } else if (result.response) {
+            // Browser sends the autopilot reply via chatjs
+            const session = agentChatSessions.get(slot.contactId);
+            if (session) {
+              store.appendMessage(slot.contactId, { role: 'AGENT', content: result.response });
+              store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
+              session.sendMessage({ message: result.response, contentType: 'text/plain' })
+                .catch((e: unknown) => console.warn('Autopilot send failed:', e));
+            }
           }
-          // If not exiting, Lambda already sent the message via Participant Service
         } catch (e) {
           console.warn('Autopilot turn failed', e);
           store.patchSlot(slot.contactId, { isAutopilot: false });
@@ -105,17 +114,13 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     // Append locally for instant feedback
     store.appendMessage(slot.contactId, { role: 'AGENT', content: text });
     store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
-    // Send via ConnectParticipant REST API (bearer token — no SigV4 required)
-    if (slot.connectionToken) {
-      const region = import.meta.env.VITE_AWS_REGION ?? 'us-east-1';
-      fetch(`https://participant.connect.${region}.amazonaws.com/participant/message`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Amz-Bearer': slot.connectionToken,
-        },
-        body: JSON.stringify({ Content: text, ContentType: 'text/plain' }),
-      }).catch(e => console.warn('Agent send failed:', e));
+    // Send via chatjs AgentChatSession (established by useConnectStreams via getMediaController)
+    const session = agentChatSessions.get(slot.contactId);
+    if (session) {
+      session.sendMessage({ message: text, contentType: 'text/plain' })
+        .catch((e: unknown) => console.warn('Agent send failed:', e));
+    } else {
+      console.warn('No chat session available for contactId', slot.contactId);
     }
   };
 

@@ -19,7 +19,6 @@ export interface ContactSlot {
   status: 'incoming' | 'active' | 'ended';
   messages: ChatMessage[];
   isAutopilot: boolean;
-  connectionToken: string | null;
   suggestedText: string;
   suggestedResources: Resource[];
   /** Timestamp of agent's last sent message — drives the ResponseTimer */

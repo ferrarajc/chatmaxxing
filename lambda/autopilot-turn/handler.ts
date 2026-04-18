@@ -1,8 +1,4 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import {
-  ConnectParticipantClient,
-  SendMessageCommand,
-} from '@aws-sdk/client-connectparticipant';
 import { invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import {
   ChatMessage,
@@ -32,12 +28,10 @@ export const handler = async (
       transcript,
       clientProfile,
       currentIntent,
-      connectionToken,
     }: {
       transcript: ChatMessage[];
       clientProfile: ClientProfile;
       currentIntent?: string;
-      connectionToken?: string;
     } = JSON.parse(event.body ?? '{}');
 
     if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
@@ -93,25 +87,8 @@ export const handler = async (
       response = "I'd be happy to help with that. Let me look into it for you.";
     }
 
-    // If staying in autopilot AND we have the agent's connection token, send the message
-    if (!shouldExitAutopilot && connectionToken && response) {
-      try {
-        const participantClient = new ConnectParticipantClient({
-          region: process.env.AWS_REGION,
-        });
-        await participantClient.send(
-          new SendMessageCommand({
-            ConnectionToken: connectionToken,
-            ContentType: 'text/plain',
-            Content: response,
-          }),
-        );
-      } catch (e) {
-        console.warn('Failed to send autopilot message via Participant Service', e);
-        shouldExitAutopilot = true;
-      }
-    }
-
+    // The browser (ChatColumn) sends the autopilot message via chatjs AgentChatSession.
+    // This Lambda always returns the response text; sending is handled client-side.
     return jsonResponse(200, { response, confidence, shouldExitAutopilot });
   } catch (err) {
     console.error('autopilot-turn error', err);
