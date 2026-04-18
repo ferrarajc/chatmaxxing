@@ -142,6 +142,16 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             return;
           }
 
+          // connect() initialises credentials (CreateParticipantConnection internally)
+          // so that sendMessage() has a valid connection token — without this, receive
+          // works (via Streams postMessage proxy) but send silently fails.
+          try {
+            await chatSession.connect();
+          } catch (e) {
+            // May throw if already connected — safe to ignore
+            console.warn('chatSession.connect() threw (may be pre-connected):', e);
+          }
+
           agentChatSessions.set(contactId, chatSession);
 
           // Receive messages from the customer (and suppress our own AGENT echoes)
