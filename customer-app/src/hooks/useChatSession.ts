@@ -182,9 +182,9 @@ export function useChatSession() {
       sessionRef.current = session;
       await session.connect();
       store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
-
-      // Show the escalation panel state while waiting for agent to accept
-      store.transitionTo('ESCALATION_OFFERED');
+      // State stays BOT_ACTIVE (set by onConnectionEstablished) — hides the
+      // escalation panel so the user can't accidentally click "Chat with agent" twice.
+      // Header and system message tell them an agent is being connected.
     } catch (err) {
       console.error('Escalation failed', err);
       store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
