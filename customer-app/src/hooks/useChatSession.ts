@@ -6,10 +6,18 @@ import { MOCK_CLIENT } from '../data/mock-client';
 
 const ESCALATION_PHRASES = [
   'connect you with a live agent',
+  'connect you to a live',
+  'connect you to a real',
+  'connecting you to',
   'chat now, or would a callback',
   'transfer you to',
   'speak with an agent',
+  'speak with a representative',
   'live representative',
+  'real person',
+  'human agent',
+  'hold on for a moment',
+  'please hold',
 ];
 
 function checkEscalation(text: string, store: ChatStore): void {
