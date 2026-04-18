@@ -8,9 +8,10 @@ import { CallbackScheduler } from './CallbackScheduler';
 interface Props {
   currentPage: string;
   onSendMessage: (text: string) => void;
+  onEscalateToAgent: () => void;
 }
 
-export function ChatPanel({ currentPage, onSendMessage }: Props) {
+export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent }: Props) {
   const { state, reset } = useChatStore();
   const [showCallbackScheduler, setShowCallbackScheduler] = useState(false);
 
@@ -60,7 +61,7 @@ export function ChatPanel({ currentPage, onSendMessage }: Props) {
             <ChatBody currentPage={currentPage} onSendMessage={onSendMessage} />
             {state === 'ESCALATION_OFFERED' && (
               <EscalationPanel
-                onConnectByChat={() => {/* already routing via Connect flow */}}
+                onConnectByChat={onEscalateToAgent}
                 onRequestCallback={() => setShowCallbackScheduler(true)}
               />
             )}

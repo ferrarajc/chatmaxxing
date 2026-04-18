@@ -10,22 +10,27 @@ export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
   try {
-    const { clientId, clientName, currentPage } = JSON.parse(event.body ?? '{}');
+    const { clientId, clientName, currentPage, escalate, intentSummary } = JSON.parse(event.body ?? '{}');
 
     if (!clientId || !clientName) {
       return jsonResponse(400, { error: 'clientId and clientName are required' });
     }
 
+    // Use agent-routing flow when escalating; bot-disconnect flow otherwise
+    const flowId = escalate
+      ? (process.env.CONNECT_AGENT_FLOW_ID ?? process.env.CONNECT_CHAT_FLOW_ID!)
+      : process.env.CONNECT_CHAT_FLOW_ID!;
+
     const response = await connectClient.send(
       new StartChatContactCommand({
         InstanceId: process.env.CONNECT_INSTANCE_ID!,
-        ContactFlowId: process.env.CONNECT_CHAT_FLOW_ID!,
+        ContactFlowId: flowId,
         ParticipantDetails: { DisplayName: clientName },
         Attributes: {
           clientId,
           clientName,
           currentPage: currentPage ?? 'home',
-          intentSummary: '',
+          intentSummary: intentSummary ?? '',
         },
         ChatDurationInMinutes: 60,
         SupportedMessagingContentTypes: ['text/plain', 'text/markdown'],

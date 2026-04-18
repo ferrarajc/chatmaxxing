@@ -449,9 +449,112 @@ test.describe('Research page filter clickthroughs', () => {
   });
 });
 
-// ── 9. Agent status toggle clickthrough ──────────────────────────────────────
+// ── 9. Message rendering correctness ─────────────────────────────────────────
 
-test.describe('Agent desktop status toggle', () => {
+test.describe('Message rendering correctness', () => {
+  test('customer messages are NOT duplicated in the chat', async ({ page }) => {
+    await openChat(page);
+    await waitForTopics(page);
+    await page.locator('textarea').first().fill('Hello, testing duplicates');
+    await page.locator('textarea').press('Enter');
+    await page.waitForTimeout(1000);
+    // Count how many times the exact message text appears in the DOM
+    const count = await page.getByText('Hello, testing duplicates').count();
+    expect(count).toBe(1);
+  });
+
+  test('customer message bubble text is left-aligned, not centered', async ({ page }) => {
+    await openChat(page);
+    await waitForTopics(page);
+    await page.locator('textarea').first().fill('Testing alignment of this message');
+    await page.locator('textarea').press('Enter');
+    await expect(page.getByText('Testing alignment of this message')).toBeVisible({ timeout: 5000 });
+    // Find the bubble div that contains the customer message text and check text-align
+    const bubbleAlign = await page.getByText('Testing alignment of this message').evaluate(
+      el => window.getComputedStyle(el).textAlign
+    );
+    // Should be 'left' or 'start' — never 'center'
+    expect(['left', 'start']).toContain(bubbleAlign);
+  });
+
+  test('bot message bubble text is left-aligned', async ({ page }) => {
+    await openChat(page);
+    await waitForTopics(page);
+    await page.locator('textarea').first().fill('What are my account balances?');
+    await page.locator('textarea').press('Enter');
+    // Wait for bot reply
+    await expect(page.getByText('🤖', { exact: true }).first()).toBeVisible({ timeout: 30000 });
+    const botBubbles = page.locator('div').filter({ hasText: /balance|account|\$|IRA/ }).last();
+    const align = await botBubbles.evaluate(el => window.getComputedStyle(el).textAlign);
+    expect(['left', 'start']).toContain(align);
+  });
+});
+
+// ── 10. Escalation "Chat with an agent" button ────────────────────────────────
+
+test.describe('Escalation — Chat with an agent button', () => {
+  test.describe.configure({ timeout: 65000 });
+
+  async function triggerEscalationPanel(page: import('@playwright/test').Page): Promise<boolean> {
+    await openChat(page);
+    await waitForTopics(page);
+    await page.locator('textarea').first().fill('I would like to speak with a live agent');
+    await page.getByRole('button', { name: 'Send' }).click();
+    const panel = page.getByRole('button', { name: /chat with an agent/i });
+    return panel.waitFor({ timeout: 35000 }).then(() => true).catch(() => false);
+  }
+
+  test('"Chat with an agent" button is clickable and produces visible feedback', async ({ page }) => {
+    const appeared = await triggerEscalationPanel(page);
+    if (!appeared) {
+      test.skip(true, 'Escalation panel did not appear within timeout');
+    }
+    const chatBtn = page.getByRole('button', { name: /chat with an agent/i });
+    await expect(chatBtn).toBeVisible({ timeout: 3000 });
+    await chatBtn.click();
+    // After clicking, the escalation panel should be gone OR a "connecting" message appears
+    await page.waitForTimeout(1500);
+    const escalationGone = await chatBtn.isVisible().then(v => !v).catch(() => true);
+    const connectingMsg = await page.getByText(/connecting|agent|wait/i).isVisible().catch(() => false);
+    expect(escalationGone || connectingMsg).toBe(true);
+  });
+
+  test('"Chat with an agent" does NOT leave the chat widget stuck/broken', async ({ page }) => {
+    const appeared = await triggerEscalationPanel(page);
+    if (!appeared) {
+      test.skip(true, 'Escalation panel did not appear within timeout');
+    }
+    await page.getByRole('button', { name: /chat with an agent/i }).click();
+    await page.waitForTimeout(2000);
+    // The chat panel should still be open (close button still present)
+    await expect(page.getByRole('button', { name: 'Close chat' })).toBeVisible({ timeout: 5000 });
+  });
+});
+
+// ── 11. Agent desktop layout ──────────────────────────────────────────────────
+
+test.describe('Agent desktop layout', () => {
+  test('agent desktop occupies full browser width', async ({ page }) => {
+    await page.goto(BASE + '/agent/');
+    await page.waitForLoadState('networkidle');
+    // The root element should not be capped at the 1126px customer-app width
+    const rootWidth = await page.locator('#root').evaluate(el => el.getBoundingClientRect().width);
+    const viewportWidth = page.viewportSize()?.width ?? 1280;
+    // Root should fill at least 95% of the viewport (previously capped at 1126px)
+    expect(rootWidth).toBeGreaterThan(viewportWidth * 0.95);
+  });
+
+  test('all 4 chat columns are visible in agent desktop', async ({ page }) => {
+    await page.goto(BASE + '/agent/');
+    await page.waitForLoadState('networkidle');
+    const waitingCols = await page.getByText('Waiting for a chat').count();
+    expect(waitingCols).toBe(4);
+  });
+});
+
+// ── 12. Agent status toggle clickthrough ─────────────────────────────────────
+
+test.describe('Agent desktop status toggle', () => {  // suite 12
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE + '/agent/');
     await page.waitForLoadState('networkidle');

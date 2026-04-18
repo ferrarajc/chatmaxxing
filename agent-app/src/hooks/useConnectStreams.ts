@@ -43,6 +43,8 @@ interface ConnectAgent {
 export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElement | null>) {
   const store = useAgentStore();
   const autoAcceptTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // Map from contactId → live contact reference so Accept/Skip events can call the SDK
+  const contactRefs = useRef<Map<string, ConnectContact>>(new Map());
 
   useEffect(() => {
     if (!ccpContainerRef.current) return;
@@ -68,11 +70,13 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
     // ── Contact events ─────────────────────────────────────────────
     window.connect.contact(contact => {
-      const type = contact.getType();
+      const contactId = contact.getContactId();
 
       contact.onConnecting(() => {
         const attrs = contact.getAttributes();
-        const contactId = contact.getContactId();
+
+        // Store the live contact reference so the Accept/Skip buttons can reach it
+        contactRefs.current.set(contactId, contact);
 
         const idx = store.addContact({
           contactId,
@@ -85,6 +89,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         if (idx === null) {
           // All 4 slots full — reject
           contact.reject();
+          contactRefs.current.delete(contactId);
           return;
         }
 
@@ -97,8 +102,6 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       });
 
       contact.onConnected(async () => {
-        const contactId = contact.getContactId();
-
         // Cancel auto-accept timer (agent already accepted)
         const timer = autoAcceptTimers.current.get(contactId);
         if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
@@ -121,18 +124,47 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       });
 
       contact.onEnded(() => {
-        const contactId = contact.getContactId();
         const timer = autoAcceptTimers.current.get(contactId);
         if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
+        contactRefs.current.delete(contactId);
         store.patchSlot(contactId, { status: 'ended' });
         // Fade out and clear slot after 3 seconds
         setTimeout(() => store.clearSlot(contactId), 3000);
       });
 
       contact.onDestroy(() => {
-        store.clearSlot(contact.getContactId());
+        contactRefs.current.delete(contactId);
+        store.clearSlot(contactId);
       });
     });
+
+    // ── Manual Accept / Skip from UI buttons ───────────────────────
+    const handleAccept = (e: Event) => {
+      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
+      const timer = autoAcceptTimers.current.get(contactId);
+      if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
+      const contact = contactRefs.current.get(contactId);
+      if (contact) {
+        contact.accept({});
+      } else {
+        console.warn('Accept: no contact ref found for', contactId);
+      }
+    };
+
+    const handleSkip = (e: Event) => {
+      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
+      const timer = autoAcceptTimers.current.get(contactId);
+      if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
+      const contact = contactRefs.current.get(contactId);
+      if (contact) {
+        contact.reject({});
+      }
+      contactRefs.current.delete(contactId);
+      store.clearSlot(contactId);
+    };
+
+    window.addEventListener('bobs:acceptContact', handleAccept);
+    window.addEventListener('bobs:skipContact', handleSkip);
 
     // ── Agent state ────────────────────────────────────────────────
     window.connect.agent(agent => {
@@ -143,17 +175,10 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         }
       });
     });
+
+    return () => {
+      window.removeEventListener('bobs:acceptContact', handleAccept);
+      window.removeEventListener('bobs:skipContact', handleSkip);
+    };
   }, []);
-}
-
-/** Called when agent clicks Accept */
-export function acceptContact(contactId: string) {
-  // The actual accept is handled by the Streams contact reference stored in the hook.
-  // We dispatch a custom event that the hook listener picks up.
-  window.dispatchEvent(new CustomEvent('bobs:acceptContact', { detail: { contactId } }));
-}
-
-/** Called when agent clicks Skip */
-export function skipContact(contactId: string) {
-  window.dispatchEvent(new CustomEvent('bobs:skipContact', { detail: { contactId } }));
 }

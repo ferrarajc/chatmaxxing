@@ -40,6 +40,7 @@ export function ChatMessage({ message }: Props) {
         padding: '8px 12px',
         fontSize: 14, lineHeight: 1.5,
         whiteSpace: 'pre-wrap',
+        textAlign: 'left',
       }}>
         {message.content}
       </div>

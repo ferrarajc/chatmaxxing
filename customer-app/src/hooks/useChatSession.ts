@@ -40,9 +40,92 @@ interface StartChatResponse {
   participantId: string;
 }
 
+type ChatJsSession = {
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string } }) => void) => void;
+  onTyping: (cb: () => void) => void;
+  onConnectionEstablished: (cb: () => void) => void;
+  onConnectionBroken: (cb: () => void) => void;
+  onEnded: (cb: () => void) => void;
+  sendMessage: (m: { message: string; contentType: string }) => Promise<void>;
+};
+
+function createAndBindSession(
+  data: StartChatResponse,
+  store: ChatStore,
+  sessionRef: React.MutableRefObject<ChatJsSession | null>,
+  botReplyTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+): ChatJsSession {
+  window.connect!.ChatSession.setGlobalConfig({
+    loggerConfig: { level: 'ERROR' },
+    region: import.meta.env.VITE_AWS_REGION ?? 'us-east-1',
+  });
+
+  const session = window.connect!.ChatSession.create({
+    chatDetails: {
+      contactId: data.contactId,
+      participantId: data.participantId,
+      participantToken: data.participantToken,
+    },
+    options: { region: import.meta.env.VITE_AWS_REGION ?? 'us-east-1' },
+    type: window.connect!.ChatSession.SessionTypes.CUSTOMER,
+  }) as ChatJsSession;
+
+  session.onMessage(({ data: msg }) => {
+    if (msg.Type !== 'MESSAGE') return;
+    // Skip the customer's own messages — sendMessage already adds them optimistically
+    if (msg.ParticipantRole === 'CUSTOMER') return;
+
+    const role = msg.ParticipantRole === 'AGENT' ? 'AGENT' : 'BOT';
+    store.addMessage({ role, content: msg.Content });
+
+    if (role === 'BOT') {
+      // A real Connect/Lex reply arrived — cancel any pending fallback timer
+      if (botReplyTimerRef.current) {
+        clearTimeout(botReplyTimerRef.current);
+        botReplyTimerRef.current = null;
+      }
+      checkEscalation(msg.Content, store);
+    }
+
+    if (msg.ParticipantRole === 'AGENT') {
+      // Cancel bot timer — agent is handling the conversation now
+      if (botReplyTimerRef.current) {
+        clearTimeout(botReplyTimerRef.current);
+        botReplyTimerRef.current = null;
+      }
+      store.transitionTo('CONNECTED_TO_AGENT');
+    }
+  });
+
+  session.onTyping(() => store.setTyping(true));
+
+  session.onConnectionEstablished(() => {
+    // Only promote to BOT_ACTIVE if we haven't already escalated to agent
+    const current = useChatStore.getState().state;
+    if (current === 'GREETING' || current === 'ESCALATION_OFFERED') {
+      store.transitionTo('BOT_ACTIVE');
+    }
+  });
+
+  session.onConnectionBroken(() => {
+    store.addMessage({ role: 'SYSTEM', content: 'Connection interrupted. Reconnecting…' });
+  });
+
+  session.onEnded(() => {
+    // Only surface "Chat ended." when a live agent was connected.
+    if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') {
+      store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
+    }
+  });
+
+  return session;
+}
+
 export function useChatSession() {
   const store = useChatStore();
-  const sessionRef = useRef<unknown>(null);
+  const sessionRef = useRef<ChatJsSession | null>(null);
   // Timer: if Connect/Lex doesn't reply in 3 s, call /autopilot-turn directly
   const botReplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -58,72 +141,9 @@ export function useChatSession() {
         currentPage,
       });
 
-      // Configure chatjs
-      window.connect!.ChatSession.setGlobalConfig({
-        loggerConfig: { level: 'ERROR' },
-        region: import.meta.env.VITE_AWS_REGION ?? 'us-east-1',
-      });
-
-      const session = window.connect!.ChatSession.create({
-        chatDetails: {
-          contactId: data.contactId,
-          participantId: data.participantId,
-          participantToken: data.participantToken,
-        },
-        options: { region: import.meta.env.VITE_AWS_REGION ?? 'us-east-1' },
-        type: window.connect!.ChatSession.SessionTypes.CUSTOMER,
-      }) as {
-        connect: () => Promise<void>;
-        onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string } }) => void) => void;
-        onTyping: (cb: () => void) => void;
-        onConnectionEstablished: (cb: () => void) => void;
-        onConnectionBroken: (cb: () => void) => void;
-        onEnded: (cb: () => void) => void;
-        sendMessage: (m: { message: string; contentType: string }) => Promise<void>;
-      };
-
+      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
       sessionRef.current = session;
-
-      session.onMessage(({ data }) => {
-        if (data.Type !== 'MESSAGE') return;
-        const role = data.ParticipantRole === 'CUSTOMER' ? 'CUSTOMER'
-          : data.ParticipantRole === 'AGENT' ? 'AGENT' : 'BOT';
-
-        store.addMessage({ role, content: data.Content });
-
-        // A real Connect/Lex reply arrived — cancel any pending fallback timer
-        if (role === 'BOT') {
-          if (botReplyTimerRef.current) {
-            clearTimeout(botReplyTimerRef.current);
-            botReplyTimerRef.current = null;
-          }
-          checkEscalation(data.Content, store);
-        }
-
-        // Detect agent joined
-        if (data.ParticipantRole === 'AGENT') {
-          store.transitionTo('CONNECTED_TO_AGENT');
-        }
-      });
-
-      session.onTyping(() => store.setTyping(true));
-      session.onConnectionEstablished(() => {
-        store.transitionTo('BOT_ACTIVE');
-      });
-      session.onConnectionBroken(() => {
-        store.addMessage({ role: 'SYSTEM', content: 'Connection interrupted. Reconnecting…' });
-      });
-      session.onEnded(() => {
-        // Only surface "Chat ended." when a live agent was connected.
-        // The placeholder contact flow disconnects immediately in BOT_ACTIVE state,
-        // so suppress the message there to avoid alarming users mid-conversation.
-        if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') {
-          store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
-        }
-      });
-
       await session.connect();
-
       store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
     } catch (err) {
       console.error('Failed to open chat', err);
@@ -132,45 +152,90 @@ export function useChatSession() {
     }
   }
 
-  async function sendMessage(text: string) {
-    const session = sessionRef.current as { sendMessage: (m: { message: string; contentType: string }) => Promise<void> } | null;
-    if (!session) return;
-    store.addMessage({ role: 'CUSTOMER', content: text });
-
-    // Start fallback timer: if Connect/Lex doesn't reply within 3 s, call autopilot-turn directly
-    if (botReplyTimerRef.current) clearTimeout(botReplyTimerRef.current);
-    botReplyTimerRef.current = setTimeout(async () => {
+  async function escalateToAgent() {
+    // Clear any pending bot timer — agent mode suppresses the autopilot
+    if (botReplyTimerRef.current) {
+      clearTimeout(botReplyTimerRef.current);
       botReplyTimerRef.current = null;
-      const currentMessages = useChatStore.getState().messages;
-      const lastMsg = currentMessages[currentMessages.length - 1];
-      if (!lastMsg || lastMsg.role !== 'CUSTOMER') return; // bot already replied
-      try {
-        store.setTyping(true);
-        const result = await post<{ response: string; confidence: number; shouldExitAutopilot: boolean }>(
-          '/autopilot-turn',
-          {
-            transcript: currentMessages.filter(m => m.role !== 'SYSTEM'),
-            clientProfile: MOCK_CLIENT,
-            currentIntent: 'general inquiry',
-          },
-        );
-        store.setTyping(false);
-        if (result.response) {
-          store.addMessage({ role: 'BOT', content: result.response });
-          checkEscalation(result.response, store);
-        }
-      } catch (e) {
-        store.setTyping(false);
-        console.warn('Fallback bot response failed', e);
-      }
-    }, 3000);
+    }
+
+    store.addMessage({ role: 'SYSTEM', content: 'Connecting you to a live agent…' });
+
+    // Disconnect the bot-mode chatjs session (flow already ended on Connect side)
+    try { sessionRef.current?.disconnect(); } catch { /* ignore */ }
+    sessionRef.current = null;
+
+    // Build a brief transcript summary to pass as context
+    const msgs = useChatStore.getState().messages.filter(m => m.role !== 'SYSTEM');
+    const summary = msgs.slice(-6).map(m => `${m.role}: ${m.content}`).join(' | ');
 
     try {
-      await session.sendMessage({ message: text, contentType: 'text/plain' });
-    } catch {
-      // WebSocket may be closed (placeholder contact flow disconnects immediately); fallback timer will handle the response
+      const data = await post<StartChatResponse>('/start-chat', {
+        clientId: MOCK_CLIENT.clientId,
+        clientName: MOCK_CLIENT.name,
+        currentPage: 'escalation',
+        escalate: true,
+        intentSummary: summary.slice(0, 500),
+      });
+
+      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
+      sessionRef.current = session;
+      await session.connect();
+      store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
+
+      // Show the escalation panel state while waiting for agent to accept
+      store.transitionTo('ESCALATION_OFFERED');
+    } catch (err) {
+      console.error('Escalation failed', err);
+      store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
     }
   }
 
-  return { openChat, sendMessage };
+  async function sendMessage(text: string) {
+    const session = sessionRef.current;
+    // In CONNECTED_TO_AGENT state, only send through the live session (no bot fallback)
+    const currentState = useChatStore.getState().state;
+    store.addMessage({ role: 'CUSTOMER', content: text });
+
+    if (currentState !== 'CONNECTED_TO_AGENT') {
+      // Start fallback timer: if Connect/Lex doesn't reply within 3 s, call autopilot-turn directly
+      if (botReplyTimerRef.current) clearTimeout(botReplyTimerRef.current);
+      botReplyTimerRef.current = setTimeout(async () => {
+        botReplyTimerRef.current = null;
+        const currentMessages = useChatStore.getState().messages;
+        const lastMsg = currentMessages[currentMessages.length - 1];
+        if (!lastMsg || lastMsg.role !== 'CUSTOMER') return; // bot or agent already replied
+        // Suppress if escalated to agent while timer was pending
+        if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') return;
+        try {
+          store.setTyping(true);
+          const result = await post<{ response: string; confidence: number; shouldExitAutopilot: boolean }>(
+            '/autopilot-turn',
+            {
+              transcript: currentMessages.filter(m => m.role !== 'SYSTEM'),
+              clientProfile: MOCK_CLIENT,
+              currentIntent: 'general inquiry',
+            },
+          );
+          store.setTyping(false);
+          if (result.response) {
+            store.addMessage({ role: 'BOT', content: result.response });
+            checkEscalation(result.response, store);
+          }
+        } catch (e) {
+          store.setTyping(false);
+          console.warn('Fallback bot response failed', e);
+        }
+      }, 3000);
+    }
+
+    if (!session) return;
+    try {
+      await session.sendMessage({ message: text, contentType: 'text/plain' });
+    } catch {
+      // WebSocket may be closed; fallback timer will handle the response
+    }
+  }
+
+  return { openChat, sendMessage, escalateToAgent };
 }

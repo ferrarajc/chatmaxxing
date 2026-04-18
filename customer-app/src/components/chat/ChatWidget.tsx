@@ -11,7 +11,7 @@ export function ChatWidget() {
   const currentPage = location.pathname.replace('/', '') || 'home';
 
   const chatState = useChatStore(s => s.state);
-  const { openChat, sendMessage } = useChatSession();
+  const { openChat, sendMessage, escalateToAgent } = useChatSession();
 
   usePredictedTopics(currentPage);
 
@@ -26,6 +26,7 @@ export function ChatWidget() {
         <ChatPanel
           currentPage={currentPage}
           onSendMessage={sendMessage}
+          onEscalateToAgent={escalateToAgent}
         />
       )}
     </>
