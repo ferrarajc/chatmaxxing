@@ -7,7 +7,12 @@ const STATUS_COLORS: Record<string, string> = {
   Offline: '#9ca3af',
 };
 
-export function TopBar() {
+interface Props {
+  ccpOpen: boolean;
+  onToggleCcp: () => void;
+}
+
+export function TopBar({ ccpOpen, onToggleCcp }: Props) {
   const { agentStatus, setAgentStatus } = useAgentStore();
   const active = useAgentStore(s => s.slots.filter(Boolean).length);
 
@@ -46,9 +51,22 @@ export function TopBar() {
           ))}
         </div>
 
-        <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13 }}>
+        {/* DA avatar — click to open/close the Connect CCP panel */}
+        <button
+          onClick={onToggleCcp}
+          title={ccpOpen ? 'Close Connect panel' : 'Open Connect panel'}
+          style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: ccpOpen ? '#3b82f6' : '#2563eb',
+            border: ccpOpen ? '2px solid #93c5fd' : '2px solid transparent',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 700, fontSize: 13, color: '#fff',
+            cursor: 'pointer', flexShrink: 0,
+            transition: 'border-color .15s, background .15s',
+          }}
+        >
           DA
-        </div>
+        </button>
       </div>
     </div>
   );
