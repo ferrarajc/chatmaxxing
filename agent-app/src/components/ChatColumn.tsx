@@ -184,16 +184,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             background: '#f8fafc', flexShrink: 0,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{slot.clientName}</div>
-                <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.2, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {slot.intentSummary}
-                </div>
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{slot.clientName}</div>
               <ResponseTimer lastEventAt={
                 Math.max(slot.lastAgentMessageAt ?? 0, slot.lastCustomerMessageAt ?? 0) || null
               } />
             </div>
+            {slot.intentSummary && (
+              <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.3, marginTop: 2 }}>
+                {slot.intentSummary}
+              </div>
+            )}
           </div>
 
           {/* Chat history — scrollable */}

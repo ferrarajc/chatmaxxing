@@ -24,12 +24,12 @@ export const handler = async (
       try {
         const raw = await invokeNovaMicro(
           intentSummary,
-          `Summarize the following customer chat transcript in ONE sentence of at most 80 characters.
+          `Summarize what this customer wants in at most 20 words.
 Start with the client's first name if present, e.g. "Alex asked about...".
-Return only the plain text summary — no quotes, no JSON.`,
+Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
           60,
         );
-        intentLabel = raw.trim().replace(/^["']|["']$/g, '').slice(0, 100);
+        intentLabel = raw.trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').slice(0, 150);
       } catch (e) {
         console.warn('Intent label generation failed', e);
       }
