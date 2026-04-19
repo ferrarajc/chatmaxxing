@@ -145,14 +145,31 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
           // connect() initialises credentials (CreateParticipantConnection internally)
           // so that sendMessage() has a valid connection token — without this, receive
           // works (via Streams postMessage proxy) but send silently fails.
+          let connectErr: string | null = null;
           try {
             await chatSession.connect();
+            console.log('chatSession.connect() succeeded for', contactId);
           } catch (e) {
-            // May throw if already connected — safe to ignore
-            console.warn('chatSession.connect() threw (may be pre-connected):', e);
+            try { connectErr = JSON.stringify(e, Object.getOwnPropertyNames(e as object)); }
+            catch { connectErr = String(e); }
+            console.warn('chatSession.connect() threw:', connectErr);
           }
 
+          // Log session keys and any accessible token for diagnosis
+          console.log('chatSession keys:', Object.keys(chatSession));
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const s = chatSession as any;
+          const token = s.connectionDetails?.connectionToken
+            ?? s._connectionDetails?.connectionToken
+            ?? s.chatDetails?.connectionCredentials?.connectionToken
+            ?? null;
+          console.log('Extracted connection token:', token ? token.slice(0, 20) + '…' : null);
+
           agentChatSessions.set(contactId, chatSession);
+          // Store connect error on session for ChatColumn to display if send fails
+          if (connectErr) {
+            agentChatSessions.set(contactId + ':connectErr', connectErr);
+          }
 
           // Receive messages from the customer (and suppress our own AGENT echoes)
           chatSession.onMessage(({ data: msg }: { data: { Type: string; ParticipantRole: string; Content: string } }) => {

@@ -74,7 +74,7 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent }: Pro
             )}
             <ChatInput
               onSend={onSendMessage}
-              disabled={state === 'GREETING' || state === 'CALLBACK_SCHEDULED' || state === 'WAITING_FOR_AGENT'}
+              disabled={state === 'GREETING' || state === 'CALLBACK_SCHEDULED'}
             />
           </>
         )}

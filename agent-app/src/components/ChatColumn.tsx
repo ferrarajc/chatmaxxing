@@ -123,12 +123,17 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     // Send via chatjs AgentChatSession (established by useConnectStreams via getMediaController)
     const session = agentChatSessions.get(slot.contactId);
     if (session) {
+      const connectErr = agentChatSessions.get(slot.contactId + ':connectErr');
       session.sendMessage({ message: text, contentType: 'text/plain' })
         .catch((e: unknown) => {
           console.error('Agent send failed:', e);
+          let detail: string;
+          try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e as object)); }
+          catch { detail = String(e); }
+          const extra = connectErr ? ` | connectErr: ${String(connectErr).slice(0, 80)}` : '';
           store.appendMessage(slot.contactId, {
             role: 'SYSTEM',
-            content: `⚠ Send error: ${String(e).slice(0, 120)}`,
+            content: `⚠ Send error: ${detail.slice(0, 240)}${extra}`,
           });
         });
     } else {
