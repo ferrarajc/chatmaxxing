@@ -1,43 +1,33 @@
-// AI client — uses OpenAI (gpt-4o-mini) via native Node 20 fetch.
-// Function names kept as-is so all callers require zero changes.
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? '';
+const client = new BedrockRuntimeClient({
+  region: process.env.BEDROCK_REGION ?? 'us-east-1',
+});
+
+const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? 'amazon.nova-micro-v1:0';
 
 export async function invokeNovaMicro(
   userPrompt: string,
   systemPrompt: string,
   maxTokens = 300,
 ): Promise<string> {
-  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set');
+  const payload = {
+    messages: [{ role: 'user', content: [{ text: userPrompt }] }],
+    system: [{ text: systemPrompt }],
+    inferenceConfig: { maxTokens, temperature: 0.3 },
+  };
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      max_tokens: maxTokens,
-      temperature: 0.3,
-    }),
+  const command = new InvokeModelCommand({
+    modelId: MODEL_ID,
+    contentType: 'application/json',
+    accept: 'application/json',
+    body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${body}`);
-  }
-
-  const data = await res.json() as {
-    choices: Array<{ message: { content: string } }>;
-  };
-  const text = data.choices[0]?.message?.content;
-  if (!text) throw new Error('Empty OpenAI response');
+  const response = await client.send(command);
+  const body = JSON.parse(Buffer.from(response.body).toString('utf-8'));
+  const text = body?.output?.message?.content?.[0]?.text;
+  if (!text) throw new Error('Empty Bedrock response');
   return text;
 }
 
