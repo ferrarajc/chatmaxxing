@@ -21,6 +21,9 @@ const ESCALATION_PHRASES = [
 ];
 
 function checkEscalation(text: string, store: ChatStore): void {
+  const s = useChatStore.getState().state;
+  // Don't re-trigger escalation if we're already waiting for or connected to an agent
+  if (s === 'WAITING_FOR_AGENT' || s === 'CONNECTED_TO_AGENT') return;
   const lower = text.toLowerCase();
   if (ESCALATION_PHRASES.some(p => lower.includes(p))) {
     store.transitionTo('ESCALATION_OFFERED');
@@ -173,14 +176,34 @@ export function useChatSession() {
     store.addMessage({ role: 'SYSTEM', content: 'Connecting you to a live agent…' });
     store.transitionTo('WAITING_FOR_AGENT');
 
-    // ── Do NOT disconnect the session or create a new contact. ──────────────
-    // The Lex EscalateAgent intent already caused the Contact Flow to transfer
-    // this contact to the agent queue. The existing chatjs session is still
-    // open on that same contact. When the agent accepts and sends their first
-    // message, onMessage fires with ParticipantRole === 'AGENT', which
-    // transitions state to CONNECTED_TO_AGENT and shows the live-agent header.
-    // Creating a new contact here would put the customer on a DIFFERENT contact
-    // than the one the agent accepted, breaking all message delivery.
+    // Disconnect the bot session (Lex flow has ended on the Connect side after
+    // the EscalateAgent intent fired). Create a fresh contact that the Connect
+    // flow will route directly to the agent queue (the flow checks escalate=true
+    // attribute and bypasses Lex when set).
+    try { sessionRef.current?.disconnect(); } catch { /* ignore */ }
+    sessionRef.current = null;
+
+    const msgs = useChatStore.getState().messages.filter(m => m.role !== 'SYSTEM');
+    const summary = msgs.slice(-6).map(m => `${m.role}: ${m.content}`).join(' | ');
+
+    try {
+      const data = await post<StartChatResponse>('/start-chat', {
+        clientId: MOCK_CLIENT.clientId,
+        clientName: MOCK_CLIENT.name,
+        currentPage: 'escalation',
+        escalate: true,
+        intentSummary: summary.slice(0, 500),
+      });
+
+      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
+      sessionRef.current = session;
+      await session.connect();
+      store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
+    } catch (err) {
+      console.error('Escalation failed', err);
+      store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
+      store.transitionTo('ESCALATION_OFFERED');
+    }
   }
 
   async function sendMessage(text: string) {

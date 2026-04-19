@@ -85,7 +85,13 @@ export function ChatColumn({ slotIndex, slot }: Props) {
               store.appendMessage(slot.contactId, { role: 'AGENT', content: result.response });
               store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
               session.sendMessage({ message: result.response, contentType: 'text/plain' })
-                .catch((e: unknown) => console.warn('Autopilot send failed:', e));
+                .catch((e: unknown) => {
+                  console.error('Autopilot send failed:', e);
+                  store.appendMessage(slot.contactId, {
+                    role: 'SYSTEM',
+                    content: `⚠ Autopilot send error: ${String(e).slice(0, 120)}`,
+                  });
+                });
             }
           }
         } catch (e) {
@@ -118,9 +124,17 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const session = agentChatSessions.get(slot.contactId);
     if (session) {
       session.sendMessage({ message: text, contentType: 'text/plain' })
-        .catch((e: unknown) => console.warn('Agent send failed:', e));
+        .catch((e: unknown) => {
+          console.error('Agent send failed:', e);
+          store.appendMessage(slot.contactId, {
+            role: 'SYSTEM',
+            content: `⚠ Send error: ${String(e).slice(0, 120)}`,
+          });
+        });
     } else {
-      console.warn('No chat session available for contactId', slot.contactId);
+      const msg = 'No active chat session — getMediaController() may not have resolved yet';
+      console.warn(msg, slot.contactId);
+      store.appendMessage(slot.contactId, { role: 'SYSTEM', content: `⚠ ${msg}` });
     }
   };
 
