@@ -29,7 +29,7 @@ export class LambdaStack extends cdk.Stack {
       CLIENTS_TABLE: clientsTable.tableName,
       SESSIONS_TABLE: chatSessionsTable.tableName,
       CALLBACKS_TABLE: callbacksTable.tableName,
-      BEDROCK_MODEL_ID: 'amazon.nova-micro-v1:0',
+      BEDROCK_MODEL_ID: 'us.amazon.nova-micro-v1:0',
       BEDROCK_REGION: this.region,
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
     };
