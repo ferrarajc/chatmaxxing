@@ -84,7 +84,8 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
     window.connect.core.initCCP(ccpContainerRef.current, {
       ccpUrl,
-      loginPopup: false,
+      loginPopup: true,
+      loginPopupAutoClose: true,
       softphone: { allowFramedSoftphone: true },
       chat: { disableMultipleChatWindows: false },
     });
