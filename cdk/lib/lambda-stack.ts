@@ -259,6 +259,15 @@ export class LambdaStack extends cdk.Stack {
       });
     }
 
+    // ── Route-level throttling on costly endpoints ─────────────────
+    // Prevents bot spam from running up OpenAI / Connect costs.
+    // These limits are per-API (global), not per-IP — WAF would be needed for per-IP.
+    const cfnStage = api.defaultStage?.node.defaultChild as apigwv2.CfnStage;
+    cfnStage.addOverride('Properties.RouteSettings', {
+      'POST /start-chat':     { ThrottlingBurstLimit: 5,  ThrottlingRateLimit: 3  },
+      'POST /autopilot-turn': { ThrottlingBurstLimit: 10, ThrottlingRateLimit: 10 },
+    });
+
     this.apiUrl = api.apiEndpoint;
 
     // ── Outputs ────────────────────────────────────────────────────
