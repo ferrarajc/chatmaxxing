@@ -1,47 +1,43 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import {
-  ConnectParticipantClient,
-  CreateParticipantConnectionCommand,
-  SendMessageCommand,
-  ConnectionType,
-} from '@aws-sdk/client-connectparticipant';
 import { jsonResponse } from '../shared/types';
 
-const client = new ConnectParticipantClient({
-  region: process.env.AWS_REGION ?? 'us-east-1',
-});
+// Use raw fetch (Node 18+) instead of @aws-sdk/client-connectparticipant.
+// The SDK adds IAM SigV4 signing even for bearer-token endpoints, and the
+// Lambda's execution role has no connectparticipant:* IAM allow, causing 403.
+// The ConnectParticipant SendMessage API only requires X-Amz-Bearer: connectionToken.
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
   try {
-    const { participantToken, message } = JSON.parse(event.body ?? '{}');
+    const { connectionToken, message } = JSON.parse(event.body ?? '{}');
 
-    if (!participantToken || !message) {
-      return jsonResponse(400, { error: 'participantToken and message are required' });
+    if (!connectionToken || !message) {
+      return jsonResponse(400, { error: 'connectionToken and message are required' });
     }
 
-    // Get a fresh connection token for this participant token
-    const connResult = await client.send(
-      new CreateParticipantConnectionCommand({
-        ParticipantToken: participantToken,
-        Type: [ConnectionType.CONNECTION_CREDENTIALS],
-      }),
-    );
+    const region = process.env.AWS_REGION ?? 'us-east-1';
+    const url = `https://participant.connect.${region}.amazonaws.com/participant/message`;
 
-    const connectionToken = connResult.ConnectionCredentials?.ConnectionToken;
-    if (!connectionToken) {
-      return jsonResponse(500, { error: 'Failed to obtain connection token' });
-    }
-
-    // Send the message using the connection token
-    await client.send(
-      new SendMessageCommand({
-        ConnectionToken: connectionToken,
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-Amz-Bearer': connectionToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         Content: message,
         ContentType: 'text/plain',
       }),
-    );
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.error('SendMessage failed:', response.status, body);
+      return jsonResponse(response.status < 500 ? response.status : 502, {
+        error: `SendMessage ${response.status}: ${body}`,
+      });
+    }
 
     return jsonResponse(200, { ok: true });
   } catch (err) {

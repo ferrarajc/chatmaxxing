@@ -154,26 +154,27 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
           agentChatSessions.set(contactId, chatSession);
 
-          // Extract participant/connection token from chatjs session for server-side sending
+          // Extract the connection token from chatjs session for server-side sending.
+          // connectionDetails.connectionToken is the connection token the CCP obtained
+          // via CreateParticipantConnection (provided to us via the Streams LPC channel).
+          // We pass this to our Lambda which calls SendMessage directly via raw fetch
+          // (bypassing SDK IAM signing that would otherwise be denied).
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const details = (chatSession as any).getChatDetails?.() ?? {};
-            const participantToken: string | null =
-              details?.connectionDetails?.connectionToken  // token set by LPC on connect()
-              ?? details?.connectionDetails?.ConnectionToken
-              ?? details?.participantToken                 // raw participant token fallback
-              ?? null;
+            const connectionToken: string | null =
+              details?.connectionDetails?.connectionToken ?? null;
             log.info('useConnectStreams:onConnected', {
               contactId,
               sessionKeys: Object.keys(chatSession),
               detailKeys: Object.keys(details),
-              hasParticipantToken: !!participantToken,
+              hasConnectionToken: !!connectionToken,
               connectionDetailsKeys: Object.keys(details?.connectionDetails ?? {}),
             });
-            if (participantToken) {
-              store.patchSlot(contactId, { participantToken });
+            if (connectionToken) {
+              store.patchSlot(contactId, { connectionToken });
             } else {
-              log.warn('useConnectStreams:noParticipantToken', { contactId, details });
+              log.warn('useConnectStreams:noConnectionToken', { contactId, detailKeys: Object.keys(details) });
             }
           } catch (e) {
             log.warn('useConnectStreams:getChatDetails:failed', e);

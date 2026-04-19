@@ -12,7 +12,7 @@ interface AgentStore {
   setAgentStatus: (s: AgentStatus) => void;
 
   /** Add a new incoming contact to the first free slot */
-  addContact: (contact: Omit<ContactSlot, 'messages' | 'isAutopilot' | 'suggestedText' | 'suggestedResources' | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'participantToken'>, initialMessages?: ChatMessage[]) => number | null;
+  addContact: (contact: Omit<ContactSlot, 'messages' | 'isAutopilot' | 'suggestedText' | 'suggestedResources' | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'>, initialMessages?: ChatMessage[]) => number | null;
 
   /** Partially update a slot by contactId */
   patchSlot: (contactId: string, patch: Partial<ContactSlot>) => void;
@@ -48,7 +48,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       suggestedResources: [],
       lastAgentMessageAt: null,
       lastCustomerMessageAt: null,
-      participantToken: null,
+      connectionToken: null,
     };
     set({ slots });
     return idx;

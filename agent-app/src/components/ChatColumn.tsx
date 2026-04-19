@@ -81,9 +81,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           } else if (result.response) {
             store.appendMessage(slot.contactId, { role: 'AGENT', content: result.response });
             store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
-            if (slot.participantToken) {
+            if (slot.connectionToken) {
               post<{ ok: boolean }>('/send-agent-message', {
-                participantToken: slot.participantToken,
+                connectionToken: slot.connectionToken,
                 message: result.response,
               }).catch((e: unknown) => {
                 log.error('ChatColumn:autopilot:sendFailed', e);
@@ -121,15 +121,15 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     store.appendMessage(slot.contactId, { role: 'AGENT', content: text });
     store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
 
-    if (!slot.participantToken) {
+    if (!slot.connectionToken) {
       const msg = 'Agent token not ready — try again in a moment';
-      log.warn('ChatColumn:send:noToken', { contactId: slot.contactId });
+      log.warn('ChatColumn:send:noConnectionToken', { contactId: slot.contactId });
       store.appendMessage(slot.contactId, { role: 'SYSTEM', content: `⚠ ${msg}` });
       return;
     }
 
     post<{ ok: boolean }>('/send-agent-message', {
-      participantToken: slot.participantToken,
+      connectionToken: slot.connectionToken,
       message: text,
     })
       .then(() => {
