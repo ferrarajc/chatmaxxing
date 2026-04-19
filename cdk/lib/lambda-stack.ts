@@ -32,6 +32,9 @@ export class LambdaStack extends cdk.Stack {
       BEDROCK_MODEL_ID: 'us.amazon.nova-micro-v1:0',
       BEDROCK_REGION: this.region,
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
+      // Read from shell env at synth time — never hardcode in source.
+      // Set OPENAI_API_KEY in the environment before running cdk deploy.
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
     };
 
     const lambdaDir = path.join(__dirname, '../../lambda');
