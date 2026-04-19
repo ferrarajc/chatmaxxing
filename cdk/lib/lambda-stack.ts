@@ -175,6 +175,19 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // ── client-log ─────────────────────────────────────────────────
+    const clientLogFn = new NodejsFunction(this, 'ClientLogFn', {
+      functionName: 'bobs-client-log',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'client-log/handler.ts'),
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+
     // ── agent-connection ───────────────────────────────────────────
     const agentConnectionFn = new NodejsFunction(this, 'AgentConnectionFn', {
       functionName: 'bobs-agent-connection',
@@ -217,6 +230,7 @@ export class LambdaStack extends cdk.Stack {
       ['/schedule-callback', scheduleCallbackFn],
       ['/autopilot-turn', autopilotTurnFn],
       ['/agent-connection', agentConnectionFn],
+      ['/client-log', clientLogFn],
     ];
     for (const [path, fn] of routes) {
       api.addRoutes({

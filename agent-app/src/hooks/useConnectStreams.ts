@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import 'amazon-connect-chatjs';
 import { useAgentStore } from '../store/agentStore';
 import { ChatMessage } from '../types';
+import { log } from '../api/logger';
 
 declare global {
   interface Window {
@@ -142,34 +143,20 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             return;
           }
 
-          // connect() initialises credentials (CreateParticipantConnection internally)
-          // so that sendMessage() has a valid connection token — without this, receive
-          // works (via Streams postMessage proxy) but send silently fails.
-          let connectErr: string | null = null;
-          try {
-            await chatSession.connect();
-            console.log('chatSession.connect() succeeded for', contactId);
-          } catch (e) {
-            try { connectErr = JSON.stringify(e, Object.getOwnPropertyNames(e as object)); }
-            catch { connectErr = String(e); }
-            console.warn('chatSession.connect() threw:', connectErr);
-          }
-
-          // Log session keys and any accessible token for diagnosis
-          console.log('chatSession keys:', Object.keys(chatSession));
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const s = chatSession as any;
-          const token = s.connectionDetails?.connectionToken
-            ?? s._connectionDetails?.connectionToken
-            ?? s.chatDetails?.connectionCredentials?.connectionToken
-            ?? null;
-          console.log('Extracted connection token:', token ? token.slice(0, 20) + '…' : null);
+          // DO NOT call chatSession.connect() for agent sessions obtained via
+          // getMediaController(). Those sessions are already connected through the
+          // Streams CCP WebSocket proxy. Calling connect() on them establishes a
+          // second, separate connection using browser IAM credentials, which have
+          // an explicit deny for connectparticipant:SendMessage — causing a 403.
+          // onMessage() works regardless because the Streams proxy relays inbound
+          // messages. sendMessage() also works through the proxy when connect() is
+          // NOT called (the session uses the proxy's send channel directly).
 
           agentChatSessions.set(contactId, chatSession);
-          // Store connect error on session for ChatColumn to display if send fails
-          if (connectErr) {
-            agentChatSessions.set(contactId + ':connectErr', connectErr);
-          }
+          log.info('useConnectStreams:onConnected', {
+            contactId,
+            sessionKeys: Object.keys(chatSession),
+          });
 
           // Receive messages from the customer (and suppress our own AGENT echoes)
           chatSession.onMessage(({ data: msg }: { data: { Type: string; ParticipantRole: string; Content: string } }) => {
@@ -178,9 +165,11 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             const role = msg.ParticipantRole === 'CUSTOMER' ? 'CUSTOMER' as const : 'BOT' as const;
             useAgentStore.getState().appendMessage(contactId, { role, content: msg.Content });
             useAgentStore.getState().patchSlot(contactId, { lastCustomerMessageAt: Date.now() });
+            log.info('useConnectStreams:onMessage', { contactId, role, preview: msg.Content.slice(0, 40) });
           });
 
         } catch (e) {
+          log.error('useConnectStreams:onConnected:failed', e);
           console.warn('Could not establish agent chat session', e);
         }
       });

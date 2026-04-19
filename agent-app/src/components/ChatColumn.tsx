@@ -3,6 +3,7 @@ import { ContactSlot, ChatMessage } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { agentChatSessions } from '../hooks/useConnectStreams';
 import { post } from '../api/client';
+import { log } from '../api/logger';
 import { IncomingAlert } from './IncomingAlert';
 import { ResponseTimer } from './ResponseTimer';
 import { AISupport } from './AISupport';
@@ -123,17 +124,19 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     // Send via chatjs AgentChatSession (established by useConnectStreams via getMediaController)
     const session = agentChatSessions.get(slot.contactId);
     if (session) {
-      const connectErr = agentChatSessions.get(slot.contactId + ':connectErr');
       session.sendMessage({ message: text, contentType: 'text/plain' })
+        .then(() => {
+          log.info('ChatColumn:sendMessage:ok', { contactId: slot.contactId, preview: text.slice(0, 40) });
+        })
         .catch((e: unknown) => {
+          log.error('ChatColumn:sendMessage:failed', e);
           console.error('Agent send failed:', e);
           let detail: string;
           try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e as object)); }
           catch { detail = String(e); }
-          const extra = connectErr ? ` | connectErr: ${String(connectErr).slice(0, 80)}` : '';
           store.appendMessage(slot.contactId, {
             role: 'SYSTEM',
-            content: `⚠ Send error: ${detail.slice(0, 240)}${extra}`,
+            content: `⚠ Send error: ${detail.slice(0, 300)}`,
           });
         });
     } else {
