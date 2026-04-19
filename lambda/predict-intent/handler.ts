@@ -174,18 +174,32 @@ async function handleApiMode(
 
     const fallbacks = PAGE_TOPIC_MAP[currentPage ?? 'home'] ?? DEFAULT_TOPICS;
 
-    // Quick Bedrock call to personalise predictions
+    const PAGE_DESCRIPTIONS: Record<string, string> = {
+      home:      'Home dashboard showing portfolio summary, market data, and featured funds',
+      portfolio: 'Portfolio page showing account balances, holdings, allocation chart, and recent transactions',
+      research:  'Fund research page with fund cards, performance data, and comparison tools',
+      account:   'Account settings page with personal info, security settings, beneficiary, and tax documents',
+    };
+
+    // AI personalises order/wording when client has prior history; otherwise fallbacks win
     let aiTopics: string[] = [];
-    try {
-      const systemPrompt = 'You are a helpful assistant for a financial services company. Suggest exactly 4 short, clear chat topics (max 5 words each) a client might want to discuss. Return JSON: {"topics": ["...", "...", "...", "..."]}';
-      const userPrompt = `Page: ${currentPage ?? 'home'}\nRecent topics: ${recentTopics.join(', ') || 'none'}\nSuggest 4 likely topics.`;
-      const raw = await invokeNovaMicro(userPrompt, systemPrompt, 150);
-      const parsed = parseJsonFromBedrock<{ topics: string[] }>(raw);
-      aiTopics = parsed.topics ?? [];
-    } catch (e) {
-      console.warn('Bedrock prediction failed, using fallback', e);
+    if (recentTopics.length > 0) {
+      try {
+        const pageDesc = PAGE_DESCRIPTIONS[currentPage ?? 'home'] ?? PAGE_DESCRIPTIONS.home;
+        const systemPrompt = `You are a virtual assistant for Bob's Mutual Funds, a financial services company.
+The client is on the following page: ${pageDesc}.
+Suggest exactly 4 short chat topics (max 5 words each) this specific client is likely to ask about, based on their recent history.
+Prefer topics directly relevant to this page. Return ONLY valid JSON: {"topics": ["...", "...", "...", "..."]}`;
+        const userPrompt = `Client's recent topics: ${recentTopics.join(', ')}\nSuggest 4 personalised topics for this page.`;
+        const raw = await invokeNovaMicro(userPrompt, systemPrompt, 150);
+        const parsed = parseJsonFromBedrock<{ topics: string[] }>(raw);
+        aiTopics = parsed.topics ?? [];
+      } catch (e) {
+        console.warn('Topic personalisation failed, using fallback', e);
+      }
     }
 
+    // Hardcoded page-specific topics anchor the list; AI personalisation prepends if available
     const topics = dedupeAndLimit([...aiTopics, ...fallbacks], 4);
 
     return jsonResponse(200, { topics, somethingElse: true });
