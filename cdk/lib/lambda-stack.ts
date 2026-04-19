@@ -83,8 +83,9 @@ export class LambdaStack extends cdk.Stack {
       memorySize: 256,
       environment: {
         ...baseEnv,
-        CONNECT_INSTANCE_ID: 'PLACEHOLDER',
-        CONNECT_CHAT_FLOW_ID: 'PLACEHOLDER',
+        CONNECT_INSTANCE_ID: process.env.CONNECT_INSTANCE_ID ?? '467c849e-e16e-404a-b9f8-ebb623f84c8b',
+        CONNECT_CHAT_FLOW_ID: process.env.CONNECT_CHAT_FLOW_ID ?? '5e4fec02-582e-43f0-8200-e652064fb381',
+        CONNECT_AGENT_FLOW_ID: process.env.CONNECT_AGENT_FLOW_ID ?? '2da1a6bd-e5ac-480c-98fd-e215ab806f98',
       },
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
