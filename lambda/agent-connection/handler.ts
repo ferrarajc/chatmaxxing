@@ -23,14 +23,14 @@ export const handler = async (
     const response = await client.send(
       new CreateParticipantConnectionCommand({
         ParticipantToken: participantToken,
-        Type: [ConnectionType.WEBSOCKET, ConnectionType.CONNECTION_CREDENTIALS],
-        ConnectParticipant: true,
+        Type: [ConnectionType.CONNECTION_CREDENTIALS],
+        // ConnectParticipant defaults to false for agents — do not set true
+        // (WEBSOCKET omitted: CCP already owns the agent's WS connection)
       }),
     );
 
     return jsonResponse(200, {
       connectionToken: response.ConnectionCredentials?.ConnectionToken,
-      websocketUrl: response.Websocket?.Url,
       expiresAt: response.ConnectionCredentials?.Expiry,
     });
   } catch (err) {

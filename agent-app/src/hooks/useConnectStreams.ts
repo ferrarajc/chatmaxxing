@@ -153,10 +153,31 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
           // NOT called (the session uses the proxy's send channel directly).
 
           agentChatSessions.set(contactId, chatSession);
-          log.info('useConnectStreams:onConnected', {
-            contactId,
-            sessionKeys: Object.keys(chatSession),
-          });
+
+          // Extract participant/connection token from chatjs session for server-side sending
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const details = (chatSession as any).getChatDetails?.() ?? {};
+            const participantToken: string | null =
+              details?.connectionDetails?.connectionToken  // token set by LPC on connect()
+              ?? details?.connectionDetails?.ConnectionToken
+              ?? details?.participantToken                 // raw participant token fallback
+              ?? null;
+            log.info('useConnectStreams:onConnected', {
+              contactId,
+              sessionKeys: Object.keys(chatSession),
+              detailKeys: Object.keys(details),
+              hasParticipantToken: !!participantToken,
+              connectionDetailsKeys: Object.keys(details?.connectionDetails ?? {}),
+            });
+            if (participantToken) {
+              store.patchSlot(contactId, { participantToken });
+            } else {
+              log.warn('useConnectStreams:noParticipantToken', { contactId, details });
+            }
+          } catch (e) {
+            log.warn('useConnectStreams:getChatDetails:failed', e);
+          }
 
           // Receive messages from the customer (and suppress our own AGENT echoes)
           chatSession.onMessage(({ data: msg }: { data: { Type: string; ParticipantRole: string; Content: string } }) => {

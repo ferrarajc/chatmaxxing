@@ -25,6 +25,8 @@ export interface ContactSlot {
   lastAgentMessageAt: number | null;
   /** Timestamp of last customer message — triggers NBR fetch */
   lastCustomerMessageAt: number | null;
+  /** Agent participant token — used server-side for SendMessage */
+  participantToken: string | null;
 }
 
 export type AgentStatus = 'Available' | 'Away' | 'Offline';

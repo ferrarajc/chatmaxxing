@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ContactSlot, ChatMessage } from '../types';
 import { useAgentStore } from '../store/agentStore';
-import { agentChatSessions } from '../hooks/useConnectStreams';
 import { post } from '../api/client';
 import { log } from '../api/logger';
 import { IncomingAlert } from './IncomingAlert';
@@ -80,19 +79,19 @@ export function ChatColumn({ slotIndex, slot }: Props) {
               suggestedText: result.response,
             });
           } else if (result.response) {
-            // Browser sends the autopilot reply via chatjs
-            const session = agentChatSessions.get(slot.contactId);
-            if (session) {
-              store.appendMessage(slot.contactId, { role: 'AGENT', content: result.response });
-              store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
-              session.sendMessage({ message: result.response, contentType: 'text/plain' })
-                .catch((e: unknown) => {
-                  console.error('Autopilot send failed:', e);
-                  store.appendMessage(slot.contactId, {
-                    role: 'SYSTEM',
-                    content: `⚠ Autopilot send error: ${String(e).slice(0, 120)}`,
-                  });
+            store.appendMessage(slot.contactId, { role: 'AGENT', content: result.response });
+            store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
+            if (slot.participantToken) {
+              post<{ ok: boolean }>('/send-agent-message', {
+                participantToken: slot.participantToken,
+                message: result.response,
+              }).catch((e: unknown) => {
+                log.error('ChatColumn:autopilot:sendFailed', e);
+                store.appendMessage(slot.contactId, {
+                  role: 'SYSTEM',
+                  content: `⚠ Autopilot send error: ${String(e).slice(0, 120)}`,
                 });
+              });
             }
           }
         } catch (e) {
@@ -121,29 +120,31 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     // Append locally for instant feedback
     store.appendMessage(slot.contactId, { role: 'AGENT', content: text });
     store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
-    // Send via chatjs AgentChatSession (established by useConnectStreams via getMediaController)
-    const session = agentChatSessions.get(slot.contactId);
-    if (session) {
-      session.sendMessage({ message: text, contentType: 'text/plain' })
-        .then(() => {
-          log.info('ChatColumn:sendMessage:ok', { contactId: slot.contactId, preview: text.slice(0, 40) });
-        })
-        .catch((e: unknown) => {
-          log.error('ChatColumn:sendMessage:failed', e);
-          console.error('Agent send failed:', e);
-          let detail: string;
-          try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e as object)); }
-          catch { detail = String(e); }
-          store.appendMessage(slot.contactId, {
-            role: 'SYSTEM',
-            content: `⚠ Send error: ${detail.slice(0, 300)}`,
-          });
-        });
-    } else {
-      const msg = 'No active chat session — getMediaController() may not have resolved yet';
-      console.warn(msg, slot.contactId);
+
+    if (!slot.participantToken) {
+      const msg = 'Agent token not ready — try again in a moment';
+      log.warn('ChatColumn:send:noToken', { contactId: slot.contactId });
       store.appendMessage(slot.contactId, { role: 'SYSTEM', content: `⚠ ${msg}` });
+      return;
     }
+
+    post<{ ok: boolean }>('/send-agent-message', {
+      participantToken: slot.participantToken,
+      message: text,
+    })
+      .then(() => {
+        log.info('ChatColumn:sendMessage:ok', { contactId: slot.contactId, preview: text.slice(0, 40) });
+      })
+      .catch((e: unknown) => {
+        log.error('ChatColumn:sendMessage:failed', e);
+        let detail: string;
+        try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e as object)); }
+        catch { detail = String(e); }
+        store.appendMessage(slot.contactId, {
+          role: 'SYSTEM',
+          content: `⚠ Send error: ${detail.slice(0, 300)}`,
+        });
+      });
   };
 
   const outline = slot?.isAutopilot ? '2.5px solid #22c55e' : '2px solid #e2e8f0';

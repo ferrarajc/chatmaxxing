@@ -175,6 +175,20 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // ── send-agent-message ─────────────────────────────────────────
+    const sendAgentMessageFn = new NodejsFunction(this, 'SendAgentMessageFn', {
+      functionName: 'bobs-send-agent-message',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'send-agent-message/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    // ConnectParticipant API uses bearer token auth (not IAM) — no extra policy needed
+
     // ── client-log ─────────────────────────────────────────────────
     const clientLogFn = new NodejsFunction(this, 'ClientLogFn', {
       functionName: 'bobs-client-log',
@@ -230,6 +244,7 @@ export class LambdaStack extends cdk.Stack {
       ['/schedule-callback', scheduleCallbackFn],
       ['/autopilot-turn', autopilotTurnFn],
       ['/agent-connection', agentConnectionFn],
+      ['/send-agent-message', sendAgentMessageFn],
       ['/client-log', clientLogFn],
     ];
     for (const [path, fn] of routes) {
