@@ -12,9 +12,19 @@ import {
 const SYSTEM_PROMPT = (profile: ClientProfile) =>
   `You are an AI assistant supporting a live chat agent at Bob's Mutual Funds.
 The client is ${profile.name}. Their accounts: ${summarizeAccounts(profile.accounts)}.
+
 Suggest ONE concise, professional reply the agent should send next (1-2 sentences max).
 Do not include greetings or sign-offs.
-Return ONLY valid JSON in this format: {"suggestedText": "..."}`;
+
+Also suggest an autopilot scope if the conversation calls for one:
+- "get-intent": the customer's need is not yet clearly defined
+- "researching": the agent has indicated they need time to look into something
+- "callback": topic requires phone escalation (trades, financial advice, complex account changes)
+- "idle-check": the customer has not responded in a while
+- "full-auto": the conversation is simple and AI could handle it end-to-end
+- null: no autopilot scope is needed right now
+
+Return ONLY valid JSON: {"suggestedText": "...", "suggestedScope": "get-intent" | "researching" | "callback" | "idle-check" | "full-auto" | null}`;
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
@@ -47,14 +57,16 @@ export const handler = async (
       .find(m => m.role === 'CUSTOMER')?.content ?? '';
 
     let suggestedText = '';
+    let suggestedScope: string | null = null;
     try {
       const raw = await invokeNovaMicro(
         formatTranscriptForBedrock(transcript),
         SYSTEM_PROMPT(profile),
-        200,
+        220,
       );
-      const parsed = parseJsonFromBedrock<{ suggestedText: string }>(raw);
+      const parsed = parseJsonFromBedrock<{ suggestedText: string; suggestedScope?: string | null }>(raw);
       suggestedText = parsed.suggestedText ?? '';
+      suggestedScope = parsed.suggestedScope ?? null;
     } catch (e) {
       console.warn('Bedrock NBR failed', e);
       suggestedText = "I'd be happy to help with that. Could you give me a moment to look into it?";
@@ -62,7 +74,7 @@ export const handler = async (
 
     const resources = matchResources(lastCustomerMessage);
 
-    return jsonResponse(200, { suggestedText, resources });
+    return jsonResponse(200, { suggestedText, resources, suggestedScope });
   } catch (err) {
     console.error('next-best-response error', err);
     return jsonResponse(500, { error: 'Failed to generate response' });

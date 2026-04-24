@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ContactSlot, AgentStatus, ChatMessage, Resource } from '../types';
+import { ContactSlot, AgentStatus, ChatMessage, AutopilotScope } from '../types';
 
 const nanoid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -11,22 +11,22 @@ interface AgentStore {
 
   setAgentStatus: (s: AgentStatus) => void;
 
-  /** Add a new incoming contact to the first free slot */
-  addContact: (contact: Omit<ContactSlot, 'messages' | 'isAutopilot' | 'suggestedText' | 'suggestedResources' | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'>, initialMessages?: ChatMessage[]) => number | null;
+  addContact: (
+    contact: Omit<ContactSlot,
+      | 'messages' | 'autopilotScope' | 'suggestedScope' | 'autopilotFlash'
+      | 'autopilotPending' | 'suggestedText' | 'suggestedResources'
+      | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'>,
+    initialMessages?: ChatMessage[]
+  ) => number | null;
 
-  /** Partially update a slot by contactId */
   patchSlot: (contactId: string, patch: Partial<ContactSlot>) => void;
-
-  /** Append a message to a slot */
   appendMessage: (contactId: string, msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
-
-  /** Clear a slot (set to null) */
   clearSlot: (contactId: string) => void;
-
-  /** Insert the current suggested text into a slot's TypeArea (sets a flag read by TypeArea) */
   insertSuggestion: (contactId: string) => void;
   pendingInserts: Set<string>;
   clearInsert: (contactId: string) => void;
+  /** Read a slot synchronously (safe in async callbacks to avoid stale closure) */
+  getSlot: (contactId: string) => ContactSlot | null;
 }
 
 export const useAgentStore = create<AgentStore>((set, get) => ({
@@ -43,7 +43,10 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     slots[idx] = {
       ...contact,
       messages: initialMessages,
-      isAutopilot: false,
+      autopilotScope: null,
+      suggestedScope: null,
+      autopilotFlash: false,
+      autopilotPending: null,
       suggestedText: '',
       suggestedResources: [],
       lastAgentMessageAt: null,
@@ -90,4 +93,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     next.delete(contactId);
     set({ pendingInserts: next });
   },
+
+  getSlot: (contactId) =>
+    get().slots.find(s => s?.contactId === contactId) ?? null,
 }));

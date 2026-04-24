@@ -7,22 +7,133 @@ import {
   summarizeAccounts,
   jsonResponse,
 } from '../shared/types';
+import { toZonedTime } from 'date-fns-tz';
 
-// Escalation keywords: if the customer says any of these, autopilot should immediately hand off.
-const CUSTOMER_ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
+type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' | 'full-auto';
 
-const SYSTEM_PROMPT = (profile: ClientProfile, currentIntent: string) =>
+const ET_ZONE = 'America/New_York';
+
+function nowET(): string {
+  const et = toZonedTime(new Date(), ET_ZONE);
+  return et.toLocaleString('en-US', {
+    timeZone: ET_ZONE,
+    weekday: 'long', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+}
+
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  return raw;
+}
+
+// ── Scope-specific system prompts ──────────────────────────────────────────
+
+const GET_INTENT_PROMPT = (profile: ClientProfile, intent: string) =>
+  `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
+Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
+Current intent label: "${intent}".
+
+Your goal is GET INTENT: clarify and fully define the client's need so the agent has enough information to act.
+
+Rules:
+- Read the transcript. If the agent has NOT yet sent a greeting, generate a warm greeting introducing yourself.
+- Otherwise, ask ONE focused clarifying question to better understand the client's need.
+- Do NOT ask questions the agent doesn't need to fulfill the request.
+- Do NOT ask multiple questions at once.
+- Once you have a sufficiently granular understanding of the client's need, set shouldExitAutopilot=true.
+- Set shouldExitAutopilot=true if the client asks to speak with a human or escalate.
+
+Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
+
+const RESEARCHING_PROMPT = (profile: ClientProfile) =>
+  `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
+Client: ${profile.name}.
+
+Your goal is RESEARCHING: you are working on something and the client is waiting.
+If the client sends a message, respond warmly and let them know you're still working on it.
+If the client asks to escalate or seems frustrated, set shouldExitAutopilot=true.
+
+Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
+
+const CALLBACK_PROMPT = (profile: ClientProfile, nowETStr: string) =>
+  `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
+Client: ${profile.name} (ID: ${profile.clientId}).
+Client phone on file: ${profile.phone ? formatPhone(profile.phone) : 'not on file'}.
+Current time in ET: ${nowETStr}.
+
+Your goal is CALLBACK: schedule a phone callback for this client.
+
+Read the transcript carefully to determine what has already been established:
+A) Has the callback need been acknowledged/offered?
+B) Has the phone number been confirmed? (client said yes to the number on file, or provided a different number)
+C) Has the callback time been confirmed? (client specified a time and you haven't yet returned scheduleCallback)
+D) Has scheduleCallback already been returned? (look for a [CALLBACK_SCHEDULED] system message in the transcript)
+
+Based on what's been collected, respond appropriately — one step at a time:
+
+1. If A is not done: Acknowledge the callback need (say you're happy to set one up, or that this topic requires a call).
+2. If A done, B not done: Ask about the phone: "The number I have on file for you is [formatted phone]. Is that the best number to reach you for a callback?"
+   - If the client confirms yes → B is done.
+   - If the client says no or provides a different number → use the number they provide.
+3. If A and B done, C not done: Ask about time.
+   - If current ET time is before 7:00 PM: "Agents are available until 7:30 PM Eastern time. What time would work for you?"
+   - If current ET time is 7:00 PM or later: "Our agents are wrapping up for today. I can schedule this for tomorrow or another weekday — what day and time works best?"
+   - Client responses like "3 PM", "3:30", "tomorrow at 2" → parse to ISO8601 UTC. Today's date in context of "${nowETStr}".
+4. If A, B, C are done and D is not done: Return scheduleCallback JSON with the extracted phone and time.
+5. If D is done (callback was scheduled): Ask "Is there anything else I can help you with today?"
+   - If client says no or thanks → send a warm closing message, set shouldExitAutopilot=true.
+   - If client says yes → set shouldExitAutopilot=true so the agent can handle the new topic.
+
+Return ONLY valid JSON:
+{
+  "response": "...",
+  "shouldExitAutopilot": false,
+  "suggestedScope": null,
+  "scheduleCallback": {
+    "clientId": "${profile.clientId}",
+    "clientName": "${profile.name}",
+    "phoneNumber": "10 digits only e.g. 6102345678",
+    "scheduledTimeISO": "ISO8601 UTC datetime e.g. 2026-04-25T19:00:00.000Z",
+    "intentSummary": "one sentence describing why the client needs a callback"
+  } | null
+}
+scheduleCallback must be null unless you have a confirmed phone AND time and D is not yet done.`;
+
+const IDLE_CHECK_PROMPT = (profile: ClientProfile) =>
+  `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
+Client: ${profile.name}.
+
+Your goal is IDLE CHECK: the client appears to have gone quiet. Respond warmly to their message.
+If they've come back and are responsive, set shouldExitAutopilot=true so normal handling resumes.
+
+Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": true, "suggestedScope": null}`;
+
+const FULL_AUTO_PROMPT = (profile: ClientProfile, intent: string) =>
   `You are a friendly, professional financial services agent at Bob's Mutual Funds handling a live chat.
-The client's name is ${profile.name}. Their accounts: ${summarizeAccounts(profile.accounts)}.
-Their current topic/intent: "${currentIntent}".
-Your job is to respond as the agent — concisely (1-3 sentences), warm but professional.
+Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
+Current topic: "${intent}".
+
+Your goal is FULL AUTO: handle this conversation end-to-end. Respond concisely (1-3 sentences), warmly, professionally.
+
 Set shouldExitAutopilot=true if:
-  - The client is asking to speak with a human, agent, representative, or requesting escalation
-  - The request is ambiguous or unclear
-  - It requires account modifications, trade execution, or sensitive actions
-  - The client is frustrated or unhappy
-  - Confidence is below 0.7
-Return ONLY valid JSON: {"response": "...", "confidence": 0.0, "shouldExitAutopilot": false}`;
+- The client is asking to speak to a human or escalate
+- The request requires account modifications, trade execution, or financial advice
+- You are not confident in the answer (confidence < 0.7)
+- The client seems frustrated
+
+Set shouldExitAutopilot=false and continue if you can handle the request within scope.
+
+Suggest a scope if the situation calls for it (e.g. "callback" if a trade is requested, "idle-check" if client seems to have gone quiet).
+
+Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": "callback" | "idle-check" | null}`;
+
+// ── Escalation hard-override ───────────────────────────────────────────────
+const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
+const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
+
+// ── Handler ────────────────────────────────────────────────────────────────
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
@@ -31,10 +142,12 @@ export const handler = async (
     const {
       transcript,
       clientProfile,
+      scope = 'full-auto',
       currentIntent,
     }: {
       transcript: ChatMessage[];
       clientProfile: ClientProfile;
+      scope?: AutopilotScope;
       currentIntent?: string;
     } = JSON.parse(event.body ?? '{}');
 
@@ -46,60 +159,75 @@ export const handler = async (
       clientId: 'demo-client-001',
       name: 'Alex Johnson',
       phone: '4842384838',
-      accounts: [
-        { type: 'Roth IRA', balance: 45230, id: 'acc-001' },
-        { type: 'Traditional IRA', balance: 128450, id: 'acc-002' },
-        { type: 'Taxable Account', balance: 67890, id: 'acc-003' },
-      ],
-      totalBalance: 241570,
+      accounts: [{ type: 'Roth IRA', balance: 45230, id: 'acc-001' }],
+      totalBalance: 45230,
       recentChatHistory: [],
     };
 
+    const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
+
+    // Pick scope-specific prompt
+    let systemPrompt: string;
+    switch (scope) {
+      case 'get-intent':
+        systemPrompt = GET_INTENT_PROMPT(profile, currentIntent ?? 'general inquiry');
+        break;
+      case 'researching':
+        systemPrompt = RESEARCHING_PROMPT(profile);
+        break;
+      case 'callback':
+        systemPrompt = CALLBACK_PROMPT(profile, nowET());
+        break;
+      case 'idle-check':
+        systemPrompt = IDLE_CHECK_PROMPT(profile);
+        break;
+      default:
+        systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry');
+    }
+
     let response = '';
-    let confidence = 0.5;
     let shouldExitAutopilot = false;
+    let suggestedScope: string | null = null;
+    let scheduleCallback: Record<string, string> | null = null;
 
     try {
       const raw = await invokeNovaMicro(
         formatTranscriptForBedrock(transcript),
-        SYSTEM_PROMPT(profile, currentIntent ?? 'general inquiry'),
-        250,
+        systemPrompt,
+        400,
       );
       const parsed = parseJsonFromBedrock<{
         response: string;
-        confidence: number;
         shouldExitAutopilot: boolean;
+        suggestedScope?: string | null;
+        scheduleCallback?: Record<string, string> | null;
       }>(raw);
-      response = parsed.response ?? '';
-      confidence = parsed.confidence ?? 0.5;
-      shouldExitAutopilot = parsed.shouldExitAutopilot ?? (confidence < 0.7);
 
-      // Business-rule hard overrides — do not let AI judgment bypass these.
-      const TRADE_INTENTS = ['PlaceOrder', 'ChangeOwnership', 'Transfer'];
-      const tradeKeywords = /\b(buy|sell|purchase|trade|transfer|place.?order|liquidat|redeem)\b/i;
-      const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
-      if (
-        TRADE_INTENTS.some(i => (currentIntent ?? '').includes(i)) ||
-        tradeKeywords.test(lastCustomerMsg)
-      ) {
-        shouldExitAutopilot = true;
-      }
-      // Hard override: customer is requesting a human agent
-      if (CUSTOMER_ESCALATION_RE.test(lastCustomerMsg)) {
-        shouldExitAutopilot = true;
-        if (!response) {
-          response = "I understand — let me make sure you're taken care of right away.";
-        }
-      }
+      response = parsed.response ?? '';
+      shouldExitAutopilot = parsed.shouldExitAutopilot ?? false;
+      suggestedScope = parsed.suggestedScope ?? null;
+      scheduleCallback = parsed.scheduleCallback ?? null;
     } catch (e) {
-      console.warn('Bedrock autopilot failed', e);
+      console.warn('Autopilot LLM call failed', e);
       shouldExitAutopilot = true;
-      response = "I'd be happy to help with that. Let me look into it for you.";
+      response = "I'd be happy to help with that — let me look into it for you.";
     }
 
-    // The browser (ChatColumn) sends the autopilot message via chatjs AgentChatSession.
-    // This Lambda always returns the response text; sending is handled client-side.
-    return jsonResponse(200, { response, confidence, shouldExitAutopilot });
+    // Business-rule hard overrides
+    if (ESCALATION_RE.test(lastCustomerMsg)) {
+      shouldExitAutopilot = true;
+    }
+    if (scope !== 'callback' && TRADE_RE.test(lastCustomerMsg)) {
+      shouldExitAutopilot = true;
+      suggestedScope = 'callback';
+    }
+
+    return jsonResponse(200, {
+      response,
+      shouldExitAutopilot,
+      suggestedScope,
+      scheduleCallback,
+    });
   } catch (err) {
     console.error('autopilot-turn error', err);
     return jsonResponse(500, { error: 'Autopilot turn failed', shouldExitAutopilot: true });

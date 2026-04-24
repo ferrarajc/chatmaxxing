@@ -9,7 +9,7 @@ import {
 import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
-import { isWeekend, getHours } from 'date-fns';
+import { isWeekend, getHours, getMinutes } from 'date-fns';
 import { randomUUID } from 'crypto';
 
 const schedulerClient = new SchedulerClient({
@@ -17,8 +17,9 @@ const schedulerClient = new SchedulerClient({
 });
 
 const ET_ZONE = 'America/New_York';
-const BUSINESS_START = 8;   // 8 AM ET
-const BUSINESS_END = 20;    // 8 PM ET
+const BUSINESS_START_HOUR = 8;    // 8:00 AM ET
+const BUSINESS_END_HOUR = 19;     // 7:30 PM ET cutoff hour
+const BUSINESS_END_MINUTE = 30;   // 7:30 PM ET
 
 function validateBusinessHours(utcDate: Date): void {
   const etDate = toZonedTime(utcDate, ET_ZONE);
@@ -26,8 +27,10 @@ function validateBusinessHours(utcDate: Date): void {
     throw new Error('Callbacks are only available Monday through Friday');
   }
   const hour = getHours(etDate);
-  if (hour < BUSINESS_START || hour >= BUSINESS_END) {
-    throw new Error('Callbacks are only available 8 AM to 8 PM Eastern, Monday through Friday');
+  const minute = getMinutes(etDate);
+  const afterClose = hour > BUSINESS_END_HOUR || (hour === BUSINESS_END_HOUR && minute >= BUSINESS_END_MINUTE);
+  if (hour < BUSINESS_START_HOUR || afterClose) {
+    throw new Error('Callbacks are only available 8:00 AM to 7:30 PM Eastern, Monday through Friday');
   }
 }
 
@@ -49,11 +52,13 @@ export const handler = async (
   try {
     const {
       clientId,
+      clientName,
       phoneNumber,
       scheduledTime,
       intentSummary,
     }: {
       clientId: string;
+      clientName?: string;
       phoneNumber: string;
       scheduledTime: string | 'ASAP';
       intentSummary?: string;
@@ -84,6 +89,7 @@ export const handler = async (
         Item: {
           callbackId,
           clientId,
+          clientName: clientName ?? '',
           phoneNumber,
           scheduledTime: fireTime.toISOString(),
           intentSummary: intentSummary ?? '',

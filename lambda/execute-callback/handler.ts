@@ -42,7 +42,7 @@ export const handler = async (event: ExecuteCallbackEvent): Promise<void> => {
         QueueId: process.env.PHONE_QUEUE_ID!,
         DestinationPhoneNumber: `+1${callback.phoneNumber.replace(/\D/g, '')}`,
         Attributes: {
-          clientName: 'Alex Johnson',   // hardcoded for demo
+          clientName: callback.clientName ?? 'Client',
           callbackId,
           intentSummary: callback.intentSummary ?? '',
           clientId: callback.clientId,
