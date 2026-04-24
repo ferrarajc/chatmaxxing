@@ -23,6 +23,7 @@ interface AutopilotTurnResult {
   response: string;
   shouldExitAutopilot: boolean;
   suggestedScope?: string | null;
+  closeChat?: boolean;
   scheduleCallback?: {
     clientId: string;
     clientName: string;
@@ -194,6 +195,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
 
     if (result.shouldExitAutopilot) {
       exitAutopilot(contactId);
+      if (result.closeChat) {
+        store.patchSlot(contactId, { status: 'ended' });
+      }
     }
   };
 
@@ -384,18 +388,18 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   };
 
   const handleColumnClick = () => {
-    if (slot?.autopilotScope !== null) {
-      exitAutopilot(slot!.contactId);
+    if (slot !== null && slot.autopilotScope !== null) {
+      exitAutopilot(slot.contactId);
     }
   };
 
   // ── Visual state ───────────────────────────────────────────────────────
-  const isAutopilot = slot?.autopilotScope !== null;
+  const isAutopilot = slot !== null && slot.autopilotScope !== null;
   const isFlashing = slot?.autopilotFlash === true;
 
   const borderColor = isFlashing ? '#eab308' : isAutopilot ? '#22c55e' : '#e2e8f0';
   const borderWidth = isAutopilot || isFlashing ? '4px' : '2px';
-  const overlayColor = isFlashing ? 'rgba(234,179,8,0.15)' : isAutopilot ? 'rgba(0,0,255,0.10)' : 'transparent';
+  const overlayColor = isFlashing ? 'rgba(234,179,8,0.15)' : isAutopilot ? 'rgba(34,197,94,0.12)' : 'transparent';
 
   return (
     <div

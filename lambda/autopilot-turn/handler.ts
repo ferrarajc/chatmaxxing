@@ -81,15 +81,16 @@ Based on what's been collected, respond appropriately — one step at a time:
    - If current ET time is before 7:00 PM: "Agents are available until 7:30 PM Eastern time. What time would work for you?"
    - If current ET time is 7:00 PM or later: "Our agents are wrapping up for today. I can schedule this for tomorrow or another weekday — what day and time works best?"
    - Client responses like "3 PM", "3:30", "tomorrow at 2" → parse to ISO8601 UTC. Today's date in context of "${nowETStr}".
-4. If A, B, C are done and D is not done: Return scheduleCallback JSON with the extracted phone and time.
+4. If A, B, C are done and D is not done: Return scheduleCallback JSON with the extracted phone and time. IMPORTANT: set shouldExitAutopilot=false and closeChat=false — you must stay active to ask step 5.
 5. If D is done (callback was scheduled): Ask "Is there anything else I can help you with today?"
-   - If client says no or thanks → send a warm closing message, set shouldExitAutopilot=true.
-   - If client says yes → set shouldExitAutopilot=true so the agent can handle the new topic.
+   - If client says no or thanks → send a warm closing message, set shouldExitAutopilot=true and closeChat=true.
+   - If client says yes → set shouldExitAutopilot=true and closeChat=false so the agent can handle the new topic.
 
 Return ONLY valid JSON:
 {
   "response": "...",
   "shouldExitAutopilot": false,
+  "closeChat": false,
   "suggestedScope": null,
   "scheduleCallback": {
     "clientId": "${profile.clientId}",
@@ -99,7 +100,8 @@ Return ONLY valid JSON:
     "intentSummary": "one sentence describing why the client needs a callback"
   } | null
 }
-scheduleCallback must be null unless you have a confirmed phone AND time and D is not yet done.`;
+scheduleCallback must be null unless you have a confirmed phone AND time and D is not yet done.
+closeChat must be true ONLY when the conversation is fully complete and should be ended.`;
 
 const IDLE_CHECK_PROMPT = (profile: ClientProfile) =>
   `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
@@ -188,6 +190,7 @@ export const handler = async (
     let response = '';
     let shouldExitAutopilot = false;
     let suggestedScope: string | null = null;
+    let closeChat = false;
     let scheduleCallback: Record<string, string> | null = null;
 
     try {
@@ -200,12 +203,14 @@ export const handler = async (
         response: string;
         shouldExitAutopilot: boolean;
         suggestedScope?: string | null;
+        closeChat?: boolean;
         scheduleCallback?: Record<string, string> | null;
       }>(raw);
 
       response = parsed.response ?? '';
       shouldExitAutopilot = parsed.shouldExitAutopilot ?? false;
       suggestedScope = parsed.suggestedScope ?? null;
+      closeChat = parsed.closeChat ?? false;
       scheduleCallback = parsed.scheduleCallback ?? null;
     } catch (e) {
       console.warn('Autopilot LLM call failed', e);
@@ -226,6 +231,7 @@ export const handler = async (
       response,
       shouldExitAutopilot,
       suggestedScope,
+      closeChat,
       scheduleCallback,
     });
   } catch (err) {

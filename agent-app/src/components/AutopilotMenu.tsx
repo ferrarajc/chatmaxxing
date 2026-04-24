@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { AutopilotScope } from '../types';
 
 const SCOPES: { id: AutopilotScope; label: string; desc: string }[] = [
@@ -17,6 +18,17 @@ interface Props {
 
 export function AutopilotMenu({ onSelect, onClose, anchorRef }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+
+  // Compute fixed position from anchor button
+  useLayoutEffect(() => {
+    if (!anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 6,
+      right: window.innerWidth - rect.right,
+    });
+  }, [anchorRef]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -34,15 +46,19 @@ export function AutopilotMenu({ onSelect, onClose, anchorRef }: Props) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose, anchorRef]);
 
-  return (
+  if (!pos) return null;
+
+  return ReactDOM.createPortal(
     <div
       ref={menuRef}
       onClick={e => e.stopPropagation()}
       style={{
-        position: 'absolute', right: 0, bottom: 28,
+        position: 'fixed',
+        top: pos.top,
+        right: pos.right,
         background: '#fff', border: '1px solid #e5e7eb',
         borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,.14)',
-        width: 210, zIndex: 200,
+        width: 210, zIndex: 9999,
       }}
     >
       <div style={{
@@ -78,6 +94,7 @@ export function AutopilotMenu({ onSelect, onClose, anchorRef }: Props) {
           <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>{s.desc}</div>
         </div>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
