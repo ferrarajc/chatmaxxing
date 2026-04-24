@@ -56,9 +56,9 @@ export class LambdaStack extends cdk.Stack {
       memorySize: 256,
       environment: {
         ...baseEnv,
-        CONNECT_INSTANCE_ID: 'PLACEHOLDER',   // filled via SSM/manual after Connect deploy
-        OUTBOUND_FLOW_ID: 'PLACEHOLDER',
-        PHONE_QUEUE_ID: 'PLACEHOLDER',
+        CONNECT_INSTANCE_ID: '467c849e-e16e-404a-b9f8-ebb623f84c8b',
+        OUTBOUND_FLOW_ID: '0552dda6-bc44-460b-ba77-b876a1f7c40c',   // Bobs-Outbound-IVR
+        PHONE_QUEUE_ID: '0f75bd89-94ec-40ee-b76c-520d0ff9480c',      // phone-general
       },
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
