@@ -18,14 +18,14 @@ interface Props {
 
 export function AutopilotMenu({ onSelect, onClose, anchorRef }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const [pos, setPos] = useState<{ bottom: number; right: number } | null>(null);
 
-  // Compute fixed position from anchor button
+  // Compute fixed position from anchor button — open upward
   useLayoutEffect(() => {
     if (!anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
     setPos({
-      top: rect.bottom + 6,
+      bottom: window.innerHeight - rect.top + 6,
       right: window.innerWidth - rect.right,
     });
   }, [anchorRef]);
@@ -54,11 +54,11 @@ export function AutopilotMenu({ onSelect, onClose, anchorRef }: Props) {
       onClick={e => e.stopPropagation()}
       style={{
         position: 'fixed',
-        top: pos.top,
+        bottom: pos.bottom,
         right: pos.right,
         background: '#fff', border: '1px solid #e5e7eb',
         borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,.14)',
-        width: 210, zIndex: 9999,
+        width: 160, zIndex: 9999,
       }}
     >
       <div style={{
@@ -84,14 +84,13 @@ export function AutopilotMenu({ onSelect, onClose, anchorRef }: Props) {
           key={s.id}
           onClick={() => onSelect(s.id)}
           style={{
-            padding: '7px 14px', cursor: 'pointer',
-            borderBottom: i < SCOPES.length - 1 ? '1px solid #f9fafb' : 'none',
+            padding: '7px 12px', cursor: 'pointer',
+            borderBottom: i < SCOPES.length - 1 ? '1px solid #f3f4f6' : 'none',
           }}
           onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         >
           <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>{s.label}</div>
-          <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>{s.desc}</div>
         </div>
       ))}
     </div>,
