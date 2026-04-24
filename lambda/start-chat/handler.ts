@@ -35,13 +35,18 @@ Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
           ),
           invokeNovaMicro(
             intentSummary,
-            `You are writing one sentence for a financial services agent to close their opening chat greeting.
+            `You are writing 1-2 sentences for a financial services agent to close their opening chat greeting.
 The transcript below shows what the customer discussed with the chatbot before asking for a live agent.
 The transcript is formatted as "ROLE: message | ROLE: message | ...".
-If the customer's intent or topic is clear, write a single warm sentence acknowledging it — as the agent would say it in first person, e.g. "I can see you have some questions about your RMDs — I'm happy to help with that." or "It looks like you're looking to update your beneficiary — let's take care of that."
-If there is NO clear intent signal in the transcript, return exactly the 6 words: How can I assist you today?
-Return only the single sentence — no quotes, no preamble, no punctuation beyond a period or question mark.`,
-            60,
+
+If the customer's need is clearly and fully explained: briefly restate it in your own words to confirm understanding, then ask if you have it right. Example: "It sounds like you're trying to figure out how much you need to withdraw from your IRA this year and whether taxes will be withheld automatically — is that right?"
+
+If the topic is mentioned but the customer hasn't fully explained what they need: acknowledge the topic and ask a focused follow-up to understand their specific situation. Example: "I can see you have some questions about RMDs — could you tell me a bit more about what you're trying to figure out?"
+
+If there is NO clear intent signal in the transcript: return exactly: How can I assist you today?
+
+Write in first person as the agent. Return only the sentences — no quotes, no preamble.`,
+            120,
           ),
         ]);
         intentLabel = labelRaw.trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').slice(0, 150);
