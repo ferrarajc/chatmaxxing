@@ -55,6 +55,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const researchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const idleTimer1Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleTimer2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Fires if no customer reply within 2 min after an autopilot message
+  const autopilotIdleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Prevent double-running the initial autopilot turn for a given contact+scope
   const initRunRef = useRef<Set<string>>(new Set());
@@ -123,6 +125,17 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           });
         });
     }
+    // Start 2-min idle timer — if no customer reply, switch to idle-check
+    const WAITING_SCOPES: AutopilotScope[] = ['get-intent', 'full-auto', 'callback'];
+    if (WAITING_SCOPES.includes(scope)) {
+      if (autopilotIdleRef.current) clearTimeout(autopilotIdleRef.current);
+      autopilotIdleRef.current = setTimeout(() => {
+        const s = store.getSlot(contactId);
+        if (s && WAITING_SCOPES.includes(s.autopilotScope as AutopilotScope)) {
+          store.patchSlot(contactId, { autopilotScope: 'idle-check' });
+        }
+      }, 2 * 60 * 1000);
+    }
     return true;
   };
 
@@ -137,6 +150,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (researchIntervalRef.current) { clearInterval(researchIntervalRef.current); researchIntervalRef.current = null; }
     if (idleTimer1Ref.current) { clearTimeout(idleTimer1Ref.current); idleTimer1Ref.current = null; }
     if (idleTimer2Ref.current) { clearTimeout(idleTimer2Ref.current); idleTimer2Ref.current = null; }
+    if (autopilotIdleRef.current) { clearTimeout(autopilotIdleRef.current); autopilotIdleRef.current = null; }
   };
 
   // ── Autopilot: call Lambda and handle result ───────────────────────────
@@ -317,6 +331,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (!slot || slot.status !== 'active' || !lastCustomerMsg) return;
     const cid = slot.contactId;
     const clientProfile = CLIENT_PROFILES[slot.clientId] ?? DEFAULT_PROFILE;
+
+    // Customer replied — cancel the autopilot idle timer
+    if (autopilotIdleRef.current) { clearTimeout(autopilotIdleRef.current); autopilotIdleRef.current = null; }
 
     // NBR (always, even when autopilot is on — keeps suggestions fresh)
     post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null }>(
