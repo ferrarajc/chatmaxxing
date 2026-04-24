@@ -185,6 +185,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           role: 'SYSTEM',
           content: `[CALLBACK_SCHEDULED] ${cbResult.displayTime} → ${result.scheduleCallback.phoneNumber}`,
         });
+        // Immediately run another turn so Lambda can ask "Is there anything else?"
+        setTimeout(() => runAutopilotTurn(contactId, scope), 200);
+        return; // don't process shouldExitAutopilot from the scheduling turn
       } catch (e) {
         console.warn('Schedule callback failed', e);
         store.appendMessage(contactId, {

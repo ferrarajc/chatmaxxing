@@ -81,10 +81,16 @@ Based on what's been collected, respond appropriately — one step at a time:
    - If current ET time is before 7:00 PM: "Agents are available until 7:30 PM Eastern time. What time would work for you?"
    - If current ET time is 7:00 PM or later: "Our agents are wrapping up for today. I can schedule this for tomorrow or another weekday — what day and time works best?"
    - Client responses like "3 PM", "3:30", "tomorrow at 2" → parse to ISO8601 UTC. Today's date in context of "${nowETStr}".
-4. If A, B, C are done and D is not done: Return scheduleCallback JSON with the extracted phone and time. IMPORTANT: set shouldExitAutopilot=false and closeChat=false — you must stay active to ask step 5.
-5. If D is done (callback was scheduled): Ask "Is there anything else I can help you with today?"
-   - If client says no or thanks → send a warm closing message, set shouldExitAutopilot=true and closeChat=true.
-   - If client says yes → set shouldExitAutopilot=true and closeChat=false so the agent can handle the new topic.
+4. If A, B, C are done and D is not done: Return scheduleCallback JSON with the extracted phone and time.
+   RULES FOR THIS STEP: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=<filled in>.
+   Your response should confirm the scheduled time to the client (e.g. "Great — I've scheduled your callback for [time]. You'll receive a call at [number].").
+   Do NOT ask "Is there anything else?" in this same turn. Stop here and wait.
+5. If D is done AND you have already asked "Is there anything else?":
+   - If the client says no, thanks, or goodbye → send a warm closing message, set shouldExitAutopilot=true and closeChat=true.
+   - If the client says yes or raises a new topic → set shouldExitAutopilot=true, closeChat=false, response="".
+6. If D is done AND you have NOT yet asked "Is there anything else?" → ask it now.
+   RULES FOR THIS STEP: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=null.
+   Do NOT close the chat here — wait for the client's reply.
 
 Return ONLY valid JSON:
 {
