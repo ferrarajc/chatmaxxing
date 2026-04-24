@@ -43,7 +43,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
     greetedContacts.current.add(slot.contactId);
     const firstName = slot.clientName.split(' ')[0];
-    const greeting = `Hi ${firstName}, my name is ${AGENT_NAME} with Bob's Mutual Funds. How can I assist you today?`;
+    const close = slot.intentGreeting || 'How can I assist you today?';
+    const greeting = `Hi ${firstName}, my name is ${AGENT_NAME} with Bob's Mutual Funds. ${close}`;
     store.patchSlot(slot.contactId, { suggestedText: greeting });
   }, [connectionToken, slot?.contactId]);
 

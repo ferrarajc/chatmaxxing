@@ -16,6 +16,7 @@ export interface ContactSlot {
   clientId: string;
   clientName: string;
   intentSummary: string;
+  intentGreeting: string;
   status: 'incoming' | 'active' | 'ended';
   messages: ChatMessage[];
   isAutopilot: boolean;

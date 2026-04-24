@@ -102,12 +102,14 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         const initialMessages = parseHistory(rawHistory);
         // Prefer AI-generated label; fall back to 'General inquiry'
         const displayLabel = attrs.intentLabel?.value || 'General inquiry';
+        const intentGreeting = attrs.intentGreeting?.value || '';
 
         const idx = store.addContact({
           contactId,
           clientId: attrs.clientId?.value ?? 'demo-client-001',
           clientName: attrs.clientName?.value ?? 'Alex Johnson',
           intentSummary: displayLabel,
+          intentGreeting,
           status: 'incoming',
         }, initialMessages);
 

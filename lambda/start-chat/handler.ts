@@ -17,24 +17,37 @@ export const handler = async (
       return jsonResponse(400, { error: 'clientId and clientName are required' });
     }
 
-    // Generate a short AI label when escalating so the agent sees a concise summary
-    // rather than the raw pipe-separated transcript.
+    // Generate a short AI label and a natural agent greeting sentence when escalating.
     let intentLabel = '';
+    let intentGreeting = '';
     if (escalate && intentSummary) {
       try {
-        const raw = await invokeNovaMicro(
-          intentSummary,
-          `You are summarizing a full customer support chat transcript for a financial services agent.
+        const [labelRaw, greetingRaw] = await Promise.all([
+          invokeNovaMicro(
+            intentSummary,
+            `You are summarizing a full customer support chat transcript for a financial services agent.
 The transcript is formatted as "ROLE: message | ROLE: message | ...".
 Write a single concise sentence (max 20 words) capturing what the customer's core need or question is.
 Start with the client's first name if you can detect it, e.g. "Alex asked about RMD rules and wants withdrawal guidance".
 Focus on the customer's underlying goal — not just the last message.
 Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
-          80,
-        );
-        intentLabel = raw.trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').slice(0, 150);
+            80,
+          ),
+          invokeNovaMicro(
+            intentSummary,
+            `You are writing one sentence for a financial services agent to close their opening chat greeting.
+The transcript below shows what the customer discussed with the chatbot before asking for a live agent.
+The transcript is formatted as "ROLE: message | ROLE: message | ...".
+If the customer's intent or topic is clear, write a single warm sentence acknowledging it — as the agent would say it in first person, e.g. "I can see you have some questions about your RMDs — I'm happy to help with that." or "It looks like you're looking to update your beneficiary — let's take care of that."
+If there is NO clear intent signal in the transcript, return exactly the 6 words: How can I assist you today?
+Return only the single sentence — no quotes, no preamble, no punctuation beyond a period or question mark.`,
+            60,
+          ),
+        ]);
+        intentLabel = labelRaw.trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').slice(0, 150);
+        intentGreeting = greetingRaw.trim().replace(/^["']|["']$/g, '');
       } catch (e) {
-        console.warn('Intent label generation failed', e);
+        console.warn('Intent label/greeting generation failed', e);
       }
     }
 
@@ -54,6 +67,7 @@ Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
           currentPage: currentPage ?? 'home',
           intentSummary: intentSummary ?? '',
           intentLabel,
+          intentGreeting,
         },
         ChatDurationInMinutes: 60,
         SupportedMessagingContentTypes: ['text/plain', 'text/markdown'],
