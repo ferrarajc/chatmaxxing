@@ -1,11 +1,12 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { MOCK_CLIENT } from '../../../data/mock-client';
+import { useClientStore } from '../../../store/clientStore';
 
 const COLORS = ['#1a56db', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 export function PortfolioPage() {
-  const allocationData = MOCK_CLIENT.accounts.map(a => ({
+  const { activePersona } = useClientStore();
+  const allocationData = activePersona.accounts.map(a => ({
     name: a.type, value: a.balance,
   }));
 
@@ -15,7 +16,7 @@ export function PortfolioPage() {
 
       {/* Account cards */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 32, flexWrap: 'wrap' }}>
-        {MOCK_CLIENT.accounts.map((acc, i) => (
+        {activePersona.accounts.map((acc, i) => (
           <div key={acc.id} style={{
             flex: '1 1 220px', background: '#fff', borderRadius: 14,
             padding: '20px 24px', boxShadow: '0 1px 6px rgba(0,0,0,.07)',
@@ -43,7 +44,7 @@ export function PortfolioPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_CLIENT.holdings.map((h, i) => (
+              {activePersona.holdings.map((h, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '10px 0', fontWeight: 500 }}>{h.name}</td>
                   <td style={{ textAlign: 'right', color: '#6b7280' }}>{h.ticker}</td>
@@ -77,7 +78,7 @@ export function PortfolioPage() {
                   <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS[i] }} />
                   {d.name}
                 </div>
-                <span style={{ fontWeight: 600 }}>{((d.value / MOCK_CLIENT.totalBalance) * 100).toFixed(0)}%</span>
+                <span style={{ fontWeight: 600 }}>{((d.value / activePersona.totalBalance) * 100).toFixed(0)}%</span>
               </div>
             ))}
           </div>
@@ -96,7 +97,7 @@ export function PortfolioPage() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_CLIENT.transactions.map((t, i) => (
+            {activePersona.transactions.map((t, i) => (
               <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <td style={{ padding: '10px 0', color: '#6b7280' }}>{t.date}</td>
                 <td>{t.description}</td>

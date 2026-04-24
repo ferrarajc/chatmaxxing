@@ -24,10 +24,13 @@ export const handler = async (
       try {
         const raw = await invokeNovaMicro(
           intentSummary,
-          `Summarize what this customer wants in at most 20 words.
-Start with the client's first name if present, e.g. "Alex asked about...".
+          `You are summarizing a full customer support chat transcript for a financial services agent.
+The transcript is formatted as "ROLE: message | ROLE: message | ...".
+Write a single concise sentence (max 20 words) capturing what the customer's core need or question is.
+Start with the client's first name if you can detect it, e.g. "Alex asked about RMD rules and wants withdrawal guidance".
+Focus on the customer's underlying goal — not just the last message.
 Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
-          60,
+          80,
         );
         intentLabel = raw.trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').slice(0, 150);
       } catch (e) {

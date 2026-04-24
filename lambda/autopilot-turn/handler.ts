@@ -8,12 +8,16 @@ import {
   jsonResponse,
 } from '../shared/types';
 
+// Escalation keywords: if the customer says any of these, autopilot should immediately hand off.
+const CUSTOMER_ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
+
 const SYSTEM_PROMPT = (profile: ClientProfile, currentIntent: string) =>
   `You are a friendly, professional financial services agent at Bob's Mutual Funds handling a live chat.
 The client's name is ${profile.name}. Their accounts: ${summarizeAccounts(profile.accounts)}.
 Their current topic/intent: "${currentIntent}".
 Your job is to respond as the agent — concisely (1-3 sentences), warm but professional.
 Set shouldExitAutopilot=true if:
+  - The client is asking to speak with a human, agent, representative, or requesting escalation
   - The request is ambiguous or unclear
   - It requires account modifications, trade execution, or sensitive actions
   - The client is frustrated or unhappy
@@ -70,8 +74,7 @@ export const handler = async (
       confidence = parsed.confidence ?? 0.5;
       shouldExitAutopilot = parsed.shouldExitAutopilot ?? (confidence < 0.7);
 
-      // Business-rule hard override: trade execution and account modifications always
-      // require a human agent — do not let AI judgment override this.
+      // Business-rule hard overrides — do not let AI judgment bypass these.
       const TRADE_INTENTS = ['PlaceOrder', 'ChangeOwnership', 'Transfer'];
       const tradeKeywords = /\b(buy|sell|purchase|trade|transfer|place.?order|liquidat|redeem)\b/i;
       const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
@@ -80,6 +83,13 @@ export const handler = async (
         tradeKeywords.test(lastCustomerMsg)
       ) {
         shouldExitAutopilot = true;
+      }
+      // Hard override: customer is requesting a human agent
+      if (CUSTOMER_ESCALATION_RE.test(lastCustomerMsg)) {
+        shouldExitAutopilot = true;
+        if (!response) {
+          response = "I understand — let me make sure you're taken care of right away.";
+        }
       }
     } catch (e) {
       console.warn('Bedrock autopilot failed', e);

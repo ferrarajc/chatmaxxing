@@ -1,10 +1,11 @@
 import { useRef } from 'react';
 import 'amazon-connect-chatjs';
 import { useChatStore, ChatStore } from '../store/chatStore';
+import { useClientStore } from '../store/clientStore';
 import { post } from '../api/client';
-import { MOCK_CLIENT } from '../data/mock-client';
 
-const ESCALATION_PHRASES = [
+// Phrases that the BOT says which signal escalation is being offered.
+const BOT_ESCALATION_PHRASES = [
   'connect you with a live agent',
   'connect you to a live',
   'connect you to a real',
@@ -20,15 +21,36 @@ const ESCALATION_PHRASES = [
   'please hold',
 ];
 
-function checkEscalation(text: string, store: ChatStore): void {
+// Phrases the CUSTOMER says that clearly signal they want to escalate.
+// Checked client-side for 99% reliability — bypasses Lex classification.
+const CUSTOMER_ESCALATION_PHRASES = [
+  'speak to an agent', 'speak with an agent', 'talk to an agent', 'talk with an agent',
+  'chat with an agent', 'connect me to an agent', 'connect me with an agent',
+  'live agent', 'live person', 'live representative', 'live support',
+  'real person', 'real agent', 'real human',
+  'human agent', 'human representative', 'human support',
+  'i want to speak', 'i want to talk', 'i need to speak', 'i need to talk',
+  "i'd like to speak", "i'd like to talk",
+  'connect me', 'transfer me', 'put me through',
+  'want a human', 'need a human', 'talk to a human', 'speak to a human',
+  'get me an agent', 'need an agent', 'want an agent', 'get an agent',
+  'representative', 'escalate', 'supervisor',
+  'someone who can help', 'speak to someone', 'talk to someone',
+];
+
+function checkBotEscalation(text: string, store: ChatStore): void {
   const s = useChatStore.getState().state;
-  // Don't re-trigger escalation if we're already waiting for or connected to an agent
   if (s === 'WAITING_FOR_AGENT' || s === 'CONNECTED_TO_AGENT') return;
   const lower = text.toLowerCase();
-  if (ESCALATION_PHRASES.some(p => lower.includes(p))) {
+  if (BOT_ESCALATION_PHRASES.some(p => lower.includes(p))) {
     store.transitionTo('ESCALATION_OFFERED');
     store.setEscalationWaitTime(3);
   }
+}
+
+function isCustomerEscalationRequest(text: string): boolean {
+  const lower = text.toLowerCase();
+  return CUSTOMER_ESCALATION_PHRASES.some(p => lower.includes(p));
 }
 
 declare global {
@@ -97,7 +119,7 @@ function createAndBindSession(
         clearTimeout(botReplyTimerRef.current);
         botReplyTimerRef.current = null;
       }
-      checkEscalation(msg.Content, store);
+      checkBotEscalation(msg.Content, store);
     }
 
     if (msg.ParticipantRole === 'AGENT') {
@@ -144,11 +166,12 @@ export function useChatSession() {
     if (store.state !== 'CLOSED') return;
 
     store.transitionTo('GREETING');
+    const { activePersona } = useClientStore.getState();
 
     try {
       const data = await post<StartChatResponse>('/start-chat', {
-        clientId: MOCK_CLIENT.clientId,
-        clientName: MOCK_CLIENT.name,
+        clientId: activePersona.clientId,
+        clientName: activePersona.name,
         currentPage,
       });
 
@@ -176,23 +199,27 @@ export function useChatSession() {
     store.addMessage({ role: 'SYSTEM', content: 'Connecting you to a live agent…' });
     store.transitionTo('WAITING_FOR_AGENT');
 
-    // Disconnect the bot session (Lex flow has ended on the Connect side after
-    // the EscalateAgent intent fired). Create a fresh contact that the Connect
-    // flow will route directly to the agent queue (the flow checks escalate=true
-    // attribute and bypasses Lex when set).
     try { sessionRef.current?.disconnect(); } catch { /* ignore */ }
     sessionRef.current = null;
 
-    const msgs = useChatStore.getState().messages.filter(m => m.role !== 'SYSTEM');
-    const summary = msgs.slice(-6).map(m => `${m.role}: ${m.content}`).join(' | ');
+    // Build summary from full transcript (not just last 6) for accurate intent capture.
+    const allMessages = useChatStore.getState().messages.filter(m => m.role !== 'SYSTEM');
+    const summaryParts = allMessages.map(m => `${m.role}: ${m.content}`);
+    // Cap total length to avoid Lambda payload limits while including as much as possible
+    let summary = summaryParts.join(' | ');
+    if (summary.length > 1500) {
+      summary = summary.slice(-1500);
+    }
+
+    const { activePersona } = useClientStore.getState();
 
     try {
       const data = await post<StartChatResponse>('/start-chat', {
-        clientId: MOCK_CLIENT.clientId,
-        clientName: MOCK_CLIENT.name,
+        clientId: activePersona.clientId,
+        clientName: activePersona.name,
         currentPage: 'escalation',
         escalate: true,
-        intentSummary: summary.slice(0, 500),
+        intentSummary: summary,
       });
 
       const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
@@ -208,11 +235,23 @@ export function useChatSession() {
 
   async function sendMessage(text: string) {
     const session = sessionRef.current;
-    // In CONNECTED_TO_AGENT state, only send through the live session (no bot fallback)
     const currentState = useChatStore.getState().state;
     store.addMessage({ role: 'CUSTOMER', content: text });
 
     const isAgentMode = currentState === 'CONNECTED_TO_AGENT' || currentState === 'WAITING_FOR_AGENT';
+
+    // Client-side escalation detection: if customer clearly wants an agent,
+    // offer escalation immediately without waiting for Lex to classify the intent.
+    if (!isAgentMode && currentState !== 'ESCALATION_OFFERED' && isCustomerEscalationRequest(text)) {
+      store.addMessage({
+        role: 'BOT',
+        content: "Of course! I'd be happy to connect you with a live agent. Would you prefer to chat now, or would a callback at a time of your choosing work better?",
+      });
+      store.transitionTo('ESCALATION_OFFERED');
+      store.setEscalationWaitTime(3);
+      return; // Don't send to Lex — escalation is already offered
+    }
+
     if (!isAgentMode) {
       // Start fallback timer: if Connect/Lex doesn't reply within 3 s, call autopilot-turn directly
       if (botReplyTimerRef.current) clearTimeout(botReplyTimerRef.current);
@@ -226,18 +265,19 @@ export function useChatSession() {
         if (liveState === 'CONNECTED_TO_AGENT' || liveState === 'WAITING_FOR_AGENT') return;
         try {
           store.setTyping(true);
+          const { activePersona } = useClientStore.getState();
           const result = await post<{ response: string; confidence: number; shouldExitAutopilot: boolean }>(
             '/autopilot-turn',
             {
               transcript: currentMessages.filter(m => m.role !== 'SYSTEM'),
-              clientProfile: MOCK_CLIENT,
+              clientProfile: activePersona,
               currentIntent: 'general inquiry',
             },
           );
           store.setTyping(false);
           if (result.response) {
             store.addMessage({ role: 'BOT', content: result.response });
-            checkEscalation(result.response, store);
+            checkBotEscalation(result.response, store);
           }
         } catch (e) {
           store.setTyping(false);

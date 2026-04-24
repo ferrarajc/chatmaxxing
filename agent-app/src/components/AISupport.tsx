@@ -2,9 +2,12 @@ import React from 'react';
 import { ContactSlot } from '../types';
 import { useAgentStore } from '../store/agentStore';
 
-interface Props { slot: ContactSlot; }
+interface Props {
+  slot: ContactSlot;
+  onSendResource: (message: string) => void;
+}
 
-export function AISupport({ slot }: Props) {
+export function AISupport({ slot, onSendResource }: Props) {
   const store = useAgentStore();
 
   const handleInsert = () => {
@@ -12,11 +15,8 @@ export function AISupport({ slot }: Props) {
   };
 
   const handleSendResource = (resource: { title: string; url: string }) => {
-    store.appendMessage(slot.contactId, {
-      role: 'AGENT',
-      content: `Here's a helpful resource: **${resource.title}** — ${resource.url}`,
-    });
-    store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
+    const message = `Here's a helpful resource: ${resource.title}\n${resource.url}`;
+    onSendResource(message);
   };
 
   const toggleAutopilot = () => {

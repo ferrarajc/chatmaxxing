@@ -6,19 +6,9 @@ import { log } from '../api/logger';
 import { IncomingAlert } from './IncomingAlert';
 import { ResponseTimer } from './ResponseTimer';
 import { AISupport } from './AISupport';
+import { CLIENT_PROFILES, DEFAULT_PROFILE } from '../data/clientProfiles';
 
-const MOCK_CLIENT_PROFILE = {
-  clientId: 'demo-client-001',
-  name: 'Alex Johnson',
-  phone: '4842384838',
-  accounts: [
-    { type: 'Roth IRA', balance: 45230, id: 'acc-001' },
-    { type: 'Traditional IRA', balance: 128450, id: 'acc-002' },
-    { type: 'Taxable Account', balance: 67890, id: 'acc-003' },
-  ],
-  totalBalance: 241570,
-  recentChatHistory: [],
-};
+const AGENT_NAME = 'John Ferrara';
 
 interface Props {
   slotIndex: number;
@@ -30,6 +20,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevMsgCount = useRef(0);
+  // Track which contactIds have already received the initial greeting suggestion
+  const greetedContacts = useRef<Set<string>>(new Set());
 
   // Auto-scroll when new messages arrive
   useEffect(() => {
@@ -39,16 +31,37 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
   }, [slot?.messages.length]);
 
+  // Pre-populate greeting suggestion when agent first connects (connectionToken arrives)
+  const connectionToken = slot?.connectionToken;
+  useEffect(() => {
+    if (!slot || !connectionToken || greetedContacts.current.has(slot.contactId)) return;
+    // Only trigger if no agent messages have been sent yet
+    const hasAgentMsg = slot.messages.some(m => m.role === 'AGENT');
+    if (hasAgentMsg) {
+      greetedContacts.current.add(slot.contactId);
+      return;
+    }
+    greetedContacts.current.add(slot.contactId);
+    const firstName = slot.clientName.split(' ')[0];
+    const topic = slot.intentSummary && slot.intentSummary !== 'General inquiry'
+      ? `I can see you were reaching out about: ${slot.intentSummary}.`
+      : "I'm here to help you today.";
+    const greeting = `Hi ${firstName}, my name is ${AGENT_NAME} with Bob's Mutual Funds. ${topic} How can I assist you?`;
+    store.patchSlot(slot.contactId, { suggestedText: greeting });
+  }, [connectionToken, slot?.contactId]);
+
   // Fetch NBR + trigger autopilot when a customer message arrives
   const lastCustomerMsg = slot?.lastCustomerMessageAt;
   useEffect(() => {
     if (!slot || slot.status !== 'active' || !lastCustomerMsg) return;
 
+    const clientProfile = CLIENT_PROFILES[slot.clientId] ?? DEFAULT_PROFILE;
+
     const fetchNBR = async () => {
       try {
         const result = await post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }> }>(
           '/next-best-response',
-          { transcript: slot.messages, clientProfile: MOCK_CLIENT_PROFILE },
+          { transcript: slot.messages, clientProfile },
         );
         store.patchSlot(slot.contactId, {
           suggestedText: result.suggestedText,
@@ -68,9 +81,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             '/autopilot-turn',
             {
               transcript: slot.messages,
-              clientProfile: MOCK_CLIENT_PROFILE,
+              clientProfile,
               currentIntent: slot.intentSummary,
-              // connectionToken removed — browser sends via chatjs
             },
           );
           if (result.shouldExitAutopilot) {
@@ -117,6 +129,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (!inputText.trim() || !slot) return;
     const text = inputText.trim();
     setInputText('');
+    sendText(text);
+  };
+
+  const sendText = (text: string) => {
+    if (!slot) return;
     // Append locally for instant feedback
     store.appendMessage(slot.contactId, { role: 'AGENT', content: text });
     store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
@@ -233,7 +250,10 @@ export function ChatColumn({ slotIndex, slot }: Props) {
 
           {/* AI support area — scrollable, fixed height */}
           <div style={{ height: 180, overflowY: 'auto', borderTop: '1px solid #e5e7eb', flexShrink: 0 }}>
-            <AISupport slot={slot} />
+            <AISupport
+              slot={slot}
+              onSendResource={(text) => sendText(text)}
+            />
           </div>
         </>
       )}
@@ -270,7 +290,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
       <div style={{
         maxWidth: '82%', background: colors[msg.role] ?? '#f3f4f6',
         borderRadius: 10, padding: '6px 10px', fontSize: 12, lineHeight: 1.5,
-        color: '#111',
+        color: '#111', whiteSpace: 'pre-wrap',
       }}>
         {!isAgent && (
           <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>

@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { useChatStore } from '../../store/chatStore';
+import { useClientStore } from '../../store/clientStore';
 import { ChatMessage } from './ChatMessage';
 import { TopicButtons } from './TopicButtons';
 import { TypingIndicator } from './TypingIndicator';
-import { MOCK_CLIENT } from '../../data/mock-client';
 
 interface Props {
   currentPage: string;
@@ -12,6 +12,7 @@ interface Props {
 
 export function ChatBody({ currentPage: _page, onSendMessage }: Props) {
   const { state, messages, predictedTopics, isTyping } = useChatStore();
+  const { activePersona } = useClientStore();
   const bottomRef = useRef<HTMLDivElement>(null);
   const topicsUsed = useRef(false);
 
@@ -24,6 +25,8 @@ export function ChatBody({ currentPage: _page, onSendMessage }: Props) {
     onSendMessage(topic);
   };
 
+  const firstName = activePersona.name.split(' ')[0];
+
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Greeting */}
@@ -32,7 +35,7 @@ export function ChatBody({ currentPage: _page, onSendMessage }: Props) {
           background: '#f3f6ff', borderRadius: 12, padding: '10px 14px',
           fontSize: 14, lineHeight: 1.5, color: '#1e3a5f',
         }}>
-          Hi <strong>{MOCK_CLIENT.name}</strong>! 👋 I'm your Bob's Mutual Funds assistant. How can I help you today?
+          Hi <strong>{firstName}</strong>! I'm your Bob's Mutual Funds assistant. How can I help you today?
         </div>
       )}
 

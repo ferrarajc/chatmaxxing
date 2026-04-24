@@ -1,7 +1,11 @@
 import React from 'react';
-import { FUNDS, MARKET_DATA, MOCK_CLIENT } from '../../../data/mock-client';
+import { FUNDS, MARKET_DATA } from '../../../data/mock-client';
+import { useClientStore } from '../../../store/clientStore';
 
 export function HomePage() {
+  const { activePersona } = useClientStore();
+  const firstName = activePersona.name.split(' ')[0];
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
       {/* Hero */}
@@ -10,16 +14,16 @@ export function HomePage() {
         borderRadius: 20, padding: '48px 48px', color: '#fff', marginBottom: 32,
       }}>
         <h1 style={{ margin: '0 0 12px', fontSize: 36, fontWeight: 800 }}>
-          Welcome back, {MOCK_CLIENT.name.split(' ')[0]}.
+          Welcome back, {firstName}.
         </h1>
         <p style={{ margin: '0 0 24px', fontSize: 18, opacity: 0.9 }}>
           Your total portfolio value
         </p>
         <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: '-1px' }}>
-          ${MOCK_CLIENT.totalBalance.toLocaleString()}
+          ${activePersona.totalBalance.toLocaleString()}
         </div>
         <p style={{ margin: '8px 0 0', fontSize: 14, opacity: 0.75 }}>
-          Across {MOCK_CLIENT.accounts.length} accounts
+          Across {activePersona.accounts.length} account{activePersona.accounts.length !== 1 ? 's' : ''}
         </p>
       </div>
 

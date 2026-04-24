@@ -3,6 +3,36 @@ import { ChatMessage as Msg } from '../../types';
 
 interface Props { message: Msg; }
 
+/** Splits content on URLs and renders them as clickable <a> tags. */
+function renderWithLinks(content: string): React.ReactNode[] {
+  const urlRegex = /https?:\/\/[^\s]+/g;
+  const result: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = urlRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      result.push(content.slice(lastIndex, match.index));
+    }
+    const url = match[0];
+    result.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
+      >
+        {url}
+      </a>,
+    );
+    lastIndex = match.index + url.length;
+  }
+  if (lastIndex < content.length) {
+    result.push(content.slice(lastIndex));
+  }
+  return result.length > 0 ? result : [content];
+}
+
 export function ChatMessage({ message }: Props) {
   const isCustomer = message.role === 'CUSTOMER';
   const isSystem = message.role === 'SYSTEM';
@@ -42,7 +72,7 @@ export function ChatMessage({ message }: Props) {
         whiteSpace: 'pre-wrap',
         textAlign: 'left',
       }}>
-        {message.content}
+        {renderWithLinks(message.content)}
       </div>
     </div>
   );

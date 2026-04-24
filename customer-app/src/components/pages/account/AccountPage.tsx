@@ -1,7 +1,9 @@
 import React from 'react';
-import { MOCK_CLIENT } from '../../../data/mock-client';
+import { useClientStore } from '../../../store/clientStore';
 
 export function AccountPage() {
+  const { activePersona } = useClientStore();
+
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 24px' }}>
       <h1 style={{ margin: '0 0 24px', fontSize: 28, fontWeight: 800 }}>My Account</h1>
@@ -10,26 +12,26 @@ export function AccountPage() {
         {
           title: 'Personal Information',
           fields: [
-            { label: 'Name', value: MOCK_CLIENT.name },
-            { label: 'Email', value: 'alex.johnson@email.com' },
-            { label: 'Phone', value: MOCK_CLIENT.displayPhone },
-            { label: 'Address', value: '123 Main St, Philadelphia, PA 19103' },
+            { label: 'Name',    value: activePersona.name },
+            { label: 'Email',   value: activePersona.email },
+            { label: 'Phone',   value: activePersona.displayPhone },
+            { label: 'Address', value: activePersona.address },
           ],
         },
         {
           title: 'Security',
           fields: [
             { label: 'Two-factor authentication', value: 'Enabled (SMS)' },
-            { label: 'Last login', value: 'Today, 9:14 AM ET' },
-            { label: 'Password', value: '••••••••••' },
+            { label: 'Last login',                value: 'Today, 9:14 AM ET' },
+            { label: 'Password',                  value: '••••••••••' },
           ],
         },
         {
           title: 'Preferences',
           fields: [
-            { label: 'Statements', value: 'Paperless' },
+            { label: 'Statements',    value: 'Paperless' },
             { label: 'Tax documents', value: 'Online delivery' },
-            { label: 'Language', value: 'English' },
+            { label: 'Language',      value: 'English' },
           ],
         },
       ].map(section => (
