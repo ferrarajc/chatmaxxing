@@ -319,9 +319,18 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         }, 2 * 60 * 1000);
       }, 2 * 60 * 1000);
 
-    } else {
-      // get-intent, callback, full-auto — call Lambda immediately
+    } else if (scope === 'callback') {
+      // callback always uses Lambda
       runAutopilotTurn(cid, scope);
+    } else {
+      // get-intent / full-auto: use existing suggestedText if available, else call Lambda
+      const existingSuggestion = slot.suggestedText?.trim();
+      if (existingSuggestion) {
+        store.patchSlot(cid, { suggestedText: '' });
+        autopilotSend(existingSuggestion, cid, scope);
+      } else {
+        runAutopilotTurn(cid, scope);
+      }
     }
   }, [autopilotScope, contactId]);
 

@@ -43,7 +43,8 @@ Rules:
 - Read the full transcript carefully. If you (the agent) have NOT yet sent any message, send a warm greeting introducing yourself by first name and acknowledge what you can see about their inquiry.
 - Otherwise, ask ONE focused clarifying question to better understand the client's need.
 - Do NOT ask multiple questions at once.
-- Once you have a clear, specific understanding of the client's need, set shouldExitAutopilot=true so the agent can handle it directly.
+- Once you have a clear, specific and actionable understanding of the client's need, set shouldExitAutopilot=true so the agent can handle it directly. A single topic keyword (e.g. "RMD question") is NOT enough — you need to know exactly what they want to do before exiting.
+- NEVER set shouldExitAutopilot=true on the same turn you are sending your opening greeting. You must wait for the client to reply to at least one of your questions first.
 - Set shouldExitAutopilot=true if the client asks to speak with a different person or escalate to a supervisor.
 
 Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
