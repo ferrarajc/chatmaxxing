@@ -51,8 +51,8 @@ Review the conversation transcript and return ONLY valid JSON with:
    Pick the BEST match based on the primary topic of the chat. Return the code exactly as spelled above.
 
 2. coaching: {
-     "positive": "One sentence of genuine, specific positive feedback about something the agent actually did well.",
-     "bullets": ["Up to 2 short, specific, actionable improvement points. Each is one sentence. Omit bullets if the interaction was excellent — max 2 bullets."]
+     "positive": "One sentence of genuine, specific positive feedback written in second person (e.g. 'You did a great job...'). Encouraging and direct.",
+     "bullets": ["At most 1 short, specific, actionable improvement point written in second person (e.g. 'Consider trying...'). One sentence max. Omit entirely (empty array) if the interaction was excellent."]
    }
 
 3. summary: A factual 3-5 sentence summary of what was discussed, what actions were taken or promised, and the outcome.
@@ -111,7 +111,7 @@ export const handler = async (
       coaching: {
         positive: parsed.coaching?.positive ?? 'Good interaction with the client.',
         bullets: Array.isArray(parsed.coaching?.bullets)
-          ? parsed.coaching.bullets.slice(0, 2)
+          ? parsed.coaching.bullets.slice(0, 1)
           : [],
       },
       summary: parsed.summary ?? 'Chat session completed.',

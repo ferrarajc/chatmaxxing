@@ -15,7 +15,6 @@ interface Props {
 
 export function TopBar({ ccpOpen, onToggleCcp }: Props) {
   const { agentStatus, setAgentStatus, dailyBonus } = useAgentStore();
-  const active = useAgentStore(s => s.slots.filter(Boolean).length);
 
   const handleStatusClick = (s: 'Available' | 'Away') => {
     setAgentStatus(s);          // optimistic local update
@@ -34,10 +33,6 @@ export function TopBar({ ccpOpen, onToggleCcp }: Props) {
       </div>
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 20 }}>
-        <span style={{ fontSize: 13, opacity: 0.8 }}>
-          Active chats: <strong>{active}</strong> / 4
-        </span>
-
         {/* Daily bonus tally — visible only when > 0 */}
         {dailyBonus > 0 && (
           <div style={{

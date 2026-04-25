@@ -66,7 +66,7 @@ export function AfterCallWork({ slot }: Props) {
                 <span>{acw.coaching.positive}</span>
               </div>
             )}
-            {acw.coaching.bullets.slice(0, 2).map((b, i) => (
+            {acw.coaching.bullets.slice(0, 1).map((b, i) => (
               <div key={i} style={{ display: 'flex', gap: 6, marginTop: i === 0 ? 0 : 3 }}>
                 <span style={{ color: '#f59e0b', fontWeight: 700, flexShrink: 0 }}>•</span>
                 <span>{b}</span>

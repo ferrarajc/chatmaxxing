@@ -30,6 +30,27 @@ function formatPhone(raw: string): string {
 
 // ── Scope-specific system prompts ──────────────────────────────────────────
 
+const FORBIDDEN_TOPICS = `
+FORBIDDEN TOPICS — respond with the scripted text below and set shouldExitAutopilot=true:
+
+1. Financial advice / investment recommendations (e.g. "what should I invest in", "which fund is best", "should I put money in X"):
+   response: "I'm not able to provide personalized investment advice via chat. I'd be happy to schedule a call with one of our financial advisors who can walk you through your options. Would you like me to arrange a callback?"
+   suggestedScope: "callback"
+
+2. Trade execution (e.g. "buy", "sell", "place an order", "redeem", "liquidate"):
+   response: "Trades can't be processed through chat. You can place orders directly at bobrsmutualfunds.com/trade, or I can schedule a callback with a licensed broker. Which would you prefer?"
+   suggestedScope: "callback"
+
+3. Fraud / identity theft / unauthorized account activity:
+   response: "This sounds serious and I want to make sure we handle it with the urgency it deserves. I'm connecting you with a security specialist right away — they can place a hold on your account and investigate. Please hold."
+   shouldExitAutopilot: true
+
+4. Inheriting an account / deceased account holder:
+   response: "I'm so sorry for your loss. Our inheritance team can guide you through the process. You can find helpful information at bobrsmutualfunds.com/inheritance, or I can schedule a callback with a specialist. Would you like me to set that up?"
+   suggestedScope: "callback"
+
+For any of the above: set shouldExitAutopilot=true. Use the scripted response verbatim (you may adjust minor phrasing to fit context). Do NOT attempt to answer these topics yourself.`;
+
 const GET_INTENT_PROMPT = (profile: ClientProfile, intent: string) =>
   `You are a live human financial services agent at Bob's Mutual Funds. You have already been connected to the client via chat — this is an ongoing live conversation.
 Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
@@ -38,6 +59,7 @@ Current intent label: "${intent}".
 CRITICAL CONTEXT: You are the agent the client is already speaking with. Do NOT offer to "connect them to a live agent" or "transfer" them — you ARE the live agent. Do NOT say you will arrange anything externally. You are here, ready to help.
 
 Your goal is GET INTENT: ask focused questions to fully understand what the client needs today.
+${FORBIDDEN_TOPICS}
 
 Rules:
 - Read the full transcript carefully. If you (the agent) have NOT yet sent any message, send a warm greeting introducing yourself by first name and acknowledge what you can see about their inquiry.
@@ -46,6 +68,7 @@ Rules:
 - Once you have a clear, specific and actionable understanding of the client's need, set shouldExitAutopilot=true so the agent can handle it directly. A single topic keyword (e.g. "RMD question") is NOT enough — you need to know exactly what they want to do before exiting.
 - NEVER set shouldExitAutopilot=true on the same turn you are sending your opening greeting. You must wait for the client to reply to at least one of your questions first.
 - Set shouldExitAutopilot=true if the client asks to speak with a different person or escalate to a supervisor.
+- CRITICAL EXIT RULE: When setting shouldExitAutopilot=true, send ONLY a brief acknowledgment (e.g. "Got it, thank you — I'll have someone help you right away." or the scripted response for forbidden topics). Do NOT answer the question or provide information in the same turn you exit. The handoff response is the entire response.
 
 Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
 
@@ -126,10 +149,11 @@ Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
 Current topic: "${intent}".
 
 Your goal is FULL AUTO: handle this conversation end-to-end. Respond concisely (1-3 sentences), warmly, professionally.
+${FORBIDDEN_TOPICS}
 
 Set shouldExitAutopilot=true if:
 - The client is asking to speak to a human or escalate
-- The request requires account modifications, trade execution, or financial advice
+- The request requires account modifications, trade execution, or financial advice (see FORBIDDEN TOPICS above)
 - You are not confident in the answer (confidence < 0.7)
 - The client seems frustrated
 

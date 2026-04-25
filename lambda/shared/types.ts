@@ -55,6 +55,8 @@ export const KNOWLEDGE_BASE: Resource[] = [
   { id: 'kb-018', title: 'Estate Planning & Inherited Accounts', url: `${BASE}/estate-planning/`, tags: ['estate', 'inherited', 'trust', 'death', 'beneficiary', 'probate'] },
   { id: 'kb-019', title: 'Fund Prospectus Library',           url: `${BASE}/prospectus/`,        tags: ['prospectus', 'fund', 'document', 'disclosure', 'risk', 'objective'] },
   { id: 'kb-020', title: 'Contact Us & Support Hours',        url: `${BASE}/contact/`,           tags: ['contact', 'support', 'hours', 'phone', 'email', 'chat', 'help'] },
+  { id: 'kb-021', title: 'How to Place a Trade',             url: `${BASE}/place-trade/`,        tags: ['trade', 'buy', 'sell', 'purchase', 'redeem', 'exchange', 'order', 'liquidate'] },
+  { id: 'kb-022', title: 'Inheriting an Account',            url: `${BASE}/inheritance/`,        tags: ['inherit', 'inheritance', 'deceased', 'death', 'beneficiary', 'estate', 'transfer', 'condolence'] },
 ];
 
 export const PAGE_TOPIC_MAP: Record<string, string[]> = {

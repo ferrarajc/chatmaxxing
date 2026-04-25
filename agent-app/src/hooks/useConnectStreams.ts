@@ -267,17 +267,18 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       store.clearSlot(contactId);
     };
 
-    // ── Close Contact (ACW → onDestroy → clearSlot) ───────────────────────────
+    // ── Close Contact (ACW → clearSlot) ──────────────────────────────────────
+    // onDestroy does NOT fire for already-ended chat contacts after contact.clear().
+    // Always call clearSlot directly — don't rely on onDestroy as the trigger.
     const handleCloseContact = (e: Event) => {
       const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
       const contact = contactRefs.current.get(contactId);
       if (contact) {
-        try { contact.clear({}); }
-        catch { store.clearSlot(contactId); }
-      } else {
-        // No ref — fall back to direct clear
-        store.clearSlot(contactId);
+        try { contact.clear({}); } catch { /* ignore — already ended */ }
       }
+      contactRefs.current.delete(contactId);
+      agentChatSessions.delete(contactId);
+      store.clearSlot(contactId);
     };
 
     window.addEventListener('bobs:acceptContact', handleAccept);
