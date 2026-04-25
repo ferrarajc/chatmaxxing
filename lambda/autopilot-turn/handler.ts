@@ -206,6 +206,7 @@ export const handler = async (
         formatTranscriptForBedrock(transcript),
         systemPrompt,
         400,
+        { fn: 'autopilot-turn', contactId: transcript[0]?.content?.slice(0, 8), scope },
       );
       const parsed = parseJsonFromBedrock<{
         response: string;

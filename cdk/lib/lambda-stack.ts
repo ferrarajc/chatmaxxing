@@ -35,6 +35,10 @@ export class LambdaStack extends cdk.Stack {
       // Read from shell env at synth time — never hardcode in source.
       // Set OPENAI_API_KEY in the environment before running cdk deploy.
       OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
+      // Arize observability — get both from app.arize.com → Settings.
+      // Leave blank to disable; all LLM calls still work normally without them.
+      ARIZE_API_KEY:   process.env.ARIZE_API_KEY   ?? '',
+      ARIZE_SPACE_KEY: process.env.ARIZE_SPACE_KEY ?? '',
     };
 
     const lambdaDir = path.join(__dirname, '../../lambda');

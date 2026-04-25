@@ -2,7 +2,6 @@ export const WRAP_UP_CODES: string[] = [
   'Account Inquiry',
   'Address Update',
   'Beneficiary Change',
-  'Callback Scheduled',
   'Complaint Filed',
   'Contribution Question',
   'Distribution Request',

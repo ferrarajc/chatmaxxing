@@ -12,7 +12,6 @@ const WRAP_UP_CODES = [
   'Account Inquiry',
   'Address Update',
   'Beneficiary Change',
-  'Callback Scheduled',
   'Complaint Filed',
   'Contribution Question',
   'Distribution Request',
@@ -53,7 +52,7 @@ Review the conversation transcript and return ONLY valid JSON with:
 
 2. coaching: {
      "positive": "One sentence of genuine, specific positive feedback about something the agent actually did well.",
-     "bullets": ["Up to 3 short, specific, actionable improvement points. Each is one sentence. Omit bullets if the interaction was excellent."]
+     "bullets": ["Up to 2 short, specific, actionable improvement points. Each is one sentence. Omit bullets if the interaction was excellent — max 2 bullets."]
    }
 
 3. summary: A factual 3-5 sentence summary of what was discussed, what actions were taken or promised, and the outcome.
@@ -94,6 +93,7 @@ export const handler = async (
       formatTranscriptForBedrock(transcript),
       ACW_PROMPT(profile),
       700,
+      { fn: 'generate-acw', contactId: profile.clientId },
     );
 
     const parsed = parseJsonFromBedrock<{
@@ -111,7 +111,7 @@ export const handler = async (
       coaching: {
         positive: parsed.coaching?.positive ?? 'Good interaction with the client.',
         bullets: Array.isArray(parsed.coaching?.bullets)
-          ? parsed.coaching.bullets.slice(0, 3)
+          ? parsed.coaching.bullets.slice(0, 2)
           : [],
       },
       summary: parsed.summary ?? 'Chat session completed.',

@@ -11,7 +11,6 @@ export function AfterCallWork({ slot }: Props) {
   const [selectedCode, setSelectedCode] = useState('');
   const [summaryText, setSummaryText] = useState('');
 
-  // Populate fields when ACW data arrives
   useEffect(() => {
     if (!acw) return;
     setSelectedCode(acw.wrapUpCode);
@@ -27,14 +26,11 @@ export function AfterCallWork({ slot }: Props) {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      padding: '0 16px', minHeight: 0, overflow: 'hidden',
-      background: '#fff',
+      padding: '12px 16px', minHeight: 0, overflow: 'hidden', gap: 10,
     }}>
-      {/* ── Wrap-up code — 10% from top ──────────────────────────────────── */}
-      <div style={{ paddingTop: '10%' }}>
-        <label style={{ fontSize: 11, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '.5px', display: 'block', marginBottom: 4 }}>
-          Wrap-up code
-        </label>
+      {/* Wrap-up code */}
+      <div>
+        <label style={labelStyle}>Wrap-up code</label>
         {loading ? (
           <div style={skeletonStyle(28)} />
         ) : (
@@ -54,25 +50,24 @@ export function AfterCallWork({ slot }: Props) {
         )}
       </div>
 
-      {/* ── Coaching ─────────────────────────────────────────────────────── */}
-      <div style={{ marginTop: 14 }}>
-        <div style={sectionLabelStyle}>Coaching</div>
+      {/* Coaching */}
+      <div>
+        <div style={labelStyle}>Coaching</div>
         {loading ? (
           <>
-            <div style={skeletonStyle(14, 8)} />
-            <div style={skeletonStyle(12, 4)} />
-            <div style={skeletonStyle(12, 4)} />
+            <div style={skeletonStyle(13, 0)} />
+            <div style={skeletonStyle(13, 4)} />
           </>
         ) : (
           <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.55 }}>
             {acw.coaching.positive && (
-              <div style={{ display: 'flex', gap: 6, marginBottom: acw.coaching.bullets.length ? 5 : 0 }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: acw.coaching.bullets.length ? 4 : 0 }}>
                 <span style={{ color: '#10b981', fontWeight: 700, flexShrink: 0 }}>✓</span>
                 <span>{acw.coaching.positive}</span>
               </div>
             )}
-            {acw.coaching.bullets.map((b, i) => (
-              <div key={i} style={{ display: 'flex', gap: 6, marginBottom: i < acw.coaching.bullets.length - 1 ? 4 : 0 }}>
+            {acw.coaching.bullets.slice(0, 2).map((b, i) => (
+              <div key={i} style={{ display: 'flex', gap: 6, marginTop: i === 0 ? 0 : 3 }}>
                 <span style={{ color: '#f59e0b', fontWeight: 700, flexShrink: 0 }}>•</span>
                 <span>{b}</span>
               </div>
@@ -81,11 +76,11 @@ export function AfterCallWork({ slot }: Props) {
         )}
       </div>
 
-      {/* ── Call summary ─────────────────────────────────────────────────── */}
-      <div style={{ marginTop: 14, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <div style={sectionLabelStyle}>Call summary</div>
+      {/* Call summary — grows to fill remaining space */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 80 }}>
+        <div style={labelStyle}>Call summary</div>
         {loading ? (
-          <div style={{ flex: 1, ...skeletonStyle(0, 0), minHeight: 80 }} />
+          <div style={{ flex: 1, ...skeletonStyle(0, 0) }} />
         ) : (
           <textarea
             value={summaryText}
@@ -93,22 +88,20 @@ export function AfterCallWork({ slot }: Props) {
             style={{
               flex: 1, resize: 'none', border: '1.5px solid #d1d5db',
               borderRadius: 7, padding: '7px 10px', fontSize: 12,
-              lineHeight: 1.6, outline: 'none', fontFamily: 'inherit',
-              color: '#111', minHeight: 80,
+              lineHeight: 1.6, outline: 'none', fontFamily: 'inherit', color: '#111',
             }}
           />
         )}
       </div>
 
-      {/* ── Close contact — 10% from bottom ──────────────────────────────── */}
-      <div style={{ paddingBottom: '10%', paddingTop: 12 }}>
+      {/* Close contact — sits below textarea, never overlaps */}
+      <div style={{ paddingBottom: 8, flexShrink: 0 }}>
         <button
           onClick={handleClose}
           style={{
             width: '100%', padding: '10px 0', borderRadius: 8,
             background: '#1a56db', color: '#fff', fontWeight: 700,
             fontSize: 13, border: 'none', cursor: 'pointer',
-            letterSpacing: '.2px',
           }}
         >
           Close contact
@@ -118,10 +111,9 @@ export function AfterCallWork({ slot }: Props) {
   );
 }
 
-const sectionLabelStyle: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, color: '#374151',
-  textTransform: 'uppercase', letterSpacing: '.5px',
-  marginBottom: 6,
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 11, fontWeight: 700, color: '#374151',
+  textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 5,
 };
 
 function skeletonStyle(height: number, marginTop = 0): React.CSSProperties {
