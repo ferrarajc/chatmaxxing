@@ -8,14 +8,17 @@ type Slots = [ContactSlot | null, ContactSlot | null, ContactSlot | null, Contac
 interface AgentStore {
   agentStatus: AgentStatus;
   slots: Slots;
+  dailyBonus: number;
 
   setAgentStatus: (s: AgentStatus) => void;
+  addBonus: (amount: number) => void;
 
   addContact: (
     contact: Omit<ContactSlot,
       | 'messages' | 'autopilotScope' | 'suggestedScope' | 'autopilotFlash'
       | 'autopilotPending' | 'suggestedText' | 'suggestedResources'
-      | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'>,
+      | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'
+      | 'bonusEligible' | 'acwData'>,
     initialMessages?: ChatMessage[]
   ) => number | null;
 
@@ -32,9 +35,11 @@ interface AgentStore {
 export const useAgentStore = create<AgentStore>((set, get) => ({
   agentStatus: 'Available',
   slots: [null, null, null, null],
+  dailyBonus: 0,
   pendingInserts: new Set(),
 
   setAgentStatus: (agentStatus) => set({ agentStatus }),
+  addBonus: (amount) => set(s => ({ dailyBonus: s.dailyBonus + amount })),
 
   addContact: (contact, initialMessages = []) => {
     const slots = [...get().slots] as Slots;
@@ -52,6 +57,8 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       lastAgentMessageAt: null,
       lastCustomerMessageAt: null,
       connectionToken: null,
+      bonusEligible: idx === 3,
+      acwData: null,
     };
     set({ slots });
     return idx;

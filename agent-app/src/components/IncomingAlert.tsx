@@ -4,6 +4,13 @@ import { useAgentStore } from '../store/agentStore';
 
 interface Props { slot: ContactSlot; }
 
+const COIN_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  fontSize: 20,
+  animation: 'bobFloat 1.6s ease-in-out infinite',
+  pointerEvents: 'none',
+};
+
 export function IncomingAlert({ slot }: Props) {
   const [countdown, setCountdown] = useState(10);
   const store = useAgentStore();
@@ -13,7 +20,6 @@ export function IncomingAlert({ slot }: Props) {
       setCountdown(c => {
         if (c <= 1) {
           clearInterval(tick);
-          // Auto-accept fires via the Streams timeout set in useConnectStreams
           return 0;
         }
         return c - 1;
@@ -38,6 +44,46 @@ export function IncomingAlert({ slot }: Props) {
       background: '#fff', borderRadius: 14, padding: 16, width: '100%',
       boxShadow: '0 4px 20px rgba(0,0,0,.12)', border: '2px solid #1a56db',
     }}>
+      {/* Bonus badge */}
+      {slot.bonusEligible && (
+        <>
+          <style>{`
+            @keyframes bobFloat {
+              0%,100% { transform: translateY(0) rotate(-10deg); }
+              50%      { transform: translateY(-8px) rotate(10deg); }
+            }
+            @keyframes bonusPop {
+              0%   { transform: scale(0.7); opacity: 0; }
+              70%  { transform: scale(1.08); }
+              100% { transform: scale(1); opacity: 1; }
+            }
+          `}</style>
+          <div style={{
+            position: 'relative', textAlign: 'center', marginBottom: 10,
+            background: 'linear-gradient(135deg,#fef9c3,#fde68a)',
+            border: '2px solid #f59e0b',
+            borderRadius: 12, padding: '10px 8px 8px',
+            animation: 'bonusPop .4s ease-out both',
+            overflow: 'visible',
+          }}>
+            {/* Flying bills */}
+            <span style={{ ...COIN_STYLE, top: -12, left: 8,  animationDelay: '0s'    }}>💵</span>
+            <span style={{ ...COIN_STYLE, top: -14, right: 12, animationDelay: '0.4s' }}>💵</span>
+            <span style={{ ...COIN_STYLE, top: -10, left: '40%', animationDelay: '0.8s' }}>🪙</span>
+
+            <div style={{ fontSize: 38, fontWeight: 900, color: '#15803d', lineHeight: 1, fontFamily: 'Georgia, serif' }}>
+              $50
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginTop: 2 }}>
+              Bonus opportunity
+            </div>
+            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, lineHeight: 1.3 }}>
+              Complete this chat with no defects today
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Countdown ring */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
         <div style={{

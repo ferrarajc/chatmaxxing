@@ -21,13 +21,20 @@ export interface Resource {
   url: string;
 }
 
+export interface ACWData {
+  wrapUpCode: string;
+  coaching: { positive: string; bullets: string[] };
+  summary: string;
+  wrapUpCodes?: string[];
+}
+
 export interface ContactSlot {
   contactId: string;
   clientId: string;
   clientName: string;
   intentSummary: string;
   intentGreeting: string;
-  status: 'incoming' | 'active' | 'ended';
+  status: 'incoming' | 'active' | 'ended' | 'acw';
   messages: ChatMessage[];
   /** Active autopilot scope; null = off */
   autopilotScope: AutopilotScope | null;
@@ -42,6 +49,10 @@ export interface ContactSlot {
   lastAgentMessageAt: number | null;
   lastCustomerMessageAt: number | null;
   connectionToken: string | null;
+  /** True when this contact occupies slot index 3 (4th active chat) */
+  bonusEligible: boolean;
+  /** Populated after chat ends for After Call Work UI; null while loading */
+  acwData: ACWData | null;
 }
 
 export type AgentStatus = 'Available' | 'Away' | 'Offline';

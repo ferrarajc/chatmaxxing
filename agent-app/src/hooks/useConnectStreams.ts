@@ -3,6 +3,7 @@ import 'amazon-connect-chatjs';
 import { useAgentStore } from '../store/agentStore';
 import { ChatMessage } from '../types';
 import { log } from '../api/logger';
+import { playChaChingSound } from '../utils/sounds';
 
 declare global {
   interface Window {
@@ -37,9 +38,17 @@ interface ConnectConnection {
   getMediaController: () => Promise<any>;
 }
 
+interface AgentState {
+  name: string;
+  agentStateARN: string;
+  type: string;
+}
+
 interface ConnectAgent {
   onStateChange: (cb: (e: { newState: { name: string } }) => void) => void;
   getName: () => string;
+  getAgentStates: () => AgentState[];
+  setState: (state: AgentState, opts?: { success?: () => void; failure?: () => void }) => void;
 }
 
 /** Parse pipe-separated "ROLE: content | ROLE: content" transcript from intentSummary */
@@ -64,6 +73,28 @@ function parseHistory(raw: string): ChatMessage[] {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const agentChatSessions = new Map<string, any>();
+
+/**
+ * Module-level Connect agent reference for external state changes (e.g. TopBar Available/Away).
+ * Set once when the agent initializes via window.connect.agent().
+ */
+let connectAgentInstance: ConnectAgent | null = null;
+
+/** Call Connect's agent setState API — used by TopBar Available/Away buttons. */
+export function setConnectAgentState(stateName: 'Available' | 'Away'): void {
+  if (!connectAgentInstance) return;
+  try {
+    const states = connectAgentInstance.getAgentStates();
+    const target = states.find(s => s.name === stateName);
+    if (target) {
+      connectAgentInstance.setState(target, {
+        failure: () => console.warn('Connect setState failed for', stateName),
+      });
+    }
+  } catch (e) {
+    console.warn('Could not set Connect agent state', e);
+  }
+}
 
 export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElement | null>) {
   const store = useAgentStore();
@@ -100,7 +131,6 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
         const rawHistory = attrs.intentSummary?.value ?? '';
         const initialMessages = parseHistory(rawHistory);
-        // Prefer AI-generated label; fall back to 'General inquiry'
         const displayLabel = attrs.intentLabel?.value || 'General inquiry';
         const intentGreeting = attrs.intentGreeting?.value || '';
 
@@ -151,17 +181,8 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
           // Streams CCP WebSocket proxy. Calling connect() on them establishes a
           // second, separate connection using browser IAM credentials, which have
           // an explicit deny for connectparticipant:SendMessage — causing a 403.
-          // onMessage() works regardless because the Streams proxy relays inbound
-          // messages. sendMessage() also works through the proxy when connect() is
-          // NOT called (the session uses the proxy's send channel directly).
-
           agentChatSessions.set(contactId, chatSession);
 
-          // Extract the connection token from chatjs session for server-side sending.
-          // connectionDetails.connectionToken is the connection token the CCP obtained
-          // via CreateParticipantConnection (provided to us via the Streams LPC channel).
-          // We pass this to our Lambda which calls SendMessage directly via raw fetch
-          // (bypassing SDK IAM signing that would otherwise be denied).
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const details = (chatSession as any).getChatDetails?.() ?? {};
@@ -183,10 +204,9 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             log.warn('useConnectStreams:getChatDetails:failed', e);
           }
 
-          // Receive messages from the customer (and suppress our own AGENT echoes)
           chatSession.onMessage(({ data: msg }: { data: { Type: string; ParticipantRole: string; Content: string } }) => {
             if (msg?.Type !== 'MESSAGE') return;
-            if (msg.ParticipantRole === 'AGENT') return; // suppress echo of own sent messages
+            if (msg.ParticipantRole === 'AGENT') return;
             const role = msg.ParticipantRole === 'CUSTOMER' ? 'CUSTOMER' as const : 'BOT' as const;
             useAgentStore.getState().appendMessage(contactId, { role, content: msg.Content });
             useAgentStore.getState().patchSlot(contactId, { lastCustomerMessageAt: Date.now() });
@@ -202,10 +222,21 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       contact.onEnded(() => {
         const timer = autoAcceptTimers.current.get(contactId);
         if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
-        contactRefs.current.delete(contactId);
+
+        // Keep contactRef alive — needed for contact.clear() when agent clicks Close Contact
+        // Do NOT delete from contactRefs here
+
         agentChatSessions.delete(contactId);
-        store.patchSlot(contactId, { status: 'ended' });
-        setTimeout(() => store.clearSlot(contactId), 3000);
+
+        // Bonus: if this was the 4th chat, play sound and tally
+        const slot = useAgentStore.getState().getSlot(contactId);
+        if (slot?.bonusEligible) {
+          playChaChingSound();
+          useAgentStore.getState().addBonus(50);
+        }
+
+        // Transition to ACW — do NOT auto-clear
+        store.patchSlot(contactId, { status: 'acw' });
       });
 
       contact.onDestroy(() => {
@@ -236,11 +267,26 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       store.clearSlot(contactId);
     };
 
+    // ── Close Contact (ACW → onDestroy → clearSlot) ───────────────────────────
+    const handleCloseContact = (e: Event) => {
+      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
+      const contact = contactRefs.current.get(contactId);
+      if (contact) {
+        try { contact.clear({}); }
+        catch { store.clearSlot(contactId); }
+      } else {
+        // No ref — fall back to direct clear
+        store.clearSlot(contactId);
+      }
+    };
+
     window.addEventListener('bobs:acceptContact', handleAccept);
     window.addEventListener('bobs:skipContact', handleSkip);
+    window.addEventListener('bobs:closeContact', handleCloseContact);
 
     // ── Agent state ───────────────────────────────────────────────────────────
     window.connect.agent(agent => {
+      connectAgentInstance = agent;
       agent.onStateChange(({ newState }) => {
         const name = newState.name;
         if (name === 'Available' || name === 'Away' || name === 'Offline') {
@@ -252,6 +298,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     return () => {
       window.removeEventListener('bobs:acceptContact', handleAccept);
       window.removeEventListener('bobs:skipContact', handleSkip);
+      window.removeEventListener('bobs:closeContact', handleCloseContact);
     };
   }, []);
 }

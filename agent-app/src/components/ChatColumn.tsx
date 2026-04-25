@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ContactSlot, ChatMessage, AutopilotScope } from '../types';
+import { ContactSlot, ChatMessage, AutopilotScope, ACWData } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { post } from '../api/client';
 import { log } from '../api/logger';
 import { IncomingAlert } from './IncomingAlert';
 import { ResponseTimer } from './ResponseTimer';
 import { AISupport } from './AISupport';
+import { AfterCallWork } from './AfterCallWork';
 import { CLIENT_PROFILES, DEFAULT_PROFILE } from '../data/clientProfiles';
 
 const AGENT_NAME = 'John Ferrara';
@@ -194,14 +195,15 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           scheduledTime: result.scheduleCallback.scheduledTimeISO,
           intentSummary: result.scheduleCallback.intentSummary,
         });
-        // Append system note so next Lambda turn knows callback was scheduled
+        // Append system note so next Lambda turn (triggered by customer reply) knows callback was scheduled
         store.appendMessage(contactId, {
           role: 'SYSTEM',
           content: `[CALLBACK_SCHEDULED] ${cbResult.displayTime} → ${result.scheduleCallback.phoneNumber}`,
         });
-        // Immediately run another turn so Lambda can ask "Is there anything else?"
-        setTimeout(() => runAutopilotTurn(contactId, scope), 200);
-        return; // don't process shouldExitAutopilot from the scheduling turn
+        // Do NOT fire another Lambda turn here — the agent already sent the confirmation.
+        // Wait for the customer to reply; the lastCustomerMsg effect will call runAutopilotTurn
+        // and the Lambda will proceed to "Is there anything else?" (Step 6 of CALLBACK_PROMPT).
+        return;
       } catch (e) {
         console.warn('Schedule callback failed', e);
         store.appendMessage(contactId, {
@@ -213,7 +215,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (result.shouldExitAutopilot) {
       exitAutopilot(contactId);
       if (result.closeChat) {
-        store.patchSlot(contactId, { status: 'ended' });
+        // Route through ACW (not 'ended') so the agent must explicitly close the contact.
+        // The ACW UI generates a summary and the agent clicks "Close contact" to end properly.
+        store.patchSlot(contactId, { status: 'acw' });
       }
     }
   };
@@ -389,6 +393,27 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     return () => clearInterval(timer);
   }, [slot?.contactId, slot?.status]);
 
+  // ── Effect: Generate ACW data when chat enters ACW state ──────────────
+  const slotStatus = slot?.status;
+  useEffect(() => {
+    if (!slot || slot.status !== 'acw' || slot.acwData !== null) return;
+    const cid = slot.contactId;
+    const clientProfile = CLIENT_PROFILES[slot.clientId] ?? DEFAULT_PROFILE;
+
+    post<ACWData & { wrapUpCodes?: string[] }>('/generate-acw', {
+      transcript: slot.messages,
+      clientProfile,
+    })
+      .then(data => store.patchSlot(cid, { acwData: data }))
+      .catch(() => store.patchSlot(cid, {
+        acwData: {
+          wrapUpCode: 'General Information',
+          coaching: { positive: 'Good interaction with the client.', bullets: [] },
+          summary: 'Chat session completed.',
+        },
+      }));
+  }, [slotStatus, slot?.contactId]);
+
   // ── Effect: Pending insert ─────────────────────────────────────────────
   const pendingInserts = store.pendingInserts;
   useEffect(() => {
@@ -413,7 +438,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
 
   const handleActivateAutopilot = (scope: AutopilotScope) => {
     if (!slot) return;
-    store.patchSlot(slot.contactId, { autopilotScope: scope, suggestedScope: null, suggestedText: '' });
+    // Keep suggestedText — the scope activation effect will consume it for get-intent/full-auto
+    store.patchSlot(slot.contactId, { autopilotScope: scope, suggestedScope: null });
   };
 
   const handleColumnClick = () => {
@@ -539,7 +565,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         </>
       )}
 
-      {/* Ended state */}
+      {/* Ended state (auto-closed via autopilot/timeout) */}
       {slot?.status === 'ended' && (
         <div style={{
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -548,6 +574,21 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           <div style={{ fontSize: 24 }}>✅</div>
           <div style={{ fontSize: 13 }}>Chat ended — {slot.clientName}</div>
         </div>
+      )}
+
+      {/* After Call Work */}
+      {slot?.status === 'acw' && (
+        <>
+          {/* ACW header */}
+          <div style={{
+            padding: '8px 14px', borderBottom: '1px solid #e5e7eb',
+            background: '#f8fafc', flexShrink: 0,
+          }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>{slot.clientName}</div>
+            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1 }}>After call work</div>
+          </div>
+          <AfterCallWork slot={slot} />
+        </>
       )}
     </div>
   );

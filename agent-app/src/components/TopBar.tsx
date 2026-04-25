@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAgentStore } from '../store/agentStore';
+import { setConnectAgentState } from '../hooks/useConnectStreams';
 
 const STATUS_COLORS: Record<string, string> = {
   Available: '#10b981',
@@ -13,8 +14,13 @@ interface Props {
 }
 
 export function TopBar({ ccpOpen, onToggleCcp }: Props) {
-  const { agentStatus, setAgentStatus } = useAgentStore();
+  const { agentStatus, setAgentStatus, dailyBonus } = useAgentStore();
   const active = useAgentStore(s => s.slots.filter(Boolean).length);
+
+  const handleStatusClick = (s: 'Available' | 'Away') => {
+    setAgentStatus(s);          // optimistic local update
+    setConnectAgentState(s);    // actual Connect API call
+  };
 
   return (
     <div style={{
@@ -32,12 +38,27 @@ export function TopBar({ ccpOpen, onToggleCcp }: Props) {
           Active chats: <strong>{active}</strong> / 4
         </span>
 
+        {/* Daily bonus tally — visible only when > 0 */}
+        {dailyBonus > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'rgba(34,197,94,0.18)', borderRadius: 20,
+            padding: '4px 12px', border: '1px solid rgba(34,197,94,0.4)',
+          }}>
+            <span style={{ fontSize: 15 }}>💰</span>
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#4ade80' }}>
+              ${dailyBonus}
+            </span>
+            <span style={{ fontSize: 11, color: '#86efac', opacity: 0.9 }}>today</span>
+          </div>
+        )}
+
         {/* Status toggle */}
         <div style={{ display: 'flex', gap: 6 }}>
           {(['Available', 'Away'] as const).map(s => (
             <button
               key={s}
-              onClick={() => setAgentStatus(s)}
+              onClick={() => handleStatusClick(s)}
               style={{
                 padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
                 border: `1.5px solid ${STATUS_COLORS[s]}`,

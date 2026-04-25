@@ -179,6 +179,19 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // ── generate-acw ──────────────────────────────────────────────
+    const generateAcwFn = new NodejsFunction(this, 'GenerateAcwFn', {
+      functionName: 'bobs-generate-acw',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'generate-acw/handler.ts'),
+      timeout: cdk.Duration.seconds(29),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+
     // ── send-agent-message ─────────────────────────────────────────
     const sendAgentMessageFn = new NodejsFunction(this, 'SendAgentMessageFn', {
       functionName: 'bobs-send-agent-message',
@@ -247,6 +260,7 @@ export class LambdaStack extends cdk.Stack {
       ['/next-best-response', nextBestResponseFn],
       ['/schedule-callback', scheduleCallbackFn],
       ['/autopilot-turn', autopilotTurnFn],
+      ['/generate-acw', generateAcwFn],
       ['/agent-connection', agentConnectionFn],
       ['/send-agent-message', sendAgentMessageFn],
       ['/client-log', clientLogFn],
