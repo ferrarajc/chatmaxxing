@@ -5,6 +5,7 @@ import {
   ClientProfile,
   formatTranscriptForBedrock,
   summarizeAccounts,
+  summarizeIntents,
   jsonResponse,
 } from '../shared/types';
 import { toZonedTime } from 'date-fns-tz';
@@ -54,7 +55,7 @@ For any of the above: set shouldExitAutopilot=true. Use the scripted response ve
 const GET_INTENT_PROMPT = (profile: ClientProfile, intent: string) =>
   `You are a live human financial services agent at Bob's Mutual Funds. You have already been connected to the client via chat — this is an ongoing live conversation.
 Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
-Current intent label: "${intent}".
+Current intent label: "${intent}".${summarizeIntents(profile.intents)}
 
 CRITICAL CONTEXT: You are the agent the client is already speaking with. Do NOT offer to "connect them to a live agent" or "transfer" them — you ARE the live agent. Do NOT say you will arrange anything externally. You are here, ready to help.
 
@@ -62,13 +63,13 @@ Your goal is GET INTENT: ask focused questions to fully understand what the clie
 ${FORBIDDEN_TOPICS}
 
 Rules:
-- Read the full transcript carefully. If you (the agent) have NOT yet sent any message, send a warm greeting introducing yourself by first name and acknowledge what you can see about their inquiry.
-- Otherwise, ask ONE focused clarifying question to better understand the client's need.
+- Read the full transcript carefully. If you (the agent) have NOT yet sent any message, send a warm greeting introducing yourself by first name, briefly acknowledge what you can see about their inquiry, and immediately ask your FIRST detail question. Do NOT ask "is that right?" or similar topic confirmations — the client already confirmed their intent by escalating to a live agent. Jump straight to collecting the specific details you need.
+- Otherwise, ask ONE focused clarifying question to fill the most important remaining blank.
 - Do NOT ask multiple questions at once.
-- Once you have a clear, specific and actionable understanding of the client's need, set shouldExitAutopilot=true so the agent can handle it directly. A single topic keyword (e.g. "RMD question") is NOT enough — you need to know exactly what they want to do before exiting.
-- NEVER set shouldExitAutopilot=true on the same turn you are sending your opening greeting. You must wait for the client to reply to at least one of your questions first.
+- Before deciding to exit, reason through: write out every piece of information you would need in order to take immediate action on this request with zero follow-up questions. Then check whether each of those pieces has been answered with a SPECIFIC answer (not just a topic confirmation). A client saying "yes", "correct", "you got it", or similar without giving a specific detail does NOT fill any blank — only concrete answers to specific questions count. If any blanks remain, ask ONE focused question to fill the most important gap. Only set shouldExitAutopilot=true once every piece is accounted for with a specific answer.
+- NEVER set shouldExitAutopilot=true on the same turn you are sending your opening greeting. You must wait for the client to reply to at least one of your detail questions first.
 - Set shouldExitAutopilot=true if the client asks to speak with a different person or escalate to a supervisor.
-- CRITICAL EXIT RULE: When setting shouldExitAutopilot=true, send ONLY a brief acknowledgment (e.g. "Got it, thank you — I'll have someone help you right away." or the scripted response for forbidden topics). Do NOT answer the question or provide information in the same turn you exit. The handoff response is the entire response.
+- CRITICAL EXIT RULE: When setting shouldExitAutopilot=true, send ONLY a brief acknowledgment that you (the agent) are personally about to take action — never imply someone else is coming. Examples: "Got it — let me look into that for you right now." / "Perfect, I have everything I need. Give me just a moment." / "Understood, I'll take care of that." For forbidden topics, use the scripted response verbatim. Do NOT answer the question or provide information in the same turn you exit. The acknowledgment is the entire response.
 
 Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
 
@@ -259,6 +260,17 @@ export const handler = async (
       shouldExitAutopilot = true;
       suggestedScope = 'callback';
     }
+
+    console.log(JSON.stringify({
+      event: 'autopilot_decision',
+      fn: 'autopilot-turn',
+      scope,
+      contactId: transcript[0]?.content?.slice(0, 8),
+      agentTurnCount: transcript.filter(m => m.role === 'AGENT').length,
+      shouldExitAutopilot,
+      suggestedScope,
+      responseChars: response.length,
+    }));
 
     return jsonResponse(200, {
       response,

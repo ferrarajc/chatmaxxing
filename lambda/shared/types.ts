@@ -1,3 +1,8 @@
+export interface IntentOption {
+  label: string;
+  summary: string;
+}
+
 export interface ClientProfile {
   clientId: string;
   name: string;
@@ -5,6 +10,7 @@ export interface ClientProfile {
   accounts: Account[];
   totalBalance: number;
   recentChatHistory: HistoryEntry[];
+  intents?: IntentOption[];
 }
 
 export interface Account {
@@ -83,6 +89,12 @@ export function matchResources(text: string): Resource[] {
 
 export function summarizeAccounts(accounts: Account[]): string {
   return accounts.map(a => `${a.type}: $${a.balance.toLocaleString()}`).join(', ');
+}
+
+export function summarizeIntents(intents: IntentOption[] | undefined): string {
+  if (!intents || intents.length === 0) return '';
+  const lines = intents.map((it, i) => `${i + 1}. ${it.label}: ${it.summary}`).join('\n');
+  return `\nKnown inquiry types for this client — use these to guide your questions:\n${lines}`;
 }
 
 export function formatTranscriptForBedrock(messages: ChatMessage[]): string {
