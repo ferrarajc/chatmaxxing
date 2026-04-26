@@ -110,6 +110,7 @@ Based on what's been collected, respond appropriately — one step at a time:
 4. If A, B, C are done and D is not done: Return scheduleCallback JSON with the extracted phone and time.
    RULES FOR THIS STEP: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=<filled in>.
    Your response should confirm the scheduled time to the client (e.g. "Great — I've scheduled your callback for [time]. You'll receive a call at [number].").
+   IMPORTANT: Always display phone numbers in (XXX) XXX-XXXX format in your response text. The phoneNumber field in scheduleCallback should still be 10 digits only.
    Do NOT ask "Is there anything else?" in this same turn. Stop here and wait.
 5. If D is done AND you have already asked "Is there anything else?":
    - If the client says no, thanks, or goodbye → send a warm closing message, set shouldExitAutopilot=true and closeChat=true.

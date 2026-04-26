@@ -9,6 +9,7 @@ import {
 } from '../shared/types';
 
 const WRAP_UP_CODES = [
+  'Access Authorization',
   'Account Inquiry',
   'Address Update',
   'Beneficiary Change',
@@ -44,15 +45,23 @@ const ACW_PROMPT = (profile: ClientProfile) =>
   `You are a quality assurance AI for Bob's Mutual Funds call center.
 Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
 
+The transcript below is a conversation between a CLIENT and an AGENT. Both voices are present.
+You are evaluating the AGENT's performance — not the client's.
+
 Review the conversation transcript and return ONLY valid JSON with:
 
 1. wrapUpCode: The single most appropriate wrap-up code from this exact list:
    ${WRAP_UP_CODES.join(', ')}
-   Pick the BEST match based on the primary topic of the chat. Return the code exactly as spelled above.
+   Pick the BEST match based on the primary topic. Use these definitions to disambiguate:
+   - "Access Authorization": granting or modifying another person's access to an account (e.g. spouse, family member, POA)
+   - "Beneficiary Change": updating the named beneficiary on an account (who inherits on death)
+   - "Account Inquiry": general questions about an account's status, balance, or features
+   Return the code exactly as spelled above.
 
-2. coaching: {
-     "positive": "One sentence of genuine, specific positive feedback written in second person (e.g. 'You did a great job...'). Encouraging and direct.",
-     "bullets": ["At most 1 short, specific, actionable improvement point written in second person (e.g. 'Consider trying...'). One sentence max. Omit entirely (empty array) if the interaction was excellent."]
+2. coaching: Evaluate the AGENT (not the client). Both sides of the conversation are in the transcript — focus only on what the agent said and did.
+   {
+     "positive": "One sentence of genuine, specific positive feedback for the AGENT written in second person (e.g. 'You did a great job clearly confirming the client's need before proceeding.'). Encouraging and direct.",
+     "bullets": ["At most 1 short, specific, actionable improvement point for the AGENT written in second person (e.g. 'Consider summarizing next steps more explicitly at the close.'). One sentence max. Omit entirely (empty array) if the interaction was excellent."]
    }
 
 3. summary: A factual 3-5 sentence summary of what was discussed, what actions were taken or promised, and the outcome.

@@ -76,9 +76,25 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {displayScope && (
-            <span style={{ fontSize: 10, fontWeight: 600, color: scopeColor }}>
-              {AUTOPILOT_SCOPE_LABELS[displayScope]}
-            </span>
+            <>
+              <style>{`
+                @keyframes scopePop {
+                  0%   { color: #f59e0b; transform: scale(1.25); letter-spacing: .6px; }
+                  50%  { color: #d97706; transform: scale(1.1);  letter-spacing: .4px; }
+                  100% { color: ${scopeColor}; transform: scale(1);    letter-spacing: normal; }
+                }
+              `}</style>
+              <span
+                key={displayScope}
+                style={{
+                  fontSize: 10, fontWeight: 600, color: scopeColor,
+                  display: 'inline-block',
+                  animation: !isActive ? 'scopePop 900ms ease-out forwards' : 'none',
+                }}
+              >
+                {AUTOPILOT_SCOPE_LABELS[displayScope]}
+              </span>
+            </>
           )}
           <div style={{ position: 'relative' }}>
             <button
