@@ -1,4 +1,5 @@
 export const WRAP_UP_CODES: string[] = [
+  'Access Authorization',
   'Account Inquiry',
   'Address Update',
   'Beneficiary Change',
