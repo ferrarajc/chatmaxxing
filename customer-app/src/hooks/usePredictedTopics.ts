@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useChatStore } from '../store/chatStore';
+import { useClientStore } from '../store/clientStore';
 import { post } from '../api/client';
-import { MOCK_CLIENT } from '../data/mock-client';
 
 interface PredictResponse {
   topics: string[];
@@ -10,10 +10,11 @@ interface PredictResponse {
 
 export function usePredictedTopics(currentPage: string) {
   const setTopics = useChatStore(s => s.setTopics);
+  const clientId = useClientStore(s => s.activePersona.clientId);
 
   useEffect(() => {
     post<PredictResponse>('/predict-intent', {
-      clientId: MOCK_CLIENT.clientId,
+      clientId,
       currentPage,
     })
       .then(res => setTopics(res.topics))
@@ -27,5 +28,5 @@ export function usePredictedTopics(currentPage: string) {
         };
         setTopics(fallbacks[currentPage] ?? ['Check my balance', 'Fund performance', 'Talk to an advisor', 'Account help']);
       });
-  }, [currentPage, setTopics]);
+  }, [currentPage, clientId, setTopics]);
 }
