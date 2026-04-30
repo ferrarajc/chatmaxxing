@@ -213,6 +213,18 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             log.info('useConnectStreams:onMessage', { contactId, role, preview: msg.Content.slice(0, 40) });
           });
 
+          chatSession.onConnectionEstablished(() => {
+            log.info('useConnectStreams:connectionEstablished', { contactId });
+          });
+
+          chatSession.onConnectionLost(() => {
+            log.warn('useConnectStreams:connectionLost', { contactId });
+          });
+
+          chatSession.onConnectionBroken(() => {
+            log.warn('useConnectStreams:connectionBroken', { contactId });
+          });
+
         } catch (e) {
           log.error('useConnectStreams:onConnected:failed', e);
           console.warn('Could not establish agent chat session', e);
