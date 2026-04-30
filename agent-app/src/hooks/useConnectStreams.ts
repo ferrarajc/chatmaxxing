@@ -242,7 +242,11 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       contact.onDestroy(() => {
         contactRefs.current.delete(contactId);
         agentChatSessions.delete(contactId);
-        store.clearSlot(contactId);
+        // Preserve the slot if we're in ACW so the agent can still review and close.
+        // The contact is already gone from Connect; Close Contact will just clear locally.
+        if (useAgentStore.getState().getSlot(contactId)?.status !== 'acw') {
+          store.clearSlot(contactId);
+        }
       });
     });
 

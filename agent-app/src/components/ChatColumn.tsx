@@ -107,9 +107,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const delaySecs = Math.max(1, Math.floor(text.length / 15));
     store.patchSlot(contactId, { autopilotPending: text });
     await sleep(delaySecs * 1000);
-    // Abort if scope was cancelled while waiting
+    // Abort if scope was cancelled while waiting, or if the chat already ended
     const fresh = store.getSlot(contactId);
-    if (!fresh || fresh.autopilotScope !== scope) {
+    if (!fresh || fresh.autopilotScope !== scope || fresh.status === 'acw') {
       store.patchSlot(contactId, { autopilotPending: null });
       return false;
     }
