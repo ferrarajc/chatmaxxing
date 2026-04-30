@@ -158,6 +158,7 @@ async function handleApiMode(
     const { currentPage, clientId } = JSON.parse(event.body ?? '{}');
 
     let recentTopics: string[] = [];
+    let accountTypes: string[] = [];
     if (clientId) {
       try {
         const result = await docClient.send(
@@ -166,6 +167,7 @@ async function handleApiMode(
         if (result.Item) {
           const profile = result.Item as ClientProfile;
           recentTopics = profile.recentChatHistory?.map(h => h.topic) ?? [];
+          accountTypes = profile.accounts?.map(a => a.type) ?? [];
         }
       } catch (e) {
         console.warn('Could not fetch client profile', e);
@@ -181,16 +183,26 @@ async function handleApiMode(
       account:   'Account settings page with personal info, security settings, beneficiary, and tax documents',
     };
 
-    // AI personalises order/wording when client has prior history; otherwise fallbacks win
+    // AI personalises when client has prior history or known account types; otherwise fallbacks win
     let aiTopics: string[] = [];
-    if (recentTopics.length > 0) {
+    if (recentTopics.length > 0 || accountTypes.length > 0) {
       try {
         const pageDesc = PAGE_DESCRIPTIONS[currentPage ?? 'home'] ?? PAGE_DESCRIPTIONS.home;
+        const accountCtx = accountTypes.length > 0
+          ? `Client's account types: ${accountTypes.join(', ')}.`
+          : '';
         const systemPrompt = `You are a virtual assistant for Bob's Mutual Funds, a financial services company.
 The client is on the following page: ${pageDesc}.
-Suggest exactly 4 short chat topics (max 5 words each) this specific client is likely to ask about, based on their recent history.
+${accountCtx}
+Suggest exactly 4 short chat topics (max 5 words each) this specific client is likely to ask about.
+IMPORTANT: Only suggest topics relevant to the account types listed. For example:
+- Do NOT suggest RMD topics unless the client has a Traditional IRA, 401(k), or similar pre-tax retirement account.
+- Do NOT suggest Roth conversion topics unless the client has a Traditional IRA or 401(k).
+- Do NOT suggest SEP-IRA contribution topics unless the client has a SEP-IRA.
 Prefer topics directly relevant to this page. Return ONLY valid JSON: {"topics": ["...", "...", "...", "..."]}`;
-        const userPrompt = `Client's recent topics: ${recentTopics.join(', ')}\nSuggest 4 personalised topics for this page.`;
+        const userPrompt = recentTopics.length > 0
+          ? `Client's recent topics: ${recentTopics.join(', ')}\nSuggest 4 personalised topics for this page.`
+          : 'Suggest 4 topics for this page based on the client\'s account types.';
         const raw = await invokeNovaMicro(userPrompt, systemPrompt, 150);
         const parsed = parseJsonFromBedrock<{ topics: string[] }>(raw);
         aiTopics = parsed.topics ?? [];

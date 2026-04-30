@@ -123,6 +123,24 @@ export class LambdaStack extends cdk.Stack {
       action: 'lambda:InvokeFunction',
     });
 
+    // ── predict-questions (two-level pill drill-down) ──────────────
+    const predictQuestionsFn = new NodejsFunction(this, 'PredictQuestionsFn', {
+      functionName: 'bobs-predict-questions',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'predict-questions/handler.ts'),
+      timeout: cdk.Duration.seconds(29),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    clientsTable.grantReadData(predictQuestionsFn);
+    predictQuestionsFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+      resources: ['*'],
+    }));
+
     // ── next-best-response ─────────────────────────────────────────
     const nextBestResponseFn = new NodejsFunction(this, 'NextBestResponseFn', {
       functionName: 'bobs-next-best-response',
@@ -261,6 +279,7 @@ export class LambdaStack extends cdk.Stack {
     const routes: [string, NodejsFunction][] = [
       ['/start-chat', startChatFn],
       ['/predict-intent', this.predictIntentFn],
+      ['/predict-questions', predictQuestionsFn],
       ['/next-best-response', nextBestResponseFn],
       ['/schedule-callback', scheduleCallbackFn],
       ['/autopilot-turn', autopilotTurnFn],
