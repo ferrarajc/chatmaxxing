@@ -14,6 +14,8 @@ export interface ChatStore {
   chatSession: any | null;  // amazon-connect-chatjs ChatSession object
   messages: ChatMessage[];
   predictedTopics: string[];
+  selectedTopic: string | null;
+  levelTwoQuestions: string[] | null;  // null = not yet fetched; [] = fetch failed/empty
   isTyping: boolean;
   escalationWaitTime: number | null;
   callbackConfirmation: CallbackConfirmation | null;
@@ -23,6 +25,8 @@ export interface ChatStore {
   setChatSession: (s: unknown, contactId: string, participantToken: string, participantId: string) => void;
   addMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   setTopics: (topics: string[]) => void;
+  setSelectedTopic: (topic: string | null) => void;
+  setLevelTwoQuestions: (questions: string[] | null) => void;
   setTyping: (v: boolean) => void;
   setEscalationWaitTime: (v: number | null) => void;
   setCallbackConfirmation: (v: CallbackConfirmation) => void;
@@ -37,6 +41,8 @@ const initial = {
   chatSession: null,
   messages: [],
   predictedTopics: [],
+  selectedTopic: null,
+  levelTwoQuestions: null,
   isTyping: false,
   escalationWaitTime: null,
   callbackConfirmation: null,
@@ -60,6 +66,8 @@ export const useChatStore = create<ChatStore>(set => ({
     })),
 
   setTopics: (predictedTopics) => set({ predictedTopics }),
+  setSelectedTopic: (selectedTopic) => set({ selectedTopic }),
+  setLevelTwoQuestions: (levelTwoQuestions) => set({ levelTwoQuestions }),
   setTyping: (isTyping) => set({ isTyping }),
   setEscalationWaitTime: (escalationWaitTime) => set({ escalationWaitTime }),
   setCallbackConfirmation: (callbackConfirmation) => set({ callbackConfirmation }),
