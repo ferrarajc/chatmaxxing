@@ -3,19 +3,13 @@ import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { ClientProfile, jsonResponse } from '../shared/types';
-
-const PAGE_DESCRIPTIONS: Record<string, string> = {
-  home:      'Home dashboard showing portfolio summary, market data, and featured funds',
-  portfolio: 'Portfolio page showing account balances, holdings, allocation chart, and recent transactions',
-  research:  'Fund research page with fund cards, performance data, and comparison tools',
-  account:   'Account settings page with personal info, security settings, beneficiary, and tax documents',
-};
+import { getKBTopicByLabel, getEligibleQuestions } from '../shared/kb';
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
   try {
-    const { topic, clientId, currentPage } = JSON.parse(event.body ?? '{}') as {
+    const { topic, clientId } = JSON.parse(event.body ?? '{}') as {
       topic: string;
       clientId: string;
       currentPage: string;
@@ -23,6 +17,11 @@ export const handler = async (
 
     if (!topic) {
       return jsonResponse(400, { error: 'topic is required' });
+    }
+
+    const kbTopic = getKBTopicByLabel(topic);
+    if (!kbTopic) {
+      return jsonResponse(200, { questions: [] });
     }
 
     let accountTypes: string[] = [];
@@ -40,29 +39,45 @@ export const handler = async (
       }
     }
 
-    const pageDesc = PAGE_DESCRIPTIONS[currentPage ?? 'home'] ?? PAGE_DESCRIPTIONS.home;
-    const accountCtx = accountTypes.length > 0
-      ? `Client's account types: ${accountTypes.join(', ')}.`
-      : '';
+    const eligible = getEligibleQuestions(kbTopic, accountTypes);
+    const fallback = eligible.slice(0, 4).map(q => ({ id: q.id, text: q.text, answer: q.answer }));
 
-    const systemPrompt = `You are a virtual assistant for Bob's Mutual Funds, a financial services company.
-${accountCtx}
-Current page: ${pageDesc}.
-Topic selected by client: "${topic}"
+    if (eligible.length <= 4) {
+      return jsonResponse(200, { questions: fallback });
+    }
 
-Generate exactly 4 specific questions this client is most likely to ask within the topic "${topic}".
-Rules:
-- Questions MUST be answerable using: account balance data, fund performance data, general educational info (IRAs, taxes, fund concepts), beneficiary or contact info updates, or callback scheduling.
-- Do NOT generate questions about: executing trades, personalized investment recommendations, fraud or security incidents, or account inheritance and estate matters.
-- Make questions specific to this client's account types (e.g. do not ask about RMDs if the client only has a Roth IRA or taxable account).
-- Each question should be concise — under 12 words.
-- Return ONLY valid JSON with no explanation: {"questions": ["...", "...", "...", "..."]}`;
+    // Ask Bedrock to select the 4 most relevant questions for this client
+    let questions = fallback;
+    try {
+      const systemPrompt = `You are a virtual assistant for Bob's Mutual Funds.
+Client account types: ${accountTypes.join(', ') || 'unknown'}.
+Topic: "${topic}".
 
-    const userPrompt = `Generate 4 common questions a client might ask about: "${topic}"`;
+From the list below, choose the 4 questions most relevant to this specific client.
+RULES:
+- You MUST select ONLY from the provided question IDs — do NOT invent IDs.
+- Return ONLY valid JSON: {"ids": ["...", "...", "...", "..."]}
 
-    const raw = await invokeNovaMicro(userPrompt, systemPrompt, 200);
-    const parsed = parseJsonFromBedrock<{ questions: string[] }>(raw);
-    const questions = (parsed.questions ?? []).slice(0, 4);
+Questions: ${eligible.map(q => `${q.id}: ${q.text}`).join(' | ')}`;
+
+      const raw = await invokeNovaMicro('Select 4 questions for this client.', systemPrompt, 100);
+      const parsed = parseJsonFromBedrock<{ ids: string[] }>(raw);
+      const eligibleIds = eligible.map(q => q.id);
+      const chosen = (parsed.ids ?? [])
+        .filter(id => eligibleIds.includes(id))
+        .map(id => eligible.find(q => q.id === id)!)
+        .filter(Boolean);
+
+      // Fill any missing slots from fallback
+      const filled = [...chosen];
+      for (const q of eligible) {
+        if (filled.length >= 4) break;
+        if (!filled.find(f => f.id === q.id)) filled.push(q);
+      }
+      questions = filled.slice(0, 4).map(q => ({ id: q.id, text: q.text, answer: q.answer }));
+    } catch (e) {
+      console.warn('Question selection failed, using fallback', e);
+    }
 
     return jsonResponse(200, { questions });
   } catch (err) {

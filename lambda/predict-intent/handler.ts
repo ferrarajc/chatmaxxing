@@ -4,12 +4,9 @@ import { docClient } from '../shared/dynamo-client';
 import { invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import {
   ClientProfile,
-  PAGE_TOPIC_MAP,
-  DEFAULT_TOPICS,
-  dedupeAndLimit,
-  summarizeAccounts,
   jsonResponse,
 } from '../shared/types';
+import { getEligibleTopics } from '../shared/kb';
 
 // ─── Lex V2 response builder helpers ──────────────────────────────────────────
 
@@ -151,6 +148,13 @@ export const handler = async (
   return handleLexMode(event as LexEvent);
 };
 
+const PAGE_DESCRIPTIONS: Record<string, string> = {
+  home:      'Home dashboard showing portfolio summary, market data, and featured funds',
+  portfolio: 'Portfolio page showing account balances, holdings, allocation chart, and recent transactions',
+  research:  'Fund research page with fund cards, performance data, and comparison tools',
+  account:   'Account settings page with personal info, security settings, beneficiary, and tax documents',
+};
+
 async function handleApiMode(
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> {
@@ -174,45 +178,52 @@ async function handleApiMode(
       }
     }
 
-    const fallbacks = PAGE_TOPIC_MAP[currentPage ?? 'home'] ?? DEFAULT_TOPICS;
+    const page = currentPage ?? 'home';
+    const pageDesc = PAGE_DESCRIPTIONS[page] ?? PAGE_DESCRIPTIONS.home;
 
-    const PAGE_DESCRIPTIONS: Record<string, string> = {
-      home:      'Home dashboard showing portfolio summary, market data, and featured funds',
-      portfolio: 'Portfolio page showing account balances, holdings, allocation chart, and recent transactions',
-      research:  'Fund research page with fund cards, performance data, and comparison tools',
-      account:   'Account settings page with personal info, security settings, beneficiary, and tax documents',
-    };
+    // Filter KB to topics eligible for this page + client's account types
+    const eligible = getEligibleTopics(page, accountTypes).map(t => t.label);
+    const fallback = eligible.slice(0, 4);
 
-    // AI personalises when client has prior history or known account types; otherwise fallbacks win
-    let aiTopics: string[] = [];
-    if (recentTopics.length > 0 || accountTypes.length > 0) {
-      try {
-        const pageDesc = PAGE_DESCRIPTIONS[currentPage ?? 'home'] ?? PAGE_DESCRIPTIONS.home;
-        const accountCtx = accountTypes.length > 0
-          ? `Client's account types: ${accountTypes.join(', ')}.`
-          : '';
-        const systemPrompt = `You are a virtual assistant for Bob's Mutual Funds, a financial services company.
-The client is on the following page: ${pageDesc}.
-${accountCtx}
-Suggest exactly 4 short chat topics (max 5 words each) this specific client is likely to ask about.
-IMPORTANT: Only suggest topics relevant to the account types listed. For example:
-- Do NOT suggest RMD topics unless the client has a Traditional IRA, 401(k), or similar pre-tax retirement account.
-- Do NOT suggest Roth conversion topics unless the client has a Traditional IRA or 401(k).
-- Do NOT suggest SEP-IRA contribution topics unless the client has a SEP-IRA.
-Prefer topics directly relevant to this page. Return ONLY valid JSON: {"topics": ["...", "...", "...", "..."]}`;
-        const userPrompt = recentTopics.length > 0
-          ? `Client's recent topics: ${recentTopics.join(', ')}\nSuggest 4 personalised topics for this page.`
-          : 'Suggest 4 topics for this page based on the client\'s account types.';
-        const raw = await invokeNovaMicro(userPrompt, systemPrompt, 150);
-        const parsed = parseJsonFromBedrock<{ topics: string[] }>(raw);
-        aiTopics = parsed.topics ?? [];
-      } catch (e) {
-        console.warn('Topic personalisation failed, using fallback', e);
-      }
+    if (eligible.length === 0) {
+      return jsonResponse(200, { topics: fallback, somethingElse: true });
     }
 
-    // Hardcoded page-specific topics anchor the list; AI personalisation prepends if available
-    const topics = dedupeAndLimit([...aiTopics, ...fallbacks], 4);
+    let topics: string[] = fallback;
+    try {
+      const systemPrompt = `You are a virtual assistant for Bob's Mutual Funds.
+Page: ${pageDesc}.
+Client account types: ${accountTypes.join(', ') || 'unknown'}.
+Recent topics: ${recentTopics.join(', ') || 'none'}.
+
+Select exactly 4 topics from the list below that are most relevant to this client right now.
+
+PAGE-SPECIFIC GUIDANCE:
+- portfolio page: Prioritize balance/transaction topics AND topics distinctive to this client's account types (e.g. SEP-IRA topics for SEP-IRA holders, RMD topics for Traditional IRA holders). Include "Fund performance" if eligible.
+- research page: Prioritize fund comparison and investment education topics. Do NOT repeat topics already covered on the portfolio page.
+- account page: Always include at least one of these account management topics if eligible: "Update contact info", "Security settings", "Change beneficiary". Also include account-type-specific topics.
+- home page: Always include at least one action/contact topic if eligible: "Schedule a callback", "Open a new account", "Auto-invest setup". Blend with relevant account-specific topics.
+
+RULES:
+- Select ONLY from the provided list — do NOT invent or rephrase any topic.
+- Return labels VERBATIM, character-for-character as they appear in the list.
+- Return ONLY valid JSON: {"topics": ["...", "...", "...", "..."]}
+
+Topic list: ${eligible.join(' | ')}`;
+
+      const raw = await invokeNovaMicro('Select 4 topics for this client.', systemPrompt, 150);
+      const parsed = parseJsonFromBedrock<{ topics: string[] }>(raw);
+      const selected = (parsed.topics ?? []).filter(t => eligible.includes(t));
+      // Fill any missing slots with fallback labels not already selected
+      const filled = [...selected];
+      for (const label of fallback) {
+        if (filled.length >= 4) break;
+        if (!filled.includes(label)) filled.push(label);
+      }
+      topics = filled.slice(0, 4);
+    } catch (e) {
+      console.warn('Topic selection failed, using fallback', e);
+    }
 
     return jsonResponse(200, { topics, somethingElse: true });
   } catch (err) {

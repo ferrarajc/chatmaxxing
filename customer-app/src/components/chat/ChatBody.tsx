@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useChatStore } from '../../store/chatStore';
 import { useClientStore } from '../../store/clientStore';
 import { usePredictQuestions } from '../../hooks/usePredictQuestions';
+import { KBQuestionResult } from '../../types';
 import { ChatMessage } from './ChatMessage';
 import { TopicButtons } from './TopicButtons';
 import { QuestionButtons } from './QuestionButtons';
@@ -14,6 +15,8 @@ interface Props {
 
 export function ChatBody({ currentPage, onSendMessage }: Props) {
   const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping } = useChatStore();
+  const addMessage = useChatStore(s => s.addMessage);
+  const setTyping = useChatStore(s => s.setTyping);
   const { activePersona } = useClientStore();
   const { fetchQuestions } = usePredictQuestions();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -32,9 +35,22 @@ export function ChatBody({ currentPage, onSendMessage }: Props) {
     fetchQuestions(topic, currentPage);
   };
 
-  const handleQuestionSelect = (question: string) => {
+  const handleQuestionSelect = (question: KBQuestionResult | 'Something else') => {
     topicsUsed.current = true;
-    onSendMessage(question);
+    if (question === 'Something else') {
+      onSendMessage('Something else');
+      return;
+    }
+    // Inject question as CUSTOMER message, then pre-written answer as BOT messages
+    addMessage({ role: 'CUSTOMER', content: question.text });
+    setTyping(true);
+    setTimeout(() => {
+      addMessage({ role: 'BOT', content: question.answer });
+      setTyping(true);
+      setTimeout(() => {
+        addMessage({ role: 'BOT', content: 'Is there anything else I can help you with?' });
+      }, 600);
+    }, 900);
   };
 
   const firstName = activePersona.name.split(' ')[0];
