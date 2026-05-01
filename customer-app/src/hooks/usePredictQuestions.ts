@@ -1,9 +1,10 @@
 import { useChatStore } from '../store/chatStore';
 import { useClientStore } from '../store/clientStore';
+import { KBQuestionResult } from '../types';
 import { post } from '../api/client';
 
 interface PredictQuestionsResponse {
-  questions: string[];
+  questions: KBQuestionResult[];
 }
 
 export function usePredictQuestions() {

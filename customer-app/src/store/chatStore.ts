@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ChatState, ChatMessage, CallbackConfirmation } from '../types';
+import { ChatState, ChatMessage, CallbackConfirmation, KBQuestionResult } from '../types';
 import { nanoid } from './nanoid';
 
 // Tiny nanoid replacement (no external dep)
@@ -15,7 +15,7 @@ export interface ChatStore {
   messages: ChatMessage[];
   predictedTopics: string[];
   selectedTopic: string | null;
-  levelTwoQuestions: string[] | null;  // null = not yet fetched; [] = fetch failed/empty
+  levelTwoQuestions: KBQuestionResult[] | null;  // null = not yet fetched; [] = fetch failed/empty
   isTyping: boolean;
   escalationWaitTime: number | null;
   callbackConfirmation: CallbackConfirmation | null;
@@ -26,7 +26,7 @@ export interface ChatStore {
   addMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   setTopics: (topics: string[]) => void;
   setSelectedTopic: (topic: string | null) => void;
-  setLevelTwoQuestions: (questions: string[] | null) => void;
+  setLevelTwoQuestions: (questions: KBQuestionResult[] | null) => void;
   setTyping: (v: boolean) => void;
   setEscalationWaitTime: (v: number | null) => void;
   setCallbackConfirmation: (v: CallbackConfirmation) => void;

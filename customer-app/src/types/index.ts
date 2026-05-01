@@ -20,3 +20,9 @@ export interface CallbackConfirmation {
   displayTime: string;
   message: string;
 }
+
+export interface KBQuestionResult {
+  id: string;
+  text: string;
+  answer: string;
+}
