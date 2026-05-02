@@ -7,11 +7,17 @@ export type ChatState =
   | 'CONNECTED_TO_AGENT'
   | 'CALLBACK_SCHEDULED';
 
+export interface ChatMessageLink {
+  text: string;
+  url: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'CUSTOMER' | 'BOT' | 'AGENT' | 'SYSTEM';
   content: string;
   timestamp: number;
+  link?: ChatMessageLink;
 }
 
 export interface CallbackConfirmation {
@@ -25,4 +31,5 @@ export interface KBQuestionResult {
   id: string;
   text: string;
   answer: string;
+  link?: ChatMessageLink;
 }

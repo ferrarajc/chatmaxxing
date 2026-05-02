@@ -1,39 +1,31 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChatMessage as Msg } from '../../types';
 
 interface Props { message: Msg; }
 
-/** Splits content on URLs and renders them as clickable <a> tags. */
 function renderWithLinks(content: string): React.ReactNode[] {
   const urlRegex = /https?:\/\/[^\s]+/g;
   const result: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = urlRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      result.push(content.slice(lastIndex, match.index));
-    }
+    if (match.index > lastIndex) result.push(content.slice(lastIndex, match.index));
     const url = match[0];
     result.push(
-      <a
-        key={match.index}
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
-      >
+      <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
+        style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}>
         {url}
       </a>,
     );
     lastIndex = match.index + url.length;
   }
-  if (lastIndex < content.length) {
-    result.push(content.slice(lastIndex));
-  }
+  if (lastIndex < content.length) result.push(content.slice(lastIndex));
   return result.length > 0 ? result : [content];
 }
 
 export function ChatMessage({ message }: Props) {
+  const navigate = useNavigate();
   const isCustomer = message.role === 'CUSTOMER';
   const isSystem = message.role === 'SYSTEM';
 
@@ -46,12 +38,7 @@ export function ChatMessage({ message }: Props) {
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: isCustomer ? 'flex-end' : 'flex-start',
-      gap: 6,
-      alignItems: 'flex-end',
-    }}>
+    <div style={{ display: 'flex', justifyContent: isCustomer ? 'flex-end' : 'flex-start', gap: 6, alignItems: 'flex-end' }}>
       {!isCustomer && (
         <div style={{
           width: 28, height: 28, borderRadius: '50%',
@@ -73,6 +60,21 @@ export function ChatMessage({ message }: Props) {
         textAlign: 'left',
       }}>
         {renderWithLinks(message.content)}
+        {message.link && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+            <button
+              onClick={() => navigate(message.link!.url)}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                color: '#1a56db', fontSize: 13, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 4,
+                textDecoration: 'none',
+              }}
+            >
+              <span style={{ fontSize: 12 }}>→</span> {message.link.text}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

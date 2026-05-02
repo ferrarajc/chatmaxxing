@@ -45,12 +45,12 @@ export function ChatBody({ currentPage, onSendMessage }: Props) {
     addMessage({ role: 'CUSTOMER', content: question.text });
     setTyping(true);
     setTimeout(() => {
-      addMessage({ role: 'BOT', content: question.answer });
+      addMessage({ role: 'BOT', content: question.answer, link: question.link });
       setTyping(true);
       setTimeout(() => {
-        addMessage({ role: 'BOT', content: 'Is there anything else I can help you with?' });
-      }, 600);
-    }, 900);
+        addMessage({ role: 'BOT', content: 'Feel free to ask if you have any other questions about this.' });
+      }, 900);
+    }, 1500);
   };
 
   const firstName = activePersona.name.split(' ')[0];
