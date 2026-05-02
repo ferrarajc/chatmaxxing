@@ -99,7 +99,7 @@ STRICT FIELD LIST — ONLY THESE, NOTHING ELSE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Task: ${task.name}
 
-Collect ONLY the fields listed below — in order. Do NOT ask about date of birth, Social Security number, driver's license, or anything else not listed, even if you believe it is normally required.
+Collect ONLY the fields listed below. Do NOT ask about date of birth, Social Security number, driver's license, or anything else not listed.
 ${preFilledSection}
 Fields to collect:
 ${fieldList}
@@ -117,11 +117,6 @@ A field is filled ONLY when the client gives a concrete, specific answer:
 ONE QUESTION PER TURN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Ask for exactly ONE field. Never combine. Never say "and also" or "I'll also need." Stop after one question.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TONE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Sound like a real person — warm, natural, brief. No corporate-speak. Not "I would like to confirm" or "Please provide your." Just talk naturally.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 HOW TO PROCEED
