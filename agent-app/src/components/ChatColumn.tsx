@@ -32,6 +32,13 @@ interface AutopilotTurnResult {
     scheduledTimeISO: string;
     intentSummary: string;
   } | null;
+  taskIdentified?: string | null;
+  proposedAction?: {
+    taskId: string;
+    taskName: string;
+    summary: string;
+    fields: Array<{ key: string; label: string; value: string }>;
+  } | null;
 }
 
 const RESEARCHING_MSGS = [
@@ -210,6 +217,27 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           role: 'SYSTEM', content: '⚠ Callback scheduling failed — please try manually.',
         });
       }
+    }
+
+    // Insert [TASK: id] system message when task is identified (phase 1)
+    if (result.taskIdentified) {
+      store.appendMessage(contactId, {
+        role: 'SYSTEM',
+        content: `[TASK: ${result.taskIdentified}]`,
+      });
+    }
+
+    // Handle proposed action — store it and exit autopilot
+    if (result.proposedAction) {
+      clearAutopilotTimers();
+      store.patchSlot(contactId, {
+        proposedAction: result.proposedAction,
+        autopilotScope: null,
+        autopilotFlash: true,
+        autopilotPending: null,
+      });
+      setTimeout(() => store.patchSlot(contactId, { autopilotFlash: false }), 100);
+      return;
     }
 
     if (result.shouldExitAutopilot) {

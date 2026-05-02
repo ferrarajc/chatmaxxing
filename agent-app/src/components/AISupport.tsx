@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ContactSlot, AutopilotScope, AUTOPILOT_SCOPE_LABELS } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { AutopilotMenu } from './AutopilotMenu';
+import { ProposedActionCard } from './ProposedActionCard';
 
 interface Props {
   slot: ContactSlot;
@@ -125,6 +126,11 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
       {/* ── Scrollable body ───────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
 
+        {/* Proposed Action Card — shown when get-intent has collected all fields */}
+        {slot.proposedAction && !slot.autopilotScope && (
+          <ProposedActionCard slot={slot} />
+        )}
+
         {/* Autopilot pending send */}
         {slot.autopilotPending && (
           <div style={{
@@ -140,8 +146,8 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
           </div>
         )}
 
-        {/* Suggested reply (only shown when autopilot is off) */}
-        {!slot.autopilotScope && slot.suggestedText && (
+        {/* Suggested reply (only shown when autopilot is off and no proposed action pending) */}
+        {!slot.autopilotScope && !slot.proposedAction && slot.suggestedText && (
           <div style={{
             background: '#eff6ff', borderRadius: 8, padding: '8px 10px',
             marginBottom: 8, border: '1px solid #bfdbfe',
@@ -162,8 +168,8 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
           </div>
         )}
 
-        {/* Relevant resources */}
-        {slot.suggestedResources.length > 0 && (
+        {/* Relevant resources (hidden when proposed action is pending) */}
+        {!slot.proposedAction && slot.suggestedResources.length > 0 && (
           <div>
             <div style={{
               fontSize: 11, color: '#6b7280', fontWeight: 600, marginBottom: 4,

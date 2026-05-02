@@ -53,6 +53,21 @@ export interface ContactSlot {
   bonusEligible: boolean;
   /** Populated after chat ends for After Call Work UI; null while loading */
   acwData: ACWData | null;
+  /** Populated when get-intent scope collects all required fields; cleared after submit/reject */
+  proposedAction: ProposedActionData | null;
 }
 
 export type AgentStatus = 'Available' | 'Away' | 'Offline';
+
+export interface ProposedActionField {
+  key: string;
+  label: string;
+  value: string;
+}
+
+export interface ProposedActionData {
+  taskId: string;
+  taskName: string;
+  summary: string;
+  fields: ProposedActionField[];
+}

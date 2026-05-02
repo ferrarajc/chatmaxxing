@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ContactSlot, AgentStatus, ChatMessage, AutopilotScope } from '../types';
+import { ContactSlot, AgentStatus, ChatMessage, AutopilotScope, ProposedActionData } from '../types';
 
 const nanoid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -18,7 +18,7 @@ interface AgentStore {
       | 'messages' | 'autopilotScope' | 'suggestedScope' | 'autopilotFlash'
       | 'autopilotPending' | 'suggestedText' | 'suggestedResources'
       | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'
-      | 'bonusEligible' | 'acwData'>,
+      | 'bonusEligible' | 'acwData' | 'proposedAction'>,
     initialMessages?: ChatMessage[]
   ) => number | null;
 
@@ -59,6 +59,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       connectionToken: null,
       bonusEligible: idx === 3,
       acwData: null,
+      proposedAction: null,
     };
     set({ slots });
     return idx;

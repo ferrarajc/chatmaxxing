@@ -258,6 +258,21 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // ── execute-task (agent proposed-action execution) ─────────────
+    const executeTaskFn = new NodejsFunction(this, 'ExecuteTaskFn', {
+      functionName: 'bobs-execute-task',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'execute-task/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    clientsTable.grantReadWriteData(executeTaskFn);
+    callbacksTable.grantReadWriteData(executeTaskFn);
+
     // ── client-data (beneficiaries / auto-invest / RMD read+write) ─
     const clientDataFn = new NodejsFunction(this, 'ClientDataFn', {
       functionName: 'bobs-client-data',
@@ -304,6 +319,7 @@ export class LambdaStack extends cdk.Stack {
       ['/send-agent-message', sendAgentMessageFn],
       ['/client-log', clientLogFn],
       ['/client-data', clientDataFn],
+      ['/execute-task', executeTaskFn],
     ];
     for (const [path, fn] of routes) {
       api.addRoutes({

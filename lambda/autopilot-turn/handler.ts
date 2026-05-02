@@ -8,6 +8,7 @@ import {
   summarizeIntents,
   jsonResponse,
 } from '../shared/types';
+import { TASKS, matchTaskByIntent, filterFields } from '../shared/tasks';
 import { toZonedTime } from 'date-fns-tz';
 
 type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' | 'full-auto';
@@ -52,6 +53,79 @@ FORBIDDEN TOPICS — respond with the scripted text below and set shouldExitAuto
 
 For any of the above: set shouldExitAutopilot=true. Use the scripted response verbatim (you may adjust minor phrasing to fit context). Do NOT attempt to answer these topics yourself.`;
 
+// ── Task-driven GET INTENT prompt (phase 2: field collection) ──────────────
+
+function buildTaskFieldPrompt(
+  profile: ClientProfile,
+  taskId: string,
+  collectedSoFar: Record<string, string>,
+): string {
+  const task = TASKS.find(t => t.id === taskId);
+  if (!task) return '';
+
+  const accountTypes = profile.accounts.map(a => a.type);
+  const fields = filterFields(task, accountTypes, profile.accounts.length, collectedSoFar);
+
+  // Pre-filled values (e.g. accountId when only 1 account exists)
+  const preFilled: string[] = [];
+  if (task.fields.some(f => f.requiresMultipleAccounts) && profile.accounts.length === 1) {
+    preFilled.push(`Account: ${profile.accounts[0].type} (${profile.accounts[0].id})`);
+  }
+
+  const fieldList = fields
+    .map((f, i) => `${i + 1}. ${f.label}: ${f.question}`)
+    .join('\n');
+
+  const preFilledSection = preFilled.length > 0
+    ? `\nAlready confirmed from client profile:\n${preFilled.map(v => `  • ${v}`).join('\n')}\n`
+    : '';
+
+  return `You are a live financial services agent at Bob's Mutual Funds handling a chat.
+Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
+${summarizeIntents(profile.intents)}
+
+Task you are completing: ${task.name}
+${task.description}
+${preFilledSection}
+REQUIRED information to collect (ask them one at a time, in this exact order):
+${fieldList}
+
+Read the full conversation transcript carefully. For each required field above, determine whether the client has already provided a SPECIFIC value in this conversation.
+
+Rules:
+1. Ask for EXACTLY ONE uncollected required field per turn — the next one in the list that has no specific answer yet.
+2. A generic "yes", "correct", "sure", "okay" from the client does NOT fill a field — only concrete, specific values count.
+3. Before moving to the next field, briefly confirm what you heard (e.g. "Got it — [value].").
+4. When ALL required fields have specific collected values: set shouldExitAutopilot=true and populate proposedAction.
+5. Exit response when done: "Perfect, I have everything I need. Let me prepare that for your agent's review." — nothing else.
+6. Do NOT ask about anything outside the required fields list above.
+${FORBIDDEN_TOPICS}
+
+Return ONLY valid JSON:
+{
+  "response": "...",
+  "collectedFields": {
+    "fieldKey": "extracted specific value, or null if not yet answered"
+  },
+  "shouldExitAutopilot": false,
+  "taskIdentified": null,
+  "proposedAction": null
+}
+
+When ALL required fields are collected, return proposedAction:
+{
+  "taskId": "${task.id}",
+  "taskName": "${task.name}",
+  "summary": "one clear sentence describing exactly what the client has requested",
+  "fields": [
+    { "key": "fieldKey", "label": "Field Label", "value": "collected value" }
+  ]
+}
+Include ALL fields in proposedAction.fields — both pre-filled and collected.`;
+}
+
+// ── General GET INTENT prompt (fallback when no task matched) ──────────────
+
 const GET_INTENT_PROMPT = (profile: ClientProfile, intent: string) =>
   `You are a live human financial services agent at Bob's Mutual Funds. You have already been connected to the client via chat — this is an ongoing live conversation.
 Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
@@ -71,7 +145,7 @@ Rules:
 - Set shouldExitAutopilot=true if the client asks to speak with a different person or escalate to a supervisor.
 - CRITICAL EXIT RULE: When setting shouldExitAutopilot=true, send ONLY a brief acknowledgment that you (the agent) are personally about to take action — never imply someone else is coming. Examples: "Got it — let me look into that for you right now." / "Perfect, I have everything I need. Give me just a moment." / "Understood, I'll take care of that." For forbidden topics, use the scripted response verbatim. Do NOT answer the question or provide information in the same turn you exit. The acknowledgment is the entire response.
 
-Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
+Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null, "taskIdentified": null, "proposedAction": null}`;
 
 const RESEARCHING_PROMPT = (profile: ClientProfile) =>
   `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
@@ -168,6 +242,7 @@ Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "sugge
 // ── Escalation hard-override ───────────────────────────────────────────────
 const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
+const CALLBACK_INTENT_RE = /\b(callback|call back|schedule.*call|phone call|call me|ring me)\b/i;
 
 // ── Handler ────────────────────────────────────────────────────────────────
 
@@ -202,7 +277,160 @@ export const handler = async (
 
     const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
 
-    // Pick scope-specific prompt
+    // ── Task-driven get-intent logic ───────────────────────────────────────
+    let taskIdentifiedForResponse: string | null = null;
+
+    if (scope === 'get-intent') {
+      // If callback intent — suggest switching to the callback scope immediately
+      if (CALLBACK_INTENT_RE.test(currentIntent ?? '') || CALLBACK_INTENT_RE.test(lastCustomerMsg)) {
+        return jsonResponse(200, {
+          response: '',
+          shouldExitAutopilot: true,
+          suggestedScope: 'callback',
+          closeChat: false,
+          scheduleCallback: null,
+          taskIdentified: null,
+          proposedAction: null,
+        });
+      }
+
+      // Check if a task has already been identified (look for [TASK: id] in transcript)
+      const taskMarker = transcript
+        .filter(m => m.role === 'SYSTEM')
+        .map(m => m.content.match(/^\[TASK:\s*([^\]]+)\]$/))
+        .find(Boolean);
+
+      const activeTaskId = taskMarker?.[1]?.trim() ?? null;
+
+      if (activeTaskId) {
+        // Phase 2: field collection — use task-driven prompt
+        const taskPrompt = buildTaskFieldPrompt(profile, activeTaskId, {});
+        if (taskPrompt) {
+          let raw: string;
+          try {
+            raw = await invokeNovaMicro(
+              formatTranscriptForBedrock(transcript),
+              taskPrompt,
+              700,
+              { fn: 'autopilot-turn', scope: `get-intent:${activeTaskId}` },
+            );
+          } catch (e) {
+            console.warn('Task field collection LLM call failed', e);
+            return jsonResponse(200, {
+              response: "I'm still gathering the details for you — could you repeat that?",
+              shouldExitAutopilot: false,
+              suggestedScope: null,
+              closeChat: false,
+              scheduleCallback: null,
+              taskIdentified: null,
+              proposedAction: null,
+            });
+          }
+
+          const parsed = parseJsonFromBedrock<{
+            response: string;
+            collectedFields?: Record<string, string | null>;
+            shouldExitAutopilot: boolean;
+            taskIdentified?: string | null;
+            proposedAction?: {
+              taskId: string;
+              taskName: string;
+              summary: string;
+              fields: Array<{ key: string; label: string; value: string }>;
+            } | null;
+          }>(raw);
+
+          // Business-rule hard overrides
+          let shouldExit = parsed.shouldExitAutopilot ?? false;
+          if (ESCALATION_RE.test(lastCustomerMsg)) shouldExit = true;
+
+          console.log(JSON.stringify({
+            event: 'autopilot_decision',
+            fn: 'autopilot-turn',
+            scope: `get-intent:${activeTaskId}`,
+            shouldExitAutopilot: shouldExit,
+            hasProposedAction: !!parsed.proposedAction,
+            responseChars: (parsed.response ?? '').length,
+          }));
+
+          return jsonResponse(200, {
+            response: parsed.response ?? '',
+            shouldExitAutopilot: shouldExit,
+            suggestedScope: null,
+            closeChat: false,
+            scheduleCallback: null,
+            taskIdentified: null,
+            proposedAction: parsed.proposedAction ?? null,
+          });
+        }
+      } else {
+        // Phase 1: task identification — try keyword match first (no LLM call)
+        const accountTypes = profile.accounts.map(a => a.type);
+        const matchedTask = matchTaskByIntent(currentIntent ?? '', accountTypes);
+
+        if (matchedTask) {
+          // Task identified — inject task marker and start field collection in this same turn
+          taskIdentifiedForResponse = matchedTask.id;
+
+          // Build the phase 2 prompt and call LLM for the first question
+          const taskPrompt = buildTaskFieldPrompt(profile, matchedTask.id, {});
+          let raw: string;
+          try {
+            raw = await invokeNovaMicro(
+              formatTranscriptForBedrock(transcript),
+              taskPrompt,
+              700,
+              { fn: 'autopilot-turn', scope: `get-intent:identify:${matchedTask.id}` },
+            );
+          } catch (e) {
+            console.warn('Task identification LLM call failed', e);
+            // Still return taskIdentified so agent app stores the task
+            return jsonResponse(200, {
+              response: `I can help you with that. Let me get a few details.`,
+              shouldExitAutopilot: false,
+              suggestedScope: null,
+              closeChat: false,
+              scheduleCallback: null,
+              taskIdentified: matchedTask.id,
+              proposedAction: null,
+            });
+          }
+
+          const parsed = parseJsonFromBedrock<{
+            response: string;
+            collectedFields?: Record<string, string | null>;
+            shouldExitAutopilot: boolean;
+            taskIdentified?: string | null;
+            proposedAction?: unknown | null;
+          }>(raw);
+
+          let shouldExit = parsed.shouldExitAutopilot ?? false;
+          if (ESCALATION_RE.test(lastCustomerMsg)) shouldExit = true;
+
+          console.log(JSON.stringify({
+            event: 'autopilot_decision',
+            fn: 'autopilot-turn',
+            scope: `get-intent:identify:${matchedTask.id}`,
+            shouldExitAutopilot: shouldExit,
+            responseChars: (parsed.response ?? '').length,
+          }));
+
+          return jsonResponse(200, {
+            response: parsed.response ?? '',
+            shouldExitAutopilot: shouldExit,
+            suggestedScope: null,
+            closeChat: false,
+            scheduleCallback: null,
+            taskIdentified: matchedTask.id,
+            proposedAction: null,
+          });
+        }
+        // No match — fall through to general GET_INTENT_PROMPT below
+      }
+    }
+
+    // ── Standard scope handling ────────────────────────────────────────────
+
     let systemPrompt: string;
     switch (scope) {
       case 'get-intent':
@@ -279,6 +507,8 @@ export const handler = async (
       suggestedScope,
       closeChat,
       scheduleCallback,
+      taskIdentified: taskIdentifiedForResponse,
+      proposedAction: null,
     });
   } catch (err) {
     console.error('autopilot-turn error', err);
