@@ -258,6 +258,20 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // ── client-data (beneficiaries / auto-invest / RMD read+write) ─
+    const clientDataFn = new NodejsFunction(this, 'ClientDataFn', {
+      functionName: 'bobs-client-data',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'client-data/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    clientsTable.grantReadWriteData(clientDataFn);
+
     // ── HTTP API Gateway ───────────────────────────────────────────
     const api = new apigwv2.HttpApi(this, 'BobsApi', {
       apiName: 'bobs-api',
@@ -269,6 +283,8 @@ export class LambdaStack extends cdk.Stack {
         ],
         allowMethods: [
           apigwv2.CorsHttpMethod.POST,
+          apigwv2.CorsHttpMethod.GET,
+          apigwv2.CorsHttpMethod.PUT,
           apigwv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ['content-type', 'authorization'],
@@ -287,6 +303,7 @@ export class LambdaStack extends cdk.Stack {
       ['/agent-connection', agentConnectionFn],
       ['/send-agent-message', sendAgentMessageFn],
       ['/client-log', clientLogFn],
+      ['/client-data', clientDataFn],
     ];
     for (const [path, fn] of routes) {
       api.addRoutes({

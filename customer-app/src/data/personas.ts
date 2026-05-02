@@ -1,6 +1,45 @@
 // All client personas for the Bob's Mutual Funds demo.
 // Each persona is a self-contained dataset that drives every page in the customer app.
 
+export interface Beneficiary {
+  id: string;
+  accountId: string;
+  accountType: string;
+  type: 'Primary' | 'Contingent';
+  name: string;
+  relationship: string;
+  dob: string;
+  ssn: string;  // masked
+  percentage: number;
+}
+
+export interface AutoInvestSchedule {
+  id: string;
+  accountId: string;
+  accountType: string;
+  fund: string;
+  ticker: string;
+  amount: number;
+  frequency: 'Monthly' | 'Bi-weekly' | 'Quarterly';
+  dayOfMonth?: number;
+  nextDate: string;
+  active: boolean;
+}
+
+export interface RmdData {
+  eligible: boolean;
+  age?: number;
+  accountId?: string;
+  priorYearBalance?: number;
+  lifeExpectancyFactor?: number;
+  annualRmd?: number;
+  takenThisYear?: number;
+  remainingThisYear?: number;
+  nextDeadline?: string;
+  distributions?: { date: string; amount: number; method: string; withheld: number }[];
+  projectedEligibilityYear?: number;  // for clients not yet at RMD age
+}
+
 export interface Persona {
   clientId: string;
   name: string;
@@ -12,6 +51,9 @@ export interface Persona {
   totalBalance: number;
   holdings: { name: string; ticker: string; shares: number; price: number; change: number; value: number }[];
   transactions: { date: string; description: string; amount: number; account: string }[];
+  beneficiaries: Beneficiary[];
+  autoInvest: AutoInvestSchedule[];
+  rmd: RmdData;
 }
 
 // ── Alex Johnson ──────────────────────────────────────────────────────────────
@@ -43,6 +85,21 @@ const alexJohnson: Persona = {
     { date: '2025-03-15', description: 'Dividend reinvestment - BFBI',       amount: +62.40,   account: 'Traditional IRA'  },
     { date: '2025-03-01', description: 'Monthly contribution',               amount: +583.33,  account: 'Roth IRA'         },
   ],
+  beneficiaries: [
+    { id: 'ben-001', accountId: 'acc-001', accountType: 'Roth IRA',        type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',     dob: '1988-03-14', ssn: '***-**-4721', percentage: 100 },
+    { id: 'ben-002', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',     dob: '1988-03-14', ssn: '***-**-4721', percentage: 60  },
+    { id: 'ben-003', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Tyler Johnson',  relationship: 'Child',      dob: '2015-07-22', ssn: '***-**-8834', percentage: 20  },
+    { id: 'ben-004', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Emma Johnson',   relationship: 'Child',      dob: '2018-11-03', ssn: '***-**-9251', percentage: 20  },
+    { id: 'ben-005', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Contingent', name: 'Robert Johnson', relationship: 'Parent',     dob: '1958-04-09', ssn: '***-**-3317', percentage: 100 },
+    { id: 'ben-006', accountId: 'acc-003', accountType: 'Taxable Account', type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',     dob: '1988-03-14', ssn: '***-**-4721', percentage: 100 },
+  ],
+  autoInvest: [
+    { id: 'ai-001', accountId: 'acc-001', accountType: 'Roth IRA', fund: 'BobsFunds 500 Index', ticker: 'BF500', amount: 583.33, frequency: 'Monthly', dayOfMonth: 1, nextDate: '2025-05-01', active: true },
+  ],
+  rmd: {
+    eligible: false,
+    projectedEligibilityYear: 2040,  // Alex turns 73 in ~2040
+  },
 };
 
 // ── Maria Chen ────────────────────────────────────────────────────────────────
@@ -72,6 +129,29 @@ const mariaChen: Persona = {
     { date: '2025-03-10', description: 'Purchase - BobsFunds Bond Income',   amount: -25000.00, account: 'Taxable Account' },
     { date: '2025-02-15', description: 'Dividend reinvestment - BF500',      amount: +621.25,   account: 'Traditional IRA' },
   ],
+  beneficiaries: [
+    { id: 'ben-201', accountId: 'acc-201', accountType: 'Traditional IRA', type: 'Primary',    name: 'David Chen',    relationship: 'Child',  dob: '1975-06-18', ssn: '***-**-5529', percentage: 50 },
+    { id: 'ben-202', accountId: 'acc-201', accountType: 'Traditional IRA', type: 'Primary',    name: 'Linda Chen',    relationship: 'Child',  dob: '1978-02-27', ssn: '***-**-8843', percentage: 50 },
+    { id: 'ben-203', accountId: 'acc-202', accountType: 'Taxable Account', type: 'Primary',    name: 'David Chen',    relationship: 'Child',  dob: '1975-06-18', ssn: '***-**-5529', percentage: 50 },
+    { id: 'ben-204', accountId: 'acc-202', accountType: 'Taxable Account', type: 'Primary',    name: 'Linda Chen',    relationship: 'Child',  dob: '1978-02-27', ssn: '***-**-8843', percentage: 50 },
+  ],
+  autoInvest: [],
+  rmd: {
+    eligible: true,
+    age: 74,
+    accountId: 'acc-201',
+    priorYearBalance: 628000,
+    lifeExpectancyFactor: 23.8,
+    annualRmd: 26387,
+    takenThisYear: 15300,
+    remainingThisYear: 11087,
+    nextDeadline: '2025-12-31',
+    distributions: [
+      { date: '2025-04-10', amount: 15300, method: 'Direct deposit — Wellesley Savings Bank', withheld: 1530 },
+      { date: '2024-12-15', amount: 25800, method: 'Direct deposit — Wellesley Savings Bank', withheld: 2580 },
+      { date: '2023-12-14', amount: 24100, method: 'Direct deposit — Wellesley Savings Bank', withheld: 2410 },
+    ],
+  },
 };
 
 // ── Jordan Williams ───────────────────────────────────────────────────────────
@@ -99,6 +179,14 @@ const jordanWilliams: Persona = {
     { date: '2025-02-01', description: 'Monthly contribution',               amount: +583.33,  account: 'Roth IRA'        },
     { date: '2025-01-15', description: 'Purchase - BobsFunds Growth',        amount: -500.00,  account: 'Roth IRA'        },
   ],
+  beneficiaries: [
+    { id: 'ben-301', accountId: 'acc-301', accountType: 'Roth IRA',        type: 'Primary', name: 'Casey Williams', relationship: 'Sibling', dob: '1993-09-05', ssn: '***-**-7712', percentage: 100 },
+    { id: 'ben-302', accountId: 'acc-302', accountType: 'Taxable Account', type: 'Primary', name: 'Casey Williams', relationship: 'Sibling', dob: '1993-09-05', ssn: '***-**-7712', percentage: 100 },
+  ],
+  autoInvest: [
+    { id: 'ai-301', accountId: 'acc-301', accountType: 'Roth IRA', fund: 'BobsFunds 500 Index', ticker: 'BF500', amount: 583.33, frequency: 'Monthly', dayOfMonth: 1, nextDate: '2025-05-01', active: true },
+  ],
+  rmd: { eligible: false },
 };
 
 // ── Robert Martinez ───────────────────────────────────────────────────────────
@@ -129,6 +217,18 @@ const robertMartinez: Persona = {
     { date: '2025-03-15', description: 'Dividend reinvestment - BF500',      amount: +831.00,   account: 'Taxable Account' },
     { date: '2025-02-15', description: 'Rebalance - Sale BobsFunds Growth',  amount: -10000.00, account: 'Taxable Account' },
   ],
+  beneficiaries: [
+    { id: 'ben-401', accountId: 'acc-401', accountType: 'SEP-IRA',         type: 'Primary',    name: 'Elena Martinez',  relationship: 'Spouse',  dob: '1976-12-08', ssn: '***-**-2241', percentage: 100 },
+    { id: 'ben-402', accountId: 'acc-402', accountType: 'Roth IRA',        type: 'Primary',    name: 'Elena Martinez',  relationship: 'Spouse',  dob: '1976-12-08', ssn: '***-**-2241', percentage: 60  },
+    { id: 'ben-403', accountId: 'acc-402', accountType: 'Roth IRA',        type: 'Primary',    name: 'Sofia Martinez',  relationship: 'Child',   dob: '2008-03-19', ssn: '***-**-6618', percentage: 20  },
+    { id: 'ben-404', accountId: 'acc-402', accountType: 'Roth IRA',        type: 'Primary',    name: 'Marco Martinez',  relationship: 'Child',   dob: '2011-08-14', ssn: '***-**-7723', percentage: 20  },
+    { id: 'ben-405', accountId: 'acc-403', accountType: 'Taxable Account', type: 'Primary',    name: 'Elena Martinez',  relationship: 'Spouse',  dob: '1976-12-08', ssn: '***-**-2241', percentage: 100 },
+  ],
+  autoInvest: [
+    { id: 'ai-401', accountId: 'acc-401', accountType: 'SEP-IRA', fund: 'BobsFunds 500 Index', ticker: 'BF500', amount: 5000, frequency: 'Quarterly', nextDate: '2025-07-01', active: true },
+    { id: 'ai-402', accountId: 'acc-401', accountType: 'SEP-IRA', fund: 'BobsFunds Bond Income', ticker: 'BFBI', amount: 2500, frequency: 'Quarterly', nextDate: '2025-07-01', active: true },
+  ],
+  rmd: { eligible: false },
 };
 
 export const PERSONAS: Persona[] = [alexJohnson, mariaChen, jordanWilliams, robertMartinez];

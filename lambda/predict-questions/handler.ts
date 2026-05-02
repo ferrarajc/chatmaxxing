@@ -40,7 +40,7 @@ export const handler = async (
     }
 
     const eligible = getEligibleQuestions(kbTopic, accountTypes);
-    const fallback = eligible.slice(0, 4).map(q => ({ id: q.id, text: q.text, answer: q.answer }));
+    const fallback = eligible.slice(0, 4).map(q => ({ id: q.id, text: q.text, answer: q.answer, link: q.link }));
 
     if (eligible.length <= 4) {
       return jsonResponse(200, { questions: fallback });
@@ -74,7 +74,7 @@ Questions: ${eligible.map(q => `${q.id}: ${q.text}`).join(' | ')}`;
         if (filled.length >= 4) break;
         if (!filled.find(f => f.id === q.id)) filled.push(q);
       }
-      questions = filled.slice(0, 4).map(q => ({ id: q.id, text: q.text, answer: q.answer }));
+      questions = filled.slice(0, 4).map(q => ({ id: q.id, text: q.text, answer: q.answer, link: q.link }));
     } catch (e) {
       console.warn('Question selection failed, using fallback', e);
     }
