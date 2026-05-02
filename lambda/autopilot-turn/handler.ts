@@ -77,51 +77,160 @@ function buildTaskFieldPrompt(
     .join('\n');
 
   const preFilledSection = preFilled.length > 0
-    ? `\nAlready confirmed from client profile:\n${preFilled.map(v => `  • ${v}`).join('\n')}\n`
+    ? `\nAlready known from client profile (do NOT ask the client for these):\n${preFilled.map(v => `  • ${v}`).join('\n')}\n`
     : '';
 
-  return `You are a live financial services agent at Bob's Mutual Funds handling a chat.
-Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
+  const proposedActionFieldsSchema = fields
+    .map(f => `    { "key": "${f.key}", "label": "${f.label}", "value": "[value the client gave]" }`)
+    .join(',\n');
+
+  return `You are a live financial services agent at Bob's Mutual Funds. You are already connected and speaking with ${profile.name} — this is an active, ongoing chat.
+Client accounts: ${summarizeAccounts(profile.accounts)}.
 ${summarizeIntents(profile.intents)}
 
-Task you are completing: ${task.name}
-${task.description}
+BEFORE ANYTHING ELSE:
+• Do NOT introduce yourself or say your name.
+• Do NOT say "connect you with a live agent" or offer to transfer — you ARE the live agent.
+• Do NOT ask "is that right?" or confirm their topic — jump straight to the first uncollected field.
+• One question per turn. Period.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRICT FIELD LIST — ONLY THESE, NOTHING ELSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Task: ${task.name}
+
+Collect ONLY the fields listed below — in order. Do NOT ask about date of birth, Social Security number, driver's license, or anything else not listed, even if you believe it is normally required.
 ${preFilledSection}
-REQUIRED information to collect (ask them one at a time, in this exact order):
+Fields to collect:
 ${fieldList}
 
-Read the full conversation transcript carefully. For each required field above, determine whether the client has already provided a SPECIFIC value in this conversation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT COUNTS AS A SPECIFIC VALUE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+A field is filled ONLY when the client gives a concrete, specific answer:
+• Person's name: "my wife", "she", "her", "my husband" → NOT a name. Ask for the actual full name.
+• Email: must be an actual email address (e.g. sarah@gmail.com).
+• "yes", "yep", "sure", "correct", "okay" → does NOT fill any field.
+• Access level choices, specific dollar amounts, specific options → these count.
 
-Rules:
-1. Ask for EXACTLY ONE uncollected required field per turn — the next one in the list that has no specific answer yet.
-2. A generic "yes", "correct", "sure", "okay" from the client does NOT fill a field — only concrete, specific values count.
-3. Before moving to the next field, briefly confirm what you heard (e.g. "Got it — [value].").
-4. When ALL required fields have specific collected values: set shouldExitAutopilot=true and populate proposedAction.
-5. Exit response when done: "Perfect, I have everything I need. Let me prepare that for your agent's review." — nothing else.
-6. Do NOT ask about anything outside the required fields list above.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ONE QUESTION PER TURN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ask for exactly ONE field. Never combine. Never say "and also" or "I'll also need." Stop after one question.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TONE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Sound like a real person — warm, natural, brief. No corporate-speak. Not "I would like to confirm" or "Please provide your." Just talk naturally.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOW TO PROCEED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Read the full transcript. For each field in the list, check whether the client gave a SPECIFIC value (see above).
+
+• If any field is still missing: briefly confirm the last answer if one was just given ("Got it — [value]."), then ask for the next uncollected field.
+• When ALL fields have specific values: set shouldExitAutopilot=true, populate proposedAction, and say ONLY: "Perfect, got everything I need — I'll get that ready for you now."
+
+⚠️ When shouldExitAutopilot=true, proposedAction MUST be populated. Never exit with proposedAction=null.
 ${FORBIDDEN_TOPICS}
 
-Return ONLY valid JSON:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESPONSE FORMAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Return ONLY valid JSON — no other text:
 {
   "response": "...",
   "collectedFields": {
-    "fieldKey": "extracted specific value, or null if not yet answered"
+    "fieldKey": "specific value the client gave, or null if not yet answered"
   },
   "shouldExitAutopilot": false,
   "taskIdentified": null,
   "proposedAction": null
 }
 
-When ALL required fields are collected, return proposedAction:
+When ALL fields are collected, replace proposedAction with:
 {
   "taskId": "${task.id}",
   "taskName": "${task.name}",
-  "summary": "one clear sentence describing exactly what the client has requested",
+  "summary": "one clear sentence describing exactly what the client wants done",
   "fields": [
-    { "key": "fieldKey", "label": "Field Label", "value": "collected value" }
+${proposedActionFieldsSchema}
+  ]
+}`;
+}
+
+// ── Per-process expert prompts ─────────────────────────────────────────────
+
+const ADD_ACCOUNT_ACCESS_PROMPT = (profile: ClientProfile) =>
+  `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
+Client accounts: ${summarizeAccounts(profile.accounts)}.
+${summarizeIntents(profile.intents)}
+
+You are handling an ADD AUTHORIZED USER request. The client wants to grant another person access to their account.
+
+════════════════════════════════════
+WHAT YOU NEED TO COLLECT — all three
+════════════════════════════════════
+
+FULL NAME of the person being added
+  A real name like "Sarah Johnson". Vague references like "my wife", "she", "her" are not names — ask for the actual name.
+
+EMAIL ADDRESS of the person being added
+  Required to set up their account login. Must be a real email address.
+
+ACCESS LEVEL — one of:
+  • Full access — can view balances, place trades, and manage the account
+  • View only — read-only, can see the account but cannot make changes
+
+════════════════════════════════════
+HOW TO HANDLE THIS CONVERSATION
+════════════════════════════════════
+
+You are already connected to the client. Do not introduce yourself or say your name.
+Collect the three pieces of information naturally — in any order that fits the conversation.
+If the client volunteers a piece of information before you ask, capture it and move on.
+Ask one thing at a time. If an answer is vague, ask for the specific detail.
+Read the full transcript — do not re-ask for something the client already provided.
+
+When you have all three with specific, confirmed values:
+→ Set shouldExitAutopilot=true
+→ Populate proposedAction with all three values
+→ Briefly tell the client you have everything needed
+
+${FORBIDDEN_TOPICS}
+
+════════════════════════════════════
+RESPONSE — return ONLY valid JSON
+════════════════════════════════════
+{
+  "response": "...",
+  "shouldExitAutopilot": false,
+  "taskIdentified": null,
+  "proposedAction": null
+}
+
+When all three are collected, set shouldExitAutopilot=true and replace proposedAction:
+{
+  "taskId": "add-account-access",
+  "taskName": "Add Authorized Account User",
+  "summary": "Grant [name] ([email]) [access level] access to ${profile.name}'s account",
+  "fields": [
+    {"key": "personName",  "label": "Person's full name",    "value": "[the name provided]"},
+    {"key": "personEmail", "label": "Email address",          "value": "[the email provided]"},
+    {"key": "accessLevel", "label": "Access level",           "value": "[Full access or View only]"}
   ]
 }
-Include ALL fields in proposedAction.fields — both pre-filled and collected.`;
+
+⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated with all three values.`;
+
+/** Returns the specialized expert prompt for a known task, or falls back to the generic template. */
+function getTaskSystemPrompt(profile: ClientProfile, taskId: string): string {
+  switch (taskId) {
+    case 'add-account-access':
+      return ADD_ACCOUNT_ACCESS_PROMPT(profile);
+    default:
+      return buildTaskFieldPrompt(profile, taskId, {});
+  }
 }
 
 // ── General GET INTENT prompt (fallback when no task matched) ──────────────
@@ -303,126 +412,113 @@ export const handler = async (
       const activeTaskId = taskMarker?.[1]?.trim() ?? null;
 
       if (activeTaskId) {
-        // Phase 2: field collection — use task-driven prompt
-        const taskPrompt = buildTaskFieldPrompt(profile, activeTaskId, {});
-        if (taskPrompt) {
-          let raw: string;
-          try {
-            raw = await invokeNovaMicro(
-              formatTranscriptForBedrock(transcript),
-              taskPrompt,
-              700,
-              { fn: 'autopilot-turn', scope: `get-intent:${activeTaskId}` },
-            );
-          } catch (e) {
-            console.warn('Task field collection LLM call failed', e);
-            return jsonResponse(200, {
-              response: "I'm still gathering the details for you — could you repeat that?",
-              shouldExitAutopilot: false,
-              suggestedScope: null,
-              closeChat: false,
-              scheduleCallback: null,
-              taskIdentified: null,
-              proposedAction: null,
-            });
-          }
+        // Phase 2: LLM expert owns the entire task conversation
 
-          const parsed = parseJsonFromBedrock<{
-            response: string;
-            collectedFields?: Record<string, string | null>;
-            shouldExitAutopilot: boolean;
-            taskIdentified?: string | null;
-            proposedAction?: {
-              taskId: string;
-              taskName: string;
-              summary: string;
-              fields: Array<{ key: string; label: string; value: string }>;
-            } | null;
-          }>(raw);
-
-          // Business-rule hard overrides
-          let shouldExit = parsed.shouldExitAutopilot ?? false;
-          if (ESCALATION_RE.test(lastCustomerMsg)) shouldExit = true;
-
-          console.log(JSON.stringify({
-            event: 'autopilot_decision',
-            fn: 'autopilot-turn',
-            scope: `get-intent:${activeTaskId}`,
-            shouldExitAutopilot: shouldExit,
-            hasProposedAction: !!parsed.proposedAction,
-            responseChars: (parsed.response ?? '').length,
-          }));
-
+        if (ESCALATION_RE.test(lastCustomerMsg)) {
           return jsonResponse(200, {
-            response: parsed.response ?? '',
-            shouldExitAutopilot: shouldExit,
+            response: '',
+            shouldExitAutopilot: true,
             suggestedScope: null,
             closeChat: false,
             scheduleCallback: null,
             taskIdentified: null,
-            proposedAction: parsed.proposedAction ?? null,
+            proposedAction: null,
           });
         }
+
+        const taskSystemPrompt = getTaskSystemPrompt(profile, activeTaskId);
+        let taskResponse = '';
+        let taskShouldExit = false;
+        let taskProposedAction: Record<string, unknown> | null = null;
+
+        try {
+          const raw = await invokeNovaMicro(
+            formatTranscriptForBedrock(transcript),
+            taskSystemPrompt,
+            400,
+            { fn: 'autopilot-turn', scope: `get-intent:${activeTaskId}` },
+          );
+          const parsed = parseJsonFromBedrock<{
+            response: string;
+            shouldExitAutopilot: boolean;
+            proposedAction?: Record<string, unknown> | null;
+          }>(raw);
+
+          taskResponse = parsed.response ?? '';
+          taskShouldExit = parsed.shouldExitAutopilot ?? false;
+          taskProposedAction = parsed.proposedAction ?? null;
+
+          // Safety guard: never exit without a proposedAction
+          if (taskShouldExit && !taskProposedAction) taskShouldExit = false;
+        } catch (e) {
+          console.warn('Task expert LLM call failed', e);
+          taskResponse = "I'm still gathering a few details — let me continue.";
+        }
+
+        console.log(JSON.stringify({
+          event: 'autopilot_decision', fn: 'autopilot-turn',
+          scope: `get-intent:${activeTaskId}`, shouldExitAutopilot: taskShouldExit,
+          hasProposedAction: !!taskProposedAction,
+        }));
+
+        return jsonResponse(200, {
+          response: taskResponse,
+          shouldExitAutopilot: taskShouldExit,
+          suggestedScope: null,
+          closeChat: false,
+          scheduleCallback: null,
+          taskIdentified: null,
+          proposedAction: taskProposedAction,
+        });
       } else {
         // Phase 1: task identification — try keyword match first (no LLM call)
         const accountTypes = profile.accounts.map(a => a.type);
         const matchedTask = matchTaskByIntent(currentIntent ?? '', accountTypes);
 
         if (matchedTask) {
-          // Task identified — inject task marker and start field collection in this same turn
+          // Phase 1: task identified — LLM expert handles the first turn
           taskIdentifiedForResponse = matchedTask.id;
+          const p1SystemPrompt = getTaskSystemPrompt(profile, matchedTask.id);
 
-          // Build the phase 2 prompt and call LLM for the first question
-          const taskPrompt = buildTaskFieldPrompt(profile, matchedTask.id, {});
-          let raw: string;
+          let p1Response = '';
+          let p1ShouldExit = false;
+          let p1ProposedAction: Record<string, unknown> | null = null;
+
           try {
-            raw = await invokeNovaMicro(
+            const raw = await invokeNovaMicro(
               formatTranscriptForBedrock(transcript),
-              taskPrompt,
-              700,
+              p1SystemPrompt,
+              400,
               { fn: 'autopilot-turn', scope: `get-intent:identify:${matchedTask.id}` },
             );
+            const parsed = parseJsonFromBedrock<{
+              response: string;
+              shouldExitAutopilot: boolean;
+              proposedAction?: Record<string, unknown> | null;
+            }>(raw);
+
+            p1Response = parsed.response ?? '';
+            p1ShouldExit = parsed.shouldExitAutopilot ?? false;
+            p1ProposedAction = parsed.proposedAction ?? null;
+            if (p1ShouldExit && !p1ProposedAction) p1ShouldExit = false;
           } catch (e) {
-            console.warn('Task identification LLM call failed', e);
-            // Still return taskIdentified so agent app stores the task
-            return jsonResponse(200, {
-              response: `I can help you with that. Let me get a few details.`,
-              shouldExitAutopilot: false,
-              suggestedScope: null,
-              closeChat: false,
-              scheduleCallback: null,
-              taskIdentified: matchedTask.id,
-              proposedAction: null,
-            });
+            console.warn('Task expert LLM call (phase 1) failed', e);
+            p1Response = "I can help with that — could I get a few details?";
           }
 
-          const parsed = parseJsonFromBedrock<{
-            response: string;
-            collectedFields?: Record<string, string | null>;
-            shouldExitAutopilot: boolean;
-            taskIdentified?: string | null;
-            proposedAction?: unknown | null;
-          }>(raw);
-
-          let shouldExit = parsed.shouldExitAutopilot ?? false;
-          if (ESCALATION_RE.test(lastCustomerMsg)) shouldExit = true;
-
           console.log(JSON.stringify({
-            event: 'autopilot_decision',
-            fn: 'autopilot-turn',
-            scope: `get-intent:identify:${matchedTask.id}`,
-            shouldExitAutopilot: shouldExit,
-            responseChars: (parsed.response ?? '').length,
+            event: 'autopilot_decision', fn: 'autopilot-turn',
+            scope: `get-intent:identify:${matchedTask.id}`, shouldExitAutopilot: p1ShouldExit,
           }));
 
           return jsonResponse(200, {
-            response: parsed.response ?? '',
-            shouldExitAutopilot: shouldExit,
+            response: p1Response,
+            shouldExitAutopilot: p1ShouldExit,
             suggestedScope: null,
             closeChat: false,
             scheduleCallback: null,
             taskIdentified: matchedTask.id,
-            proposedAction: null,
+            proposedAction: p1ProposedAction,
           });
         }
         // No match — fall through to general GET_INTENT_PROMPT below
