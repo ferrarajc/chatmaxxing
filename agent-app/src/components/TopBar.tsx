@@ -17,8 +17,10 @@ interface Props {
 }
 
 const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
-  { id: 'chatmaxxing', label: 'Chatmaxxing', desc: '4-column multi-chat view' },
-  { id: 'focusing',    label: 'Focusing',    desc: 'Single-chat deep-support view' },
+  { id: 'chatmaxxing', label: 'Chatmaxxing',  desc: '4-column multi-chat view' },
+  { id: 'triple-chat', label: 'Triple chat',  desc: '3-column multi-chat view' },
+  { id: 'double-chat', label: 'Double chat',  desc: '2-column multi-chat view' },
+  { id: 'focusing',    label: 'Focusing',     desc: 'Single-chat deep-support view' },
 ];
 
 export function TopBar({ ccpOpen, onToggleCcp, uiMode, onModeChange }: Props) {

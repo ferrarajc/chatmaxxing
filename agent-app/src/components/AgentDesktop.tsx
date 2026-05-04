@@ -5,12 +5,14 @@ import { TopBar } from './TopBar';
 import { ChatColumn } from './ChatColumn';
 import { FocusingDesktop } from './FocusingDesktop';
 
-export type UiMode = 'chatmaxxing' | 'focusing';
+export type UiMode = 'chatmaxxing' | 'triple-chat' | 'double-chat' | 'focusing';
+
+const ALL_MODES: UiMode[] = ['chatmaxxing', 'triple-chat', 'double-chat', 'focusing'];
 
 function getInitialMode(): UiMode {
   try {
     const saved = localStorage.getItem('bobs:uiMode');
-    if (saved === 'chatmaxxing' || saved === 'focusing') return saved;
+    if (ALL_MODES.includes(saved as UiMode)) return saved as UiMode;
   } catch { /* ignore */ }
   return 'chatmaxxing';
 }
@@ -49,6 +51,40 @@ export function AgentDesktop() {
           overflow: 'hidden',
         }}>
           {slots.map((slot, i) => (
+            <ChatColumn key={i} slotIndex={i} slot={slot} />
+          ))}
+        </div>
+      )}
+
+      {/* ── Triple-chat mode: 3-column grid, first 3 slots ────────────────── */}
+      {uiMode === 'triple-chat' && (
+        <div style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          padding: 12,
+          minHeight: 0,
+          overflow: 'hidden',
+        }}>
+          {slots.slice(0, 3).map((slot, i) => (
+            <ChatColumn key={i} slotIndex={i} slot={slot} />
+          ))}
+        </div>
+      )}
+
+      {/* ── Double-chat mode: 2-column grid, first 2 slots ──────────────── */}
+      {uiMode === 'double-chat' && (
+        <div style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 12,
+          padding: 12,
+          minHeight: 0,
+          overflow: 'hidden',
+        }}>
+          {slots.slice(0, 2).map((slot, i) => (
             <ChatColumn key={i} slotIndex={i} slot={slot} />
           ))}
         </div>
