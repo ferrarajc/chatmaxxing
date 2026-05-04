@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAgentStore } from '../store/agentStore';
 import { setConnectAgentState } from '../hooks/useConnectStreams';
+import { UiMode } from './AgentDesktop';
 
 const STATUS_COLORS: Record<string, string> = {
   Available: '#10b981',
@@ -11,24 +12,122 @@ const STATUS_COLORS: Record<string, string> = {
 interface Props {
   ccpOpen: boolean;
   onToggleCcp: () => void;
+  uiMode: UiMode;
+  onModeChange: (mode: UiMode) => void;
 }
 
-export function TopBar({ ccpOpen, onToggleCcp }: Props) {
+const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
+  { id: 'chatmaxxing', label: 'Chatmaxxing', desc: '4-column multi-chat view' },
+  { id: 'focusing',    label: 'Focusing',    desc: 'Single-chat deep-support view' },
+];
+
+export function TopBar({ ccpOpen, onToggleCcp, uiMode, onModeChange }: Props) {
   const { agentStatus, setAgentStatus, dailyBonus } = useAgentStore();
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
+  const bIconRef = useRef<HTMLButtonElement>(null);
+  const menuRef  = useRef<HTMLDivElement>(null);
 
   const handleStatusClick = (s: 'Available' | 'Away') => {
-    setAgentStatus(s);          // optimistic local update
-    setConnectAgentState(s);    // actual Connect API call
+    setAgentStatus(s);
+    setConnectAgentState(s);
   };
+
+  // Close dropdown on outside click or Escape
+  useEffect(() => {
+    if (!modeMenuOpen) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setModeMenuOpen(false); };
+    const handleClick = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (menuRef.current?.contains(t) || bIconRef.current?.contains(t)) return;
+      setModeMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleKey);
+    document.addEventListener('mousedown', handleClick);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('mousedown', handleClick);
+    };
+  }, [modeMenuOpen]);
 
   return (
     <div style={{
       height: 56, background: '#0f2d5e', color: '#fff',
       display: 'flex', alignItems: 'center', padding: '0 20px', gap: 20,
       boxShadow: '0 2px 8px rgba(0,0,0,.3)', flexShrink: 0,
+      position: 'relative',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>B</div>
+        {/* B icon — hidden mode-switcher trigger */}
+        <button
+          ref={bIconRef}
+          onClick={() => setModeMenuOpen(o => !o)}
+          title="Switch view"
+          style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: modeMenuOpen ? '#3b82f6' : '#2563eb',
+            border: modeMenuOpen ? '2px solid #93c5fd' : '2px solid transparent',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 700, fontSize: 14, color: '#fff',
+            cursor: 'pointer', flexShrink: 0,
+            transition: 'background .15s, border-color .15s',
+          }}
+        >B</button>
+
+        {/* Mode dropdown */}
+        {modeMenuOpen && (
+          <div
+            ref={menuRef}
+            style={{
+              position: 'absolute', top: 52, left: 20, zIndex: 3000,
+              background: '#fff', borderRadius: 10,
+              boxShadow: '0 8px 32px rgba(0,0,0,.22)',
+              border: '1px solid #e5e7eb',
+              overflow: 'hidden', minWidth: 200,
+            }}
+          >
+            <div style={{
+              padding: '8px 14px 6px',
+              fontSize: 10, fontWeight: 700, color: '#9ca3af',
+              textTransform: 'uppercase', letterSpacing: '.6px',
+              borderBottom: '1px solid #f3f4f6',
+            }}>
+              View
+            </div>
+            {UI_MODES.map(m => {
+              const active = uiMode === m.id;
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => { onModeChange(m.id); setModeMenuOpen(false); }}
+                  style={{
+                    padding: '9px 14px', cursor: 'pointer',
+                    background: active ? '#eff6ff' : 'transparent',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    transition: 'background .1s',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f8fafc'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: active ? 700 : 500,
+                      color: active ? '#1a56db' : '#1e293b',
+                    }}>
+                      {m.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1 }}>
+                      {m.desc}
+                    </div>
+                  </div>
+                  {active && (
+                    <span style={{ color: '#1a56db', fontSize: 14, fontWeight: 700 }}>✓</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <span style={{ fontWeight: 700, fontSize: 15 }}>Bob's — Agent Desktop</span>
       </div>
 

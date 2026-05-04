@@ -3,36 +3,78 @@ import { useConnectStreams } from '../hooks/useConnectStreams';
 import { useAgentStore } from '../store/agentStore';
 import { TopBar } from './TopBar';
 import { ChatColumn } from './ChatColumn';
+import { FocusingDesktop } from './FocusingDesktop';
+
+export type UiMode = 'chatmaxxing' | 'focusing';
+
+function getInitialMode(): UiMode {
+  try {
+    const saved = localStorage.getItem('bobs:uiMode');
+    if (saved === 'chatmaxxing' || saved === 'focusing') return saved;
+  } catch { /* ignore */ }
+  return 'chatmaxxing';
+}
 
 export function AgentDesktop() {
   const ccpRef = useRef<HTMLDivElement>(null);
   const slots = useAgentStore(s => s.slots);
   const [ccpOpen, setCcpOpen] = useState(false);
+  const [uiMode, setUiMode] = useState<UiMode>(getInitialMode);
 
   useConnectStreams(ccpRef);
 
+  const handleModeChange = (mode: UiMode) => {
+    setUiMode(mode);
+    try { localStorage.setItem('bobs:uiMode', mode); } catch { /* ignore */ }
+  };
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f1f5f9', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <TopBar ccpOpen={ccpOpen} onToggleCcp={() => setCcpOpen(o => !o)} />
+      <TopBar
+        ccpOpen={ccpOpen}
+        onToggleCcp={() => setCcpOpen(o => !o)}
+        uiMode={uiMode}
+        onModeChange={handleModeChange}
+      />
 
-      {/* 4-column grid */}
-      <div style={{
-        flex: 1,
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 12,
-        padding: 12,
-        minHeight: 0,
-        overflow: 'hidden',
-      }}>
-        {slots.map((slot, i) => (
-          <ChatColumn key={i} slotIndex={i} slot={slot} />
-        ))}
-      </div>
+      {/* ── Chatmaxxing mode: existing 4-column grid, completely unchanged ── */}
+      {uiMode === 'chatmaxxing' && (
+        <div style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 12,
+          padding: 12,
+          minHeight: 0,
+          overflow: 'hidden',
+        }}>
+          {slots.map((slot, i) => (
+            <ChatColumn key={i} slotIndex={i} slot={slot} />
+          ))}
+        </div>
+      )}
 
-      {/* ── CCP dropdown — anchored below the TopBar, aligned to the right edge.
-          Always in the DOM (display:none not unmount) so the Streams SDK iframe
-          keeps running in the background. */}
+      {/* ── Focusing mode: visual layer + hidden ChatColumns for effects ──── */}
+      {uiMode === 'focusing' && (
+        <>
+          {/* Hidden ChatColumns — keep autopilot effects, ACW generation, and
+              NBR fetch logic running. Visually suppressed; the FocusingDesktop
+              provides all interaction surfaces. */}
+          <div style={{
+            position: 'fixed', width: 0, height: 0,
+            overflow: 'hidden', opacity: 0, pointerEvents: 'none',
+            zIndex: -1,
+          }}>
+            {slots.map((slot, i) => (
+              <ChatColumn key={i} slotIndex={i} slot={slot} />
+            ))}
+          </div>
+
+          <FocusingDesktop />
+        </>
+      )}
+
+      {/* ── CCP dropdown — always in DOM so Streams iframe keeps running ─── */}
       <div style={{
         position: 'fixed', top: 56, right: 20, zIndex: 2000,
         width: 320, borderRadius: '0 0 12px 12px',
