@@ -30,7 +30,7 @@ async function loadList() {
   try {
     const res  = await fetch(`${API_BASE}/get-transcripts`);
     const data = await res.json();
-    allTranscripts = Array.isArray(data) ? data : (data.items ?? []);
+    allTranscripts = Array.isArray(data) ? data : (data.transcripts ?? data.items ?? []);
     renderList(allTranscripts);
   } catch (err) {
     listBody.innerHTML = `<tr class="list-row list-row--empty"><td colspan="6">Failed to load transcripts.</td></tr>`;
@@ -83,7 +83,8 @@ async function openDetail(transcriptId) {
 
   try {
     const res  = await fetch(`${API_BASE}/get-transcripts?transcriptId=${encodeURIComponent(transcriptId)}`);
-    const t    = await res.json();
+    const data = await res.json();
+    const t    = data.transcript ?? data;
 
     detailClient.textContent   = t.clientName ?? t.clientId ?? '—';
     detailIntent.textContent   = t.intentSummary ?? '—';
