@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transcript Review — Bob's Mutual Funds</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="shell">
+
+  <header class="site-header">
+    <h1 class="site-header__title">Transcript Review</h1>
+    <nav class="site-header__nav">
+      <a href="index.html" class="nav-link nav-link--active">All conversations</a>
+    </nav>
+  </header>
+
+  <!-- List view -->
+  <main class="view view--list" id="view-list">
+    <div class="toolbar">
+      <input class="toolbar__search" type="search" placeholder="Filter by client name or intent…" id="search-input" />
+    </div>
+    <table class="transcript-list" id="transcript-list">
+      <thead>
+        <tr>
+          <th class="col-date">Date &amp; time</th>
+          <th class="col-client">Client</th>
+          <th class="col-intent">Intent</th>
+          <th class="col-wrap-up">Wrap-up code</th>
+          <th class="col-duration">Duration</th>
+          <th class="col-msgs">Messages</th>
+        </tr>
+      </thead>
+      <tbody id="list-body">
+        <tr class="list-row list-row--loading">
+          <td colspan="6">Loading…</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Detail view -->
+  <main class="view view--detail" id="view-detail" hidden>
+    <button class="back-btn" id="back-btn">← All conversations</button>
+
+    <header class="transcript-header" id="detail-header">
+      <div class="transcript-header__left">
+        <h2 class="transcript-header__client" id="detail-client"></h2>
+        <p class="transcript-header__intent" id="detail-intent"></p>
+      </div>
+      <dl class="transcript-header__meta">
+        <dt>Conversation ID</dt><dd class="meta-value meta-value--id" id="detail-id"></dd>
+        <dt>Date</dt><dd class="meta-value" id="detail-date"></dd>
+        <dt>Duration</dt><dd class="meta-value" id="detail-duration"></dd>
+        <dt>Wrap-up</dt><dd class="meta-value meta-value--wrap-up" id="detail-wrap-up"></dd>
+      </dl>
+    </header>
+
+    <section class="transcript-body" id="transcript-body">
+      <!-- Events injected by JS -->
+    </section>
+
+    <section class="transcript-acw" id="transcript-acw" hidden>
+      <h3 class="acw__heading">After Call Work</h3>
+      <div class="acw__wrap-up" id="acw-wrap-up"></div>
+      <div class="acw__summary" id="acw-summary"></div>
+    </section>
+  </main>
+
+</div><!-- /.shell -->
+
+<script src="app.js"></script>
+</body>
+</html>
