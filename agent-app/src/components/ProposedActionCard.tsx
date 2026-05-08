@@ -48,6 +48,17 @@ export function ProposedActionCard({ slot }: Props) {
       });
       setResult(res);
       if (res.success) {
+        // Send confirmation to the client
+        const clientMsg = res.referenceNumber
+          ? `${res.message} (Ref: ${res.referenceNumber})`
+          : res.message;
+        store.appendMessage(slot.contactId, { role: 'AGENT', content: clientMsg });
+        if (slot.connectionToken) {
+          post<{ ok: boolean }>('/send-agent-message', {
+            connectionToken: slot.connectionToken,
+            message: clientMsg,
+          }).catch(() => {});
+        }
         // Clear card after short delay so agent sees the success message
         setTimeout(() => {
           store.patchSlot(slot.contactId, { proposedAction: null });

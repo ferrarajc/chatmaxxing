@@ -31,34 +31,34 @@ export const handler = async (
       // ── Real executions: update DynamoDB via client-data fields ───────────
 
       case 'update-beneficiaries': {
-        // Read existing beneficiaries, apply the change described in fields
+        const accountId = fields.accountId;
+        if (!accountId) return jsonResponse(400, { error: 'accountId is required' });
+
+        // Read the current full beneficiary list for this client
         const existing = await docClient.send(new GetCommand({
           TableName: table,
           Key: { clientId },
           ProjectionExpression: 'beneficiaries',
         }));
-        const current: Array<Record<string, unknown>> = existing.Item?.beneficiaries ?? [];
+        const allBens: Array<Record<string, unknown>> = existing.Item?.beneficiaries ?? [];
 
-        const action = fields.action ?? 'Add';
-        const newEntry = {
-          id: 'ben-' + Math.random().toString(36).slice(2, 8),
-          name: fields.beneficiaryName,
-          relationship: fields.relationship,
-          percentage: parseFloat(fields.percentage ?? '0'),
-          type: fields.beneficiaryType ?? 'Primary',
-          accountId: fields.accountId,
-        };
-
-        let updated: Array<Record<string, unknown>>;
-        if (action === 'Remove') {
-          updated = current.filter(b => b.name !== fields.beneficiaryName);
-        } else if (action === 'Update') {
-          updated = current.map(b =>
-            b.name === fields.beneficiaryName ? { ...b, ...newEntry, id: b.id } : b,
-          );
-        } else {
-          updated = [...current, newEntry];
+        // Build the new list from ben_N_* fields (complete intended state for this account)
+        const newAccountBens: Array<Record<string, unknown>> = [];
+        for (let i = 1; i <= 20; i++) {
+          const name = fields[`ben_${i}_name`];
+          if (!name) break;
+          newAccountBens.push({
+            accountId,
+            name,
+            relationship: fields[`ben_${i}_relationship`] ?? '',
+            percentage: parseFloat(fields[`ben_${i}_percentage`] ?? '0'),
+            type: fields[`ben_${i}_type`] ?? 'Primary',
+          });
         }
+
+        // Replace only this account's beneficiaries; keep all other accounts' beneficiaries intact
+        const otherBens = allBens.filter(b => b.accountId !== accountId);
+        const updated = [...otherBens, ...newAccountBens];
 
         await docClient.send(new UpdateCommand({
           TableName: table,
@@ -67,9 +67,13 @@ export const handler = async (
           ExpressionAttributeValues: { ':v': updated },
         }));
 
+        const countMsg = newAccountBens.length === 0
+          ? 'All beneficiaries removed from account.'
+          : `${newAccountBens.length} beneficiar${newAccountBens.length === 1 ? 'y' : 'ies'} saved successfully.`;
+
         return jsonResponse(200, {
           success: true,
-          message: `Beneficiary ${action === 'Remove' ? 'removed' : action === 'Update' ? 'updated' : 'added'} successfully.`,
+          message: countMsg,
           referenceNumber: refNumber(),
         });
       }

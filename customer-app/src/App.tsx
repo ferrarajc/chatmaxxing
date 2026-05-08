@@ -10,6 +10,7 @@ import { BeneficiariesPage } from './components/pages/account/BeneficiariesPage'
 import { AutoInvestPage } from './components/pages/account/AutoInvestPage';
 import { RmdPage } from './components/pages/account/RmdPage';
 import { TaxDocumentsPage } from './components/pages/account/TaxDocumentsPage';
+import { AccountDetailPage } from './components/pages/account/AccountDetailPage';
 import { OpenAccountPage } from './components/pages/OpenAccountPage';
 import { IraContributionLimitsPage } from './components/pages/resources/IraContributionLimitsPage';
 import { RothIraPage } from './components/pages/resources/RothIraPage';
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/account" element={<AccountPage />} />
+              <Route path="/account/detail/:accountId" element={<AccountDetailPage />} />
               <Route path="/account/beneficiaries" element={<BeneficiariesPage />} />
               <Route path="/account/auto-invest" element={<AutoInvestPage />} />
               <Route path="/account/rmd" element={<RmdPage />} />

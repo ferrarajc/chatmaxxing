@@ -11,6 +11,25 @@ import { CLIENT_PROFILES, DEFAULT_PROFILE } from '../data/clientProfiles';
 
 const AGENT_NAME = 'John Ferrara';
 
+// ── Transcript save (fire-and-forget, never throws) ────────────────────────
+
+function saveTranscript(slot: ContactSlot, acwData?: ACWData | null) {
+  const msgs = slot.messages;
+  const acw = acwData ?? slot.acwData;
+  const now = Date.now();
+  post('/save-transcript', {
+    transcriptId: slot.contactId,
+    clientId: slot.clientId,
+    clientName: slot.clientName,
+    intentSummary: slot.intentSummary,
+    startTime: msgs[0]?.timestamp ?? now,
+    endTime: msgs[msgs.length - 1]?.timestamp ?? now,
+    wrapUpCode: acw?.wrapUpCode ?? null,
+    acwSummary: acw?.summary ?? null,
+    messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
+  }).catch(() => {});
+}
+
 interface Props {
   slotIndex: number;
   slot: ContactSlot | null;
@@ -346,6 +365,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             post<{ ok: boolean }>('/send-agent-message', { connectionToken: token2, message: msg3 })
               .catch(e => log.error('ChatColumn:idleCheck:msg3Failed', e));
           }
+          const slotForSave = store.getSlot(cid);
+          if (slotForSave) saveTranscript(slotForSave);
           store.patchSlot(cid, { status: 'ended' });
           exitAutopilot(cid);
         }, 2 * 60 * 1000);
@@ -534,7 +555,10 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             background: '#f8fafc', flexShrink: 0,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{slot.clientName}</div>
+              <div
+                style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2, cursor: 'default' }}
+                onClick={() => navigator.clipboard.writeText(slot.contactId).catch(() => {})}
+              >{slot.clientName}</div>
               <ResponseTimer lastEventAt={
                 Math.max(slot.lastAgentMessageAt ?? 0, slot.lastCustomerMessageAt ?? 0) || null
               } />
@@ -583,7 +607,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           </div>
 
           {/* AI support panel — fixed height, internal scroll handled by AISupport */}
-          <div style={{ height: 180, borderTop: '1px solid #e5e7eb', flexShrink: 0, overflow: 'hidden' }}>
+          <div style={{ height: 250, borderTop: '1px solid #e5e7eb', flexShrink: 0, overflow: 'hidden' }}>
             <AISupport
               slot={slot}
               onSendResource={text => sendText(text)}

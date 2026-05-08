@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useClientStore } from '../../../store/clientStore';
 
@@ -17,17 +18,22 @@ export function PortfolioPage() {
       {/* Account cards */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 32, flexWrap: 'wrap' }}>
         {activePersona.accounts.map((acc, i) => (
-          <div key={acc.id} style={{
+          <Link key={acc.id} to={`/account/detail/${acc.id}`} style={{
             flex: '1 1 220px', background: '#fff', borderRadius: 14,
             padding: '20px 24px', boxShadow: '0 1px 6px rgba(0,0,0,.07)',
-            border: '1px solid #e5e7eb',
-          }}>
+            border: '1px solid #e5e7eb', textDecoration: 'none', color: 'inherit',
+            transition: 'box-shadow .15s, border-color .15s', cursor: 'pointer',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,.12)'; (e.currentTarget as HTMLElement).style.borderColor = '#93c5fd'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 6px rgba(0,0,0,.07)'; (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb'; }}
+          >
             <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 4 }}>{acc.type}</div>
             <div style={{ fontSize: 26, fontWeight: 800 }}>${acc.balance.toLocaleString()}</div>
             <div style={{ fontSize: 13, color: acc.change > 0 ? '#10b981' : '#ef4444', fontWeight: 600 }}>
               {acc.change > 0 ? '▲' : '▼'} {Math.abs(acc.change)}% today
             </div>
-          </div>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>View details →</div>
+          </Link>
         ))}
       </div>
 

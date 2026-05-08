@@ -63,7 +63,7 @@ const profiles: ClientProfile[] = [
       },
       {
         label: 'Update beneficiary designations',
-        summary: 'Maria recently remarried and wants to update the beneficiary on both her IRA and taxable account to reflect her new spouse and revise the contingent beneficiaries.',
+        summary: 'Maria recently remarried and wants to update the beneficiary on both her IRA and taxable account to reflect her new spouse and revise the secondary beneficiaries.',
       },
       {
         label: 'Systematic withdrawal planning',

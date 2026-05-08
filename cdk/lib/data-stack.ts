@@ -7,6 +7,7 @@ export class DataStack extends cdk.Stack {
   public readonly clientsTable: dynamodb.Table;
   public readonly chatSessionsTable: dynamodb.Table;
   public readonly callbacksTable: dynamodb.Table;
+  public readonly transcriptsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -77,9 +78,23 @@ export class DataStack extends cdk.Stack {
       }),
     });
 
+    // ── Transcripts table ──────────────────────────────────────────
+    this.transcriptsTable = new dynamodb.Table(this, 'TranscriptsTable', {
+      tableName: 'bobs-transcripts',
+      partitionKey: { name: 'transcriptId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,  // never auto-delete transcript data
+    });
+    this.transcriptsTable.addGlobalSecondaryIndex({
+      indexName: 'clientId-savedAt-index',
+      partitionKey: { name: 'clientId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'savedAt', type: dynamodb.AttributeType.NUMBER },
+    });
+
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ClientsTableName', { value: this.clientsTable.tableName });
     new cdk.CfnOutput(this, 'ChatSessionsTableName', { value: this.chatSessionsTable.tableName });
     new cdk.CfnOutput(this, 'CallbacksTableName', { value: this.callbacksTable.tableName });
+    new cdk.CfnOutput(this, 'TranscriptsTableName', { value: this.transcriptsTable.tableName });
   }
 }

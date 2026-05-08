@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ContactSlot } from '../types';
 import { WRAP_UP_CODES } from '../data/wrapUpCodes';
+import { post } from '../api/client';
 
 interface Props { slot: ContactSlot; }
 
@@ -18,6 +19,21 @@ export function AfterCallWork({ slot }: Props) {
   }, [acw?.wrapUpCode, acw?.summary]);
 
   const handleClose = () => {
+    // Save transcript before the slot is cleared — includes final acwData
+    const msgs = slot.messages;
+    const now = Date.now();
+    post('/save-transcript', {
+      transcriptId: slot.contactId,
+      clientId: slot.clientId,
+      clientName: slot.clientName,
+      intentSummary: slot.intentSummary,
+      startTime: msgs[0]?.timestamp ?? now,
+      endTime: msgs[msgs.length - 1]?.timestamp ?? now,
+      wrapUpCode: selectedCode || acw?.wrapUpCode || null,
+      acwSummary: summaryText || acw?.summary || null,
+      messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
+    }).catch(() => {});
+
     window.dispatchEvent(
       new CustomEvent('bobs:closeContact', { detail: { contactId: slot.contactId } }),
     );

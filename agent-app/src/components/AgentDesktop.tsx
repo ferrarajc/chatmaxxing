@@ -14,7 +14,7 @@ function getInitialMode(): UiMode {
     const saved = localStorage.getItem('bobs:uiMode');
     if (ALL_MODES.includes(saved as UiMode)) return saved as UiMode;
   } catch { /* ignore */ }
-  return 'chatmaxxing';
+  return 'double-chat';
 }
 
 export function AgentDesktop() {
