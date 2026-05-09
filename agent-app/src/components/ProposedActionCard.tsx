@@ -180,7 +180,7 @@ export function ProposedActionCard({ slot }: Props) {
                     fontSize: 14, color: '#9ca3af', padding: '1px 3px',
                     flexShrink: 0,
                   }}
-                >✏</button>
+                >✏️</button>
               </>
             )}
           </div>
