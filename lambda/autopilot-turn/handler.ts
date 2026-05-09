@@ -1829,7 +1829,7 @@ export const handler = async (
           if (taskShouldExit && !taskProposedAction) taskShouldExit = false;
         } catch (e) {
           console.warn('Task expert LLM call failed', e);
-          taskResponse = "I apologize for the delay — give me just a moment.";
+          taskResponse = "I'm pulling some information, give me just a few moments please.";
           taskShouldExit = true;
         }
 
