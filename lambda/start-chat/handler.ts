@@ -30,6 +30,7 @@ The transcript is formatted as "ROLE: message | ROLE: message | ...".
 Write a single concise sentence (max 20 words) capturing what the customer's core need or question is.
 Start with the client's first name if you can detect it, e.g. "Alex asked about RMD rules and wants withdrawal guidance".
 Focus on the customer's underlying goal — not just the last message.
+Do not mention that the customer asked to speak to an agent or requested escalation — that is implied and wastes space.
 Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
             80,
           ),

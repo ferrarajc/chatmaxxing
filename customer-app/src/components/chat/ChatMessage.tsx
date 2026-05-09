@@ -4,21 +4,43 @@ import { ChatMessage as Msg } from '../../types';
 
 interface Props { message: Msg; }
 
-function renderWithLinks(content: string): React.ReactNode[] {
-  const urlRegex = /https?:\/\/[^\s]+/g;
+function renderWithLinks(content: string, navigate: (path: string) => void): React.ReactNode[] {
+  // Matches [text](url) markdown links OR bare https:// URLs
+  const tokenRegex = /\[([^\]]+)\]\(([^)]+)\)|https?:\/\/[^\s]+/g;
   const result: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = urlRegex.exec(content)) !== null) {
+  while ((match = tokenRegex.exec(content)) !== null) {
     if (match.index > lastIndex) result.push(content.slice(lastIndex, match.index));
-    const url = match[0];
-    result.push(
-      <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
-        style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}>
-        {url}
-      </a>,
-    );
-    lastIndex = match.index + url.length;
+    if (match[1] !== undefined) {
+      // Markdown link [text](url)
+      const text = match[1];
+      const url = match[2];
+      const isRelative = url.startsWith('/');
+      result.push(
+        <button
+          key={match.index}
+          onClick={() => isRelative ? navigate(url) : window.open(url, '_blank')}
+          style={{
+            background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+            color: '#1a56db', fontWeight: 600, fontSize: 'inherit',
+            textDecoration: 'underline', display: 'inline',
+          }}
+        >
+          {text}
+        </button>,
+      );
+    } else {
+      // Bare URL
+      const url = match[0];
+      result.push(
+        <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
+          style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}>
+          {url}
+        </a>,
+      );
+    }
+    lastIndex = match.index + match[0].length;
   }
   if (lastIndex < content.length) result.push(content.slice(lastIndex));
   return result.length > 0 ? result : [content];
@@ -59,7 +81,7 @@ export function ChatMessage({ message }: Props) {
         whiteSpace: 'pre-wrap',
         textAlign: 'left',
       }}>
-        {renderWithLinks(message.content)}
+        {renderWithLinks(message.content, navigate)}
         {message.link && (
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
             <button

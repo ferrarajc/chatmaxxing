@@ -1701,6 +1701,33 @@ If they've come back and are responsive, set shouldExitAutopilot=true so normal 
 
 Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": true, "suggestedScope": null}`;
 
+const SELF_SERVICE_PAGES = `
+SELF-SERVICE PAGES
+The client is already on our website. Never say "complete a form on our website" or "find this on our website." Instead, give brief instructions and include a markdown link directly to the relevant page: [Link Text](/path).
+
+Action pages:
+- Update beneficiaries: /account/beneficiaries
+- Set up or change auto-invest: /account/auto-invest
+- View RMD details: /account/rmd
+- Download tax documents: /account/tax-documents
+- Open a new account: /open-account
+- View portfolio: /portfolio
+
+Help/resource pages (link as a secondary "learn more" option):
+- Estate planning & beneficiary guidance: /resources/estate-planning
+- IRA contribution limits: /resources/ira-contribution-limits
+- Roth IRA overview: /resources/roth-ira
+- Rollover guide: /resources/rollover
+- SEP IRA guide: /resources/sep-ira
+- Self-employed retirement options: /resources/self-employed-retirement
+- Tax deductions: /resources/tax-deductions
+- Tax-efficient investing: /resources/tax-efficient-investing
+
+When the client's request maps to a self-service action page: respond with 1-2 sentences explaining what to do, include the action page link, and optionally a help page link. Set shouldExitAutopilot=true so an agent is available if they need further help.
+
+Example — client says "I want to update my beneficiaries":
+"You can update your beneficiaries directly at [Beneficiaries](/account/beneficiaries) — it only takes a minute. For guidance on how beneficiary designations work, see our [Estate Planning](/resources/estate-planning) page."`;
+
 const FULL_AUTO_PROMPT = (profile: ClientProfile, intent: string) =>
   `You are a friendly, professional financial services agent at Bob's Mutual Funds handling a live chat.
 Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
@@ -1708,6 +1735,7 @@ Current topic: "${intent}".
 
 Your goal is FULL AUTO: handle this conversation end-to-end. Respond concisely (1-3 sentences), warmly, professionally.
 ${FORBIDDEN_TOPICS}
+${SELF_SERVICE_PAGES}
 
 Set shouldExitAutopilot=true if:
 - The client is asking to speak to a human or escalate
