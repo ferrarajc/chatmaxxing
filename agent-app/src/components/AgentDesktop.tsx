@@ -51,7 +51,7 @@ export function AgentDesktop() {
           overflow: 'hidden',
         }}>
           {slots.map((slot, i) => (
-            <ChatColumn key={i} slotIndex={i} slot={slot} zoom={1.25} />
+            <ChatColumn key={i} slotIndex={i} slot={slot} />
           ))}
         </div>
       )}
@@ -68,7 +68,7 @@ export function AgentDesktop() {
           overflow: 'hidden',
         }}>
           {slots.slice(0, 3).map((slot, i) => (
-            <ChatColumn key={i} slotIndex={i} slot={slot} zoom={1.25} />
+            <ChatColumn key={i} slotIndex={i} slot={slot} />
           ))}
         </div>
       )}
@@ -85,7 +85,7 @@ export function AgentDesktop() {
           overflow: 'hidden',
         }}>
           {slots.slice(0, 2).map((slot, i) => (
-            <ChatColumn key={i} slotIndex={i} slot={slot} zoom={1.25} />
+            <ChatColumn key={i} slotIndex={i} slot={slot} />
           ))}
         </div>
       )}

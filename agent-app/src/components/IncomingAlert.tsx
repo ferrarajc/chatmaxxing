@@ -107,7 +107,7 @@ export function IncomingAlert({ slot }: Props) {
       </div>
 
       {/* Buttons */}
-      <div style={{ display: 'flex', gap: 8, maxWidth: 220, margin: '0 auto' }}>
+      <div style={{ display: 'flex', gap: 8 }}>
         <button
           onClick={skip}
           style={{
@@ -119,7 +119,7 @@ export function IncomingAlert({ slot }: Props) {
         <button
           onClick={accept}
           style={{
-            flex: 1, padding: '8px 0', borderRadius: 8, fontSize: 13,
+            flex: 2, padding: '8px 0', borderRadius: 8, fontSize: 13,
             border: 'none', background: '#1a56db', color: '#fff',
             cursor: 'pointer', fontWeight: 600,
           }}

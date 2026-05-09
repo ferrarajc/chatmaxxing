@@ -33,7 +33,6 @@ function saveTranscript(slot: ContactSlot, acwData?: ACWData | null) {
 interface Props {
   slotIndex: number;
   slot: ContactSlot | null;
-  zoom?: number;
 }
 
 // ── Autopilot helpers ──────────────────────────────────────────────────────
@@ -70,7 +69,7 @@ const RESEARCHING_MSGS = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function ChatColumn({ slotIndex, slot, zoom }: Props) {
+export function ChatColumn({ slotIndex, slot }: Props) {
   const store = useAgentStore();
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -505,13 +504,12 @@ export function ChatColumn({ slotIndex, slot, zoom }: Props) {
   const borderColor = isFlashing ? '#eab308' : isAutopilot ? '#22c55e' : '#e2e8f0';
   const borderWidth = isAutopilot || isFlashing ? '4px' : '2px';
   const overlayColor = isFlashing ? 'rgba(234,179,8,0.15)' : isAutopilot ? 'rgba(34,197,94,0.12)' : 'transparent';
-  const z = zoom ?? 1;
 
   return (
     <div
       onClick={handleColumnClick}
       style={{
-        background: '#fff', borderRadius: 12,
+        background: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column',
         border: `${borderWidth} solid ${borderColor}`,
         overflow: 'hidden', minHeight: 0,
         boxShadow: '0 1px 6px rgba(0,0,0,.06)',
@@ -519,7 +517,7 @@ export function ChatColumn({ slotIndex, slot, zoom }: Props) {
         position: 'relative',
       }}
     >
-      {/* Autopilot colour overlay — sits outside the zoom wrapper so it covers the full cell */}
+      {/* Autopilot colour overlay (pointer-events: none so clicks pass through) */}
       {(isAutopilot || isFlashing) && (
         <div style={{
           position: 'absolute', inset: 0,
@@ -529,14 +527,6 @@ export function ChatColumn({ slotIndex, slot, zoom }: Props) {
           transition: 'background .1s',
         }} />
       )}
-
-      {/* Content wrapper — sized to 1/zoom so that after zoom it fills the column exactly */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0,
-        width: `${100 / z}%`, height: `${100 / z}%`,
-        zoom: z,
-        display: 'flex', flexDirection: 'column',
-      }}>
 
       {/* Empty state */}
       {!slot && (
@@ -652,7 +642,6 @@ export function ChatColumn({ slotIndex, slot, zoom }: Props) {
           <AfterCallWork slot={slot} />
         </>
       )}
-      </div>{/* end content wrapper */}
     </div>
   );
 }
