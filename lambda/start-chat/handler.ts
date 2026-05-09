@@ -45,7 +45,7 @@ If the topic is mentioned but the customer hasn't fully explained what they need
 
 If there is NO clear intent signal in the transcript: return exactly: How can I assist you today?
 
-Write in first person as the agent. Return only the sentences — no quotes, no preamble.`,
+Write in first person as the agent. Do not include any reference to "connecting with a live agent" or "speaking with a representative" — the agent reading this greeting IS already live with the customer. Return only the sentences — no quotes, no preamble.`,
             120,
           ),
         ]);
