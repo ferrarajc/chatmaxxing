@@ -1829,7 +1829,8 @@ export const handler = async (
           if (taskShouldExit && !taskProposedAction) taskShouldExit = false;
         } catch (e) {
           console.warn('Task expert LLM call failed', e);
-          taskResponse = "I'm still gathering a few details — let me continue.";
+          taskResponse = "I apologize for the delay — give me just a moment.";
+          taskShouldExit = true;
         }
 
         console.log(JSON.stringify({
