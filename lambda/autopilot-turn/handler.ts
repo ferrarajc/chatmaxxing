@@ -349,7 +349,7 @@ const UPDATE_BENEFICIARIES_PROMPT = (profile: ClientProfile, currentBeneficiarie
   const exampleAccountId = iraAccounts[0]?.id ?? 'acc-001';
 
   return `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
-Client accounts: ${summarizeAccounts(profile.accounts)}.
+Client accounts: ${summarizeAccounts(iraAccounts)}.
 ${summarizeIntents(profile.intents)}
 
 You are handling a CHANGE BENEFICIARY DESIGNATIONS request.
