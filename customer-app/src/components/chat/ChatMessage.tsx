@@ -46,6 +46,31 @@ function renderWithLinks(content: string, navigate: (path: string) => void): Rea
   return result.length > 0 ? result : [content];
 }
 
+function ConfirmationCard({ content }: { content: string }) {
+  const lines = content.split('\n');
+  const refLine = lines.find(l => l.startsWith('Ref:')) ?? '';
+  const description = lines.filter(l => l !== 'Confirmation' && l !== refLine && l.trim()).join(' ');
+  return (
+    <div style={{
+      background: '#f0fdf4', border: '1px solid #86efac',
+      borderRadius: 12, padding: '10px 14px', maxWidth: '80%',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+        <span style={{ color: '#16a34a', fontSize: 15, fontWeight: 700 }}>✓</span>
+        <span style={{ fontWeight: 700, fontSize: 14, color: '#15803d' }}>Confirmation</span>
+      </div>
+      {refLine && (
+        <div style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', marginBottom: 8 }}>
+          {refLine}
+        </div>
+      )}
+      <div style={{ borderTop: '1px solid #bbf7d0', paddingTop: 8, fontSize: 14, color: '#374151', lineHeight: 1.4 }}>
+        {description}
+      </div>
+    </div>
+  );
+}
+
 export function ChatMessage({ message }: Props) {
   const navigate = useNavigate();
   const isCustomer = message.role === 'CUSTOMER';
@@ -55,6 +80,19 @@ export function ChatMessage({ message }: Props) {
     return (
       <div style={{ textAlign: 'center', fontSize: 12, color: '#888', padding: '2px 0' }}>
         {message.content}
+      </div>
+    );
+  }
+
+  if (message.role === 'AGENT' && message.content.startsWith('Confirmation\n')) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 6, alignItems: 'flex-end' }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%', background: '#10b981',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, color: '#fff', flexShrink: 0,
+        }}>A</div>
+        <ConfirmationCard content={message.content} />
       </div>
     );
   }

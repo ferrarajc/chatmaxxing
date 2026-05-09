@@ -35,6 +35,16 @@ export function ProposedActionCard({ slot }: Props) {
     setEditingKey(null);
   };
 
+  const toPastTense = (summary: string): string => {
+    const verbMap: Record<string, string> = {
+      Update: 'Updated', Add: 'Added', Remove: 'Removed', Change: 'Changed',
+      Schedule: 'Scheduled', Cancel: 'Cancelled', Grant: 'Granted',
+      Transfer: 'Transferred', Set: 'Set', Enable: 'Enabled', Disable: 'Disabled',
+      Replace: 'Replaced', Modify: 'Modified', Close: 'Closed',
+    };
+    return summary.replace(/^\w+/, w => verbMap[w] ?? (w.endsWith('e') ? w + 'd' : w + 'ed'));
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     const fieldsMap: Record<string, string> = {};
@@ -48,9 +58,10 @@ export function ProposedActionCard({ slot }: Props) {
       });
       setResult(res);
       if (res.success) {
+        const description = toPastTense(action.summary);
         const clientMsg = res.referenceNumber
-          ? `${action.summary} (Ref: ${res.referenceNumber})`
-          : action.summary;
+          ? `Confirmation\nRef: ${res.referenceNumber}\n\n${description}`
+          : `Confirmation\n\n${description}`;
         store.appendMessage(slot.contactId, { role: 'AGENT', content: clientMsg });
         if (slot.connectionToken) {
           post<{ ok: boolean }>('/send-agent-message', {
