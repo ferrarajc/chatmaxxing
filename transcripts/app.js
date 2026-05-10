@@ -6,6 +6,7 @@ const viewList    = document.getElementById('view-list');
 const viewDetail  = document.getElementById('view-detail');
 const listBody    = document.getElementById('list-body');
 const searchInput = document.getElementById('search-input');
+const refreshBtn  = document.getElementById('refresh-btn');
 const backBtn     = document.getElementById('back-btn');
 
 const detailClient   = document.getElementById('detail-client');
@@ -24,6 +25,7 @@ let allTranscripts = [];
 
 /* ── Boot ────────────────────────────────────────────────────────────────── */
 loadList();
+refreshBtn.addEventListener('click', () => { searchInput.value = ''; loadList(); });
 
 /* ── List loading ────────────────────────────────────────────────────────── */
 async function loadList() {

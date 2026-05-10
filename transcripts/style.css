@@ -90,7 +90,20 @@ body {
 .nav-link--active { color: var(--color-accent); font-weight: 600; }
 
 /* ── Toolbar ──────────────────────────────────────────────────────────────── */
-.toolbar { margin-bottom: 14px; }
+.toolbar { margin-bottom: 14px; display: flex; gap: 8px; align-items: center; }
+
+.toolbar__refresh {
+  padding: 8px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--font);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toolbar__refresh:hover { border-color: var(--color-accent); color: var(--color-accent); }
 
 .toolbar__search {
   width: 320px;
