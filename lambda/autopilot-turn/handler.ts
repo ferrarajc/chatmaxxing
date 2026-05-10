@@ -133,7 +133,7 @@ HOW TO PROCEED
 Read the full transcript. For each field in the list, check whether the client gave a SPECIFIC value (see above).
 
 • If any field is still missing: briefly confirm the last answer if one was just given ("Got it — [value]."), then ask for the next uncollected field.
-• When ALL fields have specific values: set shouldExitAutopilot=true, populate proposedAction, and say ONLY: "Perfect, got everything I need — I'll get that ready for you now."
+• When ALL fields have specific values: set shouldExitAutopilot=true, populate proposedAction, and write a response that summarizes every collected value in plain English so the client can see exactly what is about to be submitted. Example: "Just to confirm: [name] at [X]% as primary beneficiary on your [account type]. I'm getting that ready now." Do NOT use a generic phrase like "I have everything I need" or "I'll get that ready for you."
 
 ⚠️ When shouldExitAutopilot=true, proposedAction MUST be populated. Never exit with proposedAction=null.
 ${FORBIDDEN_TOPICS}
@@ -385,7 +385,7 @@ ALLOCATION RULE: All primary beneficiaries on an account must sum to exactly 100
 Apply this rule to the COMPLETE FINAL LIST — existing retained beneficiaries plus new ones. Never check only the new beneficiaries in isolation.
 - If new beneficiaries alone sum to 100%, that implicitly zeros out every existing beneficiary. You MUST flag this: "Adding [names] at [X%] each totals 100%, which would effectively remove [existing name] from the account. Is that what you want, or would you like to adjust the percentages so [existing name] stays on?"
 - Do not exit until the math for the full final list works out.
-- Example: Elena is at 100% and client wants to add Sofia and Marco at 50% each. Sofia+Marco=100% — you must ask: "That would leave Elena with 0%, effectively removing her. Should I remove Elena, or would you like to give her a percentage too?"
+- Example: Alice is at 100% and client wants to add Bob and Carol at 50% each. Bob+Carol=100% — you must ask: "That would leave Alice with 0%, effectively removing her. Should I remove Alice, or would you like to give her a percentage too?"
 
 ════════════════════════════════════
 WHAT TO COLLECT
