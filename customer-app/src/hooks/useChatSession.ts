@@ -253,7 +253,7 @@ export function useChatSession() {
     }
 
     if (!isAgentMode) {
-      // Start fallback timer: if Connect/Lex doesn't reply within 3 s, call autopilot-turn directly
+      // Start fallback timer: if Connect/Lex doesn't reply within 8 s, call autopilot-turn directly
       if (botReplyTimerRef.current) clearTimeout(botReplyTimerRef.current);
       botReplyTimerRef.current = setTimeout(async () => {
         botReplyTimerRef.current = null;
@@ -283,7 +283,7 @@ export function useChatSession() {
           store.setTyping(false);
           console.warn('Fallback bot response failed', e);
         }
-      }, 3000);
+      }, 8000);
     }
 
     if (!session) return;
