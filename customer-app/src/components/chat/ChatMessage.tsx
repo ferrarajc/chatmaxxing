@@ -60,11 +60,11 @@ function ConfirmationCard({ content }: { content: string }) {
         <span style={{ fontWeight: 700, fontSize: 14, color: '#15803d' }}>Confirmation</span>
       </div>
       {refLine && (
-        <div style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', marginBottom: 3, textAlign: 'left' }}>
           {refLine}
         </div>
       )}
-      <div style={{ borderTop: '1px solid #bbf7d0', paddingTop: 8, fontSize: 14, color: '#374151', lineHeight: 1.4 }}>
+      <div style={{ borderTop: '1px solid #bbf7d0', paddingTop: 8, fontSize: 14, color: '#374151', lineHeight: 1.4, textAlign: 'left' }}>
         {description}
       </div>
     </div>

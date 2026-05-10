@@ -128,7 +128,7 @@ export function ProposedActionCard({ slot }: Props) {
         gap: 6,
       }}>
         <span style={{ fontSize: 14 }}>📋</span>
-        <div>
+        <div style={{ lineHeight: 1.2 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Proposed Action</div>
           <div style={{ fontSize: 13, color: '#93c5fd' }}>{action.taskName}</div>
         </div>
@@ -156,7 +156,7 @@ export function ProposedActionCard({ slot }: Props) {
             borderBottom: '1px solid #f3f4f6',
             gap: 6,
           }}>
-            <div style={{ fontSize: 13, color: '#6b7280', width: 90, flexShrink: 0, fontWeight: 600 }}>
+            <div style={{ fontSize: 13, color: '#6b7280', width: 180, flexShrink: 0, fontWeight: 600 }}>
               {field.label}
             </div>
             {editingKey === field.key ? (
