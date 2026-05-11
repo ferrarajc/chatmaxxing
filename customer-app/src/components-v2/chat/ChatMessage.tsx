@@ -8,6 +8,7 @@ interface Props { message: Msg; }
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function isInternalPath(url: string): string | null {
+  if (url.startsWith('/')) return url;
   try {
     const parsed = new URL(url, window.location.href);
     if (parsed.origin !== window.location.origin) return null;
@@ -20,7 +21,7 @@ function isInternalPath(url: string): string | null {
 }
 
 function renderWithLinks(content: string, navigate: (path: string) => void): React.ReactNode[] {
-  const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+  const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
   const urlRegex = /https?:\/\/[^\s)]+/g;
 
   const result: React.ReactNode[] = [];
