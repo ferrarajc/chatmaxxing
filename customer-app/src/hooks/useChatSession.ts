@@ -284,9 +284,10 @@ export function useChatSession() {
             },
           );
           store.setTyping(false);
-          if (result.response) {
-            store.addMessage({ role: 'BOT', content: result.response });
-            checkBotEscalation(result.response, store);
+          const reply = result.response?.trim();
+          if (reply && reply !== '...' && reply.length > 3) {
+            store.addMessage({ role: 'BOT', content: reply });
+            checkBotEscalation(reply, store);
           }
         } catch (e) {
           store.setTyping(false);
