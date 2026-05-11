@@ -168,6 +168,15 @@ export function useChatSession() {
     store.transitionTo('GREETING');
     const { activePersona } = useClientStore.getState();
 
+    // Pre-warm the fallback Lambda in the background so the first message
+    // doesn't cold-start it. Fired before /start-chat so it has maximum lead time.
+    post('/autopilot-turn', {
+      transcript: [{ role: 'CUSTOMER', content: 'hello', id: 'warmup', timestamp: Date.now() }],
+      clientProfile: activePersona,
+      scope: 'full-auto',
+      currentIntent: 'general inquiry',
+    }).catch(() => {});
+
     try {
       const data = await post<StartChatResponse>('/start-chat', {
         clientId: activePersona.clientId,

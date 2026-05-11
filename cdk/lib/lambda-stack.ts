@@ -110,7 +110,7 @@ export class LambdaStack extends cdk.Stack {
       handler: 'handler',
       entry: path.join(lambdaDir, 'predict-intent/handler.ts'),
       timeout: cdk.Duration.seconds(29),
-      memorySize: 256,
+      memorySize: 512,
       environment: baseEnv,
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
@@ -191,7 +191,7 @@ export class LambdaStack extends cdk.Stack {
       handler: 'handler',
       entry: path.join(lambdaDir, 'autopilot-turn/handler.ts'),
       timeout: cdk.Duration.seconds(29),
-      memorySize: 256,
+      memorySize: 512,
       environment: baseEnv,
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
