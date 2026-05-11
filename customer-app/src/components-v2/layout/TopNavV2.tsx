@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { PERSONAS } from '../../data/personas';
 import { useClientStore } from '../../store/clientStore';
 import { useDesignStore } from '../../store/designStore';
+import { theme } from '../../theme';
 
 const NAV_LINKS = [
   { to: '/', label: 'Home' },
@@ -11,7 +12,7 @@ const NAV_LINKS = [
   { to: '/account', label: 'Account' },
 ];
 
-export function TopNav() {
+export function TopNavV2() {
   const { activePersona, setActivePersona } = useClientStore();
   const { design, setDesign } = useDesignStore();
   const [open, setOpen] = useState(false);
@@ -45,24 +46,36 @@ export function TopNav() {
 
   return (
     <nav style={{
-      background: '#0f2d5e', color: '#fff', padding: '0 32px',
-      display: 'flex', alignItems: 'center', height: 64, gap: 32,
-      position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,.2)',
+      background: theme.color.primary, color: theme.color.textOnPrimary, padding: '0 32px',
+      display: 'flex', alignItems: 'center', height: 68, gap: 32,
+      position: 'sticky', top: 0, zIndex: 100,
+      borderBottom: `1px solid ${theme.color.primaryDeep}`,
+      fontFamily: theme.font.sans,
     }}>
       {/* Logo + hidden design toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 12 }}>
         <div ref={bRef} style={{ position: 'relative' }}>
           <div
             onClick={() => setDesignMenuOpen(o => !o)}
-            style={{ width: 36, height: 36, borderRadius: 8, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
+            style={{
+              width: 36, height: 36, borderRadius: 6, background: theme.color.bg,
+              color: theme.color.primary, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 20, fontWeight: 700,
+              fontFamily: theme.font.serif, letterSpacing: '-0.02em',
+              cursor: 'pointer',
+            }}
           >B</div>
           {designMenuOpen && (
             <div style={{
-              position: 'absolute', left: 0, top: 44, background: '#fff', color: '#111',
-              borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 190,
-              overflow: 'hidden', zIndex: 300, border: '1px solid #e5e7eb',
+              position: 'absolute', left: 0, top: 48, background: theme.color.surface,
+              color: theme.color.text,
+              borderRadius: theme.radius.lg, boxShadow: theme.shadow.lg, minWidth: 200,
+              overflow: 'hidden', zIndex: 300, border: `1px solid ${theme.color.border}`,
             }}>
-              <div style={{ padding: '8px 14px 6px', fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.6px' }}>
+              <div style={{
+                padding: '10px 14px 8px', fontSize: 10, fontWeight: 700,
+                color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>
                 Switch design
               </div>
               {(['original', 'upgraded'] as const).map(d => (
@@ -70,23 +83,28 @@ export function TopNav() {
                   key={d}
                   onClick={() => { setDesign(d); setDesignMenuOpen(false); }}
                   style={{
-                    padding: '10px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 500,
-                    background: design === d ? '#eff6ff' : 'transparent',
-                    color: design === d ? '#1a56db' : '#111',
-                    borderTop: '1px solid #f3f4f6',
+                    padding: '10px 14px',
+                    background: design === d ? theme.color.primarySoft : 'transparent',
+                    cursor: 'pointer',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    borderTop: `1px solid ${theme.color.border}`,
+                    fontSize: 13, fontWeight: design === d ? 600 : 500,
+                    color: design === d ? theme.color.primary : theme.color.text,
                   }}
-                  onMouseEnter={e => { if (design !== d) (e.currentTarget as HTMLElement).style.background = '#f9fafb'; }}
+                  onMouseEnter={e => { if (design !== d) (e.currentTarget as HTMLElement).style.background = theme.color.surfaceMuted; }}
                   onMouseLeave={e => { if (design !== d) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
                   {d === 'original' ? 'Original design' : 'Upgraded design'}
-                  {design === d && <span style={{ fontSize: 14, color: '#1a56db' }}>✓</span>}
+                  {design === d && <span style={{ fontSize: 14, color: theme.color.primary }}>✓</span>}
                 </div>
               ))}
             </div>
           )}
         </div>
-        <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-.3px' }}>Bob's Mutual Funds</span>
+        <span style={{
+          fontFamily: theme.font.serif, fontWeight: 600, fontSize: 18,
+          letterSpacing: '-0.01em',
+        }}>Bob's Mutual Funds</span>
       </div>
 
       {/* Nav links */}
@@ -96,10 +114,11 @@ export function TopNav() {
           to={to}
           end={to === '/'}
           style={({ isActive }) => ({
-            color: isActive ? '#93c5fd' : 'rgba(255,255,255,.8)',
-            textDecoration: 'none', fontSize: 14, fontWeight: isActive ? 600 : 400,
-            borderBottom: isActive ? '2px solid #93c5fd' : '2px solid transparent',
-            paddingBottom: 2,
+            color: isActive ? theme.color.textOnPrimary : 'rgba(251,249,244,0.72)',
+            textDecoration: 'none', fontSize: 14, fontWeight: isActive ? 600 : 500,
+            borderBottom: isActive ? `2px solid ${theme.color.accent}` : '2px solid transparent',
+            paddingBottom: 4, letterSpacing: '0.01em',
+            transition: 'color .15s, border-color .15s',
           })}
         >
           {label}
@@ -107,10 +126,10 @@ export function TopNav() {
       ))}
 
       {/* Spacer + user */}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 13, fontWeight: 600 }}>{activePersona.name}</div>
-          <div style={{ fontSize: 11, opacity: 0.7 }}>
+          <div style={{ fontSize: 11, opacity: 0.7, fontVariantNumeric: 'tabular-nums' }}>
             Total: ${activePersona.totalBalance.toLocaleString()}
           </div>
         </div>
@@ -120,10 +139,12 @@ export function TopNav() {
           <div
             onClick={() => setOpen(o => !o)}
             style={{
-              width: 36, height: 36, borderRadius: '50%', background: '#2563eb',
+              width: 36, height: 36, borderRadius: '50%',
+              background: theme.color.accent, color: theme.color.textOnPrimary,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: 14, cursor: 'pointer',
-              outline: open ? '2px solid #93c5fd' : 'none',
+              fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              outline: open ? `2px solid ${theme.color.accentSoft}` : 'none',
+              outlineOffset: 2, letterSpacing: '0.04em',
             }}
           >
             {initials}
@@ -131,11 +152,16 @@ export function TopNav() {
 
           {open && (
             <div style={{
-              position: 'absolute', right: 0, top: 44, background: '#fff', color: '#111',
-              borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 200,
+              position: 'absolute', right: 0, top: 48, background: theme.color.surface,
+              color: theme.color.text,
+              borderRadius: theme.radius.lg, boxShadow: theme.shadow.lg, minWidth: 220,
               overflow: 'hidden', zIndex: 200,
+              border: `1px solid ${theme.color.border}`,
             }}>
-              <div style={{ padding: '8px 14px 6px', fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.6px' }}>
+              <div style={{
+                padding: '10px 14px 8px', fontSize: 10, fontWeight: 700,
+                color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>
                 Switch Client
               </div>
               {PERSONAS.map(p => {
@@ -146,33 +172,33 @@ export function TopNav() {
                     onClick={() => { setActivePersona(p.clientId); setOpen(false); }}
                     style={{
                       padding: '10px 14px',
-                      background: isActive ? '#eff6ff' : 'transparent',
+                      background: isActive ? theme.color.primarySoft : 'transparent',
                       cursor: 'pointer',
                       display: 'flex', alignItems: 'center', gap: 10,
-                      borderTop: '1px solid #f3f4f6',
+                      borderTop: `1px solid ${theme.color.border}`,
                     }}
-                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#f9fafb'; }}
+                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = theme.color.surfaceMuted; }}
                     onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
                     <div style={{
                       width: 30, height: 30, borderRadius: '50%',
-                      background: isActive ? '#2563eb' : '#e5e7eb',
+                      background: isActive ? theme.color.primary : theme.color.surfaceMuted,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 12, fontWeight: 700,
-                      color: isActive ? '#fff' : '#6b7280',
-                      flexShrink: 0,
+                      color: isActive ? theme.color.textOnPrimary : theme.color.textMuted,
+                      flexShrink: 0, letterSpacing: '0.04em',
                     }}>
                       {p.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: isActive ? 700 : 500, color: isActive ? '#1a56db' : '#111' }}>
+                      <div style={{ fontSize: 13, fontWeight: isActive ? 600 : 500, color: isActive ? theme.color.primary : theme.color.text }}>
                         {p.name}
                       </div>
-                      <div style={{ fontSize: 11, color: '#6b7280' }}>
+                      <div style={{ fontSize: 11, color: theme.color.textMuted, fontVariantNumeric: 'tabular-nums' }}>
                         ${p.totalBalance.toLocaleString()}
                       </div>
                     </div>
-                    {isActive && <div style={{ marginLeft: 'auto', color: '#2563eb', fontSize: 14 }}>✓</div>}
+                    {isActive && <div style={{ marginLeft: 'auto', color: theme.color.primary, fontSize: 14 }}>✓</div>}
                   </div>
                 );
               })}

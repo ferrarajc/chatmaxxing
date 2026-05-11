@@ -13,7 +13,7 @@ export function HomePage() {
         background: 'linear-gradient(135deg, #0f2d5e 0%, #1a56db 100%)',
         borderRadius: 20, padding: '48px 48px', color: '#fff', marginBottom: 32,
       }}>
-        <h1 style={{ margin: '0 0 12px', fontSize: 36, fontWeight: 800 }}>
+        <h1 style={{ margin: '0 0 12px', fontSize: 36, fontWeight: 800, color: '#fff' }}>
           Welcome back, {firstName}.
         </h1>
         <p style={{ margin: '0 0 24px', fontSize: 18, opacity: 0.9 }}>

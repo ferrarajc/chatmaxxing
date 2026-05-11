@@ -45,7 +45,7 @@ export function PortfolioPage() {
             <thead>
               <tr style={{ borderBottom: '2px solid #e5e7eb', color: '#6b7280', fontWeight: 600 }}>
                 {['Fund', 'Ticker', 'Shares', 'Price', 'Value', 'Change'].map(h => (
-                  <th key={h} style={{ textAlign: h === 'Fund' ? 'left' : 'right', padding: '8px 0' }}>{h}</th>
+                  <th key={h} style={{ textAlign: ['Fund', 'Ticker'].includes(h) ? 'left' : 'right', padding: '8px 0' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -53,7 +53,7 @@ export function PortfolioPage() {
               {activePersona.holdings.map((h, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '10px 0', fontWeight: 500 }}>{h.name}</td>
-                  <td style={{ textAlign: 'right', color: '#6b7280' }}>{h.ticker}</td>
+                  <td style={{ color: '#6b7280' }}>{h.ticker}</td>
                   <td style={{ textAlign: 'right' }}>{h.shares.toFixed(1)}</td>
                   <td style={{ textAlign: 'right' }}>${h.price.toFixed(2)}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600 }}>${h.value.toLocaleString()}</td>

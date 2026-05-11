@@ -154,18 +154,19 @@ export function RmdPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
-                {['Date', 'Amount', 'Method', 'Withheld'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '6px 0 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
-                ))}
+                <th style={{ textAlign: 'left', padding: '6px 0 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Date</th>
+                <th style={{ textAlign: 'right', padding: '6px 0 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Amount</th>
+                <th style={{ textAlign: 'left', padding: '6px 0 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Method</th>
+                <th style={{ textAlign: 'right', padding: '6px 0 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Withheld</th>
               </tr>
             </thead>
             <tbody>
               {rmd.distributions.map((d, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '10px 0' }}>{d.date}</td>
-                  <td style={{ padding: '10px 0', fontWeight: 600 }}>${d.amount.toLocaleString()}</td>
+                  <td style={{ padding: '10px 0', fontWeight: 600, textAlign: 'right' }}>${d.amount.toLocaleString()}</td>
                   <td style={{ padding: '10px 0', color: '#6b7280' }}>{d.method}</td>
-                  <td style={{ padding: '10px 0' }}>${d.withheld.toLocaleString()}</td>
+                  <td style={{ padding: '10px 0', textAlign: 'right' }}>${d.withheld.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

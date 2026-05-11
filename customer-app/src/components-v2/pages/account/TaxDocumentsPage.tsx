@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { useClientStore } from '../../../store/clientStore';
+import { theme } from '../../../theme';
 
 const card: React.CSSProperties = {
-  background: '#fff', borderRadius: 14, padding: '20px 24px',
-  boxShadow: '0 1px 6px rgba(0,0,0,.07)', border: '1px solid #e5e7eb', marginBottom: 20,
+  background: theme.color.surface,
+  borderRadius: theme.radius.lg,
+  padding: '20px 24px',
+  boxShadow: theme.shadow.sm,
+  border: `1px solid ${theme.color.border}`,
+  marginBottom: 20,
 };
 
 interface TaxDoc {
@@ -71,12 +76,12 @@ export function TaxDocumentsPage() {
   const docs = selectedYear === 'all' ? allDocs : allDocs.filter(d => d.taxYear === selectedYear);
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px' }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px', fontFamily: theme.font.sans }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-        <a href="/account" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none' }}>← Account</a>
+        <a href="/account" style={{ color: theme.color.textMuted, fontSize: 13, textDecoration: 'none' }}>← Account</a>
       </div>
-      <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800 }}>Tax Documents</h1>
-      <p style={{ margin: '0 0 28px', color: '#6b7280', fontSize: 14 }}>
+      <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, fontFamily: theme.font.serif }}>Tax Documents</h1>
+      <p style={{ margin: '0 0 28px', color: theme.color.textMuted, fontSize: 14 }}>
         All tax forms for your accounts, going back 7 years. Available as PDFs.
       </p>
 
@@ -88,9 +93,9 @@ export function TaxDocumentsPage() {
             style={{
               padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
               border: '1px solid',
-              borderColor: selectedYear === y ? '#1a56db' : '#d1d5db',
-              background: selectedYear === y ? '#eff6ff' : '#fff',
-              color: selectedYear === y ? '#1a56db' : '#374151',
+              borderColor: selectedYear === y ? theme.color.primary : theme.color.borderStrong,
+              background: selectedYear === y ? theme.color.primarySoft : theme.color.surface,
+              color: selectedYear === y ? theme.color.primary : theme.color.text,
               cursor: 'pointer',
             }}
           >
@@ -102,36 +107,36 @@ export function TaxDocumentsPage() {
       <div style={card}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
-            <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
+            <tr style={{ borderBottom: `2px solid ${theme.color.border}` }}>
               {['Form', 'Description'].map(h => (
-                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 12px', color: theme.color.textMuted, fontWeight: 600, fontSize: 12 }}>{h}</th>
               ))}
-              <th style={{ textAlign: 'right', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Tax Year</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px 12px', color: theme.color.textMuted, fontWeight: 600, fontSize: 12 }}>Tax Year</th>
               {['Account', 'Available'].map(h => (
-                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 12px', color: theme.color.textMuted, fontWeight: 600, fontSize: 12 }}>{h}</th>
               ))}
-              <th style={{ textAlign: 'center', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}></th>
+              <th style={{ textAlign: 'center', padding: '6px 8px 12px', color: theme.color.textMuted, fontWeight: 600, fontSize: 12 }}></th>
             </tr>
           </thead>
           <tbody>
             {docs.map((d, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <tr key={i} style={{ borderBottom: `1px solid ${theme.color.border}` }}>
                 <td style={{ padding: '11px 8px', fontWeight: 700 }}>{d.form}</td>
                 <td style={{ padding: '11px 8px' }}>{d.description}</td>
                 <td style={{ padding: '11px 8px', textAlign: 'right' }}>{d.taxYear}</td>
-                <td style={{ padding: '11px 8px', color: '#6b7280', fontSize: 13 }}>{d.account}</td>
+                <td style={{ padding: '11px 8px', color: theme.color.textMuted, fontSize: 13 }}>{d.account}</td>
                 <td style={{ padding: '11px 8px' }}>
                   {d.available ? (
-                    <span style={{ color: '#065f46', fontSize: 12, fontWeight: 600 }}>✓ Available</span>
+                    <span style={{ color: theme.color.success, fontSize: 12, fontWeight: 600 }}>✓ Available</span>
                   ) : (
-                    <span style={{ color: '#9ca3af', fontSize: 12 }}>Available {d.date}</span>
+                    <span style={{ color: theme.color.textSubtle, fontSize: 12 }}>Available {d.date}</span>
                   )}
                 </td>
                 <td style={{ padding: '11px 8px', textAlign: 'center' }}>
                   {d.available && (
                     <button
                       onClick={() => alert(`Downloading ${d.form} for ${d.taxYear} (demo)`)}
-                      style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', color: '#374151' }}
+                      style={{ background: 'none', border: `1px solid ${theme.color.borderStrong}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', color: theme.color.text }}
                     >
                       Download PDF
                     </button>
@@ -143,7 +148,7 @@ export function TaxDocumentsPage() {
         </table>
       </div>
 
-      <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#0c4a6e' }}>
+      <div style={{ background: theme.color.primarySoft, border: `1px solid ${theme.color.primarySoftBorder}`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: theme.color.primary }}>
         Tax forms are emailed to {activePersona.email} when available. Consolidated 1099s are typically ready by February 15 for the prior year. Contact us if you need a corrected form.
       </div>
     </div>
