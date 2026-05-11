@@ -11,6 +11,25 @@ import { CLIENT_PROFILES, DEFAULT_PROFILE } from '../data/clientProfiles';
 
 const AGENT_NAME = 'John Ferrara';
 
+// ── Transcript save (fire-and-forget, never throws) ────────────────────────
+
+function saveTranscript(slot: ContactSlot, acwData?: ACWData | null) {
+  const msgs = slot.messages;
+  const acw = acwData ?? slot.acwData;
+  const now = Date.now();
+  post('/save-transcript', {
+    transcriptId: slot.contactId,
+    clientId: slot.clientId,
+    clientName: slot.clientName,
+    intentSummary: slot.intentSummary,
+    startTime: msgs[0]?.timestamp ?? now,
+    endTime: msgs[msgs.length - 1]?.timestamp ?? now,
+    wrapUpCode: acw?.wrapUpCode ?? null,
+    acwSummary: acw?.summary ?? null,
+    messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
+  }).catch(() => {});
+}
+
 interface Props {
   slotIndex: number;
   slot: ContactSlot | null;
@@ -346,6 +365,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             post<{ ok: boolean }>('/send-agent-message', { connectionToken: token2, message: msg3 })
               .catch(e => log.error('ChatColumn:idleCheck:msg3Failed', e));
           }
+          const slotForSave = store.getSlot(cid);
+          if (slotForSave) saveTranscript(slotForSave);
           store.patchSlot(cid, { status: 'ended' });
           exitAutopilot(cid);
         }, 2 * 60 * 1000);
@@ -513,8 +534,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', color: '#9ca3af', gap: 8,
         }}>
-          <div style={{ fontSize: 32 }}>💬</div>
-          <div style={{ fontSize: 13 }}>Waiting for a chat</div>
+          <div style={{ fontSize: 40 }}>💬</div>
+          <div style={{ fontSize: 16 }}>Waiting for a chat</div>
         </div>
       )}
 
@@ -534,13 +555,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             background: '#f8fafc', flexShrink: 0,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>{slot.clientName}</div>
+              <div
+                style={{ fontWeight: 700, fontSize: 18, lineHeight: 1.2, cursor: 'default' }}
+                onClick={() => navigator.clipboard.writeText(slot.contactId).catch(() => {})}
+              >{slot.clientName}</div>
               <ResponseTimer lastEventAt={
                 Math.max(slot.lastAgentMessageAt ?? 0, slot.lastCustomerMessageAt ?? 0) || null
               } />
             </div>
             {slot.intentSummary && (
-              <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.3, marginTop: 2 }}>
+              <div style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.3, marginTop: 2 }}>
                 {slot.intentSummary}
               </div>
             )}
@@ -567,7 +591,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
                 rows={2}
                 style={{
                   flex: 1, resize: 'none', border: '1.5px solid #d1d5db', borderRadius: 8,
-                  padding: '6px 10px', fontSize: 13, outline: 'none', fontFamily: 'inherit',
+                  padding: '6px 10px', fontSize: 16, outline: 'none', fontFamily: 'inherit',
                 }}
               />
               <button
@@ -576,14 +600,14 @@ export function ChatColumn({ slotIndex, slot }: Props) {
                 style={{
                   width: 34, borderRadius: 8, border: 'none',
                   background: inputText.trim() ? '#1a56db' : '#e5e7eb',
-                  color: '#fff', cursor: inputText.trim() ? 'pointer' : 'default', fontSize: 16,
+                  color: '#fff', cursor: inputText.trim() ? 'pointer' : 'default', fontSize: 20,
                 }}
               >➤</button>
             </div>
           </div>
 
           {/* AI support panel — fixed height, internal scroll handled by AISupport */}
-          <div style={{ height: 180, borderTop: '1px solid #e5e7eb', flexShrink: 0, overflow: 'hidden' }}>
+          <div style={{ height: 250, borderTop: '1px solid #e5e7eb', flexShrink: 0, overflow: 'hidden' }}>
             <AISupport
               slot={slot}
               onSendResource={text => sendText(text)}
@@ -599,8 +623,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column', color: '#9ca3af', gap: 4,
         }}>
-          <div style={{ fontSize: 24 }}>✅</div>
-          <div style={{ fontSize: 13 }}>Chat ended — {slot.clientName}</div>
+          <div style={{ fontSize: 30 }}>✅</div>
+          <div style={{ fontSize: 16 }}>Chat ended — {slot.clientName}</div>
         </div>
       )}
 
@@ -612,8 +636,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             padding: '8px 14px', borderBottom: '1px solid #e5e7eb',
             background: '#f8fafc', flexShrink: 0,
           }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>{slot.clientName}</div>
-            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1 }}>After call work</div>
+            <div style={{ fontWeight: 700, fontSize: 18 }}>{slot.clientName}</div>
+            <div style={{ fontSize: 14, color: '#6b7280', marginTop: 1 }}>After call work</div>
           </div>
           <AfterCallWork slot={slot} />
         </>
@@ -627,7 +651,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isSystem = msg.role === 'SYSTEM';
 
   if (isSystem) {
-    return <div style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af' }}>{msg.content}</div>;
+    return <div style={{ textAlign: 'center', fontSize: 14, color: '#9ca3af' }}>{msg.content}</div>;
   }
 
   const colors: Record<string, string> = {
@@ -640,11 +664,11 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
     <div style={{ display: 'flex', justifyContent: isAgent ? 'flex-end' : 'flex-start' }}>
       <div style={{
         maxWidth: '82%', background: colors[msg.role] ?? '#f3f4f6',
-        borderRadius: 10, padding: '6px 10px', fontSize: 12, lineHeight: 1.5,
+        borderRadius: 10, padding: '6px 10px', fontSize: 15, lineHeight: 1.5,
         color: '#111', whiteSpace: 'pre-wrap',
       }}>
         {!isAgent && (
-          <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>
+          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>
             {msg.role === 'BOT' ? '🤖 Bot' : 'Client'}
           </div>
         )}

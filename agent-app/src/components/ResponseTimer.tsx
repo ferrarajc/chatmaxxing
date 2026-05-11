@@ -23,7 +23,7 @@ export function ResponseTimer({ lastEventAt }: Props) {
 
   return (
     <div style={{
-      fontSize: 13, fontWeight: 700, color,
+      fontSize: 16, fontWeight: 700, color,
       fontVariantNumeric: 'tabular-nums',
       transition: 'color .3s',
     }}>

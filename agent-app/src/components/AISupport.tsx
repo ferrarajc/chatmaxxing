@@ -69,7 +69,7 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
         borderBottom: '1px solid #f0f4f8', flexShrink: 0,
       }}>
         <div style={{
-          fontWeight: 700, color: '#374151', fontSize: 11,
+          fontWeight: 700, color: '#374151', fontSize: 14,
           textTransform: 'uppercase', letterSpacing: '.5px',
         }}>
           🤖 AI
@@ -88,7 +88,7 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
               <span
                 key={displayScope}
                 style={{
-                  fontSize: 10, fontWeight: 600, color: scopeColor,
+                  fontSize: 13, fontWeight: 600, color: scopeColor,
                   display: 'inline-block',
                   animation: !isActive ? 'scopePop 900ms ease-out forwards' : 'none',
                 }}
@@ -108,7 +108,7 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
                 outline: isActive ? 'none' : '1.5px solid #9ca3af',
                 color: isActive ? '#fff' : '#6b7280',
                 cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 12, padding: 0, flexShrink: 0,
+                justifyContent: 'center', fontSize: 15, padding: 0, flexShrink: 0,
                 transition: 'background .15s, color .15s',
               }}
             >✈</button>
@@ -137,10 +137,10 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
             background: '#f0fdf4', borderRadius: 8, padding: '8px 10px',
             marginBottom: 8, border: '1px solid #bbf7d0',
           }}>
-            <div style={{ fontSize: 11, color: '#15803d', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontSize: 14, color: '#15803d', fontWeight: 600, marginBottom: 4 }}>
               ⏳ Autopilot sending…
             </div>
-            <div style={{ color: '#166534', lineHeight: 1.5, fontSize: 12 }}>
+            <div style={{ color: '#166534', lineHeight: 1.5, fontSize: 15 }}>
               {slot.autopilotPending}
             </div>
           </div>
@@ -152,16 +152,16 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
             background: '#eff6ff', borderRadius: 8, padding: '8px 10px',
             marginBottom: 8, border: '1px solid #bfdbfe',
           }}>
-            <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontSize: 14, color: '#1d4ed8', fontWeight: 600, marginBottom: 4 }}>
               Suggested reply
             </div>
-            <div style={{ color: '#1e40af', lineHeight: 1.5, marginBottom: 6, fontSize: 12 }}>
+            <div style={{ color: '#1e40af', lineHeight: 1.5, marginBottom: 6, fontSize: 15 }}>
               {slot.suggestedText}
             </div>
             <button
               onClick={handleInsert}
               style={{
-                fontSize: 11, padding: '3px 10px', borderRadius: 6, border: 'none',
+                fontSize: 14, padding: '3px 10px', borderRadius: 6, border: 'none',
                 background: '#1a56db', color: '#fff', cursor: 'pointer', fontWeight: 600,
               }}
             >Insert ↑</button>
@@ -172,7 +172,7 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
         {!slot.proposedAction && slot.suggestedResources.length > 0 && (
           <div>
             <div style={{
-              fontSize: 11, color: '#6b7280', fontWeight: 600, marginBottom: 4,
+              fontSize: 14, color: '#6b7280', fontWeight: 600, marginBottom: 4,
             }}>
               Relevant resources
             </div>
@@ -182,11 +182,11 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
                 background: '#fff', borderRadius: 6, padding: '5px 8px', marginBottom: 4,
                 border: '1px solid #e5e7eb',
               }}>
-                <span style={{ color: '#374151', flex: 1, fontSize: 11 }}>{r.title}</span>
+                <span style={{ color: '#374151', flex: 1, fontSize: 14 }}>{r.title}</span>
                 <button
                   onClick={() => handleSendResource(r)}
                   style={{
-                    fontSize: 10, padding: '2px 7px', borderRadius: 5, border: 'none',
+                    fontSize: 13, padding: '2px 7px', borderRadius: 5, border: 'none',
                     background: '#10b981', color: '#fff', cursor: 'pointer',
                     fontWeight: 600, flexShrink: 0,
                   }}

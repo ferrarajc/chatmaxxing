@@ -58,7 +58,7 @@ export function SepIraPage() {
           <thead>
             <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
               {['Schedule C Net Profit', 'Approx. SEP-IRA Limit', '% of Profit'].map(h => (
-                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                <th key={h} style={{ textAlign: 'right', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -71,9 +71,9 @@ export function SepIraPage() {
               { profit: '$280,000+', limit: '$70,000 (cap)', pct: '25% of comp.' },
             ].map(r => (
               <tr key={r.profit} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <td style={{ padding: '10px 8px', fontWeight: 500 }}>{r.profit}</td>
-                <td style={{ padding: '10px 8px' }}>{r.limit}</td>
-                <td style={{ padding: '10px 8px', color: '#6b7280' }}>{r.pct}</td>
+                <td style={{ padding: '10px 8px', fontWeight: 500, textAlign: 'right' }}>{r.profit}</td>
+                <td style={{ padding: '10px 8px', textAlign: 'right' }}>{r.limit}</td>
+                <td style={{ padding: '10px 8px', color: '#6b7280', textAlign: 'right' }}>{r.pct}</td>
               </tr>
             ))}
           </tbody>

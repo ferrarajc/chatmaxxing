@@ -73,7 +73,7 @@ export function SepIraVsSoloPage() {
           <thead>
             <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
               {['Net Self-Employment Income', 'SEP-IRA Max', 'Solo 401(k) Max (under 50)'].map(h => (
-                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                <th key={h} style={{ textAlign: 'right', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -86,9 +86,9 @@ export function SepIraVsSoloPage() {
               { income: '$280,000+', sep: '$70,000', solo: '$70,000 (cap)' },
             ].map(r => (
               <tr key={r.income} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <td style={{ padding: '10px 8px', fontWeight: 500 }}>{r.income}</td>
-                <td style={{ padding: '10px 8px' }}>{r.sep}</td>
-                <td style={{ padding: '10px 8px', color: '#1a56db' }}>{r.solo}</td>
+                <td style={{ padding: '10px 8px', fontWeight: 500, textAlign: 'right' }}>{r.income}</td>
+                <td style={{ padding: '10px 8px', textAlign: 'right' }}>{r.sep}</td>
+                <td style={{ padding: '10px 8px', color: '#1a56db', textAlign: 'right' }}>{r.solo}</td>
               </tr>
             ))}
           </tbody>

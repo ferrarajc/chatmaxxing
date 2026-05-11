@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { PERSONAS } from '../../data/personas';
 import { useClientStore } from '../../store/clientStore';
+import { useDesignStore } from '../../store/designStore';
 
 const NAV_LINKS = [
   { to: '/', label: 'Home' },
@@ -12,8 +13,11 @@ const NAV_LINKS = [
 
 export function TopNav() {
   const { activePersona, setActivePersona } = useClientStore();
+  const { design, setDesign } = useDesignStore();
   const [open, setOpen] = useState(false);
+  const [designMenuOpen, setDesignMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
+  const bRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -26,6 +30,17 @@ export function TopNav() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  useEffect(() => {
+    if (!designMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (bRef.current && !bRef.current.contains(e.target as Node)) {
+        setDesignMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [designMenuOpen]);
+
   const initials = activePersona.name.split(' ').map(n => n[0]).join('');
 
   return (
@@ -34,9 +49,43 @@ export function TopNav() {
       display: 'flex', alignItems: 'center', height: 64, gap: 32,
       position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,.2)',
     }}>
-      {/* Logo */}
+      {/* Logo + hidden design toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 16 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>B</div>
+        <div ref={bRef} style={{ position: 'relative' }}>
+          <div
+            onClick={() => setDesignMenuOpen(o => !o)}
+            style={{ width: 36, height: 36, borderRadius: 8, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
+          >B</div>
+          {designMenuOpen && (
+            <div style={{
+              position: 'absolute', left: 0, top: 44, background: '#fff', color: '#111',
+              borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 190,
+              overflow: 'hidden', zIndex: 300, border: '1px solid #e5e7eb',
+            }}>
+              <div style={{ padding: '8px 14px 6px', fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.6px' }}>
+                Switch design
+              </div>
+              {(['original', 'upgraded'] as const).map(d => (
+                <div
+                  key={d}
+                  onClick={() => { setDesign(d); setDesignMenuOpen(false); }}
+                  style={{
+                    padding: '10px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                    background: design === d ? '#eff6ff' : 'transparent',
+                    color: design === d ? '#1a56db' : '#111',
+                    borderTop: '1px solid #f3f4f6',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}
+                  onMouseEnter={e => { if (design !== d) (e.currentTarget as HTMLElement).style.background = '#f9fafb'; }}
+                  onMouseLeave={e => { if (design !== d) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  {d === 'original' ? 'Original design' : 'Upgraded design'}
+                  {design === d && <span style={{ fontSize: 14, color: '#1a56db' }}>✓</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-.3px' }}>Bob's Mutual Funds</span>
       </div>
 

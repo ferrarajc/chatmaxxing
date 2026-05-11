@@ -20,6 +20,7 @@ const lambdaStack = new LambdaStack(app, 'BobsLambdaStack', {
   clientsTable: dataStack.clientsTable,
   chatSessionsTable: dataStack.chatSessionsTable,
   callbacksTable: dataStack.callbacksTable,
+  transcriptsTable: dataStack.transcriptsTable,
 });
 lambdaStack.addDependency(dataStack);
 

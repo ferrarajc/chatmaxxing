@@ -4,6 +4,7 @@ import { useAgentStore } from '../store/agentStore';
 import { ChatMessage } from '../types';
 import { log } from '../api/logger';
 import { playChaChingSound } from '../utils/sounds';
+import { post } from '../api/client';
 
 declare global {
   interface Window {
@@ -245,6 +246,22 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         if (slot?.bonusEligible) {
           playChaChingSound();
           useAgentStore.getState().addBonus(50);
+        }
+
+        // Save transcript now (no ACW data yet) — AfterCallWork will overwrite with ACW data
+        const slotNow = useAgentStore.getState().getSlot(contactId);
+        if (slotNow) {
+          const msgs = slotNow.messages;
+          const now = Date.now();
+          post('/save-transcript', {
+            transcriptId: slotNow.contactId,
+            clientId: slotNow.clientId,
+            clientName: slotNow.clientName,
+            intentSummary: slotNow.intentSummary,
+            startTime: msgs[0]?.timestamp ?? now,
+            endTime: msgs[msgs.length - 1]?.timestamp ?? now,
+            messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
+          }).catch(() => {});
         }
 
         // Transition to ACW — do NOT auto-clear

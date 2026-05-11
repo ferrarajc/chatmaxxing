@@ -96,10 +96,10 @@ export const TASKS: Task[] = [
       },
       {
         key: 'beneficiaryType',
-        label: 'Primary or contingent',
-        question: 'Should this be a primary beneficiary or a contingent (backup) beneficiary?',
+        label: 'Primary or secondary',
+        question: 'Should this be a primary beneficiary or a secondary (backup) beneficiary?',
         type: 'enum',
-        options: ['Primary', 'Contingent'],
+        options: ['Primary', 'Secondary'],
         required: true,
         skipWhenFieldIs: { field: 'action', value: 'Remove' },
       },
@@ -533,8 +533,8 @@ export const TASKS: Task[] = [
   {
     id: 'update-rmd-settings',
     name: 'Update RMD Settings',
-    description: "Change the delivery method, frequency, or tax withholding for the client's Required Minimum Distribution.",
-    keywords: ['rmd', 'required minimum', 'minimum distribution', 'rmd settings', 'rmd delivery', 'rmd withholding', 'update rmd'],
+    description: "Update how and when a client receives their Required Minimum Distribution (RMD) — mandatory minimum annual withdrawals required for Traditional IRA and SEP-IRA accounts.",
+    keywords: ['rmd', 'required minimum', 'minimum distribution', 'rmd settings', 'rmd delivery', 'rmd withholding', 'update rmd', 'mandatory withdrawal', 'annual withdrawal'],
     eligibleAccountTypes: ['Traditional IRA', 'SEP-IRA'],
     fields: [
       {
@@ -640,8 +640,8 @@ export const TASKS: Task[] = [
   {
     id: 'request-tax-document',
     name: 'Request Tax Document',
-    description: 'Request a copy of a specific tax form.',
-    keywords: ['tax document', 'tax form', '1099', '5498', '1099-r', '1099-div', 'tax paperwork', 'request form', 'tax year'],
+    description: 'Request a copy of a tax document — such as a 1099, 1099-R, 1099-DIV, 1099-B, or Form 5498 — for filing taxes or recordkeeping.',
+    keywords: ['tax document', 'tax form', '1099', '5498', '1099-r', '1099-div', 'tax paperwork', 'request form', 'tax year', 'tax statement', 'income statement', 'earnings statement'],
     fields: [
       {
         key: 'formType',

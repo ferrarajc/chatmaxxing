@@ -30,6 +30,7 @@ The transcript is formatted as "ROLE: message | ROLE: message | ...".
 Write a single concise sentence (max 20 words) capturing what the customer's core need or question is.
 Start with the client's first name if you can detect it, e.g. "Alex asked about RMD rules and wants withdrawal guidance".
 Focus on the customer's underlying goal — not just the last message.
+Do not mention that the customer asked to speak to an agent or requested escalation — that is implied and wastes space.
 Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
             80,
           ),
@@ -45,7 +46,7 @@ If the topic is mentioned but the customer hasn't fully explained what they need
 
 If there is NO clear intent signal in the transcript: return exactly: How can I assist you today?
 
-Write in first person as the agent. Return only the sentences — no quotes, no preamble.`,
+Write in first person as the agent. Do not include any reference to "connecting with a live agent" or "speaking with a representative" — the agent reading this greeting IS already live with the customer. Return only the sentences — no quotes, no preamble.`,
             120,
           ),
         ]);

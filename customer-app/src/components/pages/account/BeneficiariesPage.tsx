@@ -1,6 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useClientStore } from '../../../store/clientStore';
-import { Beneficiary } from '../../../data/personas';
+import { post } from '../../../api/client';
+
+interface LiveBeneficiary {
+  accountId: string;
+  name: string;
+  relationship: string;
+  percentage: number;
+  type: 'Primary' | 'Secondary';
+}
+
+function isRetirementAccount(type: string) {
+  const t = type.toLowerCase();
+  return t.includes('ira') || t.includes('sep');
+}
 
 const card: React.CSSProperties = {
   background: '#fff', borderRadius: 14, padding: '20px 24px',
@@ -8,37 +21,61 @@ const card: React.CSSProperties = {
 };
 
 export function BeneficiariesPage() {
-  const { activePersona, removeBeneficiary, updateBeneficiaries } = useClientStore();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Beneficiary>>({});
+  const { activePersona } = useClientStore();
+  const [liveBens, setLiveBens] = useState<LiveBeneficiary[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<LiveBeneficiary>>({});
   const [saved, setSaved] = useState(false);
 
-  const accounts = activePersona.accounts.map(a => ({
-    id: a.id,
-    type: a.type,
-    beneficiaries: activePersona.beneficiaries.filter(b => b.accountId === a.id),
-  }));
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    post<{ beneficiaries: LiveBeneficiary[] }>('/client-data', {
+      action: 'get-beneficiaries',
+      clientId: activePersona.clientId,
+    })
+      .then(res => setLiveBens(res.beneficiaries ?? []))
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [activePersona.clientId]);
 
-  const handleEdit = (b: Beneficiary) => {
-    setEditingId(b.id);
+  const writeBens = (updated: LiveBeneficiary[]) =>
+    post('/client-data', {
+      action: 'put-beneficiaries',
+      clientId: activePersona.clientId,
+      data: updated,
+    });
+
+  const iraAccounts = activePersona.accounts.filter(a => isRetirementAccount(a.type));
+
+  const benKey = (b: LiveBeneficiary) => `${b.accountId}:${b.name}`;
+
+  const handleEdit = (b: LiveBeneficiary) => {
+    setEditingKey(benKey(b));
     setEditForm({ name: b.name, relationship: b.relationship, percentage: b.percentage });
     setSaved(false);
   };
 
-  const handleSave = (b: Beneficiary) => {
-    const updated: Beneficiary = { ...b, ...editForm };
-    const accountBeneficiaries = activePersona.beneficiaries
-      .filter(x => x.accountId === b.accountId)
-      .map(x => x.id === b.id ? updated : x);
-    updateBeneficiaries(b.accountId, accountBeneficiaries);
-    setEditingId(null);
+  const handleSave = async (b: LiveBeneficiary) => {
+    const updated = liveBens.map(x => x === b ? { ...x, ...editForm } : x);
+    await writeBens(updated);
+    setLiveBens(updated);
+    setEditingKey(null);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const handleRemove = async (b: LiveBeneficiary) => {
+    const updated = liveBens.filter(x => x !== b);
+    await writeBens(updated);
+    setLiveBens(updated);
+  };
+
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+      <div style={{ marginBottom: 8 }}>
         <a href="/account" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none' }}>← Account</a>
       </div>
       <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800 }}>Beneficiary Designations</h1>
@@ -52,92 +89,96 @@ export function BeneficiariesPage() {
         </div>
       )}
 
-      {accounts.map(account => (
-        <div key={account.id} style={card}>
-          <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: '#1e3a5f' }}>
-            {account.type}
-          </h2>
+      {loading && <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>Loading…</div>}
+      {error && <div style={{ color: '#ef4444', fontSize: 14, marginBottom: 20 }}>Could not load beneficiaries — {error}</div>}
 
-          {account.beneficiaries.length === 0 ? (
-            <p style={{ color: '#ef4444', fontSize: 14 }}>No beneficiary on file — please add one.</p>
-          ) : (
-            account.beneficiaries.map(b => (
-              <div key={b.id} style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: 14, marginBottom: 14 }}>
-                {editingId === b.id ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                      <label style={{ fontSize: 13, color: '#374151' }}>
-                        Name
+      {!loading && iraAccounts.map(account => {
+        const accountBens = liveBens.filter(b => b.accountId === account.id);
+        return (
+          <div key={account.id} style={card}>
+            <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: '#1e3a5f' }}>
+              {account.type}
+            </h2>
+
+            {accountBens.length === 0 ? (
+              <p style={{ color: '#ef4444', fontSize: 14 }}>No beneficiary on file — please add one.</p>
+            ) : (
+              accountBens.map(b => (
+                <div key={benKey(b)} style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: 14, marginBottom: 14 }}>
+                  {editingKey === benKey(b) ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <label style={{ fontSize: 13, color: '#374151' }}>
+                          Name
+                          <input
+                            value={editForm.name ?? ''}
+                            onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                            style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }}
+                          />
+                        </label>
+                        <label style={{ fontSize: 13, color: '#374151' }}>
+                          Relationship
+                          <input
+                            value={editForm.relationship ?? ''}
+                            onChange={e => setEditForm(f => ({ ...f, relationship: e.target.value }))}
+                            style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }}
+                          />
+                        </label>
+                      </div>
+                      <label style={{ fontSize: 13, color: '#374151', width: 120 }}>
+                        Share (%)
                         <input
-                          value={editForm.name ?? ''}
-                          onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                          type="number" min={1} max={100}
+                          value={editForm.percentage ?? 0}
+                          onChange={e => setEditForm(f => ({ ...f, percentage: Number(e.target.value) }))}
                           style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }}
                         />
                       </label>
-                      <label style={{ fontSize: 13, color: '#374151' }}>
-                        Relationship
-                        <input
-                          value={editForm.relationship ?? ''}
-                          onChange={e => setEditForm(f => ({ ...f, relationship: e.target.value }))}
-                          style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }}
-                        />
-                      </label>
-                    </div>
-                    <label style={{ fontSize: 13, color: '#374151', width: 120 }}>
-                      Share (%)
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={editForm.percentage ?? 0}
-                        onChange={e => setEditForm(f => ({ ...f, percentage: Number(e.target.value) }))}
-                        style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }}
-                      />
-                    </label>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                      <button
-                        onClick={() => handleSave(b)}
-                        style={{ background: '#1a56db', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        style={{ background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 15 }}>{b.name}</div>
-                      <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>
-                        {b.relationship} · {b.type} · {b.percentage}% · DOB {b.dob} · SSN {b.ssn}
+                      <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                        <button
+                          onClick={() => handleSave(b)}
+                          style={{ background: '#1a56db', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingKey(null)}
+                          style={{ background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={() => handleEdit(b)}
-                        style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', color: '#374151' }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => removeBeneficiary(b.id)}
-                        style={{ background: 'none', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', color: '#dc2626' }}
-                      >
-                        Remove
-                      </button>
+                  ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{b.name}</div>
+                        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>
+                          {b.relationship} · {b.type} · {b.percentage}%
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          onClick={() => handleEdit(b)}
+                          style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', color: '#374151' }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleRemove(b)}
+                          style={{ background: 'none', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', color: '#dc2626' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      ))}
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        );
+      })}
 
       <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#92400e' }}>
         Changes are effective immediately. Keep designations up to date after marriage, divorce, birth, or death of a beneficiary.

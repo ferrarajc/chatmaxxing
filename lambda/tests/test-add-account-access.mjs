@@ -73,7 +73,7 @@ async function simulateCustomerReply(agentMessage, conversationHistory) {
   return data.choices[0]?.message?.content?.trim() ?? '';
 }
 
-async function runSingleTest(runIndex) {
+async function runSingleTest(runIndex, intentOverride) {
   const transcript = [];
   let systemMessages = [];
 
@@ -100,7 +100,7 @@ async function runSingleTest(runIndex) {
       transcript: fullTranscript,
       clientProfile: CLIENT_PROFILE,
       scope: 'get-intent',
-      currentIntent: 'add authorized account user give access',
+      currentIntent: intentOverride ?? 'add authorized account user give access',
     };
 
     const res = await fetch(API_URL, {
@@ -191,10 +191,18 @@ async function runSingleTest(runIndex) {
   return { passed, issues, proposedAction, turnCount: transcript.filter(m => m.role === 'AGENT').length };
 }
 
+// Intent strings that do NOT keyword-match — must be routed via LLM classifier
+const LLM_FALLBACK_INTENTS = [
+  'The customer wants to give his wife access to his account and needs assistance with the process',
+  'Client wants to add my wife to the account',
+  'The client would like another person to have access to his accounts',
+];
+
 async function main() {
   const RUNS = 10;
   const PASS_THRESHOLD = 9;
 
+  // ── Part 1: standard 10-run test with exact-match intent ──────────────────
   console.log(`\nRunning ${RUNS} simulated add-account-access conversations...\n`);
 
   let passCount = 0;
@@ -222,30 +230,52 @@ async function main() {
 
   console.log(`\nResult: ${passCount}/${RUNS} passed`);
 
-  if (passCount >= PASS_THRESHOLD) {
-    console.log(`✓ PASS — meets the 90% threshold (${PASS_THRESHOLD}/${RUNS} required)\n`);
-    process.exit(0);
-  } else {
+  if (passCount < PASS_THRESHOLD) {
     console.log(`✗ FAIL — below the 90% threshold (needed ${PASS_THRESHOLD}/${RUNS}, got ${passCount}/${RUNS})\n`);
-
-    // Print failure summary
     const failures = results.filter(r => !r.passed);
     if (failures.length > 0) {
       console.log('Failure summary:');
       const issueCounts = {};
       for (const f of failures) {
-        for (const issue of f.issues) {
-          issueCounts[issue] = (issueCounts[issue] ?? 0) + 1;
-        }
+        for (const issue of f.issues) issueCounts[issue] = (issueCounts[issue] ?? 0) + 1;
       }
       for (const [issue, count] of Object.entries(issueCounts)) {
         console.log(`  ${count}x: ${issue}`);
       }
-      console.log('');
     }
-
     process.exit(1);
   }
+
+  console.log(`✓ PASS — meets the 90% threshold (${PASS_THRESHOLD}/${RUNS} required)`);
+
+  // ── Part 2: LLM-fallback routing test — these intents skip keyword match ──
+  console.log(`\nRunning LLM-fallback routing test (${LLM_FALLBACK_INTENTS.length} intent variants)...\n`);
+
+  let fallbackPass = 0;
+  for (const intent of LLM_FALLBACK_INTENTS) {
+    process.stdout.write(`  "${intent.slice(0, 60)}...": `);
+    try {
+      const result = await runSingleTest(0, intent);
+      if (result.passed) {
+        fallbackPass++;
+        console.log(`PASS (${result.turnCount} agent turns)`);
+      } else {
+        console.log(`FAIL — ${result.issues.join(', ')}`);
+      }
+    } catch (err) {
+      console.log(`ERROR — ${err.message}`);
+    }
+  }
+
+  const fallbackThreshold = Math.ceil(LLM_FALLBACK_INTENTS.length * 0.9);
+  console.log(`\nFallback result: ${fallbackPass}/${LLM_FALLBACK_INTENTS.length} passed`);
+  if (fallbackPass < fallbackThreshold) {
+    console.log(`✗ FAIL — LLM fallback routing below threshold\n`);
+    process.exit(1);
+  }
+
+  console.log(`✓ PASS — LLM fallback routing works\n`);
+  process.exit(0);
 }
 
 main().catch(err => {

@@ -103,9 +103,14 @@ export function TaxDocumentsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
-              {['Form', 'Description', 'Tax Year', 'Account', 'Available', ''].map(h => (
+              {['Form', 'Description'].map(h => (
                 <th key={h} style={{ textAlign: 'left', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
               ))}
+              <th style={{ textAlign: 'right', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Tax Year</th>
+              {['Account', 'Available'].map(h => (
+                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
+              ))}
+              <th style={{ textAlign: 'center', padding: '6px 8px 12px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -113,7 +118,7 @@ export function TaxDocumentsPage() {
               <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <td style={{ padding: '11px 8px', fontWeight: 700 }}>{d.form}</td>
                 <td style={{ padding: '11px 8px' }}>{d.description}</td>
-                <td style={{ padding: '11px 8px' }}>{d.taxYear}</td>
+                <td style={{ padding: '11px 8px', textAlign: 'right' }}>{d.taxYear}</td>
                 <td style={{ padding: '11px 8px', color: '#6b7280', fontSize: 13 }}>{d.account}</td>
                 <td style={{ padding: '11px 8px' }}>
                   {d.available ? (
@@ -122,7 +127,7 @@ export function TaxDocumentsPage() {
                     <span style={{ color: '#9ca3af', fontSize: 12 }}>Available {d.date}</span>
                   )}
                 </td>
-                <td style={{ padding: '11px 8px' }}>
+                <td style={{ padding: '11px 8px', textAlign: 'center' }}>
                   {d.available && (
                     <button
                       onClick={() => alert(`Downloading ${d.form} for ${d.taxYear} (demo)`)}

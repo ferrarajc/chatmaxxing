@@ -5,6 +5,7 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as path from 'path';
 import { Construct } from 'constructs';
 
@@ -12,6 +13,7 @@ interface LambdaStackProps extends cdk.StackProps {
   clientsTable: dynamodb.Table;
   chatSessionsTable: dynamodb.Table;
   callbacksTable: dynamodb.Table;
+  transcriptsTable: dynamodb.Table;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -22,19 +24,20 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable } = props;
 
     // ── Shared base config ─────────────────────────────────────────
     const baseEnv: Record<string, string> = {
       CLIENTS_TABLE: clientsTable.tableName,
       SESSIONS_TABLE: chatSessionsTable.tableName,
       CALLBACKS_TABLE: callbacksTable.tableName,
+      TRANSCRIPTS_TABLE: transcriptsTable.tableName,
       BEDROCK_MODEL_ID: 'us.amazon.nova-micro-v1:0',
       BEDROCK_REGION: this.region,
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
-      // Read from shell env at synth time — never hardcode in source.
-      // Set OPENAI_API_KEY in the environment before running cdk deploy.
-      OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
+      // Resolved by CloudFormation from SSM at deploy time — no shell variable needed.
+      // To set: aws ssm put-parameter --name "bobs-openai-api-key" --value sk-... --type String --overwrite
+      OPENAI_API_KEY: ssm.StringParameter.valueForStringParameter(this, 'bobs-openai-api-key'),
       // Arize observability — get both from app.arize.com → Settings.
       // Leave blank to disable; all LLM calls still work normally without them.
       ARIZE_API_KEY:   process.env.ARIZE_API_KEY   ?? '',
@@ -200,6 +203,7 @@ export class LambdaStack extends cdk.Stack {
       actions: ['connect:*'],
       resources: ['*'],
     }));
+    clientsTable.grantReadData(autopilotTurnFn);
 
     // ── generate-acw ──────────────────────────────────────────────
     const generateAcwFn = new NodejsFunction(this, 'GenerateAcwFn', {
@@ -273,6 +277,20 @@ export class LambdaStack extends cdk.Stack {
     clientsTable.grantReadWriteData(executeTaskFn);
     callbacksTable.grantReadWriteData(executeTaskFn);
 
+    // ── reset-beneficiaries (browser-accessible demo reset endpoint) ─
+    const resetBeneficiariesFn = new NodejsFunction(this, 'ResetBeneficiariesFn', {
+      functionName: 'bobs-reset-beneficiaries',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'reset-beneficiaries/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    clientsTable.grantReadWriteData(resetBeneficiariesFn);
+
     // ── client-data (beneficiaries / auto-invest / RMD read+write) ─
     const clientDataFn = new NodejsFunction(this, 'ClientDataFn', {
       functionName: 'bobs-client-data',
@@ -286,6 +304,34 @@ export class LambdaStack extends cdk.Stack {
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     clientsTable.grantReadWriteData(clientDataFn);
+
+    // ── save-transcript ────────────────────────────────────────────
+    const saveTranscriptFn = new NodejsFunction(this, 'SaveTranscriptFn', {
+      functionName: 'bobs-save-transcript',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'save-transcript/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    transcriptsTable.grantWriteData(saveTranscriptFn);
+
+    // ── get-transcripts ────────────────────────────────────────────
+    const getTranscriptsFn = new NodejsFunction(this, 'GetTranscriptsFn', {
+      functionName: 'bobs-get-transcripts',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'get-transcripts/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    transcriptsTable.grantReadData(getTranscriptsFn);
 
     // ── HTTP API Gateway ───────────────────────────────────────────
     const api = new apigwv2.HttpApi(this, 'BobsApi', {
@@ -320,6 +366,7 @@ export class LambdaStack extends cdk.Stack {
       ['/client-log', clientLogFn],
       ['/client-data', clientDataFn],
       ['/execute-task', executeTaskFn],
+      ['/save-transcript', saveTranscriptFn],
     ];
     for (const [path, fn] of routes) {
       api.addRoutes({
@@ -328,6 +375,20 @@ export class LambdaStack extends cdk.Stack {
         integration: new HttpLambdaIntegration(`${fn.node.id}Integration`, fn),
       });
     }
+
+    // GET route for browser-accessible reset endpoint
+    api.addRoutes({
+      path: '/reset-beneficiaries',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('ResetBeneficiariesIntegration', resetBeneficiariesFn),
+    });
+
+    // GET route for transcript review UI
+    api.addRoutes({
+      path: '/get-transcripts',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('GetTranscriptsIntegration', getTranscriptsFn),
+    });
 
     // ── Route-level throttling on costly endpoints ─────────────────
     // Prevents bot spam from running up OpenAI / Connect costs.

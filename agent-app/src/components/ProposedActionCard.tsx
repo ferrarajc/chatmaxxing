@@ -35,6 +35,16 @@ export function ProposedActionCard({ slot }: Props) {
     setEditingKey(null);
   };
 
+  const toPastTense = (summary: string): string => {
+    const verbMap: Record<string, string> = {
+      Update: 'Updated', Add: 'Added', Remove: 'Removed', Change: 'Changed',
+      Schedule: 'Scheduled', Cancel: 'Cancelled', Grant: 'Granted',
+      Transfer: 'Transferred', Set: 'Set', Enable: 'Enabled', Disable: 'Disabled',
+      Replace: 'Replaced', Modify: 'Modified', Close: 'Closed',
+    };
+    return summary.replace(/^\w+/, w => verbMap[w] ?? (w.endsWith('e') ? w + 'd' : w + 'ed'));
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     const fieldsMap: Record<string, string> = {};
@@ -48,6 +58,17 @@ export function ProposedActionCard({ slot }: Props) {
       });
       setResult(res);
       if (res.success) {
+        const description = toPastTense(action.summary);
+        const clientMsg = res.referenceNumber
+          ? `Confirmation\nRef: ${res.referenceNumber}\n\n${description}`
+          : `Confirmation\n\n${description}`;
+        store.appendMessage(slot.contactId, { role: 'AGENT', content: clientMsg });
+        if (slot.connectionToken) {
+          post<{ ok: boolean }>('/send-agent-message', {
+            connectionToken: slot.connectionToken,
+            message: clientMsg,
+          }).catch(() => {});
+        }
         // Clear card after short delay so agent sees the success message
         setTimeout(() => {
           store.patchSlot(slot.contactId, { proposedAction: null });
@@ -74,15 +95,15 @@ export function ProposedActionCard({ slot }: Props) {
         marginBottom: 8,
       }}>
         <div style={{
-          fontWeight: 700, fontSize: 11,
+          fontWeight: 700, fontSize: 14,
           color: result.success ? '#15803d' : '#dc2626',
           marginBottom: 4,
         }}>
           {result.success ? '✓ Action submitted' : '✗ Submission failed'}
         </div>
-        <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.4 }}>{result.message}</div>
+        <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.4 }}>{result.message}</div>
         {result.referenceNumber && (
-          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+          <div style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>
             Ref: {result.referenceNumber}
           </div>
         )}
@@ -106,17 +127,17 @@ export function ProposedActionCard({ slot }: Props) {
         alignItems: 'center',
         gap: 6,
       }}>
-        <span style={{ fontSize: 11 }}>📋</span>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>Proposed Action</div>
-          <div style={{ fontSize: 10, color: '#93c5fd' }}>{action.taskName}</div>
+        <span style={{ fontSize: 14 }}>📋</span>
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Proposed Action</div>
+          <div style={{ fontSize: 13, color: '#93c5fd' }}>{action.taskName}</div>
         </div>
       </div>
 
       {/* Summary */}
       <div style={{
         padding: '7px 10px',
-        fontSize: 11,
+        fontSize: 14,
         color: '#374151',
         lineHeight: 1.4,
         borderBottom: '1px solid #e5e7eb',
@@ -135,7 +156,7 @@ export function ProposedActionCard({ slot }: Props) {
             borderBottom: '1px solid #f3f4f6',
             gap: 6,
           }}>
-            <div style={{ fontSize: 10, color: '#6b7280', width: 90, flexShrink: 0, fontWeight: 600 }}>
+            <div style={{ fontSize: 13, color: '#6b7280', width: 180, flexShrink: 0, fontWeight: 600 }}>
               {field.label}
             </div>
             {editingKey === field.key ? (
@@ -146,30 +167,30 @@ export function ProposedActionCard({ slot }: Props) {
                   onChange={e => setEditValue(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingKey(null); }}
                   style={{
-                    flex: 1, fontSize: 11, padding: '2px 6px',
+                    flex: 1, fontSize: 14, padding: '2px 6px',
                     border: '1px solid #1a56db', borderRadius: 4, outline: 'none',
                   }}
                 />
                 <button
                   onClick={saveEdit}
                   style={{
-                    fontSize: 10, padding: '2px 6px', borderRadius: 4, border: 'none',
+                    fontSize: 13, padding: '2px 6px', borderRadius: 4, border: 'none',
                     background: '#1a56db', color: '#fff', cursor: 'pointer',
                   }}
                 >✓</button>
               </div>
             ) : (
               <>
-                <div style={{ flex: 1, fontSize: 11, color: '#111' }}>{field.value || '—'}</div>
+                <div style={{ flex: 1, fontSize: 14, color: '#111' }}>{field.value || '—'}</div>
                 <button
                   onClick={() => startEdit(field)}
                   title="Edit"
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    fontSize: 11, color: '#9ca3af', padding: '1px 3px',
+                    fontSize: 14, color: '#9ca3af', padding: '1px 3px',
                     flexShrink: 0,
                   }}
-                >✏</button>
+                >✏️</button>
               </>
             )}
           </div>
@@ -188,7 +209,7 @@ export function ProposedActionCard({ slot }: Props) {
           onClick={handleReject}
           disabled={submitting}
           style={{
-            fontSize: 11, padding: '4px 10px', borderRadius: 6,
+            fontSize: 14, padding: '4px 10px', borderRadius: 6,
             border: '1px solid #e5e7eb', background: '#fff',
             color: '#374151', cursor: 'pointer',
           }}
@@ -197,7 +218,7 @@ export function ProposedActionCard({ slot }: Props) {
           onClick={handleSubmit}
           disabled={submitting || editingKey !== null}
           style={{
-            fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none',
+            fontSize: 14, padding: '4px 12px', borderRadius: 6, border: 'none',
             background: submitting ? '#9ca3af' : '#16a34a',
             color: '#fff', cursor: submitting ? 'default' : 'pointer',
             fontWeight: 600,

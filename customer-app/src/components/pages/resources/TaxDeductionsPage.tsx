@@ -26,7 +26,7 @@ export function TaxDeductionsPage() {
           <thead>
             <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
               {['SEP-IRA Contribution', '22% Bracket', '24% Bracket', '32% Bracket'].map(h => (
-                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
+                <th key={h} style={{ textAlign: 'right', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -38,10 +38,10 @@ export function TaxDeductionsPage() {
               { contrib: '$70,000', b22: '$15,400', b24: '$16,800', b32: '$22,400' },
             ].map(r => (
               <tr key={r.contrib} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <td style={{ padding: '10px 8px', fontWeight: 600 }}>{r.contrib}</td>
-                <td style={{ padding: '10px 8px', color: '#065f46' }}>{r.b22}</td>
-                <td style={{ padding: '10px 8px', color: '#065f46' }}>{r.b24}</td>
-                <td style={{ padding: '10px 8px', color: '#065f46' }}>{r.b32}</td>
+                <td style={{ padding: '10px 8px', fontWeight: 600, textAlign: 'right' }}>{r.contrib}</td>
+                <td style={{ padding: '10px 8px', color: '#065f46', textAlign: 'right' }}>{r.b22}</td>
+                <td style={{ padding: '10px 8px', color: '#065f46', textAlign: 'right' }}>{r.b24}</td>
+                <td style={{ padding: '10px 8px', color: '#065f46', textAlign: 'right' }}>{r.b32}</td>
               </tr>
             ))}
           </tbody>

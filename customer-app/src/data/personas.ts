@@ -5,7 +5,7 @@ export interface Beneficiary {
   id: string;
   accountId: string;
   accountType: string;
-  type: 'Primary' | 'Contingent';
+  type: 'Primary' | 'Secondary';
   name: string;
   relationship: string;
   dob: string;
@@ -49,7 +49,7 @@ export interface Persona {
   address: string;
   accounts: { type: string; balance: number; id: string; change: number }[];
   totalBalance: number;
-  holdings: { name: string; ticker: string; shares: number; price: number; change: number; value: number }[];
+  holdings: { name: string; ticker: string; accountId: string; shares: number; price: number; change: number; value: number }[];
   transactions: { date: string; description: string; amount: number; account: string }[];
   beneficiaries: Beneficiary[];
   autoInvest: AutoInvestSchedule[];
@@ -71,12 +71,12 @@ const alexJohnson: Persona = {
   ],
   totalBalance: 241570,
   holdings: [
-    { name: 'BobsFunds 500 Index',          ticker: 'BF500',  shares: 142.3, price: 218.40, change: +1.2, value: 31072  },
-    { name: 'BobsFunds Growth',             ticker: 'BFGR',   shares: 88.1,  price: 341.20, change: +2.1, value: 30060  },
-    { name: 'BobsFunds Bond Income',        ticker: 'BFBI',   shares: 210.0, price: 98.30,  change: -0.3, value: 20643  },
-    { name: 'BobsFunds International',      ticker: 'BFIN',   shares: 55.4,  price: 87.60,  change: +0.7, value: 4853   },
-    { name: 'BobsFunds ESG Leaders',        ticker: 'BFESG',  shares: 31.2,  price: 156.90, change: +1.8, value: 4895   },
-    { name: 'BobsFunds Short-Term Treas.',  ticker: 'BFST',   shares: 499.8, price: 100.10, change: +0.1, value: 50030  },
+    { name: 'BobsFunds 500 Index',          ticker: 'BF500',  accountId: 'acc-001', shares: 142.3, price: 218.40, change: +1.2, value: 31072  },
+    { name: 'BobsFunds Growth',             ticker: 'BFGR',   accountId: 'acc-001', shares: 88.1,  price: 341.20, change: +2.1, value: 30060  },
+    { name: 'BobsFunds Bond Income',        ticker: 'BFBI',   accountId: 'acc-002', shares: 210.0, price: 98.30,  change: -0.3, value: 20643  },
+    { name: 'BobsFunds International',      ticker: 'BFIN',   accountId: 'acc-002', shares: 55.4,  price: 87.60,  change: +0.7, value: 4853   },
+    { name: 'BobsFunds ESG Leaders',        ticker: 'BFESG',  accountId: 'acc-003', shares: 31.2,  price: 156.90, change: +1.8, value: 4895   },
+    { name: 'BobsFunds Short-Term Treas.',  ticker: 'BFST',   accountId: 'acc-003', shares: 499.8, price: 100.10, change: +0.1, value: 50030  },
   ],
   transactions: [
     { date: '2025-04-10', description: 'Dividend reinvestment - BF500',      amount: +124.20,  account: 'Roth IRA'         },
@@ -86,12 +86,11 @@ const alexJohnson: Persona = {
     { date: '2025-03-01', description: 'Monthly contribution',               amount: +583.33,  account: 'Roth IRA'         },
   ],
   beneficiaries: [
-    { id: 'ben-001', accountId: 'acc-001', accountType: 'Roth IRA',        type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',     dob: '1988-03-14', ssn: '***-**-4721', percentage: 100 },
-    { id: 'ben-002', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',     dob: '1988-03-14', ssn: '***-**-4721', percentage: 60  },
-    { id: 'ben-003', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Tyler Johnson',  relationship: 'Child',      dob: '2015-07-22', ssn: '***-**-8834', percentage: 20  },
-    { id: 'ben-004', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Emma Johnson',   relationship: 'Child',      dob: '2018-11-03', ssn: '***-**-9251', percentage: 20  },
-    { id: 'ben-005', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Contingent', name: 'Robert Johnson', relationship: 'Parent',     dob: '1958-04-09', ssn: '***-**-3317', percentage: 100 },
-    { id: 'ben-006', accountId: 'acc-003', accountType: 'Taxable Account', type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',     dob: '1988-03-14', ssn: '***-**-4721', percentage: 100 },
+    { id: 'ben-001', accountId: 'acc-001', accountType: 'Roth IRA',        type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',  dob: '1988-03-14', ssn: '***-**-4721', percentage: 100 },
+    { id: 'ben-002', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Sarah Johnson',  relationship: 'Spouse',  dob: '1988-03-14', ssn: '***-**-4721', percentage: 60  },
+    { id: 'ben-003', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Tyler Johnson',  relationship: 'Child',   dob: '2015-07-22', ssn: '***-**-8834', percentage: 20  },
+    { id: 'ben-004', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Primary',    name: 'Emma Johnson',   relationship: 'Child',   dob: '2018-11-03', ssn: '***-**-9251', percentage: 20  },
+    { id: 'ben-005', accountId: 'acc-002', accountType: 'Traditional IRA', type: 'Secondary',  name: 'Robert Johnson', relationship: 'Parent',  dob: '1958-04-09', ssn: '***-**-3317', percentage: 100 },
   ],
   autoInvest: [
     { id: 'ai-001', accountId: 'acc-001', accountType: 'Roth IRA', fund: 'BobsFunds 500 Index', ticker: 'BF500', amount: 583.33, frequency: 'Monthly', dayOfMonth: 1, nextDate: '2025-05-01', active: true },
@@ -116,11 +115,11 @@ const mariaChen: Persona = {
   ],
   totalBalance: 890000,
   holdings: [
-    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  shares: 850.0,  price: 218.40, change: +1.2, value: 185640 },
-    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   shares: 1500.0, price: 98.30,  change: -0.3, value: 147450 },
-    { name: 'BobsFunds Short-Term Treas.', ticker: 'BFST',   shares: 2800.0, price: 100.10, change: +0.1, value: 280280 },
-    { name: 'BobsFunds International',     ticker: 'BFIN',   shares: 500.0,  price: 87.60,  change: +0.7, value: 43800  },
-    { name: 'BobsFunds ESG Leaders',       ticker: 'BFESG',  shares: 150.0,  price: 156.90, change: +1.8, value: 23535  },
+    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  accountId: 'acc-201', shares: 850.0,  price: 218.40, change: +1.2, value: 185640 },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-201', shares: 1500.0, price: 98.30,  change: -0.3, value: 147450 },
+    { name: 'BobsFunds Short-Term Treas.', ticker: 'BFST',   accountId: 'acc-201', shares: 2800.0, price: 100.10, change: +0.1, value: 280280 },
+    { name: 'BobsFunds International',     ticker: 'BFIN',   accountId: 'acc-202', shares: 500.0,  price: 87.60,  change: +0.7, value: 43800  },
+    { name: 'BobsFunds ESG Leaders',       ticker: 'BFESG',  accountId: 'acc-202', shares: 150.0,  price: 156.90, change: +1.8, value: 23535  },
   ],
   transactions: [
     { date: '2025-04-10', description: 'RMD Distribution',                   amount: -15300.00, account: 'Traditional IRA' },
@@ -130,10 +129,8 @@ const mariaChen: Persona = {
     { date: '2025-02-15', description: 'Dividend reinvestment - BF500',      amount: +621.25,   account: 'Traditional IRA' },
   ],
   beneficiaries: [
-    { id: 'ben-201', accountId: 'acc-201', accountType: 'Traditional IRA', type: 'Primary',    name: 'David Chen',    relationship: 'Child',  dob: '1975-06-18', ssn: '***-**-5529', percentage: 50 },
-    { id: 'ben-202', accountId: 'acc-201', accountType: 'Traditional IRA', type: 'Primary',    name: 'Linda Chen',    relationship: 'Child',  dob: '1978-02-27', ssn: '***-**-8843', percentage: 50 },
-    { id: 'ben-203', accountId: 'acc-202', accountType: 'Taxable Account', type: 'Primary',    name: 'David Chen',    relationship: 'Child',  dob: '1975-06-18', ssn: '***-**-5529', percentage: 50 },
-    { id: 'ben-204', accountId: 'acc-202', accountType: 'Taxable Account', type: 'Primary',    name: 'Linda Chen',    relationship: 'Child',  dob: '1978-02-27', ssn: '***-**-8843', percentage: 50 },
+    { id: 'ben-201', accountId: 'acc-201', accountType: 'Traditional IRA', type: 'Primary', name: 'David Chen', relationship: 'Child', dob: '1975-06-18', ssn: '***-**-5529', percentage: 50 },
+    { id: 'ben-202', accountId: 'acc-201', accountType: 'Traditional IRA', type: 'Primary', name: 'Linda Chen', relationship: 'Child', dob: '1978-02-27', ssn: '***-**-8843', percentage: 50 },
   ],
   autoInvest: [],
   rmd: {
@@ -168,9 +165,9 @@ const jordanWilliams: Persona = {
   ],
   totalBalance: 23300,
   holdings: [
-    { name: 'BobsFunds 500 Index',   ticker: 'BF500',  shares: 65.0,  price: 218.40, change: +1.2, value: 14196 },
-    { name: 'BobsFunds Growth',      ticker: 'BFGR',   shares: 15.0,  price: 341.20, change: +2.1, value: 5118  },
-    { name: 'BobsFunds ESG Leaders', ticker: 'BFESG',  shares: 25.0,  price: 156.90, change: +1.8, value: 3923  },
+    { name: 'BobsFunds 500 Index',   ticker: 'BF500',  accountId: 'acc-301', shares: 65.0,  price: 218.40, change: +1.2, value: 14196 },
+    { name: 'BobsFunds Growth',      ticker: 'BFGR',   accountId: 'acc-301', shares: 15.0,  price: 341.20, change: +2.1, value: 5118  },
+    { name: 'BobsFunds ESG Leaders', ticker: 'BFESG',  accountId: 'acc-302', shares: 25.0,  price: 156.90, change: +1.8, value: 3923  },
   ],
   transactions: [
     { date: '2025-04-01', description: 'Monthly contribution',               amount: +583.33,  account: 'Roth IRA'        },
@@ -180,8 +177,8 @@ const jordanWilliams: Persona = {
     { date: '2025-01-15', description: 'Purchase - BobsFunds Growth',        amount: -500.00,  account: 'Roth IRA'        },
   ],
   beneficiaries: [
-    { id: 'ben-301', accountId: 'acc-301', accountType: 'Roth IRA',        type: 'Primary', name: 'Casey Williams', relationship: 'Sibling', dob: '1993-09-05', ssn: '***-**-7712', percentage: 100 },
-    { id: 'ben-302', accountId: 'acc-302', accountType: 'Taxable Account', type: 'Primary', name: 'Casey Williams', relationship: 'Sibling', dob: '1993-09-05', ssn: '***-**-7712', percentage: 100 },
+    { id: 'ben-301', accountId: 'acc-301', accountType: 'Roth IRA', type: 'Primary',   name: 'Casey Williams', relationship: 'Sibling', dob: '1993-09-05', ssn: '***-**-7712', percentage: 100 },
+    { id: 'ben-302', accountId: 'acc-301', accountType: 'Roth IRA', type: 'Secondary', name: 'Pat Williams',   relationship: 'Parent',  dob: '1965-04-12', ssn: '***-**-3301', percentage: 100 },
   ],
   autoInvest: [
     { id: 'ai-301', accountId: 'acc-301', accountType: 'Roth IRA', fund: 'BobsFunds 500 Index', ticker: 'BF500', amount: 583.33, frequency: 'Monthly', dayOfMonth: 1, nextDate: '2025-05-01', active: true },
@@ -204,11 +201,11 @@ const robertMartinez: Persona = {
   ],
   totalBalance: 445000,
   holdings: [
-    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  shares: 380.0,  price: 218.40, change: +1.2, value: 82992  },
-    { name: 'BobsFunds Growth',            ticker: 'BFGR',   shares: 145.0,  price: 341.20, change: +2.1, value: 49474  },
-    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   shares: 800.0,  price: 98.30,  change: -0.3, value: 78640  },
-    { name: 'BobsFunds International',     ticker: 'BFIN',   shares: 250.0,  price: 87.60,  change: +0.7, value: 21900  },
-    { name: 'BobsFunds Short-Term Treas.', ticker: 'BFST',   shares: 1100.0, price: 100.10, change: +0.1, value: 110110 },
+    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  accountId: 'acc-401', shares: 380.0,  price: 218.40, change: +1.2, value: 82992  },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-401', shares: 800.0,  price: 98.30,  change: -0.3, value: 78640  },
+    { name: 'BobsFunds Growth',            ticker: 'BFGR',   accountId: 'acc-402', shares: 145.0,  price: 341.20, change: +2.1, value: 49474  },
+    { name: 'BobsFunds International',     ticker: 'BFIN',   accountId: 'acc-402', shares: 250.0,  price: 87.60,  change: +0.7, value: 21900  },
+    { name: 'BobsFunds Short-Term Treas.', ticker: 'BFST',   accountId: 'acc-403', shares: 1100.0, price: 100.10, change: +0.1, value: 110110 },
   ],
   transactions: [
     { date: '2025-04-10', description: 'SEP-IRA Contribution',               amount: +15000.00, account: 'SEP-IRA'         },
@@ -218,11 +215,10 @@ const robertMartinez: Persona = {
     { date: '2025-02-15', description: 'Rebalance - Sale BobsFunds Growth',  amount: -10000.00, account: 'Taxable Account' },
   ],
   beneficiaries: [
-    { id: 'ben-401', accountId: 'acc-401', accountType: 'SEP-IRA',         type: 'Primary',    name: 'Elena Martinez',  relationship: 'Spouse',  dob: '1976-12-08', ssn: '***-**-2241', percentage: 100 },
-    { id: 'ben-402', accountId: 'acc-402', accountType: 'Roth IRA',        type: 'Primary',    name: 'Elena Martinez',  relationship: 'Spouse',  dob: '1976-12-08', ssn: '***-**-2241', percentage: 60  },
-    { id: 'ben-403', accountId: 'acc-402', accountType: 'Roth IRA',        type: 'Primary',    name: 'Sofia Martinez',  relationship: 'Child',   dob: '2008-03-19', ssn: '***-**-6618', percentage: 20  },
-    { id: 'ben-404', accountId: 'acc-402', accountType: 'Roth IRA',        type: 'Primary',    name: 'Marco Martinez',  relationship: 'Child',   dob: '2011-08-14', ssn: '***-**-7723', percentage: 20  },
-    { id: 'ben-405', accountId: 'acc-403', accountType: 'Taxable Account', type: 'Primary',    name: 'Elena Martinez',  relationship: 'Spouse',  dob: '1976-12-08', ssn: '***-**-2241', percentage: 100 },
+    { id: 'ben-401', accountId: 'acc-401', accountType: 'SEP-IRA',  type: 'Primary', name: 'Elena Martinez', relationship: 'Spouse', dob: '1976-12-08', ssn: '***-**-2241', percentage: 100 },
+    { id: 'ben-402', accountId: 'acc-402', accountType: 'Roth IRA', type: 'Primary', name: 'Elena Martinez', relationship: 'Spouse', dob: '1976-12-08', ssn: '***-**-2241', percentage: 60  },
+    { id: 'ben-403', accountId: 'acc-402', accountType: 'Roth IRA', type: 'Primary', name: 'Sofia Martinez', relationship: 'Child',  dob: '2008-03-19', ssn: '***-**-6618', percentage: 20  },
+    { id: 'ben-404', accountId: 'acc-402', accountType: 'Roth IRA', type: 'Primary', name: 'Marco Martinez', relationship: 'Child',  dob: '2011-08-14', ssn: '***-**-7723', percentage: 20  },
   ],
   autoInvest: [
     { id: 'ai-401', accountId: 'acc-401', accountType: 'SEP-IRA', fund: 'BobsFunds 500 Index', ticker: 'BF500', amount: 5000, frequency: 'Quarterly', nextDate: '2025-07-01', active: true },

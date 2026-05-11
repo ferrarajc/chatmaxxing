@@ -2,7 +2,28 @@
   "permissions": {
     "allow": [
       "Bash(gh auth *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(bash *)",
+      "Bash(node -e ' *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -o \"getMediaController.\\\\{0,500\\\\}\" /c/Users/ferra/chatmaxxing/node_modules/amazon-connect-streams/release/connect-streams.js)",
+      "Bash(grep *)",
+      "Bash(npx tsc *)",
+      "Bash(export OPENAI_API_KEY=*)",
+      "Bash(OPENAI_API_KEY=* npx cdk deploy BobsLambdaStack --require-approval never)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh run *)",
+      "Bash(git *)",
+      "Bash(aws connect list-instances *)",
+      "Bash(aws connect list-users *)",
+      "Bash(aws connect *)",
+      "Bash(aws service-quotas *)",
+      "Bash(aws logs describe-log-groups *)",
+      "Bash(aws lambda get-function-configuration *)",
+      "Bash(gh pr *)",
+      "Bash(MSYS_NO_PATHCONV=1 aws connect list-instances *)"
     ]
   }
 }

@@ -18,9 +18,10 @@ export function IraContributionLimitsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
-              {['Account Type', 'Under 50', 'Age 50+', 'Income Limit'].map(h => (
-                <th key={h} style={{ textAlign: 'left', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>{h}</th>
-              ))}
+              <th style={{ textAlign: 'left', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Account Type</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Under 50</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Age 50+</th>
+              <th style={{ textAlign: 'left', padding: '6px 8px 10px', color: '#6b7280', fontWeight: 600, fontSize: 12 }}>Income Limit</th>
             </tr>
           </thead>
           <tbody>
@@ -31,8 +32,8 @@ export function IraContributionLimitsPage() {
             ].map(r => (
               <tr key={r.type} style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <td style={{ padding: '10px 8px', fontWeight: 600 }}>{r.type}</td>
-                <td style={{ padding: '10px 8px' }}>{r.under50}</td>
-                <td style={{ padding: '10px 8px' }}>{r.over50}</td>
+                <td style={{ padding: '10px 8px', textAlign: 'right' }}>{r.under50}</td>
+                <td style={{ padding: '10px 8px', textAlign: 'right' }}>{r.over50}</td>
                 <td style={{ padding: '10px 8px', color: '#6b7280', fontSize: 13 }}>{r.income}</td>
               </tr>
             ))}

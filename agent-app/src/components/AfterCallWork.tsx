@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ContactSlot } from '../types';
 import { WRAP_UP_CODES } from '../data/wrapUpCodes';
+import { post } from '../api/client';
 
 interface Props { slot: ContactSlot; }
 
@@ -18,6 +19,21 @@ export function AfterCallWork({ slot }: Props) {
   }, [acw?.wrapUpCode, acw?.summary]);
 
   const handleClose = () => {
+    // Save transcript before the slot is cleared — includes final acwData
+    const msgs = slot.messages;
+    const now = Date.now();
+    post('/save-transcript', {
+      transcriptId: slot.contactId,
+      clientId: slot.clientId,
+      clientName: slot.clientName,
+      intentSummary: slot.intentSummary,
+      startTime: msgs[0]?.timestamp ?? now,
+      endTime: msgs[msgs.length - 1]?.timestamp ?? now,
+      wrapUpCode: selectedCode || acw?.wrapUpCode || null,
+      acwSummary: summaryText || acw?.summary || null,
+      messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
+    }).catch(() => {});
+
     window.dispatchEvent(
       new CustomEvent('bobs:closeContact', { detail: { contactId: slot.contactId } }),
     );
@@ -39,7 +55,7 @@ export function AfterCallWork({ slot }: Props) {
             onChange={e => setSelectedCode(e.target.value)}
             style={{
               width: '100%', padding: '6px 10px', borderRadius: 7,
-              border: '1.5px solid #d1d5db', fontSize: 13, background: '#fff',
+              border: '1.5px solid #d1d5db', fontSize: 16, background: '#fff',
               color: '#111', cursor: 'pointer', outline: 'none',
             }}
           >
@@ -59,7 +75,7 @@ export function AfterCallWork({ slot }: Props) {
             <div style={skeletonStyle(13, 4)} />
           </>
         ) : (
-          <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.55 }}>
+          <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.55 }}>
             {acw.coaching.positive && (
               <div style={{ display: 'flex', gap: 6, marginBottom: acw.coaching.bullets.length ? 4 : 0 }}>
                 <span style={{ color: '#10b981', fontWeight: 700, flexShrink: 0 }}>✓</span>
@@ -87,7 +103,7 @@ export function AfterCallWork({ slot }: Props) {
             onChange={e => setSummaryText(e.target.value)}
             style={{
               flex: 1, resize: 'none', border: '1.5px solid #d1d5db',
-              borderRadius: 7, padding: '7px 10px', fontSize: 12,
+              borderRadius: 7, padding: '7px 10px', fontSize: 15,
               lineHeight: 1.6, outline: 'none', fontFamily: 'inherit', color: '#111',
             }}
           />
@@ -101,7 +117,7 @@ export function AfterCallWork({ slot }: Props) {
           style={{
             width: '100%', padding: '10px 0', borderRadius: 8,
             background: '#1a56db', color: '#fff', fontWeight: 700,
-            fontSize: 13, border: 'none', cursor: 'pointer',
+            fontSize: 16, border: 'none', cursor: 'pointer',
           }}
         >
           Close contact
@@ -112,7 +128,7 @@ export function AfterCallWork({ slot }: Props) {
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 700, color: '#374151',
+  display: 'block', fontSize: 14, fontWeight: 700, color: '#374151',
   textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 5,
 };
 
