@@ -262,7 +262,10 @@ export function useChatSession() {
     }
 
     if (!isAgentMode) {
-      // Start fallback timer: if Connect/Lex doesn't reply within 8 s, call autopilot-turn directly
+      // Show typing indicator immediately — customer shouldn't see dead silence while waiting.
+      store.setTyping(true);
+      // Fallback timer: if Connect/Lex doesn't reply in 3 s, call autopilot-turn directly.
+      // 3 s is safe because the pre-warm in openChat() keeps the Lambda hot.
       if (botReplyTimerRef.current) clearTimeout(botReplyTimerRef.current);
       botReplyTimerRef.current = setTimeout(async () => {
         botReplyTimerRef.current = null;
@@ -273,7 +276,6 @@ export function useChatSession() {
         const liveState = useChatStore.getState().state;
         if (liveState === 'CONNECTED_TO_AGENT' || liveState === 'WAITING_FOR_AGENT') return;
         try {
-          store.setTyping(true);
           const { activePersona } = useClientStore.getState();
           const result = await post<{ response: string; confidence: number; shouldExitAutopilot: boolean }>(
             '/autopilot-turn',
@@ -284,15 +286,16 @@ export function useChatSession() {
             },
           );
           store.setTyping(false);
-          if (result.response) {
-            store.addMessage({ role: 'BOT', content: result.response });
-            checkBotEscalation(result.response, store);
+          const reply = result.response?.trim();
+          if (reply && reply !== '...' && reply.length > 3) {
+            store.addMessage({ role: 'BOT', content: reply });
+            checkBotEscalation(reply, store);
           }
         } catch (e) {
           store.setTyping(false);
           console.warn('Fallback bot response failed', e);
         }
-      }, 8000);
+      }, 3000);
     }
 
     if (!session) return;

@@ -1747,7 +1747,13 @@ Set shouldExitAutopilot=false and continue if you can handle the request within 
 
 Suggest a scope if the situation calls for it (e.g. "callback" if a trade is requested, "idle-check" if client seems to have gone quiet).
 
-Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": "callback" | "idle-check" | null}`;
+Return ONLY valid JSON with this exact shape — fill in real values, never copy placeholder text:
+{"response": "Here is your answer.", "shouldExitAutopilot": false, "suggestedScope": null}
+
+Rules:
+- "response" MUST be a complete, natural sentence. NEVER use "...", empty string, or placeholder text.
+- "shouldExitAutopilot" must be true or false.
+- "suggestedScope" must be "callback", "idle-check", or null.`;
 
 // ── Escalation hard-override ───────────────────────────────────────────────
 const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
