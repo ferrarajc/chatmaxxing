@@ -1,29 +1,31 @@
 import React, { useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useChatStore } from '../../store/chatStore';
+import { useChatSession } from '../../hooks/useChatSession';
+import { usePredictedTopics } from '../../hooks/usePredictedTopics';
 import { ChatBubbleFAB } from './ChatBubbleFAB';
 import { ChatPanel } from './ChatPanel';
 
 export function ChatWidget() {
-  const { state, transitionTo, sendUserMessage, escalateToAgent } = useChatStore();
   const location = useLocation();
-  const currentPage = location.pathname;
+  const currentPage = location.pathname.replace('/', '') || 'home';
 
-  const handleOpenChat = useCallback(() => {
-    if (state === 'CLOSED') {
-      transitionTo('GREETING');
-    }
-  }, [state, transitionTo]);
+  const chatState = useChatStore(s => s.state);
+  const { openChat, sendMessage, escalateToAgent } = useChatSession();
 
-  const isOpen = state !== 'CLOSED';
+  usePredictedTopics(currentPage);
+
+  const handleOpen = useCallback(() => {
+    if (chatState === 'CLOSED') openChat(currentPage);
+  }, [chatState, currentPage, openChat]);
 
   return (
     <>
-      {!isOpen && <ChatBubbleFAB onClick={handleOpenChat} />}
-      {isOpen && (
+      {chatState === 'CLOSED' && <ChatBubbleFAB onClick={handleOpen} />}
+      {chatState !== 'CLOSED' && (
         <ChatPanel
           currentPage={currentPage}
-          onSendMessage={sendUserMessage}
+          onSendMessage={sendMessage}
           onEscalateToAgent={escalateToAgent}
         />
       )}
