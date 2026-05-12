@@ -13,7 +13,7 @@ Whenever you make changes that affect architecture, add/modify tasks, change dep
 ## Key Rules
 
 - Never push directly to main. All changes go through a PR.
-- Always set `$env:OPENAI_API_KEY` before running `cdk deploy` or autopilot silently breaks.
+- `OPENAI_API_KEY` is stored in AWS SSM (`bobs-openai-api-key`) and resolved by CloudFormation at deploy time — no shell variable needed.
 - Lambda deploys are immediate. Frontend changes require a gh-pages push or PR merge to go live.
 - Typecheck before every Lambda deploy: `cd cdk; npx tsc --noEmit`
 - When modifying `FORBIDDEN_TOPICS` in `autopilot-turn/handler.ts`, remember it applies to all 19 task experts simultaneously — scope changes carefully.

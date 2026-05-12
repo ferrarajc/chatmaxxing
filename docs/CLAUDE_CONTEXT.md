@@ -154,10 +154,10 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 
 **Lambda (immediate):**
 ```powershell
-$env:OPENAI_API_KEY = "sk-..."   # REQUIRED — must be in shell before deploy
 cd cdk
 npx cdk deploy BobsLambdaStack --require-approval never
 ```
+`OPENAI_API_KEY` is in AWS SSM (`bobs-openai-api-key`) — CloudFormation resolves it at deploy time, no shell variable needed.
 Typecheck first: `cd cdk; npx tsc --noEmit`
 
 **Frontend (customer-app or agent-app — manual):**
