@@ -1,8 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { useChatStore } from '../../store/chatStore';
 import { useClientStore } from '../../store/clientStore';
+import { usePredictQuestions } from '../../hooks/usePredictQuestions';
+import { KBQuestionResult } from '../../types';
 import { ChatMessage } from './ChatMessage';
 import { TopicButtons } from './TopicButtons';
+import { QuestionButtons } from './QuestionButtons';
 import { TypingIndicator } from './TypingIndicator';
 import { theme } from '../../theme';
 
@@ -11,9 +14,12 @@ interface Props {
   onSendMessage: (text: string) => void;
 }
 
-export function ChatBody({ currentPage: _page, onSendMessage }: Props) {
-  const { state, messages, predictedTopics, isTyping } = useChatStore();
+export function ChatBody({ currentPage, onSendMessage }: Props) {
+  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping } = useChatStore();
+  const addMessage = useChatStore(s => s.addMessage);
+  const setTyping = useChatStore(s => s.setTyping);
   const { activePersona } = useClientStore();
+  const { fetchQuestions } = usePredictQuestions();
   const bottomRef = useRef<HTMLDivElement>(null);
   const topicsUsed = useRef(false);
 
@@ -22,11 +28,33 @@ export function ChatBody({ currentPage: _page, onSendMessage }: Props) {
   }, [messages, isTyping]);
 
   const handleTopicSelect = (topic: string) => {
+    if (topic === 'Something else') {
+      topicsUsed.current = true;
+      onSendMessage(topic);
+      return;
+    }
+    fetchQuestions(topic, currentPage);
+  };
+
+  const handleQuestionSelect = (question: KBQuestionResult | 'Something else') => {
     topicsUsed.current = true;
-    onSendMessage(topic);
+    if (question === 'Something else') {
+      onSendMessage('Something else');
+      return;
+    }
+    addMessage({ role: 'CUSTOMER', content: question.text });
+    setTyping(true);
+    setTimeout(() => {
+      addMessage({ role: 'BOT', content: question.answer, link: question.link });
+      setTyping(true);
+      setTimeout(() => {
+        addMessage({ role: 'BOT', content: 'Feel free to ask if you have any other questions about this.' });
+      }, 900);
+    }, 1500);
   };
 
   const firstName = activePersona.name.split(' ')[0];
+  const noMessages = messages.filter(m => m.role !== 'SYSTEM').length === 0;
 
   return (
     <div style={{
@@ -47,11 +75,26 @@ export function ChatBody({ currentPage: _page, onSendMessage }: Props) {
         </div>
       )}
 
-      {/* Predicted topic buttons */}
-      {predictedTopics.length > 0 && !topicsUsed.current && (state === 'GREETING' || state === 'BOT_ACTIVE') && messages.filter(m => m.role !== 'SYSTEM').length === 0 && (
+      {/* Level 1: topic pills */}
+      {!topicsUsed.current && !selectedTopic && predictedTopics.length > 0 && (state === 'GREETING' || state === 'BOT_ACTIVE') && noMessages && (
         <TopicButtons
           topics={predictedTopics}
           onSelect={handleTopicSelect}
+          disabled={false}
+        />
+      )}
+
+      {/* Level 1 → 2 transition: loading */}
+      {!topicsUsed.current && selectedTopic && levelTwoQuestions === null && (
+        <TypingIndicator />
+      )}
+
+      {/* Level 2: question pills */}
+      {!topicsUsed.current && selectedTopic && levelTwoQuestions !== null && levelTwoQuestions.length > 0 && (
+        <QuestionButtons
+          topic={selectedTopic}
+          questions={levelTwoQuestions}
+          onSelect={handleQuestionSelect}
           disabled={false}
         />
       )}
