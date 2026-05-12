@@ -150,6 +150,26 @@ export function ChatMessage({ message }: Props) {
         border: isCustomer ? 'none' : `1px solid ${theme.color.border}`,
       }}>
         {renderWithLinks(message.content, navigate)}
+        {message.link && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${theme.color.border}` }}>
+            <button
+              onClick={() => {
+                const url = message.link!.url;
+                const internalPath = isInternalPath(url);
+                if (internalPath) navigate(internalPath);
+                else window.open(url, '_blank', 'noopener,noreferrer');
+              }}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                color: theme.color.primary, fontSize: 13, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 4,
+                fontFamily: theme.font.sans,
+              }}
+            >
+              <span style={{ fontSize: 12 }}>→</span> {message.link.text}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
