@@ -3,11 +3,15 @@ import { invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client'
 import {
   ChatMessage,
   ClientProfile,
+  Resource,
+  KNOWLEDGE_BASE,
   matchResources,
   summarizeAccounts,
   formatTranscriptForBedrock,
   jsonResponse,
 } from '../shared/types';
+
+const RESOURCE_LIST = KNOWLEDGE_BASE.map(r => `${r.id}: ${r.title}`).join('\n');
 
 const SYSTEM_PROMPT = (profile: ClientProfile) =>
   `You are an AI assistant supporting a live chat agent at Bob's Mutual Funds.
@@ -24,7 +28,12 @@ Also suggest an autopilot scope if the conversation calls for one:
 - "full-auto": the conversation is simple and AI could handle it end-to-end
 - null: no autopilot scope is needed right now
 
-Return ONLY valid JSON: {"suggestedText": "...", "suggestedScope": "get-intent" | "researching" | "callback" | "idle-check" | "full-auto" | null}`;
+Also select the 0–3 most relevant knowledge base articles for this conversation, ordered by relevance (most relevant first). Only include articles that are genuinely on-topic — return an empty array if nothing fits well.
+
+Available articles:
+${RESOURCE_LIST}
+
+Return ONLY valid JSON: {"suggestedText": "...", "suggestedScope": "get-intent" | "researching" | "callback" | "idle-check" | "full-auto" | null, "resourceIds": ["kb-xxx", ...]}`;
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
@@ -52,31 +61,38 @@ export const handler = async (
       recentChatHistory: [],
     };
 
-    const lastCustomerMessage = [...transcript]
-      .reverse()
-      .find(m => m.role === 'CUSTOMER')?.content ?? '';
+    const kbIndex = new Map<string, Resource>(KNOWLEDGE_BASE.map(r => [r.id, r]));
 
     let suggestedText = '';
     let suggestedScope: string | null = null;
+    let resources: Resource[] = [];
     try {
       const raw = await invokeNovaMicro(
         formatTranscriptForBedrock(transcript),
         SYSTEM_PROMPT(profile),
-        220,
+        280,
       );
-      const parsed = parseJsonFromBedrock<{ suggestedText: string; suggestedScope?: string | null }>(raw);
+      const parsed = parseJsonFromBedrock<{
+        suggestedText: string;
+        suggestedScope?: string | null;
+        resourceIds?: string[];
+      }>(raw);
       suggestedText = parsed.suggestedText ?? '';
       suggestedScope = parsed.suggestedScope ?? null;
+      resources = (parsed.resourceIds ?? [])
+        .map(id => kbIndex.get(id))
+        .filter((r): r is Resource => r !== undefined)
+        .slice(0, 3);
     } catch (e) {
       console.warn('Bedrock NBR failed', e);
       suggestedText = "I'd be happy to help with that. Could you give me a moment to look into it?";
+      // Keyword fallback so resources aren't empty on LLM error
+      const conversationText = transcript
+        .filter(m => m.role === 'CUSTOMER')
+        .map(m => m.content)
+        .join(' ');
+      resources = matchResources(conversationText);
     }
-
-    const conversationText = transcript
-      .filter(m => m.role === 'CUSTOMER')
-      .map(m => m.content)
-      .join(' ');
-    const resources = matchResources(conversationText);
 
     return jsonResponse(200, { suggestedText, resources, suggestedScope });
   } catch (err) {
