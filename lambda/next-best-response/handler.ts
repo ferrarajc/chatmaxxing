@@ -72,7 +72,11 @@ export const handler = async (
       suggestedText = "I'd be happy to help with that. Could you give me a moment to look into it?";
     }
 
-    const resources = matchResources(lastCustomerMessage);
+    const conversationText = transcript
+      .filter(m => m.role === 'CUSTOMER')
+      .map(m => m.content)
+      .join(' ');
+    const resources = matchResources(conversationText);
 
     return jsonResponse(200, { suggestedText, resources, suggestedScope });
   } catch (err) {

@@ -20,7 +20,7 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
   };
 
   const handleSendResource = (resource: { title: string; url: string }) => {
-    onSendResource(`Here's a helpful resource: ${resource.title}\n${resource.url}`);
+    onSendResource(`Here's a helpful resource:\n[${resource.title}](${resource.url})`);
   };
 
   const exitAutopilot = () => {
