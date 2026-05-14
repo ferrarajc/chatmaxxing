@@ -23,7 +23,6 @@ import { EstatePlanningPage } from './components-v2/pages/resources/EstatePlanni
 import { SelfEmployedRetirementPage } from './components-v2/pages/resources/SelfEmployedRetirementPage';
 import { TaxDeductionsPage } from './components-v2/pages/resources/TaxDeductionsPage';
 import { RolloverPage } from './components-v2/pages/resources/RolloverPage';
-import { BeneficiaryDesignationsPage } from './components-v2/pages/resources/BeneficiaryDesignationsPage';
 
 const FONTS_HREF = 'https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Inter:wght@400;500;600;700&display=swap';
 
@@ -62,7 +61,6 @@ export default function AppV2() {
               <Route path="/resources/self-employed-retirement" element={<SelfEmployedRetirementPage />} />
               <Route path="/resources/tax-deductions" element={<TaxDeductionsPage />} />
               <Route path="/resources/rollover" element={<RolloverPage />} />
-              <Route path="/resources/beneficiary-designations" element={<BeneficiaryDesignationsPage />} />
             </Routes>
           </main>
           <ChatWidget />
