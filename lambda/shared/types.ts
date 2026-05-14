@@ -43,7 +43,7 @@ export const KNOWLEDGE_BASE: Resource[] = [
   { id: 'kb-002', title: 'IRA Contribution Limits 2025',      url: '/resources/ira-contribution-limits',  tags: ['ira', 'contribution', 'roth', 'traditional', 'limit', '2025'] },
   { id: 'kb-003', title: 'Change of Ownership Form',          url: '/account',                            tags: ['ownership', 'transfer', 'estate', 'deceased', 'inherited', 'change'] },
   { id: 'kb-004', title: 'Required Minimum Distributions',    url: '/account/rmd',                        tags: ['rmd', 'minimum', 'distribution', 'withdrawal', 'required', 'age'] },
-  { id: 'kb-005', title: 'Beneficiary Designation Guide',     url: '/account/beneficiaries',              tags: ['beneficiary', 'designation', 'update', 'change', 'estate'] },
+  { id: 'kb-005', title: 'Beneficiary Designation Guide',     url: '/resources/beneficiary-designations',  tags: ['beneficiary', 'designation', 'update', 'change', 'estate'] },
   { id: 'kb-006', title: 'Fee Schedule & Expense Ratios',     url: '/research',                           tags: ['fee', 'expense', 'ratio', 'cost', 'charge', 'annual'] },
   { id: 'kb-007', title: 'Tax Documents & 1099 Forms',        url: '/account/tax-documents',              tags: ['tax', '1099', 'document', 'form', 'year-end', 'schedule'] },
   { id: 'kb-008', title: 'Account Transfer Instructions',     url: '/account',                            tags: ['transfer', 'move', 'acat', 'incoming', 'outgoing'] },
