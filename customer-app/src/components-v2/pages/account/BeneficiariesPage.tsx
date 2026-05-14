@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useClientStore } from '../../../store/clientStore';
 import { post } from '../../../api/client';
 import { theme } from '../../../theme';
@@ -81,7 +82,7 @@ export function BeneficiariesPage() {
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px', fontFamily: theme.font.sans }}>
       <div style={{ marginBottom: 8 }}>
-        <a href="/account" style={{ color: theme.color.textMuted, fontSize: 13, textDecoration: 'none' }}>← Account</a>
+        <Link to="/account" style={{ color: theme.color.textMuted, fontSize: 13, textDecoration: 'none' }}>← Account</Link>
       </div>
       <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, fontFamily: theme.font.serif }}>Beneficiary Designations</h1>
       <p style={{ margin: '0 0 28px', color: theme.color.textMuted, fontSize: 14 }}>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { theme } from '../../theme';
 
 const card: React.CSSProperties = {
@@ -67,9 +68,9 @@ export function OpenAccountPage() {
         <p style={{ fontSize: 15, color: theme.color.textMuted, marginBottom: 24 }}>
           Your new account application is under review. You'll receive a confirmation at the email address you provided within 1–3 business days. Once approved, you can begin investing immediately.
         </p>
-        <a href="/" style={{ display: 'inline-block', background: theme.color.primary, color: theme.color.textOnPrimary, borderRadius: 8, padding: '10px 24px', textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>
+        <Link to="/" style={{ display: 'inline-block', background: theme.color.primary, color: theme.color.textOnPrimary, borderRadius: 8, padding: '10px 24px', textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>
           Return to Home
-        </a>
+        </Link>
       </div>
     );
   }
