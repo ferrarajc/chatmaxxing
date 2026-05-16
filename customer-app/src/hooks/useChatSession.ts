@@ -6,19 +6,11 @@ import { post } from '../api/client';
 
 // Phrases that the BOT says which signal escalation is being offered.
 const BOT_ESCALATION_PHRASES = [
-  'connect you with a live agent',
+  "i'll connect you with a live agent",
   'connect you to a live',
   'connect you to a real',
   'connecting you to',
-  'chat now, or would a callback',
   'transfer you to',
-  'speak with an agent',
-  'speak with a representative',
-  'live representative',
-  'real person',
-  'human agent',
-  'hold on for a moment',
-  'please hold',
 ];
 
 // Phrases the CUSTOMER says that clearly signal they want to escalate.
