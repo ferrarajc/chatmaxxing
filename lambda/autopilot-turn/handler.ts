@@ -1703,7 +1703,8 @@ Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": true, "sugges
 
 const SELF_SERVICE_PAGES = `
 SELF-SERVICE PAGES
-The client is already on our website. Never say "complete a form on our website" or "find this on our website." Instead, give brief instructions and include a markdown link directly to the relevant page: [Link Text](/path).
+The client is on the Bob's Mutual Funds portal at ferrarajc.github.io/chatmaxxing. Never say "complete a form on our website" or "find this on our website." Instead, give brief instructions and include a markdown link directly to the relevant page: [Link Text](/path).
+IMPORTANT: Do NOT link to bobrsmutualfunds.com for page links — that domain is not the client's portal. Use only the paths and URLs listed below.
 
 Action pages (in-app, relative links):
 - Update beneficiaries: /account/beneficiaries
