@@ -1,42 +1,45 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { TopNav } from './components/layout/TopNav';
-import { ChatWidget } from './components/chat/ChatWidget';
-import { useDesignStore } from './store/designStore';
-import { HomePage } from './components/pages/home/HomePage';
-import { PortfolioPage } from './components/pages/portfolio/PortfolioPage';
-import { ResearchPage } from './components/pages/research/ResearchPage';
-import { AccountPage } from './components/pages/account/AccountPage';
-import { BeneficiariesPage } from './components/pages/account/BeneficiariesPage';
-import { AutoInvestPage } from './components/pages/account/AutoInvestPage';
-import { RmdPage } from './components/pages/account/RmdPage';
-import { TaxDocumentsPage } from './components/pages/account/TaxDocumentsPage';
-import { AccountDetailPage } from './components/pages/account/AccountDetailPage';
-import { OpenAccountPage } from './components/pages/OpenAccountPage';
-import { IraContributionLimitsPage } from './components/pages/resources/IraContributionLimitsPage';
-import { RothIraPage } from './components/pages/resources/RothIraPage';
-import { SepIraPage } from './components/pages/resources/SepIraPage';
-import { SepIraVsSoloPage } from './components/pages/resources/SepIraVsSoloPage';
-import { TaxEfficientInvestingPage } from './components/pages/resources/TaxEfficientInvestingPage';
-import { EstatePlanningPage } from './components/pages/resources/EstatePlanningPage';
-import { SelfEmployedRetirementPage } from './components/pages/resources/SelfEmployedRetirementPage';
-import { TaxDeductionsPage } from './components/pages/resources/TaxDeductionsPage';
-import { RolloverPage } from './components/pages/resources/RolloverPage';
-import { AccessGate } from './components/AccessGate';
+import { theme } from './theme';
+import { TopNavV2 } from './components-v2/layout/TopNavV2';
+import { ChatWidget } from './components-v2/chat/ChatWidget';
+import { AccessGate } from './components-v2/AccessGate';
+import { HomePage } from './components-v2/pages/home/HomePage';
+import { PortfolioPage } from './components-v2/pages/portfolio/PortfolioPage';
+import { ResearchPage } from './components-v2/pages/research/ResearchPage';
+import { AccountPage } from './components-v2/pages/account/AccountPage';
+import { AccountDetailPage } from './components-v2/pages/account/AccountDetailPage';
+import { BeneficiariesPage } from './components-v2/pages/account/BeneficiariesPage';
+import { AutoInvestPage } from './components-v2/pages/account/AutoInvestPage';
+import { RmdPage } from './components-v2/pages/account/RmdPage';
+import { TaxDocumentsPage } from './components-v2/pages/account/TaxDocumentsPage';
+import { OpenAccountPage } from './components-v2/pages/OpenAccountPage';
+import { IraContributionLimitsPage } from './components-v2/pages/resources/IraContributionLimitsPage';
+import { RothIraPage } from './components-v2/pages/resources/RothIraPage';
+import { SepIraPage } from './components-v2/pages/resources/SepIraPage';
+import { SepIraVsSoloPage } from './components-v2/pages/resources/SepIraVsSoloPage';
+import { TaxEfficientInvestingPage } from './components-v2/pages/resources/TaxEfficientInvestingPage';
+import { EstatePlanningPage } from './components-v2/pages/resources/EstatePlanningPage';
+import { SelfEmployedRetirementPage } from './components-v2/pages/resources/SelfEmployedRetirementPage';
+import { TaxDeductionsPage } from './components-v2/pages/resources/TaxDeductionsPage';
+import { RolloverPage } from './components-v2/pages/resources/RolloverPage';
 
-const AppV2 = React.lazy(() => import('./AppV2'));
+const FONTS_HREF = 'https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Inter:wght@400;500;600;700&display=swap';
 
 export default function App() {
-  const design = useDesignStore(s => s.design);
-  if (design === 'upgraded') {
-    return <React.Suspense fallback={null}><AppV2 /></React.Suspense>;
-  }
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = FONTS_HREF;
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, []);
 
   return (
     <AccessGate>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: 'system-ui, -apple-system, sans-serif', textAlign: 'left' }}>
-          <TopNav />
+        <div style={{ minHeight: '100vh', background: theme.color.bg, fontFamily: theme.font.sans, textAlign: 'left' }}>
+          <TopNavV2 />
           <main>
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -60,7 +63,6 @@ export default function App() {
               <Route path="/resources/rollover" element={<RolloverPage />} />
             </Routes>
           </main>
-          {/* ChatWidget mounts once at root — persists across page navigation */}
           <ChatWidget />
         </div>
       </BrowserRouter>

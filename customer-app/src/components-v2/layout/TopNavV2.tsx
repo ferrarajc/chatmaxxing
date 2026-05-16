@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { PERSONAS } from '../../data/personas';
 import { useClientStore } from '../../store/clientStore';
-import { useDesignStore } from '../../store/designStore';
 import { theme } from '../../theme';
 
 const NAV_LINKS = [
@@ -14,11 +13,8 @@ const NAV_LINKS = [
 
 export function TopNavV2() {
   const { activePersona, setActivePersona } = useClientStore();
-  const { design, setDesign } = useDesignStore();
   const [open, setOpen] = useState(false);
-  const [designMenuOpen, setDesignMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
-  const bRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -31,17 +27,6 @@ export function TopNavV2() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  useEffect(() => {
-    if (!designMenuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (bRef.current && !bRef.current.contains(e.target as Node)) {
-        setDesignMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [designMenuOpen]);
-
   const initials = activePersona.name.split(' ').map(n => n[0]).join('');
 
   return (
@@ -52,55 +37,14 @@ export function TopNavV2() {
       borderBottom: `1px solid ${theme.color.primaryDeep}`,
       fontFamily: theme.font.sans,
     }}>
-      {/* Logo + hidden design toggle */}
+      {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 12 }}>
-        <div ref={bRef} style={{ position: 'relative' }}>
-          <div
-            onClick={() => setDesignMenuOpen(o => !o)}
-            style={{
-              width: 36, height: 36, borderRadius: 6, background: theme.color.bg,
-              color: theme.color.primary, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 20, fontWeight: 700,
-              fontFamily: theme.font.serif, letterSpacing: '-0.02em',
-              cursor: 'pointer',
-            }}
-          >B</div>
-          {designMenuOpen && (
-            <div style={{
-              position: 'absolute', left: 0, top: 48, background: theme.color.surface,
-              color: theme.color.text,
-              borderRadius: theme.radius.lg, boxShadow: theme.shadow.lg, minWidth: 200,
-              overflow: 'hidden', zIndex: 300, border: `1px solid ${theme.color.border}`,
-            }}>
-              <div style={{
-                padding: '10px 14px 8px', fontSize: 10, fontWeight: 700,
-                color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.08em',
-              }}>
-                Switch design
-              </div>
-              {(['original', 'upgraded'] as const).map(d => (
-                <div
-                  key={d}
-                  onClick={() => { setDesign(d); setDesignMenuOpen(false); }}
-                  style={{
-                    padding: '10px 14px',
-                    background: design === d ? theme.color.primarySoft : 'transparent',
-                    cursor: 'pointer',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    borderTop: `1px solid ${theme.color.border}`,
-                    fontSize: 13, fontWeight: design === d ? 600 : 500,
-                    color: design === d ? theme.color.primary : theme.color.text,
-                  }}
-                  onMouseEnter={e => { if (design !== d) (e.currentTarget as HTMLElement).style.background = theme.color.surfaceMuted; }}
-                  onMouseLeave={e => { if (design !== d) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                >
-                  {d === 'original' ? 'Original design' : 'Upgraded design'}
-                  {design === d && <span style={{ fontSize: 14, color: theme.color.primary }}>✓</span>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <div style={{
+          width: 36, height: 36, borderRadius: 6, background: theme.color.bg,
+          color: theme.color.primary, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: 20, fontWeight: 700,
+          fontFamily: theme.font.serif, letterSpacing: '-0.02em',
+        }}>B</div>
         <span style={{
           fontFamily: theme.font.serif, fontWeight: 600, fontSize: 18,
           letterSpacing: '-0.01em',
