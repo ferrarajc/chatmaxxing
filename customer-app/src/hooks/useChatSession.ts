@@ -289,7 +289,13 @@ export function useChatSession() {
           const reply = result.response?.trim();
           if (reply && reply !== '...' && reply.length > 3) {
             store.addMessage({ role: 'BOT', content: reply });
-            checkBotEscalation(reply, store);
+            if (result.shouldExitAutopilot) {
+              const s = useChatStore.getState().state;
+              if (s !== 'WAITING_FOR_AGENT' && s !== 'CONNECTED_TO_AGENT' && s !== 'ESCALATION_OFFERED') {
+                store.transitionTo('ESCALATION_OFFERED');
+                store.setEscalationWaitTime(3);
+              }
+            }
           }
         } catch (e) {
           store.setTyping(false);

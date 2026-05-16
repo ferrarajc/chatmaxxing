@@ -23,6 +23,28 @@ import { EstatePlanningPage } from './components-v2/pages/resources/EstatePlanni
 import { SelfEmployedRetirementPage } from './components-v2/pages/resources/SelfEmployedRetirementPage';
 import { TaxDeductionsPage } from './components-v2/pages/resources/TaxDeductionsPage';
 import { RolloverPage } from './components-v2/pages/resources/RolloverPage';
+import { AccountAccessPage } from './components-v2/pages/help/AccountAccessPage';
+import { AccountTransferPage } from './components-v2/pages/help/AccountTransferPage';
+import { BeneficiaryPage } from './components-v2/pages/help/BeneficiaryPage';
+import { ContactPage } from './components-v2/pages/help/ContactPage';
+import { CostBasisPage } from './components-v2/pages/help/CostBasisPage';
+import { DripPage } from './components-v2/pages/help/DripPage';
+import { EstatePlanningHelpPage } from './components-v2/pages/help/EstatePlanningHelpPage';
+import { FeesPage } from './components-v2/pages/help/FeesPage';
+import { FundPerformancePage } from './components-v2/pages/help/FundPerformancePage';
+import { InheritancePage } from './components-v2/pages/help/InheritancePage';
+import { IraLimitsHelpPage } from './components-v2/pages/help/IraLimitsHelpPage';
+import { OpenAccountHelpPage } from './components-v2/pages/help/OpenAccountHelpPage';
+import { OwnershipFormPage } from './components-v2/pages/help/OwnershipFormPage';
+import { PlaceTradePage } from './components-v2/pages/help/PlaceTradePage';
+import { ProspectusPage } from './components-v2/pages/help/ProspectusPage';
+import { RmdGuidePage } from './components-v2/pages/help/RmdGuidePage';
+import { RolloverGuidePage } from './components-v2/pages/help/RolloverGuidePage';
+import { SipPage } from './components-v2/pages/help/SipPage';
+import { StatementsPage } from './components-v2/pages/help/StatementsPage';
+import { TaxDocumentsHelpPage } from './components-v2/pages/help/TaxDocumentsHelpPage';
+import { TradingPage } from './components-v2/pages/help/TradingPage';
+import { WireTransferPage } from './components-v2/pages/help/WireTransferPage';
 
 const FONTS_HREF = 'https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Inter:wght@400;500;600;700&display=swap';
 
@@ -61,6 +83,28 @@ export default function App() {
               <Route path="/resources/self-employed-retirement" element={<SelfEmployedRetirementPage />} />
               <Route path="/resources/tax-deductions" element={<TaxDeductionsPage />} />
               <Route path="/resources/rollover" element={<RolloverPage />} />
+              <Route path="/help/account-access" element={<AccountAccessPage />} />
+              <Route path="/help/account-transfer" element={<AccountTransferPage />} />
+              <Route path="/help/beneficiary" element={<BeneficiaryPage />} />
+              <Route path="/help/contact" element={<ContactPage />} />
+              <Route path="/help/cost-basis" element={<CostBasisPage />} />
+              <Route path="/help/drip" element={<DripPage />} />
+              <Route path="/help/estate-planning" element={<EstatePlanningHelpPage />} />
+              <Route path="/help/fees" element={<FeesPage />} />
+              <Route path="/help/fund-performance" element={<FundPerformancePage />} />
+              <Route path="/help/inheritance" element={<InheritancePage />} />
+              <Route path="/help/ira-limits" element={<IraLimitsHelpPage />} />
+              <Route path="/help/open-account" element={<OpenAccountHelpPage />} />
+              <Route path="/help/ownership-form" element={<OwnershipFormPage />} />
+              <Route path="/help/place-trade" element={<PlaceTradePage />} />
+              <Route path="/help/prospectus" element={<ProspectusPage />} />
+              <Route path="/help/rmd-guide" element={<RmdGuidePage />} />
+              <Route path="/help/rollover-guide" element={<RolloverGuidePage />} />
+              <Route path="/help/sip" element={<SipPage />} />
+              <Route path="/help/statements" element={<StatementsPage />} />
+              <Route path="/help/tax-documents" element={<TaxDocumentsHelpPage />} />
+              <Route path="/help/trading" element={<TradingPage />} />
+              <Route path="/help/wire-transfer" element={<WireTransferPage />} />
             </Routes>
           </main>
           <ChatWidget />
