@@ -12,6 +12,7 @@ const STATUS_COLORS: Record<string, string> = {
 interface Props {
   ccpOpen: boolean;
   onToggleCcp: () => void;
+  ccpButtonRef?: React.RefObject<HTMLButtonElement | null>;
   uiMode: UiMode;
   onModeChange: (mode: UiMode) => void;
 }
@@ -23,7 +24,7 @@ const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
   { id: 'focusing',    label: 'Focusing',     desc: 'Single-chat deep-support view' },
 ];
 
-export function TopBar({ ccpOpen, onToggleCcp, uiMode, onModeChange }: Props) {
+export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChange }: Props) {
   const { agentStatus, setAgentStatus, dailyBonus } = useAgentStore();
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const bIconRef = useRef<HTMLButtonElement>(null);
@@ -170,6 +171,7 @@ export function TopBar({ ccpOpen, onToggleCcp, uiMode, onModeChange }: Props) {
 
         {/* DA avatar — click to open/close the Connect CCP panel */}
         <button
+          ref={ccpButtonRef}
           onClick={onToggleCcp}
           title={ccpOpen ? 'Close Connect panel' : 'Open Connect panel'}
           style={{

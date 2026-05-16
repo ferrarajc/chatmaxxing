@@ -75,6 +75,10 @@ function parseHistory(raw: string): ChatMessage[] {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const agentChatSessions = new Map<string, any>();
 
+// Module-level set prevents React StrictMode's double-mount from registering
+// duplicate contact handlers (which would double-append every incoming message).
+const trackedContactIds = new Set<string>();
+
 /**
  * Module-level Connect agent reference for external state changes (e.g. TopBar Available/Away).
  * Set once when the agent initializes via window.connect.agent().
@@ -125,6 +129,10 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     // ── Contact events ────────────────────────────────────────────────────────
     window.connect.contact(contact => {
       const contactId = contact.getContactId();
+      // StrictMode runs effects twice, registering two subscribers. Skip all event
+      // registration for a contactId that's already being handled.
+      if (trackedContactIds.has(contactId)) return;
+      trackedContactIds.add(contactId);
 
       contact.onConnecting(() => {
         const attrs = contact.getAttributes();
@@ -269,6 +277,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       });
 
       contact.onDestroy(() => {
+        trackedContactIds.delete(contactId);
         contactRefs.current.delete(contactId);
         agentChatSessions.delete(contactId);
         // Preserve the slot if we're in ACW so the agent can still review and close.
