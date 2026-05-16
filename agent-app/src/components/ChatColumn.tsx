@@ -11,6 +11,10 @@ import { CLIENT_PROFILES, DEFAULT_PROFILE } from '../data/clientProfiles';
 
 const AGENT_NAME = 'John Ferrara';
 
+const DEFAULT_AI_HEIGHT = 250;
+const MIN_AI_HEIGHT = 100;
+const MAX_AI_HEIGHT = 700;
+
 // ── Transcript save (fire-and-forget, never throws) ────────────────────────
 
 function saveTranscript(slot: ContactSlot, acwData?: ACWData | null) {
@@ -74,6 +78,35 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevMsgCount = useRef(0);
+
+  const [aiHeight, setAiHeight] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`bobs:aiHeight:${slotIndex}`);
+      const n = saved ? parseInt(saved, 10) : NaN;
+      if (!isNaN(n) && n >= MIN_AI_HEIGHT && n <= MAX_AI_HEIGHT) return n;
+    } catch {}
+    return DEFAULT_AI_HEIGHT;
+  });
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startY = e.clientY;
+    const startHeight = aiHeight;
+    let lastHeight = startHeight;
+
+    const onMove = (ev: MouseEvent) => {
+      lastHeight = Math.max(MIN_AI_HEIGHT, Math.min(MAX_AI_HEIGHT, startHeight - (ev.clientY - startY)));
+      setAiHeight(lastHeight);
+    };
+    const onUp = () => {
+      try { localStorage.setItem(`bobs:aiHeight:${slotIndex}`, String(lastHeight)); } catch {}
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
 
   // Greeting tracking
   const greetedContacts = useRef<Set<string>>(new Set());
@@ -606,8 +639,20 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             </div>
           </div>
 
-          {/* AI support panel — fixed height, internal scroll handled by AISupport */}
-          <div style={{ height: 250, borderTop: '1px solid #e5e7eb', flexShrink: 0, overflow: 'hidden' }}>
+          {/* Drag handle — resize AI section independently per column */}
+          <div
+            onMouseDown={handleDragStart}
+            style={{
+              height: 14, cursor: 'ns-resize', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'transparent', userSelect: 'none',
+            }}
+          >
+            <div style={{ width: 32, height: 3, borderRadius: 2, background: '#cbd5e1' }} />
+          </div>
+
+          {/* AI support panel — height per-column, resizable via drag handle above */}
+          <div style={{ height: aiHeight, borderTop: '1px solid #e5e7eb', flexShrink: 0, overflow: 'hidden' }}>
             <AISupport
               slot={slot}
               onSendResource={text => sendText(text)}

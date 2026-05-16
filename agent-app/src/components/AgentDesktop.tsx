@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useConnectStreams } from '../hooks/useConnectStreams';
 import { useAgentStore } from '../store/agentStore';
 import { TopBar } from './TopBar';
@@ -19,11 +19,24 @@ function getInitialMode(): UiMode {
 
 export function AgentDesktop() {
   const ccpRef = useRef<HTMLDivElement>(null);
+  const ccpPanelRef = useRef<HTMLDivElement>(null);
+  const ccpButtonRef = useRef<HTMLButtonElement>(null);
   const slots = useAgentStore(s => s.slots);
   const [ccpOpen, setCcpOpen] = useState(false);
   const [uiMode, setUiMode] = useState<UiMode>(getInitialMode);
 
   useConnectStreams(ccpRef);
+
+  useEffect(() => {
+    if (!ccpOpen) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (ccpPanelRef.current?.contains(t) || ccpButtonRef.current?.contains(t)) return;
+      setCcpOpen(false);
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [ccpOpen]);
 
   const handleModeChange = (mode: UiMode) => {
     setUiMode(mode);
@@ -35,6 +48,7 @@ export function AgentDesktop() {
       <TopBar
         ccpOpen={ccpOpen}
         onToggleCcp={() => setCcpOpen(o => !o)}
+        ccpButtonRef={ccpButtonRef}
         uiMode={uiMode}
         onModeChange={handleModeChange}
       />
@@ -111,7 +125,7 @@ export function AgentDesktop() {
       )}
 
       {/* ── CCP dropdown — always in DOM so Streams iframe keeps running ─── */}
-      <div style={{
+      <div ref={ccpPanelRef} style={{
         position: 'fixed', top: 56, right: 20, zIndex: 2000,
         width: 320, borderRadius: '0 0 12px 12px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
