@@ -24,7 +24,7 @@ function renderWithLinks(content: string, navigate: (path: string) => void): Rea
           style={{
             background: 'none', border: 'none', padding: 0, cursor: 'pointer',
             color: '#1a56db', fontWeight: 600, fontSize: 'inherit',
-            textDecoration: 'underline', display: 'inline',
+            textDecoration: 'underline', display: 'inline-block',
             whiteSpace: 'nowrap',
           }}
         >
