@@ -9,7 +9,6 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function isInternalPath(url: string): string | null {
   if (url.startsWith('/')) {
-    if (url.startsWith('/resources-v2/')) return null;
     return url;
   }
   try {
@@ -17,7 +16,6 @@ function isInternalPath(url: string): string | null {
     if (parsed.origin !== window.location.origin) return null;
     let path = parsed.pathname;
     if (BASE && path.startsWith(BASE)) path = path.slice(BASE.length) || '/';
-    if (path.startsWith('/resources-v2/')) return null;
     return path;
   } catch {
     return null;

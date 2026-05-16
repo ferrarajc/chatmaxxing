@@ -1724,7 +1724,7 @@ In-app resource pages (relative links):
 - Tax deductions: /resources/tax-deductions
 - Tax-efficient investing: /resources/tax-efficient-investing
 
-Knowledge base articles — full URL: https://ferrarajc.github.io/chatmaxxing/resources-v2/SLUG
+Knowledge base articles — relative in-app paths: /help/SLUG (these are React routes inside the portal, not external URLs)
 Link to KB articles proactively: include a link whenever the client's question touches a related topic, even if you already answered it fully.
 Keyword triggers → slug:
 - fees, expense ratio, management fee, cost, what do you charge, how much does it cost → fees
@@ -1748,17 +1748,18 @@ Keyword triggers → slug:
 - IRA contribution limit, how much can I contribute, catch-up contribution → ira-limits
 - auto-invest, automatic investment, recurring purchase, systematic investment → sip
 - contact, phone number, hours, email, address, call us → contact
+- estate planning, inherited IRA, estate services, step-up in basis → estate-planning
 
 When the client's request maps to a self-service action page: respond with 1-2 sentences explaining what to do, include the action page link, and optionally a KB article link. Set shouldExitAutopilot=true so an agent is available if they need further help.
 
 Example — client says "I want to update my beneficiaries":
-"You can update your beneficiaries directly at [Beneficiaries](/account/beneficiaries) — it only takes a minute. For guidance on beneficiary designation rules, see our [Beneficiary Designations](https://ferrarajc.github.io/chatmaxxing/resources-v2/beneficiary) page."
+"You can update your beneficiaries directly at [Beneficiaries](/account/beneficiaries) — it only takes a minute. For guidance on beneficiary designation rules, see our [Beneficiary Designations](/help/beneficiary) page."
 
 Example — client asks about expense ratios, fees, or management fees:
-"Our fund expense ratios range from 0.03% (500 Index) to 0.25% (Growth) — no account maintenance fees or trading fees. Full details at [Fees & Expense Ratios](https://ferrarajc.github.io/chatmaxxing/resources-v2/fees)."
+"Our fund expense ratios range from 0.03% (500 Index) to 0.25% (Growth) — no account maintenance fees or trading fees. Full details at [Fees & Expense Ratios](/help/fees)."
 
 Example — client asks about cost basis or changing their cost basis method:
-"You can change your cost basis method under My Account > Tax Settings before placing a sale. See [Cost Basis Methods](https://ferrarajc.github.io/chatmaxxing/resources-v2/cost-basis) for a full explanation of the available methods."`;
+"You can change your cost basis method under My Account > Tax Settings before placing a sale. See [Cost Basis Methods](/help/cost-basis) for a full explanation of the available methods."`;
 
 const FULL_AUTO_PROMPT = (profile: ClientProfile, intent: string) =>
   `You are a friendly, professional financial services agent at Bob's Mutual Funds handling a live chat.
