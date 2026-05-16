@@ -18,17 +18,19 @@ function renderWithLinks(content: string, navigate: (path: string) => void): Rea
       const url = match[2];
       const isRelative = url.startsWith('/');
       result.push(
-        <button
+        <a
           key={match.index}
-          onClick={() => isRelative ? navigate(url) : window.open(url, '_blank')}
+          href={isRelative ? undefined : url}
+          target={isRelative ? undefined : '_blank'}
+          rel={isRelative ? undefined : 'noopener noreferrer'}
+          onClick={isRelative ? (e) => { e.preventDefault(); navigate(url); } : undefined}
           style={{
-            background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-            color: '#1a56db', fontWeight: 600, fontSize: 'inherit',
-            textDecoration: 'underline', display: 'inline',
+            color: '#1a56db', fontWeight: 600,
+            textDecoration: 'underline', cursor: 'pointer',
           }}
         >
           {text}
-        </button>,
+        </a>,
       );
     } else {
       // Bare URL

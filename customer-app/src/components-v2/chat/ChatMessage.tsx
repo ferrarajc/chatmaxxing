@@ -58,7 +58,7 @@ function renderWithLinks(content: string, navigate: (path: string) => void): Rea
         >{label}</button>
       ) : (
         <a key={m.index} href={url} target="_blank" rel="noopener noreferrer"
-          style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
+          style={{ color: theme.color.primary, fontWeight: 600, textDecoration: 'underline' }}
         >{label}</a>
       ),
     });
