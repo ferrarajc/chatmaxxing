@@ -2043,7 +2043,6 @@ export const handler = async (
         }
       }
     }
-    }
 
     // Business-rule hard overrides
     if (ESCALATION_RE.test(lastCustomerMsg)) {
