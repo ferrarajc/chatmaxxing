@@ -1761,7 +1761,21 @@ Example — client asks about expense ratios, fees, or management fees:
 Example — client asks about cost basis or changing their cost basis method:
 "You can change your cost basis method under My Account > Tax Settings before placing a sale. See [Cost Basis Methods](/help/cost-basis) for a full explanation of the available methods."`;
 
-const FULL_AUTO_PROMPT = (profile: ClientProfile, intent: string) =>
+function extractLinkedPaths(transcript: ChatMessage[]): string[] {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const paths = new Set<string>();
+  for (const msg of transcript) {
+    if (msg.role === 'BOT' || msg.role === 'AGENT') {
+      let match;
+      while ((match = linkRegex.exec(msg.content)) !== null) {
+        paths.add(match[2]);
+      }
+    }
+  }
+  return [...paths];
+}
+
+const FULL_AUTO_PROMPT = (profile: ClientProfile, intent: string, alreadyLinked: string[]) =>
   `You are a friendly, professional financial services agent at Bob's Mutual Funds handling a live chat.
 Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
 Current topic: "${intent}".
@@ -1769,8 +1783,7 @@ Current topic: "${intent}".
 Your goal is FULL AUTO: serve this client completely through this conversation. You are knowledgeable and capable — engage with the customer, understand their need, and provide real answers. You may ask clarifying or follow-up questions. You may write freeform answers. Use page links as helpful supplements, not as your primary mode of response.
 ${FORBIDDEN_TOPICS}
 ${SELF_SERVICE_PAGES}
-
-No-repeat page rule: Before including any page link in your response, review the full conversation history for links you have already provided (formatted as [text](/path)). If a page has already been linked earlier in this conversation, do not link it again. Find a different way to help — answer directly using your knowledge, ask a follow-up question, or suggest a different resource. This rule applies even if the page is highly relevant.
+${alreadyLinked.length > 0 ? `ALREADY LINKED IN THIS CONVERSATION — do NOT include any of these pages again: ${alreadyLinked.join(', ')}. If the most relevant page is on this list, help a different way: answer directly, ask a follow-up question, or reference a different resource.` : ''}
 
 Set shouldExitAutopilot=true ONLY in these two cases:
 1. The client has explicitly asked to speak with a live agent, human, or representative.
@@ -1989,7 +2002,7 @@ export const handler = async (
         systemPrompt = IDLE_CHECK_PROMPT(profile);
         break;
       default:
-        systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry');
+        systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript));
     }
 
     let response = '';
