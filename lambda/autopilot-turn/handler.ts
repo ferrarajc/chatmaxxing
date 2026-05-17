@@ -2011,30 +2011,38 @@ export const handler = async (
     let closeChat = false;
     let scheduleCallback: Record<string, string> | null = null;
 
-    try {
-      const raw = await invokeNovaMicro(
-        formatTranscriptForBedrock(transcript),
-        systemPrompt,
-        400,
-        { fn: 'autopilot-turn', contactId: transcript[0]?.content?.slice(0, 8), scope },
-      );
-      const parsed = parseJsonFromBedrock<{
-        response: string;
-        shouldExitAutopilot: boolean;
-        suggestedScope?: string | null;
-        closeChat?: boolean;
-        scheduleCallback?: Record<string, string> | null;
-      }>(raw);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const raw = await invokeNovaMicro(
+          formatTranscriptForBedrock(transcript),
+          systemPrompt,
+          400,
+          { fn: 'autopilot-turn', contactId: transcript[0]?.content?.slice(0, 8), scope },
+        );
+        const parsed = parseJsonFromBedrock<{
+          response: string;
+          shouldExitAutopilot: boolean;
+          suggestedScope?: string | null;
+          closeChat?: boolean;
+          scheduleCallback?: Record<string, string> | null;
+        }>(raw);
 
-      response = parsed.response ?? '';
-      shouldExitAutopilot = parsed.shouldExitAutopilot ?? false;
-      suggestedScope = parsed.suggestedScope ?? null;
-      closeChat = parsed.closeChat ?? false;
-      scheduleCallback = parsed.scheduleCallback ?? null;
-    } catch (e) {
-      console.warn('Autopilot LLM call failed', e);
-      shouldExitAutopilot = false;
-      response = "I'm having a bit of trouble right now — could you try rephrasing your question?";
+        response = parsed.response ?? '';
+        shouldExitAutopilot = parsed.shouldExitAutopilot ?? false;
+        suggestedScope = parsed.suggestedScope ?? null;
+        closeChat = parsed.closeChat ?? false;
+        scheduleCallback = parsed.scheduleCallback ?? null;
+        break;
+      } catch (e) {
+        if (attempt === 0) {
+          console.warn('Autopilot LLM call failed, retrying', e);
+        } else {
+          console.warn('Autopilot LLM call failed after retry', e);
+          shouldExitAutopilot = false;
+          response = "I'm having a bit of trouble right now — could you try rephrasing your question?";
+        }
+      }
+    }
     }
 
     // Business-rule hard overrides
