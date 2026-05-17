@@ -318,6 +318,7 @@ export class LambdaStack extends cdk.Stack {
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     transcriptsTable.grantWriteData(saveTranscriptFn);
+    chatSessionsTable.grantWriteData(saveTranscriptFn);
 
     // ── get-transcripts ────────────────────────────────────────────
     const getTranscriptsFn = new NodejsFunction(this, 'GetTranscriptsFn', {

@@ -44,6 +44,8 @@ export interface ContactSlot {
   autopilotFlash: boolean;
   /** Message staged for send during autopilot delay — shown in AI panel */
   autopilotPending: string | null;
+  /** Human-readable reason for last autopilot exit; null while autopilot is active or never ran */
+  autopilotExitMessage: string | null;
   suggestedText: string;
   suggestedResources: Resource[];
   lastAgentMessageAt: number | null;

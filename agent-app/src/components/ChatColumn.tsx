@@ -55,6 +55,7 @@ interface AutopilotTurnResult {
     scheduledTimeISO: string;
     intentSummary: string;
   } | null;
+  exitMessage?: string | null;
   taskIdentified?: string | null;
   proposedAction?: {
     taskId: string;
@@ -200,9 +201,14 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   };
 
   // ── Autopilot: exit with flash ─────────────────────────────────────────
-  const exitAutopilot = (contactId: string) => {
+  const exitAutopilot = (contactId: string, message?: string | null) => {
     clearAutopilotTimers();
-    store.patchSlot(contactId, { autopilotScope: null, autopilotFlash: true, autopilotPending: null });
+    store.patchSlot(contactId, {
+      autopilotScope: null,
+      autopilotFlash: true,
+      autopilotPending: null,
+      autopilotExitMessage: message ?? null,
+    });
     setTimeout(() => store.patchSlot(contactId, { autopilotFlash: false }), 100);
   };
 
@@ -287,13 +293,14 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         autopilotScope: null,
         autopilotFlash: true,
         autopilotPending: null,
+        autopilotExitMessage: result.exitMessage ?? null,
       });
       setTimeout(() => store.patchSlot(contactId, { autopilotFlash: false }), 100);
       return;
     }
 
     if (result.shouldExitAutopilot) {
-      exitAutopilot(contactId);
+      exitAutopilot(contactId, result.exitMessage);
       if (result.closeChat) {
         // Route through ACW (not 'ended') so the agent must explicitly close the contact.
         // The ACW UI generates a summary and the agent clicks "Close contact" to end properly.

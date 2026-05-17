@@ -126,6 +126,20 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
       {/* ── Scrollable body ───────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
 
+        {/* Autopilot exit reason */}
+        {slot.autopilotExitMessage && !slot.autopilotScope && (
+          <div style={{
+            color: '#9ca3af',
+            fontStyle: 'italic',
+            textAlign: 'center',
+            fontSize: 13,
+            padding: '6px 8px 4px',
+            marginBottom: 6,
+          }}>
+            {slot.autopilotExitMessage}
+          </div>
+        )}
+
         {/* Proposed Action Card — shown when get-intent has collected all fields */}
         {slot.proposedAction && !slot.autopilotScope && (
           <ProposedActionCard slot={slot} />

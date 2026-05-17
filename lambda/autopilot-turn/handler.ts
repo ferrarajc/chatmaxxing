@@ -1800,6 +1800,12 @@ Output ONLY a JSON object — no prose, no markdown, no explanation before or af
 {"response": "YOUR_RESPONSE_HERE", "shouldExitAutopilot": false, "suggestedScope": null}
 Replace YOUR_RESPONSE_HERE with your actual reply. The other fields are booleans/null as shown.`;
 
+// ── Exit message instruction appended to system prompts at LLM call sites ─
+const EXIT_MESSAGE_INSTRUCTION = `
+
+EXIT MESSAGE RULE
+When shouldExitAutopilot is true, also set exitMessage to a ≤20-word sentence addressed to the human agent explaining why autopilot is handing back control (third person, e.g. "All fields collected — proposed action is ready for review." or "Customer requested escalation to a supervisor."). When shouldExitAutopilot is false, set exitMessage to null.`;
+
 // ── Escalation hard-override ───────────────────────────────────────────────
 const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
@@ -1853,6 +1859,7 @@ export const handler = async (
         return jsonResponse(200, {
           response: '',
           shouldExitAutopilot: true,
+          exitMessage: 'Customer requested a callback — switching to callback scope.',
           suggestedScope: 'callback',
           closeChat: false,
           scheduleCallback: null,
@@ -1876,6 +1883,7 @@ export const handler = async (
           return jsonResponse(200, {
             response: '',
             shouldExitAutopilot: true,
+            exitMessage: 'Customer requested escalation to a live agent.',
             suggestedScope: null,
             closeChat: false,
             scheduleCallback: null,
@@ -1884,10 +1892,11 @@ export const handler = async (
           });
         }
 
-        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId);
+        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION;
         let taskResponse = '';
         let taskShouldExit = false;
         let taskProposedAction: Record<string, unknown> | null = null;
+        let taskExitMessage: string | null = null;
 
         try {
           const raw = await invokeNovaMicro(
@@ -1895,15 +1904,18 @@ export const handler = async (
             taskSystemPrompt,
             600,
             { fn: 'autopilot-turn', scope: `get-intent:${activeTaskId}` },
+            true,
           );
           const parsed = parseJsonFromBedrock<{
             response: string;
             shouldExitAutopilot: boolean;
+            exitMessage?: string | null;
             proposedAction?: Record<string, unknown> | null;
           }>(raw);
 
           taskResponse = parsed.response ?? '';
           taskShouldExit = parsed.shouldExitAutopilot ?? false;
+          taskExitMessage = parsed.exitMessage ?? null;
           taskProposedAction = parsed.proposedAction ?? null;
 
           // Safety guard: never exit without a proposedAction
@@ -1912,6 +1924,7 @@ export const handler = async (
           console.warn('Task expert LLM call failed', e);
           taskResponse = "I'm pulling some information, give me just a few moments please.";
           taskShouldExit = true;
+          taskExitMessage = 'Autopilot stopped due to an unexpected processing error.';
         }
 
         console.log(JSON.stringify({
@@ -1923,6 +1936,7 @@ export const handler = async (
         return jsonResponse(200, {
           response: taskResponse,
           shouldExitAutopilot: taskShouldExit,
+          exitMessage: taskExitMessage,
           suggestedScope: null,
           closeChat: false,
           scheduleCallback: null,
@@ -1941,11 +1955,12 @@ export const handler = async (
         if (resolvedTask) {
           // Phase 1: task identified — LLM expert handles the first turn
           taskIdentifiedForResponse = resolvedTask.id;
-          const p1SystemPrompt = await buildTaskSystemPrompt(profile, resolvedTask.id);
+          const p1SystemPrompt = await buildTaskSystemPrompt(profile, resolvedTask.id) + EXIT_MESSAGE_INSTRUCTION;
 
           let p1Response = '';
           let p1ShouldExit = false;
           let p1ProposedAction: Record<string, unknown> | null = null;
+          let p1ExitMessage: string | null = null;
 
           try {
             const raw = await invokeNovaMicro(
@@ -1953,15 +1968,18 @@ export const handler = async (
               p1SystemPrompt,
               600,
               { fn: 'autopilot-turn', scope: `get-intent:identify:${resolvedTask.id}` },
+              true,
             );
             const parsed = parseJsonFromBedrock<{
               response: string;
               shouldExitAutopilot: boolean;
+              exitMessage?: string | null;
               proposedAction?: Record<string, unknown> | null;
             }>(raw);
 
             p1Response = parsed.response ?? '';
             p1ShouldExit = parsed.shouldExitAutopilot ?? false;
+            p1ExitMessage = parsed.exitMessage ?? null;
             p1ProposedAction = parsed.proposedAction ?? null;
             if (p1ShouldExit && !p1ProposedAction) p1ShouldExit = false;
           } catch (e) {
@@ -1977,6 +1995,7 @@ export const handler = async (
           return jsonResponse(200, {
             response: p1Response,
             shouldExitAutopilot: p1ShouldExit,
+            exitMessage: p1ExitMessage,
             suggestedScope: null,
             closeChat: false,
             scheduleCallback: null,
@@ -2008,23 +2027,28 @@ export const handler = async (
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
+    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION;
+
     let response = '';
     let shouldExitAutopilot = false;
     let suggestedScope: string | null = null;
     let closeChat = false;
     let scheduleCallback: Record<string, string> | null = null;
+    let exitMessage: string | null = null;
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const raw = await invokeNovaMicro(
           formatTranscriptForBedrock(transcript),
-          systemPrompt,
+          augmentedSystemPrompt,
           400,
           { fn: 'autopilot-turn', contactId: transcript[0]?.content?.slice(0, 8), scope },
+          true,
         );
         const parsed = parseJsonFromBedrock<{
           response: string;
           shouldExitAutopilot: boolean;
+          exitMessage?: string | null;
           suggestedScope?: string | null;
           closeChat?: boolean;
           scheduleCallback?: Record<string, string> | null;
@@ -2032,6 +2056,7 @@ export const handler = async (
 
         response = parsed.response ?? '';
         shouldExitAutopilot = parsed.shouldExitAutopilot ?? false;
+        exitMessage = parsed.exitMessage ?? null;
         suggestedScope = parsed.suggestedScope ?? null;
         closeChat = parsed.closeChat ?? false;
         scheduleCallback = parsed.scheduleCallback ?? null;
@@ -2050,10 +2075,12 @@ export const handler = async (
     // Business-rule hard overrides
     if (ESCALATION_RE.test(lastCustomerMsg)) {
       shouldExitAutopilot = true;
+      exitMessage = 'Customer requested escalation to a live agent.';
     }
     if (scope !== 'callback' && TRADE_RE.test(lastCustomerMsg)) {
       shouldExitAutopilot = true;
       suggestedScope = 'callback';
+      exitMessage = 'Trade request detected — please handle in the callback scope.';
     }
 
     console.log(JSON.stringify({
@@ -2070,6 +2097,7 @@ export const handler = async (
     return jsonResponse(200, {
       response,
       shouldExitAutopilot,
+      exitMessage: shouldExitAutopilot ? (exitMessage ?? 'Autopilot exited.') : null,
       suggestedScope,
       closeChat,
       scheduleCallback,

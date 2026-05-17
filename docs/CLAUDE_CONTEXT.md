@@ -191,7 +191,7 @@ GitHub Actions deploys customer-app to root of gh-pages, agent-app to `/agent`. 
   intents: [recent intent strings]
 }
 ```
-Sessions Table: `{ contactId (PK), clientId, timestamp, status, messages[], expiresAt (TTL 30 days) }`
+Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 30 days) }`
 
 ---
 
