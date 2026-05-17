@@ -20,6 +20,7 @@ export async function invokeNovaMicro(
   systemPrompt: string,
   maxTokens = 300,
   ctx?: LlmCallContext,
+  jsonMode = false,
 ): Promise<string> {
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set');
 
@@ -39,6 +40,7 @@ export async function invokeNovaMicro(
       ],
       max_tokens: maxTokens,
       temperature: 0.3,
+      ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
     }),
   });
 

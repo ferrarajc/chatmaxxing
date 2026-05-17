@@ -1,5 +1,6 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
+import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
 
@@ -53,6 +54,21 @@ export const handler = async (
         savedAt: now,
       },
     }));
+
+    try {
+      await docClient.send(new UpdateCommand({
+        TableName: process.env.SESSIONS_TABLE!,
+        Key: { contactId: transcriptId },
+        UpdateExpression: 'SET #s = :completed',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: { ':completed': 'completed' },
+        ConditionExpression: 'attribute_exists(contactId)',
+      }));
+    } catch (e) {
+      if (!(e instanceof ConditionalCheckFailedException)) {
+        console.warn('save-transcript: could not mark session completed', e);
+      }
+    }
 
     return jsonResponse(200, { ok: true, transcriptId });
   } catch (e) {

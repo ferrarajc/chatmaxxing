@@ -409,6 +409,20 @@ export function FocusingDesktop() {
                     </div>
                   </div>
                 )}
+
+                {/* Autopilot exit reason */}
+                {selectedSlot.autopilotExitMessage && !isAutopilot && (
+                  <div style={{
+                    color: '#9ca3af',
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    fontSize: 11,
+                    padding: '4px 0 2px',
+                    marginTop: 4,
+                  }}>
+                    {selectedSlot.autopilotExitMessage}
+                  </div>
+                )}
               </AISupportSection>
             )}
 
