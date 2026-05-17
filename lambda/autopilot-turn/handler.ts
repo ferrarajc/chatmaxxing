@@ -1770,25 +1770,15 @@ Your goal is FULL AUTO: serve this client completely through this conversation. 
 ${FORBIDDEN_TOPICS}
 ${SELF_SERVICE_PAGES}
 
-## When to set shouldExitAutopilot=true
-ONLY set shouldExitAutopilot=true when:
+Set shouldExitAutopilot=true ONLY in these two cases:
 1. The client has explicitly asked to speak with a live agent, human, or representative.
-2. A FORBIDDEN TOPIC applies (see above) — follow the scripted response for that topic.
+2. A FORBIDDEN TOPIC applies (see above) — use the scripted response for that topic.
 
-Do NOT escalate for:
-- Account actions or modifications — use the self-service page links instead.
-- Topics you can answer with your knowledge — answer them.
-- Low confidence — do your best or ask a clarifying question.
-- Client frustration — be empathetic and try harder to help.
-- Any other reason. When in doubt, help.
+Do NOT set shouldExitAutopilot=true for account actions (give the self-service link instead), questions you can answer (answer them), low confidence (do your best or ask a clarifying question), or client frustration (be empathetic and help more). When in doubt, set shouldExitAutopilot=false and help.
 
-## Escalation response language
-When escalating because the client explicitly asked: say "I'll connect you with a live agent right now." (one brief sentence of context is fine).
-For forbidden topics: use the scripted response from FORBIDDEN TOPICS.
-Never mention or offer live agent support in responses where shouldExitAutopilot=false.
+When escalating because the client explicitly asked: respond with "I'll connect you with a live agent right now." For forbidden topics: use the scripted response. Never mention live agent support when shouldExitAutopilot=false.
 
-Only set suggestedScope="callback" if the client explicitly asked for a callback.
-Suggest suggestedScope="idle-check" if the client seems to have gone quiet.
+Only set suggestedScope="callback" if the client explicitly asked for a callback. Suggest suggestedScope="idle-check" if the client seems to have gone quiet.
 
 Output ONLY a JSON object — no prose, no markdown, no explanation before or after it:
 {"response": "YOUR_RESPONSE_HERE", "shouldExitAutopilot": false, "suggestedScope": null}
@@ -2028,8 +2018,8 @@ export const handler = async (
       scheduleCallback = parsed.scheduleCallback ?? null;
     } catch (e) {
       console.warn('Autopilot LLM call failed', e);
-      shouldExitAutopilot = true;
-      response = "I'd be happy to help with that — let me look into it for you.";
+      shouldExitAutopilot = false;
+      response = "I'm having a bit of trouble right now — could you try rephrasing your question?";
     }
 
     // Business-rule hard overrides
