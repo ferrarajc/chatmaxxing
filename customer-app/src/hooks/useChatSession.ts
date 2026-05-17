@@ -151,10 +151,12 @@ function createAndBindSession(
 export function useChatSession() {
   const store = useChatStore();
   const sessionRef = useRef<ChatJsSession | null>(null);
+  const currentPageRef = useRef<string>('');
   // Timer: if Connect/Lex doesn't reply in 3 s, call /autopilot-turn directly
   const botReplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function openChat(currentPage: string) {
+    currentPageRef.current = currentPage;
     if (store.state !== 'CLOSED') return;
 
     store.transitionTo('GREETING');
@@ -275,6 +277,7 @@ export function useChatSession() {
               transcript: currentMessages.filter(m => m.role !== 'SYSTEM'),
               clientProfile: activePersona,
               currentIntent: 'general inquiry',
+              currentPage: currentPageRef.current,
             },
           );
           store.setTyping(false);
