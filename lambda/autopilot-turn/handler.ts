@@ -1775,7 +1775,7 @@ function extractLinkedPaths(transcript: ChatMessage[]): string[] {
   return [...paths];
 }
 
-const FULL_AUTO_PROMPT = (profile: ClientProfile, intent: string, alreadyLinked: string[]) =>
+const FULL_AUTO_PROMPT = (profile: ClientProfile, intent: string, alreadyLinked: string[], currentPage?: string) =>
   `You are a friendly, professional financial services agent at Bob's Mutual Funds handling a live chat.
 Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
 Current topic: "${intent}".
@@ -1783,7 +1783,8 @@ Current topic: "${intent}".
 Your goal is FULL AUTO: serve this client completely through this conversation. You are knowledgeable and capable — engage with the customer, understand their need, and provide real answers. You may ask clarifying or follow-up questions. You may write freeform answers. Use page links as helpful supplements, not as your primary mode of response.
 ${FORBIDDEN_TOPICS}
 ${SELF_SERVICE_PAGES}
-${alreadyLinked.length > 0 ? `ALREADY LINKED IN THIS CONVERSATION — do NOT include any of these pages again: ${alreadyLinked.join(', ')}. If the most relevant page is on this list, help a different way: answer directly, ask a follow-up question, or reference a different resource.` : ''}
+${currentPage ? `CURRENT PAGE: The client is already viewing "${currentPage}". Do not link to this page — they are on it. Use your awareness of what is on this page to give specific, contextual guidance.` : ''}
+${(() => { const excluded = [...alreadyLinked, ...(currentPage ? [currentPage] : [])]; return excluded.length > 0 ? `DO NOT LINK to any of these pages (already visited or currently viewing): ${excluded.join(', ')}. If the most relevant page is on this list, help a different way: answer directly, ask a follow-up question, or reference a different resource.` : ''; })()}
 
 Set shouldExitAutopilot=true ONLY in these two cases:
 1. The client has explicitly asked to speak with a live agent, human, or representative.
@@ -1817,11 +1818,13 @@ export const handler = async (
       clientProfile,
       scope = 'full-auto',
       currentIntent,
+      currentPage,
     }: {
       transcript: ChatMessage[];
       clientProfile: ClientProfile;
       scope?: AutopilotScope;
       currentIntent?: string;
+      currentPage?: string;
     } = JSON.parse(event.body ?? '{}');
 
     if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
@@ -2002,7 +2005,7 @@ export const handler = async (
         systemPrompt = IDLE_CHECK_PROMPT(profile);
         break;
       default:
-        systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript));
+        systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
     let response = '';
