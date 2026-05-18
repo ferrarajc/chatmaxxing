@@ -46,7 +46,10 @@ interface AgentState {
 }
 
 interface ConnectAgent {
-  onStateChange: (cb: (e: { newState: { name: string } }) => void) => void;
+  onStateChange: (cb: (e: { newState: AgentState }) => void) => void;
+  onRoutable: (cb: () => void) => void;
+  onNotRoutable: (cb: () => void) => void;
+  onOffline: (cb: () => void) => void;
   getName: () => string;
   getAgentStates: () => AgentState[];
   setState: (state: AgentState, opts?: { success?: () => void; failure?: () => void }) => void;
@@ -342,13 +345,23 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     // ── Agent state ───────────────────────────────────────────────────────────
     window.connect.agent(agent => {
       connectAgentInstance = agent;
+
+      // Primary sync: routable/offline callbacks are the most direct signal
+      agent.onRoutable(() => {
+        useAgentStore.getState().setAgentStatus('Available');
+      });
+      agent.onOffline(() => {
+        useAgentStore.getState().setAgentStatus('Away');
+      });
+
+      // Belt-and-suspenders: also listen to generic state change for any state
+      // not covered above (e.g. custom non-routable states)
       agent.onStateChange(({ newState }) => {
-        const name = newState.name;
-        // Connect uses 'Offline' for what the UI calls 'Away'
-        if (name === 'Available') {
-          store.setAgentStatus('Available');
-        } else if (name === 'Offline') {
-          store.setAgentStatus('Away');
+        console.info('[Connect] Agent state change:', newState.name, '| type:', newState.type);
+        if (newState.name === 'Available') {
+          useAgentStore.getState().setAgentStatus('Available');
+        } else {
+          useAgentStore.getState().setAgentStatus('Away');
         }
       });
     });
