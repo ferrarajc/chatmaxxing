@@ -127,9 +127,9 @@ function createAndBindSession(
   session.onTyping(() => store.setTyping(true));
 
   session.onConnectionEstablished(() => {
-    // Only promote to BOT_ACTIVE if we haven't already escalated to agent
+    // Only promote to BOT_ACTIVE on initial connect from GREETING
     const current = useChatStore.getState().state;
-    if (current === 'GREETING' || current === 'ESCALATION_OFFERED') {
+    if (current === 'GREETING') {
       store.transitionTo('BOT_ACTIVE');
     }
   });
