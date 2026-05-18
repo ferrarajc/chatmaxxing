@@ -3,6 +3,7 @@ import { invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client'
 import {
   ChatMessage,
   ClientProfile,
+  RmdData,
   formatTranscriptForBedrock,
   summarizeAccounts,
   summarizeIntents,
@@ -319,6 +320,19 @@ async function fetchBeneficiaries(clientId: string): Promise<BeneficiaryEntry[]>
     return (result.Item?.beneficiaries as BeneficiaryEntry[] | undefined) ?? [];
   } catch {
     return [];
+  }
+}
+
+async function fetchRmdSettings(clientId: string): Promise<RmdData> {
+  try {
+    const result = await docClient.send(new GetCommand({
+      TableName: process.env.CLIENTS_TABLE!,
+      Key: { clientId },
+      ProjectionExpression: 'rmd',
+    }));
+    return (result.Item?.rmd as RmdData | undefined) ?? { eligible: false };
+  } catch {
+    return { eligible: false };
   }
 }
 
@@ -1145,16 +1159,47 @@ When all five fields are confirmed, return this EXACT structure with proposedAct
 ⚠ Never set shouldExitAutopilot=true unless all five fields are present in proposedAction.`;
 };
 
-const UPDATE_RMD_SETTINGS_PROMPT = (profile: ClientProfile) =>
-  `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
+const UPDATE_RMD_SETTINGS_PROMPT = (profile: ClientProfile, currentRmd: RmdData) => {
+  const rmdAccount = profile.accounts.find(a => a.id === currentRmd.accountId)
+    ?? profile.accounts.find(a => a.type.toLowerCase().includes('ira') || a.type.toLowerCase().includes('sep'));
+
+  const fmt = (n: number | undefined) => n != null ? `$${n.toLocaleString()}` : 'N/A';
+
+  const recentDist = (currentRmd.distributions ?? []).slice(0, 3)
+    .map(d => `  • ${d.date}: ${fmt(d.amount)} via ${d.method} ($${d.withheld} withheld)`)
+    .join('\n') || '  (none on file)';
+
+  return `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
 Client accounts: ${summarizeAccounts(profile.accounts)}.
 ${summarizeIntents(profile.intents)}
 
 You are handling an UPDATE RMD SETTINGS request. The client wants to change how their Required Minimum Distribution is delivered.
 
 ════════════════════════════════════
-WHAT YOU NEED TO COLLECT — all three
+CURRENT RMD STATE
 ════════════════════════════════════
+
+Account: ${rmdAccount?.type ?? 'IRA'} (${currentRmd.accountId ?? rmdAccount?.id ?? 'on file'})
+2025 RMD required:      ${fmt(currentRmd.annualRmd)}
+Taken this year:        ${fmt(currentRmd.takenThisYear)}
+Remaining to take:      ${fmt(currentRmd.remainingThisYear)}  ← NEVER calculate this yourself; use the figure above
+Deadline:               ${currentRmd.nextDeadline ?? 'December 31'}
+Prior year balance:     ${fmt(currentRmd.priorYearBalance)}
+Life expectancy factor: ${currentRmd.lifeExpectancyFactor ?? 'N/A'}
+
+Current distribution preferences:
+  Delivery method:     ${currentRmd.deliveryMethod ?? 'not set'}
+  Frequency:           ${currentRmd.frequency ?? 'not set'}
+  Federal withholding: ${currentRmd.taxWithholding != null ? `${currentRmd.taxWithholding}%` : 'not set'}
+
+Recent distributions:
+${recentDist}
+
+════════════════════════════════════
+WHAT YOU NEED TO COLLECT
+════════════════════════════════════
+
+Collect only the fields the client actually wants to change. If they mention just one field, confirm the others are staying the same before submitting.
 
 RMD DELIVERY METHOD — one of:
   • Direct deposit (ACH) — sent to their bank account on file
@@ -1168,17 +1213,19 @@ RMD FREQUENCY — one of:
 FEDERAL TAX WITHHOLDING PERCENTAGE
   What percentage of each RMD payment to withhold for federal income tax.
   Accept: "none" or "0%", a specific percentage like "10%" or "20%"
-  Default is 10% if not specified.
 
 ════════════════════════════════════
-HOW TO HANDLE THIS CONVERSATION
+RULES
 ════════════════════════════════════
+
+Do NOT calculate RMD amounts or balances yourself — use only the figures in CURRENT RMD STATE above.
+When the client asks about their current settings, read them from CURRENT RMD STATE above.
+When the client asks how much they still need to take, read remainingThisYear from CURRENT RMD STATE — never compute it.
 
 You are already connected to the client. Do not introduce yourself.
-Collect the three pieces naturally in any order. Ask ONE question per turn.
-Read the full transcript — do not re-ask for something already provided.
+Ask ONE question per turn. Read the full transcript — do not re-ask for something already confirmed.
 
-When all three are collected:
+When all three preference values are confirmed (including unchanged ones):
 → Set shouldExitAutopilot=true and populate proposedAction
 
 ${FORBIDDEN_TOPICS}
@@ -1211,6 +1258,7 @@ When all three fields are confirmed, return this EXACT structure with proposedAc
 }
 
 ⚠ Never set shouldExitAutopilot=true unless all three fields are present in proposedAction.`;
+};
 
 const INITIATE_ROLLOVER_PROMPT = (profile: ClientProfile) => {
   const multiAccount = profile.accounts.length > 1;
@@ -1596,7 +1644,10 @@ async function buildTaskSystemPrompt(profile: ClientProfile, taskId: string): Pr
     case 'pause-auto-invest':             return PAUSE_AUTO_INVEST_PROMPT(profile);
     case 'request-withdrawal':            return REQUEST_WITHDRAWAL_PROMPT(profile);
     case 'setup-systematic-withdrawal':   return SETUP_SYSTEMATIC_WITHDRAWAL_PROMPT(profile);
-    case 'update-rmd-settings':           return UPDATE_RMD_SETTINGS_PROMPT(profile);
+    case 'update-rmd-settings': {
+      const rmd = await fetchRmdSettings(profile.clientId);
+      return UPDATE_RMD_SETTINGS_PROMPT(profile, rmd);
+    }
     case 'initiate-rollover':             return INITIATE_ROLLOVER_PROMPT(profile);
     case 'roth-conversion':               return ROTH_CONVERSION_PROMPT(profile);
     case 'request-tax-document':          return REQUEST_TAX_DOCUMENT_PROMPT(profile);

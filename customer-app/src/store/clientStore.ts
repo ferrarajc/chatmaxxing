@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { PERSONAS, Persona, Beneficiary, AutoInvestSchedule, RmdData } from '../data/personas';
+import { post } from '../api/client';
 
 const STORAGE_KEY = 'bobs_active_client_id';
 
@@ -21,9 +22,11 @@ interface ClientStore {
   setAutoInvestSchedules: (schedules: AutoInvestSchedule[]) => void;
   updateAutoInvestSchedule: (scheduleId: string, updates: Partial<AutoInvestSchedule>) => void;
   updateRmd: (updates: Partial<RmdData>) => void;
+  fetchRmd: () => Promise<void>;
+  saveRmdPreferences: (updates: Partial<RmdData>) => Promise<void>;
 }
 
-export const useClientStore = create<ClientStore>((set) => ({
+export const useClientStore = create<ClientStore>((set, get) => ({
   activePersona: loadActivePersona(),
 
   setActivePersona: (id: string) => {
@@ -86,5 +89,37 @@ export const useClientStore = create<ClientStore>((set) => ({
         rmd: { ...state.activePersona.rmd, ...updates },
       },
     }));
+  },
+
+  fetchRmd: async () => {
+    const { clientId, rmd } = get().activePersona;
+    try {
+      const result = await post<{ rmd: RmdData }>('/client-data', {
+        action: 'get-rmd',
+        clientId,
+      });
+      if (result.rmd) {
+        set(state => ({
+          activePersona: { ...state.activePersona, rmd: { ...rmd, ...result.rmd } },
+        }));
+      }
+    } catch {
+      // keep local data on error
+    }
+  },
+
+  saveRmdPreferences: async (updates: Partial<RmdData>) => {
+    const { clientId, rmd } = get().activePersona;
+    const merged = { ...rmd, ...updates };
+    set(state => ({ activePersona: { ...state.activePersona, rmd: merged } }));
+    try {
+      await post<{ ok: boolean }>('/client-data', {
+        action: 'put-rmd',
+        clientId,
+        data: merged,
+      });
+    } catch {
+      // optimistic update stays; non-critical
+    }
   },
 }));

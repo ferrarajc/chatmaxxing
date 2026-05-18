@@ -3,6 +3,29 @@ export interface IntentOption {
   summary: string;
 }
 
+export interface RmdDistribution {
+  date: string;
+  amount: number;
+  method: string;
+  withheld: number;
+}
+
+export interface RmdData {
+  eligible: boolean;
+  age?: number;
+  accountId?: string;
+  priorYearBalance?: number;
+  lifeExpectancyFactor?: number;
+  annualRmd?: number;
+  takenThisYear?: number;
+  remainingThisYear?: number;
+  nextDeadline?: string;
+  distributions?: RmdDistribution[];
+  deliveryMethod?: string;
+  frequency?: string;
+  taxWithholding?: number;
+}
+
 export interface ClientProfile {
   clientId: string;
   name: string;

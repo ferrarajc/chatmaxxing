@@ -38,6 +38,10 @@ export interface RmdData {
   nextDeadline?: string;
   distributions?: { date: string; amount: number; method: string; withheld: number }[];
   projectedEligibilityYear?: number;  // for clients not yet at RMD age
+  // preference fields — written by expert task, read by expert + page
+  deliveryMethod?: string;
+  frequency?: string;
+  taxWithholding?: number;
 }
 
 export interface Persona {
@@ -148,6 +152,9 @@ const mariaChen: Persona = {
       { date: '2024-12-15', amount: 25800, method: 'Direct deposit — Wellesley Savings Bank', withheld: 2580 },
       { date: '2023-12-14', amount: 24100, method: 'Direct deposit — Wellesley Savings Bank', withheld: 2410 },
     ],
+    deliveryMethod: 'Direct deposit (ACH)',
+    frequency: 'Annual (December)',
+    taxWithholding: 10,
   },
 };
 

@@ -205,18 +205,17 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
-## Active Branch / Current State (as of 2026-05-09)
+## Active Branch / Current State (as of 2026-05-17)
 
-Branch: `feature/focusing-ui`
-Recent changes on this branch (not yet merged to main):
-- Font sizes scaled 25% across all column components
-- ProposedActionCard: confirmation message is now structured (Confirmation / Ref / past-tense description) and renders as a green card in client chat
-- ChatMessage.tsx: markdown `[text](url)` links render as in-app navigation buttons
-- FULL_AUTO_PROMPT: SELF_SERVICE_PAGES block — bot gives direct links instead of "fill out a form"
-- FORBIDDEN_TOPICS: field follow-up rule + language rule for restating customer-stated info
-- start-chat: intentGreeting no longer says "connect with a live agent"; intentLabel no longer includes escalation request language
-- UPDATE_BENEFICIARIES_PROMPT: taxable accounts excluded from account listing
-- autopilot-turn catch block: sets taskShouldExit=true on LLM error (prevents indefinite stall)
+Branch: `feature/rmd-data-roundtrip` — in progress.
+
+In-flight:
+- Full RMD data round-trip: expert reads real DynamoDB state (annualRmd, takenThisYear, remainingThisYear, deliveryMethod, frequency, taxWithholding, distributions), CURRENT STATE block injected into UPDATE_RMD_SETTINGS_PROMPT; RMD page reads from and writes to DB via fetchRmd/saveRmdPreferences; Maria Chen's full RMD seeded to DynamoDB.
+
+Recent shipped features (last several PRs):
+- EscalationPanel WebSocket reconnect fix (PR 33, `fix/escalation-panel-reconnect`)
+- Autopilot exit message + JSON enforcement + session status fix (PR 32, `feature/autopilot-exit-message`)
+- Current page passed to chatbot for context; no-link rule (PR 31)
 
 ---
 
