@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useClientStore } from '../../../store/clientStore';
 import { theme } from '../../../theme';
@@ -13,26 +13,36 @@ const card: React.CSSProperties = {
 };
 
 const DELIVERY_OPTIONS = [
-  'Direct deposit — linked bank account',
-  'Transfer to taxable account',
+  'Direct deposit (ACH)',
   'Check by mail',
 ];
 
-const FREQUENCY_OPTIONS = ['Annual (lump sum)', 'Quarterly', 'Monthly'];
+const FREQUENCY_OPTIONS = ['Annual (December)', 'Monthly', 'Quarterly'];
 
 export function RmdPage() {
-  const { activePersona, updateRmd } = useClientStore();
+  const { activePersona, fetchRmd, saveRmdPreferences } = useClientStore();
   const rmd = activePersona.rmd;
 
   const [deliveryMethod, setDeliveryMethod] = useState(
-    rmd.distributions?.[0]?.method ?? DELIVERY_OPTIONS[0],
+    rmd.deliveryMethod ?? DELIVERY_OPTIONS[0],
   );
-  const [frequency, setFrequency] = useState('Annual (lump sum)');
-  const [withholding, setWithholding] = useState(10);
+  const [frequency, setFrequency] = useState(rmd.frequency ?? FREQUENCY_OPTIONS[0]);
+  const [withholding, setWithholding] = useState(rmd.taxWithholding ?? 10);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    updateRmd({ distributions: rmd.distributions });
+  useEffect(() => {
+    fetchRmd();
+  }, []);
+
+  // Sync local state when DB fetch updates the store
+  useEffect(() => {
+    if (rmd.deliveryMethod) setDeliveryMethod(rmd.deliveryMethod);
+    if (rmd.frequency) setFrequency(rmd.frequency);
+    if (rmd.taxWithholding != null) setWithholding(rmd.taxWithholding);
+  }, [rmd.deliveryMethod, rmd.frequency, rmd.taxWithholding]);
+
+  const handleSave = async () => {
+    await saveRmdPreferences({ deliveryMethod, frequency, taxWithholding: withholding });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
