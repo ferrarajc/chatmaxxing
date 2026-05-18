@@ -82,6 +82,11 @@ export const agentChatSessions = new Map<string, any>();
 // duplicate contact handlers (which would double-append every incoming message).
 const trackedContactIds = new Set<string>();
 
+// Prevents initCCP from being called twice (React StrictMode double-invokes effects).
+// initCCP appends a new iframe every call; two iframes corrupt the Streams event bus
+// and cause onRoutable/onOffline/onStateChange to never fire.
+let ccpInitialized = false;
+
 /**
  * Module-level Connect agent reference for external state changes (e.g. TopBar Available/Away).
  * Set once when the agent initializes via window.connect.agent().
@@ -132,6 +137,9 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       console.warn('VITE_CCP_URL not set');
       return;
     }
+
+    if (ccpInitialized) return;
+    ccpInitialized = true;
 
     window.connect.core.initCCP(ccpContainerRef.current, {
       ccpUrl,
