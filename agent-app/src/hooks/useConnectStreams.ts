@@ -87,14 +87,26 @@ let connectAgentInstance: ConnectAgent | null = null;
 
 /** Call Connect's agent setState API — used by TopBar Available/Away buttons. */
 export function setConnectAgentState(stateName: 'Available' | 'Away'): void {
-  if (!connectAgentInstance) return;
+  if (!connectAgentInstance) {
+    console.warn('setConnectAgentState: agent not initialized yet');
+    return;
+  }
   try {
     const states = connectAgentInstance.getAgentStates();
-    const target = states.find(s => s.name === stateName);
+    // Amazon Connect has no built-in "Away" state — it calls it "Offline"
+    const connectName = stateName === 'Away' ? 'Offline' : 'Available';
+    const target = states.find(s => s.name === connectName)
+      ?? states.find(s => s.type === (stateName === 'Away' ? 'offline' : 'routable'));
     if (target) {
       connectAgentInstance.setState(target, {
-        failure: () => console.warn('Connect setState failed for', stateName),
+        success: () => console.info('Connect setState succeeded:', connectName),
+        failure: () => console.warn('Connect setState failed for', connectName),
       });
+    } else {
+      console.warn(
+        'Connect state not found:', connectName,
+        '| available:', states.map(s => `${s.name}(${s.type})`).join(', '),
+      );
     }
   } catch (e) {
     console.warn('Could not set Connect agent state', e);
@@ -332,8 +344,11 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       connectAgentInstance = agent;
       agent.onStateChange(({ newState }) => {
         const name = newState.name;
-        if (name === 'Available' || name === 'Away' || name === 'Offline') {
-          store.setAgentStatus(name);
+        // Connect uses 'Offline' for what the UI calls 'Away'
+        if (name === 'Available') {
+          store.setAgentStatus('Available');
+        } else if (name === 'Offline') {
+          store.setAgentStatus('Away');
         }
       });
     });
