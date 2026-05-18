@@ -52,6 +52,7 @@ interface ConnectAgent {
   onOffline: (cb: () => void) => void;
   getName: () => string;
   getAgentStates: () => AgentState[];
+  getState: () => AgentState;
   setState: (state: AgentState, opts?: { success?: () => void; failure?: () => void }) => void;
 }
 
@@ -353,6 +354,16 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     // ── Agent state ───────────────────────────────────────────────────────────
     window.connect.agent(agent => {
       connectAgentInstance = agent;
+
+      // Sync immediately on (re-)init — covers the case where going from Offline
+      // back to Available triggers a full agent re-init rather than a state
+      // transition, so onRoutable never fires for that direction.
+      const currentState = agent.getState();
+      if (currentState.name === 'Available') {
+        useAgentStore.getState().setAgentStatus('Available');
+      } else {
+        useAgentStore.getState().setAgentStatus('Away');
+      }
 
       // Primary sync: routable/offline callbacks are the most direct signal
       agent.onRoutable(() => {
