@@ -3,11 +3,6 @@ import { useAgentStore } from '../store/agentStore';
 import { setConnectAgentState } from '../hooks/useConnectStreams';
 import { UiMode } from './AgentDesktop';
 
-const STATUS_COLORS: Record<string, string> = {
-  Available: '#10b981',
-  Away: '#f59e0b',
-  Offline: '#9ca3af',
-};
 
 interface Props {
   ccpOpen: boolean;
@@ -150,23 +145,31 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
           </div>
         )}
 
-        {/* Status toggle */}
-        <div style={{ display: 'flex', gap: 6 }}>
-          {(['Available', 'Away'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => handleStatusClick(s)}
-              style={{
-                padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                border: `1.5px solid ${STATUS_COLORS[s]}`,
-                background: agentStatus === s ? STATUS_COLORS[s] : 'transparent',
-                color: agentStatus === s ? '#fff' : STATUS_COLORS[s],
-                cursor: 'pointer',
-              }}
-            >
-              {s}
-            </button>
-          ))}
+        {/* Status toggle switch */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af' }}>
+            {agentStatus === 'Available' ? 'On queue' : 'Off queue'}
+          </span>
+          <button
+            onClick={() => handleStatusClick(agentStatus === 'Available' ? 'Away' : 'Available')}
+            style={{
+              position: 'relative', width: 44, height: 24, borderRadius: 12,
+              background: agentStatus === 'Available' ? '#10b981' : '#6b7280',
+              border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
+              transition: 'background .2s',
+            }}
+            title={agentStatus === 'Available' ? 'Go off queue' : 'Go on queue'}
+          >
+            <span style={{
+              position: 'absolute', top: 3,
+              left: agentStatus === 'Available' ? 23 : 3,
+              width: 18, height: 18, borderRadius: '50%',
+              background: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              transition: 'left .2s',
+              display: 'block',
+            }} />
+          </button>
         </div>
 
         {/* DA avatar — click to open/close the Connect CCP panel */}
