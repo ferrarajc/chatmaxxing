@@ -205,17 +205,14 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
-## Active Branch / Current State (as of 2026-05-17)
+## Active Branch / Current State (as of 2026-05-18)
 
-Branch: `feature/rmd-data-roundtrip` — in progress.
-
-In-flight:
-- Full RMD data round-trip: expert reads real DynamoDB state (annualRmd, takenThisYear, remainingThisYear, deliveryMethod, frequency, taxWithholding, distributions), CURRENT STATE block injected into UPDATE_RMD_SETTINGS_PROMPT; RMD page reads from and writes to DB via fetchRmd/saveRmdPreferences; Maria Chen's full RMD seeded to DynamoDB.
+No branch currently in flight.
 
 Recent shipped features (last several PRs):
+- Availability toggle overhaul (PR 35, `fix/availability-toggle-connect-state`): fixed Available/Away↔Offline mapping, StrictMode double-initCCP guard, onRoutable/onOffline/onStateChange suppression during pending setState, 1s poll fallback, On queue/Off queue toggle UI, agent initials from Connect name/username, "Not logged on" pre-login state
+- Full RMD data round-trip (PR 34, `feature/rmd-data-roundtrip`): expert reads DynamoDB, RMD page reads/writes DB
 - EscalationPanel WebSocket reconnect fix (PR 33, `fix/escalation-panel-reconnect`)
-- Autopilot exit message + JSON enforcement + session status fix (PR 32, `feature/autopilot-exit-message`)
-- Current page passed to chatbot for context; no-link rule (PR 31)
 
 ---
 
