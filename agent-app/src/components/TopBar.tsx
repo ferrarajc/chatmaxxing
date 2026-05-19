@@ -147,7 +147,7 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
 
         {/* Status toggle switch */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af' }}>
+          <span style={{ fontSize: 21, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af', paddingRight: 10 }}>
             {agentStatus === 'Available' ? 'On queue' : 'Off queue'}
           </span>
           <button

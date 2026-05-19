@@ -33,7 +33,7 @@ interface AgentStore {
 }
 
 export const useAgentStore = create<AgentStore>((set, get) => ({
-  agentStatus: 'Available',
+  agentStatus: 'Away',
   slots: [null, null, null, null],
   dailyBonus: 0,
   pendingInserts: new Set(),
