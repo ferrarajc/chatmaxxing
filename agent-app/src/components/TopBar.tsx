@@ -20,7 +20,13 @@ const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
 ];
 
 export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChange }: Props) {
-  const { agentStatus, setAgentStatus, dailyBonus } = useAgentStore();
+  const { agentStatus, setAgentStatus, dailyBonus, agentConnected, agentName } = useAgentStore();
+
+  const initials = (() => {
+    if (!agentName) return 'DA';
+    const parts = agentName.trim().split(/\s+/);
+    return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+  })();
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const bIconRef = useRef<HTMLButtonElement>(null);
   const menuRef  = useRef<HTMLDivElement>(null);
@@ -145,32 +151,37 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
           </div>
         )}
 
-        {/* Status toggle switch */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 21, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af', paddingRight: 10 }}>
-            {agentStatus === 'Available' ? 'On queue' : 'Off queue'}
-          </span>
-          <button
-            onClick={() => handleStatusClick(agentStatus === 'Available' ? 'Away' : 'Available')}
-            style={{
-              position: 'relative', width: 44, height: 24, borderRadius: 12,
-              background: agentStatus === 'Available' ? '#10b981' : '#6b7280',
-              border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
-              transition: 'background .2s',
-            }}
-            title={agentStatus === 'Available' ? 'Go off queue' : 'Go on queue'}
-          >
-            <span style={{
-              position: 'absolute', top: 3,
-              left: agentStatus === 'Available' ? 23 : 3,
-              width: 18, height: 18, borderRadius: '50%',
-              background: '#fff',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-              transition: 'left .2s',
-              display: 'block',
-            }} />
-          </button>
-        </div>
+        {/* Status toggle switch — hidden until Connect confirms login */}
+        {agentConnected ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 21, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af', paddingRight: 10 }}>
+              {agentStatus === 'Available' ? 'On queue' : 'Off queue'}
+            </span>
+            <button
+              onClick={() => handleStatusClick(agentStatus === 'Available' ? 'Away' : 'Available')}
+              style={{
+                position: 'relative', width: 44, height: 24, borderRadius: 12,
+                background: agentStatus === 'Available' ? '#10b981' : '#6b7280',
+                border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
+                marginRight: 10,
+                transition: 'background .2s',
+              }}
+              title={agentStatus === 'Available' ? 'Go off queue' : 'Go on queue'}
+            >
+              <span style={{
+                position: 'absolute', top: 3,
+                left: agentStatus === 'Available' ? 23 : 3,
+                width: 18, height: 18, borderRadius: '50%',
+                background: '#fff',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                transition: 'left .2s',
+                display: 'block',
+              }} />
+            </button>
+          </div>
+        ) : (
+          <span style={{ fontSize: 21, fontWeight: 500, color: '#6b7280' }}>Not logged on</span>
+        )}
 
         {/* DA avatar — click to open/close the Connect CCP panel */}
         <button
@@ -187,7 +198,7 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
             transition: 'border-color .15s, background .15s',
           }}
         >
-          DA
+          {initials}
         </button>
       </div>
     </div>

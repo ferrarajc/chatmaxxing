@@ -357,6 +357,8 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     // ── Agent state ───────────────────────────────────────────────────────────
     window.connect.agent(agent => {
       connectAgentInstance = agent;
+      useAgentStore.getState().setAgentConnected(true);
+      useAgentStore.getState().setAgentName(agent.getName());
 
       // Sync on (re-)init
       const syncFromAgent = () => {
