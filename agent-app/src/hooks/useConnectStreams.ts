@@ -381,10 +381,10 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     window.connect.agent(agent => {
       connectAgentInstance = agent;
       useAgentStore.getState().setAgentConnected(true);
-      // getConfiguration().name is the full display name ("John Ferrara");
-      // getName() is the login username which may be first-name only.
-      const displayName = agent.getConfiguration().name || agent.getName();
-      useAgentStore.getState().setAgentName(displayName);
+      const config = agent.getConfiguration();
+      console.info('[Connect] agent config — name:', config.name, '| username:', config.username);
+      useAgentStore.getState().setAgentName(config.name || agent.getName());
+      useAgentStore.getState().setAgentUsername(config.username || '');
 
       // Sync on (re-)init
       const syncFromAgent = () => {

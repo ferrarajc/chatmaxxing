@@ -20,12 +20,21 @@ const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
 ];
 
 export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChange }: Props) {
-  const { agentStatus, setAgentStatus, dailyBonus, agentConnected, agentName } = useAgentStore();
+  const { agentStatus, setAgentStatus, dailyBonus, agentConnected, agentName, agentUsername } = useAgentStore();
 
   const initials = (() => {
-    if (!agentName) return 'DA';
-    const parts = agentName.trim().split(/\s+/);
-    return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+    // 1. Multi-word display name: "John Ferrara" → "JF"
+    const nameParts = agentName.trim().split(/\s+/).filter(Boolean);
+    if (nameParts.length >= 2) {
+      return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    // 2. Username with delimiter: "john.ferrara" / "john_ferrara" → "JF"
+    const userParts = agentUsername.split(/[.\-_@]/).filter(Boolean);
+    if (userParts.length >= 2) {
+      return (userParts[0][0] + userParts[userParts.length - 1][0]).toUpperCase();
+    }
+    // 3. Single name: first letter only; empty: fallback "DA"
+    return (nameParts[0]?.[0] ?? agentUsername[0] ?? 'DA').toUpperCase();
   })();
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const bIconRef = useRef<HTMLButtonElement>(null);
