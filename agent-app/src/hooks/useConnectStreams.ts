@@ -45,12 +45,18 @@ interface AgentState {
   type: string;
 }
 
+interface AgentConfiguration {
+  name: string;
+  username: string;
+}
+
 interface ConnectAgent {
   onStateChange: (cb: (e: { newState: AgentState }) => void) => void;
   onRoutable: (cb: () => void) => void;
   onNotRoutable: (cb: () => void) => void;
   onOffline: (cb: () => void) => void;
   getName: () => string;
+  getConfiguration: () => AgentConfiguration;
   getAgentStates: () => AgentState[];
   getState: () => AgentState;
   setState: (state: AgentState, opts?: { success?: () => void; failure?: () => void }) => void;
@@ -117,14 +123,14 @@ export function setConnectAgentState(stateName: 'Available' | 'Away'): void {
     if (target) {
       agentStatePendingUntil = Date.now() + 5000;
       connectAgentInstance.setState(target, {
-        success: () => {
-          console.info('Connect setState succeeded:', connectName);
-          agentStatePendingUntil = 0;
-        },
+        // Do NOT clear agentStatePendingUntil on success — Connect's own
+        // onStateChange/onOffline callbacks fire after success and would
+        // snap the optimistic UI back if the suppression is already gone.
+        // The 5 s window expires naturally and the poll confirms final state.
+        success: () => console.info('Connect setState succeeded:', connectName),
         failure: () => {
           console.warn('Connect setState failed for', connectName);
           agentStatePendingUntil = 0;
-          // Revert UI to actual Connect state on failure
           try {
             const s = connectAgentInstance?.getState();
             if (s) useAgentStore.getState().setAgentStatus(s.name === 'Available' ? 'Available' : 'Away');
@@ -375,7 +381,10 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     window.connect.agent(agent => {
       connectAgentInstance = agent;
       useAgentStore.getState().setAgentConnected(true);
-      useAgentStore.getState().setAgentName(agent.getName());
+      // getConfiguration().name is the full display name ("John Ferrara");
+      // getName() is the login username which may be first-name only.
+      const displayName = agent.getConfiguration().name || agent.getName();
+      useAgentStore.getState().setAgentName(displayName);
 
       // Sync on (re-)init
       const syncFromAgent = () => {
@@ -397,12 +406,15 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       agentStatePollHandle = setInterval(syncFromAgent, 1000);
 
       agent.onRoutable(() => {
+        if (Date.now() < agentStatePendingUntil) return;
         useAgentStore.getState().setAgentStatus('Available');
       });
       agent.onOffline(() => {
+        if (Date.now() < agentStatePendingUntil) return;
         useAgentStore.getState().setAgentStatus('Away');
       });
       agent.onStateChange(({ newState }) => {
+        if (Date.now() < agentStatePendingUntil) return;
         console.info('[Connect] onStateChange:', newState.name, '| type:', newState.type);
         useAgentStore.getState().setAgentStatus(newState.name === 'Available' ? 'Available' : 'Away');
       });
