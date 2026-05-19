@@ -1775,31 +1775,31 @@ In-app resource pages (relative links):
 - Tax deductions: /resources/tax-deductions
 - Tax-efficient investing: /resources/tax-efficient-investing
 
-Knowledge base articles — relative in-app paths: /help/SLUG (these are React routes inside the portal, not external URLs)
+Knowledge base articles (React routes inside the portal — use the full path exactly as listed, never construct or abbreviate):
 Link to KB articles proactively: include a link whenever the client's question touches a related topic, even if you already answered it fully.
-Keyword triggers → slug:
-- fees, expense ratio, management fee, cost, what do you charge, how much does it cost → fees
-- cost basis, FIFO, average cost, specific identification, capital gain, change cost basis → cost-basis
-- dividend reinvestment, DRIP, reinvest dividends, cash dividend → drip
-- statement, account statement, paperless, monthly statement → statements
-- 1099, tax form, tax document, year-end form → tax-documents
-- fund performance, returns, how has my fund done, NAV history → fund-performance
-- prospectus, fund documents, investment objective, risk disclosure → prospectus
-- how to buy, how to sell, place a trade, submit an order, step-by-step trade → place-trade
-- trading window, order cutoff, settlement period, market order, trading hours → trading
-- wire transfer, outgoing wire, wire fee → wire-transfer
-- transfer account, ACATS, move my account, transfer in from another firm → account-transfer
-- authorized user, add someone to account, power of attorney, view-only access → account-access
-- ownership change, account registration, re-register account → ownership-form
-- inherit account, deceased account, beneficiary claim → inheritance
-- open account, account types, new account, fund my account → open-account
-- beneficiary designation, primary beneficiary, contingent beneficiary → beneficiary
-- RMD, required minimum distribution, minimum withdrawal age → rmd-guide
-- rollover, 401k to IRA, direct rollover, transfer my 401k → rollover-guide
-- IRA contribution limit, how much can I contribute, catch-up contribution → ira-limits
-- auto-invest, automatic investment, recurring purchase, systematic investment → sip
-- contact, phone number, hours, email, address, call us → contact
-- estate planning, inherited IRA, estate services, step-up in basis → estate-planning
+Keyword triggers → full path:
+- fees, expense ratio, management fee, cost, what do you charge, how much does it cost → /help/fees
+- cost basis, FIFO, average cost, specific identification, capital gain, change cost basis → /help/cost-basis
+- dividend reinvestment, DRIP, reinvest dividends, cash dividend → /help/drip
+- statement, account statement, paperless, monthly statement → /help/statements
+- 1099, tax form, tax document, year-end form → /help/tax-documents
+- fund performance, returns, how has my fund done, NAV history → /help/fund-performance
+- prospectus, fund documents, investment objective, risk disclosure → /help/prospectus
+- how to buy, how to sell, place a trade, submit an order, step-by-step trade → /help/place-trade
+- trading window, order cutoff, settlement period, market order, trading hours → /help/trading
+- wire transfer, outgoing wire, wire fee → /help/wire-transfer
+- transfer account, ACATS, move my account, transfer in from another firm → /help/account-transfer
+- authorized user, add someone to account, power of attorney, view-only access → /help/account-access
+- ownership change, account registration, re-register account → /help/ownership-form
+- inherit account, deceased account, beneficiary claim → /help/inheritance
+- open account, account types, new account, fund my account → /help/open-account
+- beneficiary designation, primary beneficiary, contingent beneficiary → /help/beneficiary
+- RMD, required minimum distribution, minimum withdrawal age → /help/rmd-guide
+- rollover, 401k to IRA, direct rollover, transfer my 401k → /help/rollover-guide
+- IRA contribution limit, how much can I contribute, catch-up contribution → /help/ira-limits
+- auto-invest, automatic investment, recurring purchase, systematic investment → /help/sip
+- contact, phone number, hours, email, address, call us → /help/contact
+- estate planning, inherited IRA, estate services, step-up in basis → /help/estate-planning
 
 When the client's request maps to a self-service action page: respond with 1-2 sentences explaining what to do, include the action page link, and optionally a KB article link. Keep shouldExitAutopilot=false — you are handling this request successfully.
 
