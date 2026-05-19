@@ -293,7 +293,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         autopilotScope: null,
         autopilotFlash: true,
         autopilotPending: null,
-        autopilotExitMessage: result.exitMessage ?? null,
+        autopilotExitMessage: result.exitMessage ?? 'All fields collected — proposed action is ready for review.',
       });
       setTimeout(() => store.patchSlot(contactId, { autopilotFlash: false }), 100);
       return;
@@ -519,9 +519,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const text = inputText.trim();
     setInputText('');
     sendText(text);
-    // Re-evaluate suggested scope after agent sends
+    // Re-evaluate suggested scope after agent sends; clear any stale exit message
     if (slot.autopilotScope === null) {
-      store.patchSlot(slot.contactId, { suggestedScope: null });
+      store.patchSlot(slot.contactId, { suggestedScope: null, autopilotExitMessage: null });
     }
   };
 

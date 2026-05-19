@@ -109,7 +109,7 @@ export function FocusingDesktop() {
     setInputText('');
     sendText(selectedSlot, text, store);
     if (selectedSlot.autopilotScope === null) {
-      store.patchSlot(selectedSlot.contactId, { suggestedScope: null });
+      store.patchSlot(selectedSlot.contactId, { suggestedScope: null, autopilotExitMessage: null });
     }
   };
 
