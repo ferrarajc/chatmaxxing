@@ -91,6 +91,11 @@ let ccpInitialized = false;
 // Handle for the agent-state poll — cleared by effect cleanup.
 let agentStatePollHandle: ReturnType<typeof setInterval> | null = null;
 
+// Suppress the poll briefly after a manual setState so the optimistic UI
+// update isn't clobbered by the poll reading the old Connect state.
+// Cleared by success/failure callbacks; expires after 5 s regardless.
+let agentStatePendingUntil = 0;
+
 /**
  * Module-level Connect agent reference for external state changes (e.g. TopBar Available/Away).
  * Set once when the agent initializes via window.connect.agent().
@@ -110,9 +115,21 @@ export function setConnectAgentState(stateName: 'Available' | 'Away'): void {
     const target = states.find(s => s.name === connectName)
       ?? states.find(s => s.type === (stateName === 'Away' ? 'offline' : 'routable'));
     if (target) {
+      agentStatePendingUntil = Date.now() + 5000;
       connectAgentInstance.setState(target, {
-        success: () => console.info('Connect setState succeeded:', connectName),
-        failure: () => console.warn('Connect setState failed for', connectName),
+        success: () => {
+          console.info('Connect setState succeeded:', connectName);
+          agentStatePendingUntil = 0;
+        },
+        failure: () => {
+          console.warn('Connect setState failed for', connectName);
+          agentStatePendingUntil = 0;
+          // Revert UI to actual Connect state on failure
+          try {
+            const s = connectAgentInstance?.getState();
+            if (s) useAgentStore.getState().setAgentStatus(s.name === 'Available' ? 'Available' : 'Away');
+          } catch { /* ignore */ }
+        },
       });
     } else {
       console.warn(
@@ -362,6 +379,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
       // Sync on (re-)init
       const syncFromAgent = () => {
+        if (Date.now() < agentStatePendingUntil) return; // suppress during pending setState
         try {
           const s = connectAgentInstance?.getState();
           if (!s) return;

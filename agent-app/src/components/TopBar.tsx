@@ -154,7 +154,7 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
         {/* Status toggle switch — hidden until Connect confirms login */}
         {agentConnected ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 21, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af', paddingRight: 10 }}>
+            <span style={{ fontSize: 17, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af', paddingRight: 8 }}>
               {agentStatus === 'Available' ? 'On queue' : 'Off queue'}
             </span>
             <button
@@ -180,7 +180,7 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
             </button>
           </div>
         ) : (
-          <span style={{ fontSize: 21, fontWeight: 500, color: '#6b7280' }}>Not logged on</span>
+          <span style={{ fontSize: 17, fontWeight: 500, color: '#6b7280' }}>Not logged on</span>
         )}
 
         {/* DA avatar — click to open/close the Connect CCP panel */}
