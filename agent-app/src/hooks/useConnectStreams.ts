@@ -88,6 +88,9 @@ const trackedContactIds = new Set<string>();
 // and cause onRoutable/onOffline/onStateChange to never fire.
 let ccpInitialized = false;
 
+// Handle for the agent-state poll — cleared by effect cleanup.
+let agentStatePollHandle: ReturnType<typeof setInterval> | null = null;
+
 /**
  * Module-level Connect agent reference for external state changes (e.g. TopBar Available/Away).
  * Set once when the agent initializes via window.connect.agent().
@@ -355,33 +358,33 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     window.connect.agent(agent => {
       connectAgentInstance = agent;
 
-      // Sync immediately on (re-)init — covers the case where going from Offline
-      // back to Available triggers a full agent re-init rather than a state
-      // transition, so onRoutable never fires for that direction.
-      const currentState = agent.getState();
-      if (currentState.name === 'Available') {
-        useAgentStore.getState().setAgentStatus('Available');
-      } else {
-        useAgentStore.getState().setAgentStatus('Away');
-      }
+      // Sync on (re-)init
+      const syncFromAgent = () => {
+        try {
+          const s = connectAgentInstance?.getState();
+          if (!s) return;
+          console.info('[Connect] getState:', s.name, '| type:', s.type);
+          useAgentStore.getState().setAgentStatus(s.name === 'Available' ? 'Available' : 'Away');
+        } catch { /* ignore */ }
+      };
 
-      // Primary sync: routable/offline callbacks are the most direct signal
+      syncFromAgent();
+
+      // Poll every 1 s — belt-and-suspenders for the Offline→Available
+      // transition where onRoutable/onStateChange reliably do not fire.
+      // Zustand no-ops the set if the value is unchanged, so no extra renders.
+      if (agentStatePollHandle) clearInterval(agentStatePollHandle);
+      agentStatePollHandle = setInterval(syncFromAgent, 1000);
+
       agent.onRoutable(() => {
         useAgentStore.getState().setAgentStatus('Available');
       });
       agent.onOffline(() => {
         useAgentStore.getState().setAgentStatus('Away');
       });
-
-      // Belt-and-suspenders: also listen to generic state change for any state
-      // not covered above (e.g. custom non-routable states)
       agent.onStateChange(({ newState }) => {
-        console.info('[Connect] Agent state change:', newState.name, '| type:', newState.type);
-        if (newState.name === 'Available') {
-          useAgentStore.getState().setAgentStatus('Available');
-        } else {
-          useAgentStore.getState().setAgentStatus('Away');
-        }
+        console.info('[Connect] onStateChange:', newState.name, '| type:', newState.type);
+        useAgentStore.getState().setAgentStatus(newState.name === 'Available' ? 'Available' : 'Away');
       });
     });
 
@@ -389,6 +392,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       window.removeEventListener('bobs:acceptContact', handleAccept);
       window.removeEventListener('bobs:skipContact', handleSkip);
       window.removeEventListener('bobs:closeContact', handleCloseContact);
+      if (agentStatePollHandle) { clearInterval(agentStatePollHandle); agentStatePollHandle = null; }
     };
   }, []);
 }
