@@ -3,11 +3,6 @@ import { useAgentStore } from '../store/agentStore';
 import { setConnectAgentState } from '../hooks/useConnectStreams';
 import { UiMode } from './AgentDesktop';
 
-const STATUS_COLORS: Record<string, string> = {
-  Available: '#10b981',
-  Away: '#f59e0b',
-  Offline: '#9ca3af',
-};
 
 interface Props {
   ccpOpen: boolean;
@@ -25,7 +20,22 @@ const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
 ];
 
 export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChange }: Props) {
-  const { agentStatus, setAgentStatus, dailyBonus } = useAgentStore();
+  const { agentStatus, setAgentStatus, dailyBonus, agentConnected, agentName, agentUsername } = useAgentStore();
+
+  const initials = (() => {
+    // 1. Multi-word display name: "John Ferrara" → "JF"
+    const nameParts = agentName.trim().split(/\s+/).filter(Boolean);
+    if (nameParts.length >= 2) {
+      return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    // 2. Username with delimiter: "john.ferrara" / "john_ferrara" → "JF"
+    const userParts = agentUsername.split(/[.\-_@]/).filter(Boolean);
+    if (userParts.length >= 2) {
+      return (userParts[0][0] + userParts[userParts.length - 1][0]).toUpperCase();
+    }
+    // 3. Single name: first letter only; empty: fallback "DA"
+    return (nameParts[0]?.[0] ?? agentUsername[0] ?? 'DA').toUpperCase();
+  })();
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const bIconRef = useRef<HTMLButtonElement>(null);
   const menuRef  = useRef<HTMLDivElement>(null);
@@ -150,24 +160,37 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
           </div>
         )}
 
-        {/* Status toggle */}
-        <div style={{ display: 'flex', gap: 6 }}>
-          {(['Available', 'Away'] as const).map(s => (
+        {/* Status toggle switch — hidden until Connect confirms login */}
+        {agentConnected ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 17, fontWeight: 600, color: agentStatus === 'Available' ? '#4ade80' : '#9ca3af', paddingRight: 8 }}>
+              {agentStatus === 'Available' ? 'On queue' : 'Off queue'}
+            </span>
             <button
-              key={s}
-              onClick={() => handleStatusClick(s)}
+              onClick={() => handleStatusClick(agentStatus === 'Available' ? 'Away' : 'Available')}
               style={{
-                padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                border: `1.5px solid ${STATUS_COLORS[s]}`,
-                background: agentStatus === s ? STATUS_COLORS[s] : 'transparent',
-                color: agentStatus === s ? '#fff' : STATUS_COLORS[s],
-                cursor: 'pointer',
+                position: 'relative', width: 44, height: 24, borderRadius: 12,
+                background: agentStatus === 'Available' ? '#10b981' : '#6b7280',
+                border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
+                marginRight: 10,
+                transition: 'background .2s',
               }}
+              title={agentStatus === 'Available' ? 'Go off queue' : 'Go on queue'}
             >
-              {s}
+              <span style={{
+                position: 'absolute', top: 3,
+                left: agentStatus === 'Available' ? 23 : 3,
+                width: 18, height: 18, borderRadius: '50%',
+                background: '#fff',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                transition: 'left .2s',
+                display: 'block',
+              }} />
             </button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <span style={{ fontSize: 17, fontWeight: 500, color: '#6b7280' }}>Not logged on</span>
+        )}
 
         {/* DA avatar — click to open/close the Connect CCP panel */}
         <button
@@ -184,7 +207,7 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
             transition: 'border-color .15s, background .15s',
           }}
         >
-          DA
+          {initials}
         </button>
       </div>
     </div>

@@ -45,10 +45,20 @@ interface AgentState {
   type: string;
 }
 
+interface AgentConfiguration {
+  name: string;
+  username: string;
+}
+
 interface ConnectAgent {
-  onStateChange: (cb: (e: { newState: { name: string } }) => void) => void;
+  onStateChange: (cb: (e: { newState: AgentState }) => void) => void;
+  onRoutable: (cb: () => void) => void;
+  onNotRoutable: (cb: () => void) => void;
+  onOffline: (cb: () => void) => void;
   getName: () => string;
+  getConfiguration: () => AgentConfiguration;
   getAgentStates: () => AgentState[];
+  getState: () => AgentState;
   setState: (state: AgentState, opts?: { success?: () => void; failure?: () => void }) => void;
 }
 
@@ -79,6 +89,19 @@ export const agentChatSessions = new Map<string, any>();
 // duplicate contact handlers (which would double-append every incoming message).
 const trackedContactIds = new Set<string>();
 
+// Prevents initCCP from being called twice (React StrictMode double-invokes effects).
+// initCCP appends a new iframe every call; two iframes corrupt the Streams event bus
+// and cause onRoutable/onOffline/onStateChange to never fire.
+let ccpInitialized = false;
+
+// Handle for the agent-state poll — cleared by effect cleanup.
+let agentStatePollHandle: ReturnType<typeof setInterval> | null = null;
+
+// Suppress the poll briefly after a manual setState so the optimistic UI
+// update isn't clobbered by the poll reading the old Connect state.
+// Cleared by success/failure callbacks; expires after 5 s regardless.
+let agentStatePendingUntil = 0;
+
 /**
  * Module-level Connect agent reference for external state changes (e.g. TopBar Available/Away).
  * Set once when the agent initializes via window.connect.agent().
@@ -87,14 +110,38 @@ let connectAgentInstance: ConnectAgent | null = null;
 
 /** Call Connect's agent setState API — used by TopBar Available/Away buttons. */
 export function setConnectAgentState(stateName: 'Available' | 'Away'): void {
-  if (!connectAgentInstance) return;
+  if (!connectAgentInstance) {
+    console.warn('setConnectAgentState: agent not initialized yet');
+    return;
+  }
   try {
     const states = connectAgentInstance.getAgentStates();
-    const target = states.find(s => s.name === stateName);
+    // Amazon Connect has no built-in "Away" state — it calls it "Offline"
+    const connectName = stateName === 'Away' ? 'Offline' : 'Available';
+    const target = states.find(s => s.name === connectName)
+      ?? states.find(s => s.type === (stateName === 'Away' ? 'offline' : 'routable'));
     if (target) {
+      agentStatePendingUntil = Date.now() + 5000;
       connectAgentInstance.setState(target, {
-        failure: () => console.warn('Connect setState failed for', stateName),
+        // Do NOT clear agentStatePendingUntil on success — Connect's own
+        // onStateChange/onOffline callbacks fire after success and would
+        // snap the optimistic UI back if the suppression is already gone.
+        // The 5 s window expires naturally and the poll confirms final state.
+        success: () => console.info('Connect setState succeeded:', connectName),
+        failure: () => {
+          console.warn('Connect setState failed for', connectName);
+          agentStatePendingUntil = 0;
+          try {
+            const s = connectAgentInstance?.getState();
+            if (s) useAgentStore.getState().setAgentStatus(s.name === 'Available' ? 'Available' : 'Away');
+          } catch { /* ignore */ }
+        },
       });
+    } else {
+      console.warn(
+        'Connect state not found:', connectName,
+        '| available:', states.map(s => `${s.name}(${s.type})`).join(', '),
+      );
     }
   } catch (e) {
     console.warn('Could not set Connect agent state', e);
@@ -117,6 +164,9 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       console.warn('VITE_CCP_URL not set');
       return;
     }
+
+    if (ccpInitialized) return;
+    ccpInitialized = true;
 
     window.connect.core.initCCP(ccpContainerRef.current, {
       ccpUrl,
@@ -330,11 +380,43 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     // ── Agent state ───────────────────────────────────────────────────────────
     window.connect.agent(agent => {
       connectAgentInstance = agent;
+      useAgentStore.getState().setAgentConnected(true);
+      const config = agent.getConfiguration();
+      console.info('[Connect] agent config — name:', config.name, '| username:', config.username);
+      useAgentStore.getState().setAgentName(config.name || agent.getName());
+      useAgentStore.getState().setAgentUsername(config.username || '');
+
+      // Sync on (re-)init
+      const syncFromAgent = () => {
+        if (Date.now() < agentStatePendingUntil) return; // suppress during pending setState
+        try {
+          const s = connectAgentInstance?.getState();
+          if (!s) return;
+          console.info('[Connect] getState:', s.name, '| type:', s.type);
+          useAgentStore.getState().setAgentStatus(s.name === 'Available' ? 'Available' : 'Away');
+        } catch { /* ignore */ }
+      };
+
+      syncFromAgent();
+
+      // Poll every 1 s — belt-and-suspenders for the Offline→Available
+      // transition where onRoutable/onStateChange reliably do not fire.
+      // Zustand no-ops the set if the value is unchanged, so no extra renders.
+      if (agentStatePollHandle) clearInterval(agentStatePollHandle);
+      agentStatePollHandle = setInterval(syncFromAgent, 1000);
+
+      agent.onRoutable(() => {
+        if (Date.now() < agentStatePendingUntil) return;
+        useAgentStore.getState().setAgentStatus('Available');
+      });
+      agent.onOffline(() => {
+        if (Date.now() < agentStatePendingUntil) return;
+        useAgentStore.getState().setAgentStatus('Away');
+      });
       agent.onStateChange(({ newState }) => {
-        const name = newState.name;
-        if (name === 'Available' || name === 'Away' || name === 'Offline') {
-          store.setAgentStatus(name);
-        }
+        if (Date.now() < agentStatePendingUntil) return;
+        console.info('[Connect] onStateChange:', newState.name, '| type:', newState.type);
+        useAgentStore.getState().setAgentStatus(newState.name === 'Available' ? 'Available' : 'Away');
       });
     });
 
@@ -342,6 +424,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       window.removeEventListener('bobs:acceptContact', handleAccept);
       window.removeEventListener('bobs:skipContact', handleSkip);
       window.removeEventListener('bobs:closeContact', handleCloseContact);
+      if (agentStatePollHandle) { clearInterval(agentStatePollHandle); agentStatePollHandle = null; }
     };
   }, []);
 }

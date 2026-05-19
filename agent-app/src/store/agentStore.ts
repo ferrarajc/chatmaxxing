@@ -7,10 +7,16 @@ type Slots = [ContactSlot | null, ContactSlot | null, ContactSlot | null, Contac
 
 interface AgentStore {
   agentStatus: AgentStatus;
+  agentConnected: boolean;
+  agentName: string;
+  agentUsername: string;
   slots: Slots;
   dailyBonus: number;
 
   setAgentStatus: (s: AgentStatus) => void;
+  setAgentConnected: (connected: boolean) => void;
+  setAgentName: (name: string) => void;
+  setAgentUsername: (username: string) => void;
   addBonus: (amount: number) => void;
 
   addContact: (
@@ -33,12 +39,18 @@ interface AgentStore {
 }
 
 export const useAgentStore = create<AgentStore>((set, get) => ({
-  agentStatus: 'Available',
+  agentStatus: 'Away',
+  agentConnected: false,
+  agentName: '',
+  agentUsername: '',
   slots: [null, null, null, null],
   dailyBonus: 0,
   pendingInserts: new Set(),
 
   setAgentStatus: (agentStatus) => set({ agentStatus }),
+  setAgentConnected: (agentConnected) => set({ agentConnected }),
+  setAgentName: (agentName) => set({ agentName }),
+  setAgentUsername: (agentUsername) => set({ agentUsername }),
   addBonus: (amount) => set(s => ({ dailyBonus: s.dailyBonus + amount })),
 
   addContact: (contact, initialMessages = []) => {
