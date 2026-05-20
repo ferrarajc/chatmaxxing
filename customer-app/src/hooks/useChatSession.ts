@@ -167,7 +167,7 @@ export function useChatSession() {
     post('/autopilot-turn', {
       transcript: [{ role: 'CUSTOMER', content: 'hello', id: 'warmup', timestamp: Date.now() }],
       clientProfile: activePersona,
-      scope: 'full-auto',
+      scope: 'customer-bot',
       currentIntent: 'general inquiry',
     }).catch(() => {});
 
@@ -276,6 +276,7 @@ export function useChatSession() {
             {
               transcript: currentMessages.filter(m => m.role !== 'SYSTEM'),
               clientProfile: activePersona,
+              scope: 'customer-bot',
               currentIntent: 'general inquiry',
               currentPage: currentPageRef.current,
             },
