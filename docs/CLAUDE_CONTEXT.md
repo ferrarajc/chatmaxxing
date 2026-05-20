@@ -205,14 +205,15 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
-## Active Branch / Current State (as of 2026-05-18)
+## Active Branch / Current State (as of 2026-05-20)
 
 No branch currently in flight.
 
 Recent shipped features (last several PRs):
+- Customer-bot scope separation (PR 38, `feat/customer-bot-scope`): dedicated `customer-bot` scope in `autopilot-turn` with `CUSTOMER_BOT_PROMPT` and `CUSTOMER_FORBIDDEN_TOPICS`; fixes false escalation on "trade" as a verb, fixes terse link-dump responses, fixes broken `/trade` link; `TRADE_RE` hard override scoped out for `customer-bot`; `useChatSession.ts` pre-warm and fallback now pass `scope: 'customer-bot'`
+- Autopilot exit message fixes (PR 36, `feature/autopilot-exit-message`): message clears on agent send; proposedAction exits always show a message
+- Chatbot KB link fix (PR 37, `fix/chatbot-kb-links`): all SELF_SERVICE_PAGES entries use full `/help/slug` paths
 - Availability toggle overhaul (PR 35, `fix/availability-toggle-connect-state`): fixed Available/Away↔Offline mapping, StrictMode double-initCCP guard, onRoutable/onOffline/onStateChange suppression during pending setState, 1s poll fallback, On queue/Off queue toggle UI, agent initials from Connect name/username, "Not logged on" pre-login state
-- Full RMD data round-trip (PR 34, `feature/rmd-data-roundtrip`): expert reads DynamoDB, RMD page reads/writes DB
-- EscalationPanel WebSocket reconnect fix (PR 33, `fix/escalation-panel-reconnect`)
 
 ---
 
