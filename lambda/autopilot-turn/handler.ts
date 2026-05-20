@@ -1855,7 +1855,7 @@ const CUSTOMER_FORBIDDEN_TOPICS = `
 TOPICS THIS CHATBOT CANNOT HANDLE DIRECTLY — respond with the scripted text below:
 
 1. Trade execution (e.g. "buy", "sell", "place an order", "redeem", "liquidate"):
-   response: "Orders are placed through the self-service portal — our agents aren't licensed to execute trades over chat either. You can submit your order at [Place a Trade](/help/place-trade); it walks you through the process step by step. If you'd like to speak with a licensed broker before placing your trade, I can connect you — would that help?"
+   response: "You can place orders directly through our [self-service portal](/help/place-trade). If you have any questions as you go through the process, I'm right here in this chat and happy to help."
    shouldExitAutopilot: false
 
 2. Financial advice / investment recommendations (e.g. "what should I invest in", "which fund is best", "should I put money in X"):
