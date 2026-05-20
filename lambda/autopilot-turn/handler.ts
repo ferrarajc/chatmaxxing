@@ -15,7 +15,7 @@ import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { BeneficiaryEntry } from '../shared/beneficiary-defaults';
 
-type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' | 'full-auto';
+type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' | 'full-auto' | 'customer-bot';
 
 const ET_ZONE = 'America/New_York';
 
@@ -1851,6 +1851,31 @@ Output ONLY a JSON object — no prose, no markdown, no explanation before or af
 {"response": "YOUR_RESPONSE_HERE", "shouldExitAutopilot": false, "suggestedScope": null}
 Replace YOUR_RESPONSE_HERE with your actual reply. The other fields are booleans/null as shown.`;
 
+const CUSTOMER_BOT_PROMPT = (profile: ClientProfile, alreadyLinked: string[], currentPage?: string) =>
+  `You are the Bob's Mutual Funds virtual assistant — a knowledgeable, friendly helper in the client's portal chat.
+Client: ${profile.name}. Accounts: ${summarizeAccounts(profile.accounts)}.
+
+RESPONSE STYLE — follow this for every message:
+1. Acknowledge what the client is asking. Show you understand their situation.
+2. Give a direct, informative answer (2-4 sentences). Use their account data when relevant.
+3. Include a page link as a supplement — never as your only response.
+4. When appropriate, invite engagement with a specific follow-up question.
+
+BAD: "You can manage account access at [Account Access](/help/account-access). Let me know if you have questions!"
+GOOD: "Adding an authorized user lets someone view and manage your account on their behalf — you control what level of access they get. You'll need their full name, date of birth, and relationship to you. Start the process at [Account Access](/help/account-access) — it takes about 5 minutes. Would you like to know what information to have ready?"
+
+${FORBIDDEN_TOPICS}
+${SELF_SERVICE_PAGES}
+${currentPage ? `CURRENT PAGE: The client is already viewing "${currentPage}". Do not link to this page. Use your knowledge of what's on it to give specific, contextual guidance.` : ''}
+${(() => { const excluded = [...alreadyLinked, ...(currentPage ? [currentPage] : [])]; return excluded.length > 0 ? `DO NOT LINK to these pages (already visited/viewing): ${excluded.join(', ')}.` : ''; })()}
+
+Set shouldExitAutopilot=true ONLY when the client has explicitly asked to speak with a live agent. Do NOT escalate for account questions, topics you can answer, or anything covered by a self-service page — handle those directly. When in doubt, help.
+
+When escalating: respond "I'll connect you with a live agent right now." Never mention live agent support when shouldExitAutopilot=false.
+
+Output ONLY a JSON object:
+{"response": "YOUR_RESPONSE_HERE", "shouldExitAutopilot": false, "suggestedScope": null}`;
+
 // ── Exit message instruction appended to system prompts at LLM call sites ─
 const EXIT_MESSAGE_INSTRUCTION = `
 
@@ -2074,6 +2099,9 @@ export const handler = async (
       case 'idle-check':
         systemPrompt = IDLE_CHECK_PROMPT(profile);
         break;
+      case 'customer-bot':
+        systemPrompt = CUSTOMER_BOT_PROMPT(profile, extractLinkedPaths(transcript), currentPage);
+        break;
       default:
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
@@ -2128,7 +2156,7 @@ export const handler = async (
       shouldExitAutopilot = true;
       exitMessage = 'Customer requested escalation to a live agent.';
     }
-    if (scope !== 'callback' && TRADE_RE.test(lastCustomerMsg)) {
+    if (scope !== 'callback' && scope !== 'customer-bot' && TRADE_RE.test(lastCustomerMsg)) {
       shouldExitAutopilot = true;
       suggestedScope = 'callback';
       exitMessage = 'Trade request detected — please handle in the callback scope.';
