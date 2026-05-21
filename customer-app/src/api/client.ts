@@ -12,3 +12,9 @@ export async function post<T>(path: string, body: unknown): Promise<T> {
   }
   return res.json() as Promise<T>;
 }
+
+export async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { method: 'GET' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json() as Promise<T>;
+}

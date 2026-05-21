@@ -291,6 +291,20 @@ export class LambdaStack extends cdk.Stack {
     });
     clientsTable.grantReadWriteData(resetBeneficiariesFn);
 
+    // ── reset-all-data (browser-accessible full demo reset endpoint) ─
+    const resetClientDataFn = new NodejsFunction(this, 'ResetClientDataFn', {
+      functionName: 'bobs-reset-client-data',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'reset-all-data/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    clientsTable.grantReadWriteData(resetClientDataFn);
+
     // ── client-data (beneficiaries / auto-invest / RMD read+write) ─
     const clientDataFn = new NodejsFunction(this, 'ClientDataFn', {
       functionName: 'bobs-client-data',
@@ -377,11 +391,16 @@ export class LambdaStack extends cdk.Stack {
       });
     }
 
-    // GET route for browser-accessible reset endpoint
+    // GET routes for browser-accessible reset endpoints
     api.addRoutes({
       path: '/reset-beneficiaries',
       methods: [apigwv2.HttpMethod.GET],
       integration: new HttpLambdaIntegration('ResetBeneficiariesIntegration', resetBeneficiariesFn),
+    });
+    api.addRoutes({
+      path: '/reset-client-data',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('ResetClientDataIntegration', resetClientDataFn),
     });
 
     // GET route for transcript review UI

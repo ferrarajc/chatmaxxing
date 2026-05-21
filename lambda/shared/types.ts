@@ -26,12 +26,35 @@ export interface RmdData {
   taxWithholding?: number;
 }
 
+export interface ClientHolding {
+  name: string;
+  ticker: string;
+  accountId: string;
+  shares: number;
+  price: number;
+  change: number;
+  value: number;
+  drip?: boolean;
+}
+
+export interface ClientTransaction {
+  date: string;
+  description: string;
+  amount: number;
+  account: string;
+}
+
 export interface ClientProfile {
   clientId: string;
   name: string;
   phone: string;
+  displayPhone?: string;
+  email?: string;
+  address?: string;
   accounts: Account[];
   totalBalance: number;
+  holdings?: ClientHolding[];
+  transactions?: ClientTransaction[];
   recentChatHistory: HistoryEntry[];
   intents?: IntentOption[];
 }
@@ -40,6 +63,7 @@ export interface Account {
   type: string;
   balance: number;
   id: string;
+  change?: number;
 }
 
 export interface HistoryEntry {

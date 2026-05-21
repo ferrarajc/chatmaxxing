@@ -4,6 +4,8 @@ import { PERSONAS } from '../../data/personas';
 import { useClientStore } from '../../store/clientStore';
 import { theme } from '../../theme';
 
+const RESET_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001'}/reset-client-data?key=bobs-reset-2025`;
+
 const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/portfolio', label: 'Portfolio' },
@@ -12,9 +14,27 @@ const NAV_LINKS = [
 ];
 
 export function TopNavV2() {
-  const { activePersona, setActivePersona } = useClientStore();
+  const { activePersona, setActivePersona, refreshFromDb } = useClientStore();
   const [open, setOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
+
+  const handleReset = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setResetting(true);
+    setResetDone(false);
+    try {
+      await fetch(RESET_URL);
+      await refreshFromDb();
+      setResetDone(true);
+      setTimeout(() => setResetDone(false), 2500);
+    } catch {
+      // non-critical; silently ignore
+    } finally {
+      setResetting(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -105,8 +125,26 @@ export function TopNavV2() {
               <div style={{
                 padding: '10px 14px 8px', fontSize: 10, fontWeight: 700,
                 color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.08em',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
-                Switch Client
+                <span>Switch Client</span>
+                <button
+                  onClick={handleReset}
+                  disabled={resetting}
+                  title="Reset all clients to default demo data"
+                  style={{
+                    background: 'none', border: `1px solid ${theme.color.border}`,
+                    borderRadius: theme.radius.md, padding: '2px 8px',
+                    fontSize: 10, cursor: resetting ? 'default' : 'pointer',
+                    color: resetDone ? theme.color.success : theme.color.textMuted,
+                    fontWeight: 600, letterSpacing: '0.04em',
+                    transition: 'color .2s, border-color .2s',
+                    whiteSpace: 'nowrap',
+                    textTransform: 'none',
+                  }}
+                >
+                  {resetting ? '…' : resetDone ? '✓ Done' : '↺ Reset all'}
+                </button>
               </div>
               {PERSONAS.map(p => {
                 const isActive = p.clientId === activePersona.clientId;
