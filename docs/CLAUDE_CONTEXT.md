@@ -207,7 +207,11 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ## Active Branch / Current State (as of 2026-05-20)
 
-No branch currently in flight.
+Branch in flight: `feat/idle-check-auto-trigger`
+
+Two changes in this branch:
+1. Auto-trigger idle-check when agent asks a question and customer doesn't respond for 3 min (`ChatColumn.tsx` — `agentQuestionIdleRef` timer; heuristic: message contains `?`)
+2. Fix Accept/Close contact broken in dev mode (`useConnectStreams.ts` — StrictMode double-mount ate the custom event listeners; handlers now registered before `ccpInitialized` guard)
 
 Recent shipped features (last several PRs):
 - Customer-bot scope separation (PR 38, `feat/customer-bot-scope`): dedicated `customer-bot` scope in `autopilot-turn` with `CUSTOMER_BOT_PROMPT` and `CUSTOMER_FORBIDDEN_TOPICS`; fixes false escalation on "trade" as a verb, fixes terse link-dump responses, fixes broken `/trade` link; `TRADE_RE` hard override scoped out for `customer-bot`; `useChatSession.ts` pre-warm and fallback now pass `scope: 'customer-bot'`

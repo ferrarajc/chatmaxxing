@@ -165,7 +165,50 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       return;
     }
 
-    if (ccpInitialized) return;
+    // ── Manual Accept / Skip / Close ─────────────────────────────────────────
+    // Defined before the ccpInitialized guard so listeners survive StrictMode's
+    // cleanup-and-remount cycle (the guard blocks CCP re-init, not listener re-registration).
+    const handleAccept = (e: Event) => {
+      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
+      const timer = autoAcceptTimers.current.get(contactId);
+      if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
+      const contact = contactRefs.current.get(contactId);
+      if (contact) contact.accept({});
+      else console.warn('Accept: no contact ref for', contactId);
+    };
+    const handleSkip = (e: Event) => {
+      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
+      const timer = autoAcceptTimers.current.get(contactId);
+      if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
+      const contact = contactRefs.current.get(contactId);
+      if (contact) contact.reject({});
+      contactRefs.current.delete(contactId);
+      agentChatSessions.delete(contactId);
+      store.clearSlot(contactId);
+    };
+    // onDestroy does NOT fire for already-ended chat contacts after contact.clear().
+    // Always call clearSlot directly — don't rely on onDestroy as the trigger.
+    const handleCloseContact = (e: Event) => {
+      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
+      const contact = contactRefs.current.get(contactId);
+      if (contact) {
+        try { contact.clear({}); } catch { /* ignore — already ended */ }
+      }
+      contactRefs.current.delete(contactId);
+      agentChatSessions.delete(contactId);
+      store.clearSlot(contactId);
+    };
+    window.addEventListener('bobs:acceptContact', handleAccept);
+    window.addEventListener('bobs:skipContact', handleSkip);
+    window.addEventListener('bobs:closeContact', handleCloseContact);
+
+    if (ccpInitialized) {
+      return () => {
+        window.removeEventListener('bobs:acceptContact', handleAccept);
+        window.removeEventListener('bobs:skipContact', handleSkip);
+        window.removeEventListener('bobs:closeContact', handleCloseContact);
+      };
+    }
     ccpInitialized = true;
 
     window.connect.core.initCCP(ccpContainerRef.current, {
@@ -337,45 +380,6 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         }
       });
     });
-
-    // ── Manual Accept / Skip ──────────────────────────────────────────────────
-    const handleAccept = (e: Event) => {
-      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
-      const timer = autoAcceptTimers.current.get(contactId);
-      if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
-      const contact = contactRefs.current.get(contactId);
-      if (contact) contact.accept({});
-      else console.warn('Accept: no contact ref for', contactId);
-    };
-
-    const handleSkip = (e: Event) => {
-      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
-      const timer = autoAcceptTimers.current.get(contactId);
-      if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
-      const contact = contactRefs.current.get(contactId);
-      if (contact) contact.reject({});
-      contactRefs.current.delete(contactId);
-      agentChatSessions.delete(contactId);
-      store.clearSlot(contactId);
-    };
-
-    // ── Close Contact (ACW → clearSlot) ──────────────────────────────────────
-    // onDestroy does NOT fire for already-ended chat contacts after contact.clear().
-    // Always call clearSlot directly — don't rely on onDestroy as the trigger.
-    const handleCloseContact = (e: Event) => {
-      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
-      const contact = contactRefs.current.get(contactId);
-      if (contact) {
-        try { contact.clear({}); } catch { /* ignore — already ended */ }
-      }
-      contactRefs.current.delete(contactId);
-      agentChatSessions.delete(contactId);
-      store.clearSlot(contactId);
-    };
-
-    window.addEventListener('bobs:acceptContact', handleAccept);
-    window.addEventListener('bobs:skipContact', handleSkip);
-    window.addEventListener('bobs:closeContact', handleCloseContact);
 
     // ── Agent state ───────────────────────────────────────────────────────────
     window.connect.agent(agent => {
