@@ -118,6 +118,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const idleTimer2Ref = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Fires if no customer reply within 2 min after an autopilot message
   const autopilotIdleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Fires if customer doesn't reply within 3 min after agent poses a question
+  const agentQuestionIdleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Prevent double-running the initial autopilot turn for a given contact+scope
   const initRunRef = useRef<Set<string>>(new Set());
@@ -137,6 +139,17 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (!slot) return;
     store.appendMessage(slot.contactId, { role: 'AGENT', content: text });
     store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
+
+    // Start 3-min idle-check timer when agent poses a question; cancel on any non-question send
+    if (agentQuestionIdleRef.current) clearTimeout(agentQuestionIdleRef.current);
+    if (text.includes('?')) {
+      const cidForTimer = slot.contactId;
+      agentQuestionIdleRef.current = setTimeout(() => {
+        const s = store.getSlot(cidForTimer);
+        if (!s || s.autopilotScope !== null || s.status !== 'active') return;
+        store.patchSlot(cidForTimer, { autopilotScope: 'idle-check' });
+      }, 3 * 60 * 1000);
+    }
 
     if (!slot.connectionToken) {
       log.warn('ChatColumn:send:noConnectionToken', { contactId: slot.contactId });
@@ -217,6 +230,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (idleTimer1Ref.current) { clearTimeout(idleTimer1Ref.current); idleTimer1Ref.current = null; }
     if (idleTimer2Ref.current) { clearTimeout(idleTimer2Ref.current); idleTimer2Ref.current = null; }
     if (autopilotIdleRef.current) { clearTimeout(autopilotIdleRef.current); autopilotIdleRef.current = null; }
+    if (agentQuestionIdleRef.current) { clearTimeout(agentQuestionIdleRef.current); agentQuestionIdleRef.current = null; }
   };
 
   // ── Autopilot: call Lambda and handle result ───────────────────────────
@@ -434,8 +448,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const cid = slot.contactId;
     const clientProfile = CLIENT_PROFILES[slot.clientId] ?? DEFAULT_PROFILE;
 
-    // Customer replied — cancel the autopilot idle timer
+    // Customer replied — cancel autopilot idle timer and agent-question idle timer
     if (autopilotIdleRef.current) { clearTimeout(autopilotIdleRef.current); autopilotIdleRef.current = null; }
+    if (agentQuestionIdleRef.current) { clearTimeout(agentQuestionIdleRef.current); agentQuestionIdleRef.current = null; }
 
     // NBR (always, even when autopilot is on — keeps suggestions fresh)
     post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null }>(
