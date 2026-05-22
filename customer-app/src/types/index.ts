@@ -18,6 +18,7 @@ export interface ChatMessage {
   content: string;
   timestamp: number;
   link?: ChatMessageLink;
+  toolsUsed?: string[];
 }
 
 export interface CallbackConfirmation {

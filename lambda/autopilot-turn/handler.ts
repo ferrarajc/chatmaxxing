@@ -1,5 +1,6 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
+import { invokeNovaMicro, invokeWithTools, parseJsonFromBedrock } from '../shared/bedrock-client';
+import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import {
   ChatMessage,
   ClientProfile,
@@ -1876,6 +1877,11 @@ When escalating: respond "I'll connect you with a live agent right now." Never m
 Output ONLY a JSON object:
 {"response": "YOUR_RESPONSE_HERE", "shouldExitAutopilot": false, "suggestedScope": null}`;
 
+// ── Hallucination protection — appended to all tool-enabled system prompts ─
+const HALLUCINATION_PROTECTION_RULE = `
+
+CRITICAL DATA RULE: You only know what is explicitly written in this system prompt or what a tool call returned. Never state, reference, or imply specific financial data (account balances, holdings quantities, transaction amounts, phone numbers, email addresses, beneficiary names, or any client-specific numbers) that was not provided here or returned by a tool. If you need data not already in context, call the appropriate tool first.`;
+
 // ── Exit message instruction appended to system prompts at LLM call sites ─
 const EXIT_MESSAGE_INSTRUCTION = `
 
@@ -1968,26 +1974,31 @@ export const handler = async (
           });
         }
 
-        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION;
+        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE;
+        const p2ContactId = transcript[0]?.content?.slice(0, 8);
+        const p2Executor = createToolExecutor(profile.clientId, { contactId: p2ContactId });
         let taskResponse = '';
         let taskShouldExit = false;
         let taskProposedAction: Record<string, unknown> | null = null;
         let taskExitMessage: string | null = null;
+        let taskToolsUsed: string[] = [];
 
         try {
-          const raw = await invokeNovaMicro(
-            formatTranscriptForBedrock(transcript),
+          const result = await invokeWithTools(
             taskSystemPrompt,
-            600,
-            { fn: 'autopilot-turn', scope: `get-intent:${activeTaskId}` },
-            true,
+            [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
+            ALL_CLIENT_TOOLS,
+            p2Executor,
+            700,
+            { fn: 'autopilot-turn', contactId: p2ContactId, clientId: profile.clientId, scope: `get-intent:${activeTaskId}` },
           );
+          taskToolsUsed = result.toolsUsed;
           const parsed = parseJsonFromBedrock<{
             response: string;
             shouldExitAutopilot: boolean;
             exitMessage?: string | null;
             proposedAction?: Record<string, unknown> | null;
-          }>(raw);
+          }>(result.text);
 
           taskResponse = parsed.response ?? '';
           taskShouldExit = parsed.shouldExitAutopilot ?? false;
@@ -2018,6 +2029,7 @@ export const handler = async (
           scheduleCallback: null,
           taskIdentified: null,
           proposedAction: taskProposedAction,
+          toolsUsed: taskToolsUsed,
         });
       } else {
         // Phase 1: task identification — try keyword match first (no LLM call)
@@ -2037,21 +2049,26 @@ export const handler = async (
           let p1ShouldExit = false;
           let p1ProposedAction: Record<string, unknown> | null = null;
           let p1ExitMessage: string | null = null;
+          let p1ToolsUsed: string[] = [];
 
           try {
-            const raw = await invokeNovaMicro(
-              formatTranscriptForBedrock(transcript),
-              p1SystemPrompt,
-              600,
-              { fn: 'autopilot-turn', scope: `get-intent:identify:${resolvedTask.id}` },
-              true,
+            const p1ContactId = transcript[0]?.content?.slice(0, 8);
+            const p1Executor = createToolExecutor(profile.clientId, { contactId: p1ContactId });
+            const result = await invokeWithTools(
+              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE,
+              [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
+              ALL_CLIENT_TOOLS,
+              p1Executor,
+              700,
+              { fn: 'autopilot-turn', contactId: p1ContactId, clientId: profile.clientId, scope: `get-intent:identify:${resolvedTask.id}` },
             );
+            p1ToolsUsed = result.toolsUsed;
             const parsed = parseJsonFromBedrock<{
               response: string;
               shouldExitAutopilot: boolean;
               exitMessage?: string | null;
               proposedAction?: Record<string, unknown> | null;
-            }>(raw);
+            }>(result.text);
 
             p1Response = parsed.response ?? '';
             p1ShouldExit = parsed.shouldExitAutopilot ?? false;
@@ -2077,6 +2094,7 @@ export const handler = async (
             scheduleCallback: null,
             taskIdentified: resolvedTask.id,
             proposedAction: p1ProposedAction,
+            toolsUsed: p1ToolsUsed,
           });
         }
         // No keyword or LLM match — fall through to general GET_INTENT_PROMPT below
@@ -2106,7 +2124,9 @@ export const handler = async (
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
-    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION;
+    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE;
+    const contactId = transcript[0]?.content?.slice(0, 8);
+    const executor = createToolExecutor(profile.clientId, { contactId });
 
     let response = '';
     let shouldExitAutopilot = false;
@@ -2114,41 +2134,37 @@ export const handler = async (
     let closeChat = false;
     let scheduleCallback: Record<string, string> | null = null;
     let exitMessage: string | null = null;
+    let toolsUsed: string[] = [];
 
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const raw = await invokeNovaMicro(
-          formatTranscriptForBedrock(transcript),
-          augmentedSystemPrompt,
-          400,
-          { fn: 'autopilot-turn', contactId: transcript[0]?.content?.slice(0, 8), scope },
-          true,
-        );
-        const parsed = parseJsonFromBedrock<{
-          response: string;
-          shouldExitAutopilot: boolean;
-          exitMessage?: string | null;
-          suggestedScope?: string | null;
-          closeChat?: boolean;
-          scheduleCallback?: Record<string, string> | null;
-        }>(raw);
+    try {
+      const result = await invokeWithTools(
+        augmentedSystemPrompt,
+        [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
+        ALL_CLIENT_TOOLS,
+        executor,
+        500,
+        { fn: 'autopilot-turn', contactId, clientId: profile.clientId, scope },
+      );
+      toolsUsed = result.toolsUsed;
+      const parsed = parseJsonFromBedrock<{
+        response: string;
+        shouldExitAutopilot: boolean;
+        exitMessage?: string | null;
+        suggestedScope?: string | null;
+        closeChat?: boolean;
+        scheduleCallback?: Record<string, string> | null;
+      }>(result.text);
 
-        response = parsed.response ?? '';
-        shouldExitAutopilot = parsed.shouldExitAutopilot ?? false;
-        exitMessage = parsed.exitMessage ?? null;
-        suggestedScope = parsed.suggestedScope ?? null;
-        closeChat = parsed.closeChat ?? false;
-        scheduleCallback = parsed.scheduleCallback ?? null;
-        break;
-      } catch (e) {
-        if (attempt === 0) {
-          console.warn('Autopilot LLM call failed, retrying', e);
-        } else {
-          console.warn('Autopilot LLM call failed after retry', e);
-          shouldExitAutopilot = false;
-          response = "I'm having a bit of trouble right now — could you try rephrasing your question?";
-        }
-      }
+      response = parsed.response ?? '';
+      shouldExitAutopilot = parsed.shouldExitAutopilot ?? false;
+      exitMessage = parsed.exitMessage ?? null;
+      suggestedScope = parsed.suggestedScope ?? null;
+      closeChat = parsed.closeChat ?? false;
+      scheduleCallback = parsed.scheduleCallback ?? null;
+    } catch (e) {
+      console.warn('Autopilot LLM call failed', e);
+      shouldExitAutopilot = false;
+      response = "I'm having a bit of trouble right now — could you try rephrasing your question?";
     }
 
     // Business-rule hard overrides
@@ -2182,6 +2198,7 @@ export const handler = async (
       scheduleCallback,
       taskIdentified: taskIdentifiedForResponse,
       proposedAction: null,
+      toolsUsed,
     });
   } catch (err) {
     console.error('autopilot-turn error', err);
