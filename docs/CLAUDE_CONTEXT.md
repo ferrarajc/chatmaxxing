@@ -86,6 +86,7 @@ chatmaxxing/
 | `schedule-callback` | Create EventBridge callback event | No |
 | `execute-callback` | Fire on scheduled callback time | No |
 | `reset-beneficiaries` | Dev: reset test client beneficiary data | No |
+| `reset-all-data` | Dev: reset ALL fields for all 4 clients to defaults | No |
 
 ---
 
@@ -184,13 +185,21 @@ GitHub Actions deploys customer-app to root of gh-pages, agent-app to `/agent`. 
 ```
 {
   clientId: string (partition key),
-  name, phone, accounts: [{type, balance, id}], totalBalance,
+  name, phone, displayPhone, email, address,
+  totalBalance,
+  accounts: [{type, balance, id, change}],
+  holdings: [{name, ticker, accountId, shares, price, change, value, drip?}],
+  transactions: [{date, description, amount, account}],
   beneficiaries: [{accountId, name, relationship, percentage, type}],
-  autoInvest: [{id, accountId, fund, amount, frequency, dayOfMonth, status}],
-  rmd: {eligible, deliveryMethod, frequency, taxWithholding},
-  intents: [recent intent strings]
+  autoInvest: [{id, accountId, accountType, fund, ticker, amount, frequency, dayOfMonth?, nextDate, active, type?}],
+  rmd: {eligible, age?, annualRmd?, takenThisYear?, remainingThisYear?, nextDeadline?, distributions?, deliveryMethod?, frequency?, taxWithholding?, ...},
+  recentChatHistory: [{date, topic, summary}]
 }
 ```
+
+All fields for all 4 demo clients are seeded via `GET /reset-client-data?key=bobs-reset-2025`.
+Factory defaults live in `lambda/shared/client-defaults.ts`.
+
 Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 30 days) }`
 
 ---
@@ -205,19 +214,23 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
-## Active Branch / Current State (as of 2026-05-20)
+## Active Branch / Current State (as of 2026-05-21)
 
-Branch in flight: `feat/idle-check-auto-trigger`
+Branch in flight: `feat/db-driven-portal` (PR #40 — awaiting merge)
 
-Two changes in this branch:
-1. Auto-trigger idle-check when agent asks a question and customer doesn't respond for 3 min (`ChatColumn.tsx` — `agentQuestionIdleRef` timer; heuristic: message contains `?`)
-2. Fix Accept/Close contact broken in dev mode (`useConnectStreams.ts` — StrictMode double-mount ate the custom event listeners; handlers now registered before `ccpInitialized` guard)
+Full database-driven portal — every client data field is now in DynamoDB:
+- `lambda/shared/client-defaults.ts` — canonical defaults for all 4 clients
+- `lambda/reset-all-data/handler.ts` — GET /reset-client-data resets all fields for all 4 clients
+- `lambda/client-data/handler.ts` — extended: get-all, put-profile, put-holdings, put-transactions
+- `lambda/execute-task/handler.ts` — 9 tasks upgraded from mock to real writes (purchase, sale, exchange, withdrawal, contact-info, DRIP, systematic-withdrawal, open-account, roth-conversion)
+- `customer-app/src/store/clientStore.ts` — fetchAll() hydrates from DB on persona switch; refreshFromDb() re-fetches after AI task
+- `customer-app/src/components-v2/layout/TopNavV2.tsx` — "↺ Reset all" button in Switch Client dropdown
+- Lambda deployed; all 4 clients seeded via reset endpoint
 
 Recent shipped features (last several PRs):
-- Customer-bot scope separation (PR 38, `feat/customer-bot-scope`): dedicated `customer-bot` scope in `autopilot-turn` with `CUSTOMER_BOT_PROMPT` and `CUSTOMER_FORBIDDEN_TOPICS`; fixes false escalation on "trade" as a verb, fixes terse link-dump responses, fixes broken `/trade` link; `TRADE_RE` hard override scoped out for `customer-bot`; `useChatSession.ts` pre-warm and fallback now pass `scope: 'customer-bot'`
-- Autopilot exit message fixes (PR 36, `feature/autopilot-exit-message`): message clears on agent send; proposedAction exits always show a message
-- Chatbot KB link fix (PR 37, `fix/chatbot-kb-links`): all SELF_SERVICE_PAGES entries use full `/help/slug` paths
-- Availability toggle overhaul (PR 35, `fix/availability-toggle-connect-state`): fixed Available/Away↔Offline mapping, StrictMode double-initCCP guard, onRoutable/onOffline/onStateChange suppression during pending setState, 1s poll fallback, On queue/Off queue toggle UI, agent initials from Connect name/username, "Not logged on" pre-login state
+- Idle-check auto-trigger (PR 39): 3-min timer when agent asks question; fix Accept/Close in dev StrictMode
+- Customer-bot scope separation (PR 38): dedicated customer-bot scope with CUSTOMER_BOT_PROMPT
+- Autopilot exit message fixes (PR 36); chatbot KB link fix (PR 37)
 
 ---
 

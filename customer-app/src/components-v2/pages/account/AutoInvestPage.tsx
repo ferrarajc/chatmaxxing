@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useClientStore } from '../../../store/clientStore';
 import { AutoInvestSchedule } from '../../../data/personas';
+import { post } from '../../../api/client';
 import { theme } from '../../../theme';
 
 const card: React.CSSProperties = {
@@ -23,12 +24,19 @@ const FUNDS = [
 ];
 
 export function AutoInvestPage() {
-  const { activePersona, updateAutoInvestSchedule, setAutoInvestSchedules } = useClientStore();
+  const { activePersona, updateAutoInvestSchedule } = useClientStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<AutoInvestSchedule>>({});
   const [saved, setSaved] = useState(false);
 
   const schedules = activePersona.autoInvest;
+
+  const persistSchedules = (updated: AutoInvestSchedule[]) =>
+    post('/client-data', {
+      action: 'put-auto-invest',
+      clientId: activePersona.clientId,
+      data: updated,
+    }).catch(() => { /* optimistic update stays */ });
 
   const handleEdit = (s: AutoInvestSchedule) => {
     setEditingId(s.id);
@@ -38,6 +46,8 @@ export function AutoInvestPage() {
 
   const handleSave = (s: AutoInvestSchedule) => {
     updateAutoInvestSchedule(s.id, editForm);
+    const updated = schedules.map(x => x.id === s.id ? { ...x, ...editForm } : x);
+    persistSchedules(updated);
     setEditingId(null);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -45,6 +55,8 @@ export function AutoInvestPage() {
 
   const handleToggle = (s: AutoInvestSchedule) => {
     updateAutoInvestSchedule(s.id, { active: !s.active });
+    const updated = schedules.map(x => x.id === s.id ? { ...x, active: !s.active } : x);
+    persistSchedules(updated);
   };
 
   const totalMonthly = schedules
