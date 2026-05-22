@@ -191,27 +191,30 @@ export async function invokeWithTools(
 
     // finish_reason === 'stop'
     if (toolsUsed.length === 0) {
-      // No tools used — model responded directly.
-      // If jsonMode, the system prompt instructions are sufficient (same as invokeNovaMicro).
-      const text = assistantMsg.content ?? '';
-      if (MONEY_RE.test(text) && jsonMode) {
-        console.log(JSON.stringify({ event: 'possible_hallucination_risk', fn: ctx.fn, contactId: ctx.contactId, clientId: ctx.clientId, scope: ctx.scope }));
+      if (!jsonMode) {
+        // Prose response, no JSON needed — return directly.
+        return { text: assistantMsg.content ?? '', toolsUsed };
       }
-      return { text, toolsUsed };
+      // jsonMode=true but no tools called — push prose to current so Phase 2 can reformat
+      // with response_format: json_object. Without this, gpt-4o-mini sometimes ignores the
+      // "Return ONLY valid JSON" system prompt instruction when tools are present in the call.
+      current.push(assistantMsg);
     }
 
-    // Tools were used but model returned prose — fall through to Phase 2 json-mode reformatter.
+    // Both no-tools+jsonMode and tools-used+stop fall through to Phase 2.
     break;
   }
 
-  if (toolsUsed.length === 0) {
-    // Max iterations hit without any tool calls completing — safety net
+  if (toolsUsed.length === 0 && current.length <= messages.length) {
+    // Max iterations without any useful content accumulated — safety net
     console.log(JSON.stringify({ event: 'tool_loop_max_iterations', fn: ctx.fn, contactId: ctx.contactId, clientId: ctx.clientId, toolsUsed }));
     return { text: '', toolsUsed };
   }
 
-  // Phase 2: final json-mode call (no tools) — reformat tool results into structured output.
-  // Tool results are now in `current`; the model synthesizes them into the required JSON shape.
+  // Phase 2: final json-mode call (no tools) — reformat into structured output.
+  // `current` holds either tool results (when tools were called) or a prose assistant
+  // message (when no tools were called but jsonMode=true). Either way, the model
+  // synthesizes them into the required JSON shape with response_format enforced.
   const { choice: finalChoice } = await openAiCall({
     model: OPENAI_MODEL,
     messages: [{ role: 'system', content: systemPrompt }, ...current],
@@ -221,6 +224,9 @@ export async function invokeWithTools(
   }, ctx, MAX_TOOL_ITERATIONS);
 
   const text = finalChoice.message.content ?? '';
+  if (MONEY_RE.test(text) && jsonMode && toolsUsed.length === 0) {
+    console.log(JSON.stringify({ event: 'possible_hallucination_risk', fn: ctx.fn, contactId: ctx.contactId, clientId: ctx.clientId, scope: ctx.scope }));
+  }
   return { text, toolsUsed };
 }
 
