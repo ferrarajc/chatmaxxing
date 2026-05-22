@@ -132,9 +132,12 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
     }
 
     case 'get_holdings': {
-      const item = await fetchField(clientId, 'holdings');
+      const item = await fetchField(clientId, 'holdings, accounts');
       const holdings = (item.holdings as Array<{ name: string; ticker: string; accountId: string; shares: number; price: number; value: number; change?: number; drip?: boolean }> | undefined) ?? [];
       if (!holdings.length) return 'No holdings on file.';
+      const acctTypeMap = new Map(
+        ((item.accounts as Array<{ type: string; id: string }> | undefined) ?? []).map(a => [a.id, a.type]),
+      );
       const byAccount = new Map<string, typeof holdings>();
       for (const h of holdings) {
         const list = byAccount.get(h.accountId) ?? [];
@@ -143,7 +146,7 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
       }
       const lines: string[] = [];
       for (const [acctId, hs] of byAccount) {
-        lines.push(`Account ${acctId}:`);
+        lines.push(`${acctTypeMap.get(acctId) ?? acctId}:`);
         for (const h of hs) {
           lines.push(`  ${h.name} (${h.ticker}): ${h.shares} shares @ $${fmt(h.price)} = $${fmt(h.value)}${h.drip ? ' [DRIP on]' : ''}${h.change !== undefined ? ` (${h.change >= 0 ? '+' : ''}${h.change}% today)` : ''}`);
         }
@@ -164,9 +167,12 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
     }
 
     case 'get_beneficiaries': {
-      const item = await fetchField(clientId, 'beneficiaries');
+      const item = await fetchField(clientId, 'beneficiaries, accounts');
       const benes = (item.beneficiaries as Array<{ accountId: string; name: string; relationship: string; percentage: number; type: string }> | undefined) ?? [];
       if (!benes.length) return 'No beneficiaries on file.';
+      const acctTypeMap = new Map(
+        ((item.accounts as Array<{ type: string; id: string }> | undefined) ?? []).map(a => [a.id, a.type]),
+      );
       const byAccount = new Map<string, typeof benes>();
       for (const b of benes) {
         const list = byAccount.get(b.accountId) ?? [];
@@ -175,7 +181,7 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
       }
       const lines: string[] = [];
       for (const [acctId, bs] of byAccount) {
-        lines.push(`Account ${acctId}:`);
+        lines.push(`${acctTypeMap.get(acctId) ?? acctId}:`);
         for (const b of bs) {
           lines.push(`  ${b.type}: ${b.name} (${b.relationship}) — ${b.percentage}%`);
         }
