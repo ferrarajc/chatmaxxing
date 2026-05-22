@@ -214,20 +214,12 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
-## Active Branch / Current State (as of 2026-05-21)
+## Active Branch / Current State (as of 2026-05-22)
 
-Branch in flight: `feat/db-driven-portal` (PR #40 — awaiting merge)
-
-Full database-driven portal — every client data field is now in DynamoDB:
-- `lambda/shared/client-defaults.ts` — canonical defaults for all 4 clients
-- `lambda/reset-all-data/handler.ts` — GET /reset-client-data resets all fields for all 4 clients
-- `lambda/client-data/handler.ts` — extended: get-all, put-profile, put-holdings, put-transactions
-- `lambda/execute-task/handler.ts` — 9 tasks upgraded from mock to real writes (purchase, sale, exchange, withdrawal, contact-info, DRIP, systematic-withdrawal, open-account, roth-conversion)
-- `customer-app/src/store/clientStore.ts` — fetchAll() hydrates from DB on persona switch; refreshFromDb() re-fetches after AI task
-- `customer-app/src/components-v2/layout/TopNavV2.tsx` — "↺ Reset all" button in Switch Client dropdown
-- Lambda deployed; all 4 clients seeded via reset endpoint
+No branch currently in flight. Main is up to date.
 
 Recent shipped features (last several PRs):
+- DB-driven portal (PR 40): all client data in DynamoDB; reset-all-data Lambda; 9 execute-task tasks upgraded to real writes; fetchAll() in clientStore; "↺ Reset all" button in TopNavV2
 - Idle-check auto-trigger (PR 39): 3-min timer when agent asks question; fix Accept/Close in dev StrictMode
 - Customer-bot scope separation (PR 38): dedicated customer-bot scope with CUSTOMER_BOT_PROMPT
 - Autopilot exit message fixes (PR 36); chatbot KB link fix (PR 37)
