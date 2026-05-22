@@ -271,7 +271,7 @@ export const handler = async (
 
         let updateExpr = '';
         const eav: Record<string, unknown> = {};
-        const ean: Record<string, string> = { '#nm': 'name' };
+        const ean: Record<string, string> = {};
 
         if (infoType.includes('phone')) {
           const digits = newValue.replace(/\D/g, '');
@@ -288,6 +288,7 @@ export const handler = async (
           updateExpr = 'SET address = :v';
           eav[':v']  = newValue;
         } else if (infoType.includes('name')) {
+          ean['#nm'] = 'name';
           updateExpr = 'SET #nm = :v';
           eav[':v']  = newValue;
         } else {
