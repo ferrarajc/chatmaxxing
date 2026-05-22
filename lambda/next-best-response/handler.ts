@@ -81,6 +81,7 @@ export const handler = async (
         executor,
         350,
         { fn: 'next-best-response', clientId: profile.clientId },
+        true,
       );
       toolsUsed = result.toolsUsed;
       const parsed = parseJsonFromBedrock<{

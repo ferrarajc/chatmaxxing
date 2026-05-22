@@ -1991,6 +1991,7 @@ export const handler = async (
             p2Executor,
             700,
             { fn: 'autopilot-turn', contactId: p2ContactId, clientId: profile.clientId, scope: `get-intent:${activeTaskId}` },
+            true,
           );
           taskToolsUsed = result.toolsUsed;
           const parsed = parseJsonFromBedrock<{
@@ -2061,6 +2062,7 @@ export const handler = async (
               p1Executor,
               700,
               { fn: 'autopilot-turn', contactId: p1ContactId, clientId: profile.clientId, scope: `get-intent:identify:${resolvedTask.id}` },
+              true,
             );
             p1ToolsUsed = result.toolsUsed;
             const parsed = parseJsonFromBedrock<{
@@ -2144,6 +2146,7 @@ export const handler = async (
         executor,
         500,
         { fn: 'autopilot-turn', contactId, clientId: profile.clientId, scope },
+        true,
       );
       toolsUsed = result.toolsUsed;
       const parsed = parseJsonFromBedrock<{
