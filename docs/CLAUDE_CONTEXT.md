@@ -214,15 +214,15 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
-## Active Branch / Current State (as of 2026-05-22)
+## Active Branch / Current State (as of 2026-05-23)
 
 No branch currently in flight. Main is up to date.
 
 Recent shipped features (last several PRs):
+- On-demand LLM tool calling (PR 41): all three AI systems (customer bot, NBR, autopilot task experts) can fetch client data from DynamoDB via OpenAI function calling; two-phase agentic loop (tool gather → json_object reformat); 7 tools in `lambda/shared/client-tools.ts`; rotating TypingIndicator messages; "Data fetched from your account" annotation; hallucination protection rule in all system prompts; customer-bot cannot imply it can process account changes
 - DB-driven portal (PR 40): all client data in DynamoDB; reset-all-data Lambda; 9 execute-task tasks upgraded to real writes; fetchAll() in clientStore; "↺ Reset all" button in TopNavV2
 - Idle-check auto-trigger (PR 39): 3-min timer when agent asks question; fix Accept/Close in dev StrictMode
 - Customer-bot scope separation (PR 38): dedicated customer-bot scope with CUSTOMER_BOT_PROMPT
-- Autopilot exit message fixes (PR 36); chatbot KB link fix (PR 37)
 
 ---
 
