@@ -104,7 +104,7 @@ export function ChatBody({ currentPage, onSendMessage }: Props) {
         <ChatMessage key={msg.id} message={msg} />
       ))}
 
-      {isTyping && <TypingIndicator />}
+      {isTyping && <TypingIndicator isWaiting />}
       <div ref={bottomRef} />
     </div>
   );

@@ -152,10 +152,11 @@ export class LambdaStack extends cdk.Stack {
       handler: 'handler',
       entry: path.join(lambdaDir, 'next-best-response/handler.ts'),
       timeout: cdk.Duration.seconds(29),
-      memorySize: 256,
+      memorySize: 512,
       environment: baseEnv,
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
+    clientsTable.grantReadData(nextBestResponseFn);
     nextBestResponseFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
       resources: ['*'],

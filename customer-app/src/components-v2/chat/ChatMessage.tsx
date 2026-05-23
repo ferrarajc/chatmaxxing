@@ -123,6 +123,7 @@ export function ChatMessage({ message }: Props) {
   const isAgent = message.role === 'AGENT';
 
   return (
+    <>
     <div style={{
       display: 'flex',
       justifyContent: isCustomer ? 'flex-end' : 'flex-start',
@@ -174,5 +175,15 @@ export function ChatMessage({ message }: Props) {
         )}
       </div>
     </div>
+    {message.role === 'BOT' && !!message.toolsUsed?.length && (
+      <div style={{
+        fontSize: 11, color: theme.color.textSubtle,
+        marginTop: 2, paddingLeft: 36,
+        fontStyle: 'italic',
+      }}>
+        Data fetched from your account
+      </div>
+    )}
+    </>
   );
 }

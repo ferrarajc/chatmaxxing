@@ -271,7 +271,7 @@ export function useChatSession() {
         if (liveState === 'CONNECTED_TO_AGENT' || liveState === 'WAITING_FOR_AGENT') return;
         try {
           const { activePersona } = useClientStore.getState();
-          const result = await post<{ response: string; confidence: number; shouldExitAutopilot: boolean }>(
+          const result = await post<{ response: string; shouldExitAutopilot: boolean; toolsUsed?: string[] }>(
             '/autopilot-turn',
             {
               transcript: currentMessages.filter(m => m.role !== 'SYSTEM'),
@@ -284,7 +284,7 @@ export function useChatSession() {
           store.setTyping(false);
           const reply = result.response?.trim();
           if (reply && reply !== '...' && reply.length > 3) {
-            store.addMessage({ role: 'BOT', content: reply });
+            store.addMessage({ role: 'BOT', content: reply, toolsUsed: result.toolsUsed ?? [] });
             if (result.shouldExitAutopilot) {
               const s = useChatStore.getState().state;
               if (s !== 'WAITING_FOR_AGENT' && s !== 'CONNECTED_TO_AGENT' && s !== 'ESCALATION_OFFERED') {

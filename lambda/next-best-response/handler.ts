@@ -1,5 +1,6 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
+import { invokeWithTools, parseJsonFromBedrock } from '../shared/bedrock-client';
+import { NBR_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import {
   ChatMessage,
   ClientProfile,
@@ -12,6 +13,10 @@ import {
 } from '../shared/types';
 
 const RESOURCE_LIST = KNOWLEDGE_BASE.map(r => `${r.id}: ${r.title}`).join('\n');
+
+const NBR_HALLUCINATION_RULE = `
+
+CRITICAL DATA RULE: You only know what is in this system prompt or what a tool returned. Never state specific financial figures (balances, holdings, transaction amounts, phone numbers, email addresses, or any client-specific numbers) that were not provided. Call the appropriate tool if you need that data.`;
 
 const SYSTEM_PROMPT = (profile: ClientProfile) =>
   `You are an AI assistant supporting a live chat agent at Bob's Mutual Funds.
@@ -66,17 +71,24 @@ export const handler = async (
     let suggestedText = '';
     let suggestedScope: string | null = null;
     let resources: Resource[] = [];
+    let toolsUsed: string[] = [];
     try {
-      const raw = await invokeNovaMicro(
-        formatTranscriptForBedrock(transcript),
-        SYSTEM_PROMPT(profile),
-        280,
+      const executor = createToolExecutor(profile.clientId, {});
+      const result = await invokeWithTools(
+        SYSTEM_PROMPT(profile) + NBR_HALLUCINATION_RULE,
+        [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
+        NBR_CLIENT_TOOLS,
+        executor,
+        350,
+        { fn: 'next-best-response', clientId: profile.clientId },
+        true,
       );
+      toolsUsed = result.toolsUsed;
       const parsed = parseJsonFromBedrock<{
         suggestedText: string;
         suggestedScope?: string | null;
         resourceIds?: string[];
-      }>(raw);
+      }>(result.text);
       suggestedText = parsed.suggestedText ?? '';
       suggestedScope = parsed.suggestedScope ?? null;
       resources = (parsed.resourceIds ?? [])
@@ -84,9 +96,8 @@ export const handler = async (
         .filter((r): r is Resource => r !== undefined)
         .slice(0, 3);
     } catch (e) {
-      console.warn('Bedrock NBR failed', e);
+      console.warn('NBR LLM call failed', e);
       suggestedText = "I'd be happy to help with that. Could you give me a moment to look into it?";
-      // Keyword fallback so resources aren't empty on LLM error
       const conversationText = transcript
         .filter(m => m.role === 'CUSTOMER')
         .map(m => m.content)
@@ -94,7 +105,7 @@ export const handler = async (
       resources = matchResources(conversationText);
     }
 
-    return jsonResponse(200, { suggestedText, resources, suggestedScope });
+    return jsonResponse(200, { suggestedText, resources, suggestedScope, toolsUsed });
   } catch (err) {
     console.error('next-best-response error', err);
     return jsonResponse(500, { error: 'Failed to generate response' });
