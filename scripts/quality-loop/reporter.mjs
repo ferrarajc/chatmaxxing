@@ -1,10 +1,9 @@
 /**
- * Quality Loop — Reporter
+ * Quality Loop — Reporter (LEGACY — kept for reference)
  *
- * Takes run results + evaluations, produces:
- *   1. results/report-NNN.md  — human-readable quality report
- *   2. results/latest.json    — machine-readable scores
- *   3. results/NEXT_FIX.md   — specific instructions for Claude to implement
+ * @deprecated This file is no longer imported by the active scripts.
+ * The generic implementation lives in heqya/core/reporter.mjs.
+ * The active entry point is scripts/quality-loop/run-quality-loop.mjs.
  */
 
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'fs';

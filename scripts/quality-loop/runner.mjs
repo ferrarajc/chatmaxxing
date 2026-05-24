@@ -1,9 +1,10 @@
 /**
- * Quality Loop — Conversation Runner
+ * Quality Loop — Conversation Runner (LEGACY — kept for reference)
  *
- * Drives multi-turn conversations against the live autopilot-turn API.
- * Uses GPT-4o-mini to simulate customer responses.
- * Resets DynamoDB before each scenario to prevent cross-contamination.
+ * @deprecated This file is no longer imported by the active scripts.
+ * The generic implementation lives in heqya/core/runner.mjs.
+ * The Bob's-specific adapter is in scripts/quality-loop/bobs-adapter.mjs.
+ * The active entry point is scripts/quality-loop/run-quality-loop.mjs.
  */
 
 const API_BASE = process.env.API_BASE

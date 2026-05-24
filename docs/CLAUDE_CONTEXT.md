@@ -214,6 +214,27 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
+## Heqya — Quality Evaluation System
+
+Lives in `heqya/` (npm-extractable package). The Bob's implementation uses it via `scripts/quality-loop/`.
+
+| File | Purpose |
+|------|---------|
+| `heqya/core/runner.mjs` | Generic conversation runner (adapter-based) |
+| `heqya/core/evaluator.mjs` | Generic LLM evaluator (heuristics-config-driven) |
+| `heqya/core/reporter.mjs` | Generic reporter (produces report-NNN.md, latest.json, NEXT_FIX.md) |
+| `heqya/core/loop.mjs` | Generic improvement loop |
+| `heqya/adapters/http-json.mjs` | Configurable HTTP/JSON adapter |
+| `scripts/quality-loop/bobs-adapter.mjs` | Bob's adapter (autopilot-turn API wiring) |
+| `scripts/quality-loop/heqya.config.mjs` | Bob's config (heuristics + thresholds + scenarios) |
+| `scripts/quality-loop/run-quality-loop.mjs` | Active entry point (one evaluation pass) |
+| `scripts/quality-loop/improvement-loop.mjs` | Full loop with Claude API + CDK deploy |
+| `scripts/quality-loop/scenarios.mjs` | 11 test scenarios + 4 client profiles |
+
+The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs` are **legacy/deprecated** — they are kept for reference but are no longer imported by active scripts.
+
+---
+
 ## Active Branch / Current State (as of 2026-05-23)
 
 No branch currently in flight. Main is up to date.

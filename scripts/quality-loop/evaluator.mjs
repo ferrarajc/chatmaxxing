@@ -1,8 +1,9 @@
 /**
- * Quality Loop — LLM Evaluator
+ * Quality Loop — LLM Evaluator (LEGACY — kept for reference)
  *
- * Scores each completed conversation against QUALITY_HEURISTICS.md using GPT-4o.
- * Returns structured JSON with per-heuristic grades and an aggregate score.
+ * @deprecated This file is no longer imported by the active scripts.
+ * The generic implementation lives in heqya/core/evaluator.mjs.
+ * The active entry point is scripts/quality-loop/run-quality-loop.mjs.
  */
 
 import { readFileSync } from 'fs';
