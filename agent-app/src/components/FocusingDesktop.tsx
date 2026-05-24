@@ -8,6 +8,7 @@ import { ProposedActionCard } from './ProposedActionCard';
 import { AfterCallWork } from './AfterCallWork';
 import { AutopilotMenu } from './AutopilotMenu';
 import { ResponseTimer } from './ResponseTimer';
+import { IntentLabel, stripIntentMarkers } from './IntentLabel';
 
 // ── Color palette ─────────────────────────────────────────────────────────────
 const C = {
@@ -224,7 +225,7 @@ export function FocusingDesktop() {
                   Conversation
                 </div>
                 <div style={{ fontSize: 11, color: C.sectionLabel, marginTop: 1 }}>
-                  {selectedSlot.clientName} · {selectedSlot.intentSummary}
+                  {selectedSlot.clientName} · <IntentLabel text={selectedSlot.intentSummary} />
                 </div>
               </div>
               <ResponseTimer lastEventAt={
@@ -594,7 +595,7 @@ function ContactCard({ slot, selected, onClick, onAccept, onSkip }: ContactCardP
 
       <div style={{ fontSize: 11, color: subColor, lineHeight: 1.4 }}>
         {isIncoming ? 'Incoming chat' : isAcw ? 'After call work' : 'Chat'}
-        {slot.intentSummary && ` · ${slot.intentSummary.slice(0, 32)}${slot.intentSummary.length > 32 ? '…' : ''}`}
+        {slot.intentSummary && (() => { const plain = stripIntentMarkers(slot.intentSummary); return ` · ${plain.slice(0, 32)}${plain.length > 32 ? '…' : ''}`; })()}
       </div>
 
       {isIncoming && (
@@ -677,7 +678,7 @@ function IncomingConversation({ slot, onAccept, onSkip }: {
           {slot.clientName}
         </div>
         <div style={{ fontSize: 13, color: C.sectionLabel, lineHeight: 1.5, marginBottom: 20 }}>
-          {slot.intentSummary || 'New incoming chat'}
+          <IntentLabel text={slot.intentSummary || 'New incoming chat'} />
         </div>
         {slot.bonusEligible && (
           <div style={{

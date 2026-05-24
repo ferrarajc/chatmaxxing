@@ -29,11 +29,12 @@ export const handler = async (
 The transcript is formatted as "ROLE: message | ROLE: message | ...".
 The customer's name is ${clientName}. Other names that appear in the transcript (beneficiaries, fund names, etc.) are NOT the customer.
 Write a single concise sentence (max 20 words) capturing what ${clientName}'s core need or question is.
-Start the sentence with their first name, e.g. "Robert wants to update the beneficiaries on his SEP-IRA".
+Start the sentence with their first name, e.g. "Robert wants to **update** the **beneficiaries** on his SEP-IRA".
 Focus on the customer's underlying goal — not just the last message.
 Do not mention that the customer asked to speak to an agent or requested escalation — that is implied and wastes space.
-Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
-            80,
+Pick 1 or 2 words in your sentence that most distinguish the intent — typically the action and/or the account type or subject — and wrap them in **double asterisks** like **word**. Leave all other words unmarked.
+Return only the plain text sentence with those markers — no quotes, no JSON, no punctuation at the end.`,
+            90,
           ),
           invokeNovaMicro(
             intentSummary,
