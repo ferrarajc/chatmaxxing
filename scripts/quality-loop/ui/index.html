@@ -198,8 +198,7 @@
   .scenario-scope { font-size: 10px; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
   .scope-get  { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
   .scope-full { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-  .scenario-heuristics { display: flex; gap: 3px; flex-shrink: 0; }
-  .h-chip { font-size: 10px; font-family: var(--mono); font-weight: 700; padding: 1px 5px; border-radius: 3px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .scenario-turns { font-size: 10px; color: var(--muted); flex-shrink: 0; }
   .scenario-client { font-size: 11px; color: var(--muted); flex-shrink: 0; }
   .scenario-actions { display: flex; gap: 6px; flex-shrink: 0; }
   .scenario-body { padding: 0 16px 14px 36px; display: none; }
@@ -395,10 +394,6 @@
   .form-textarea.xtall { min-height: 200px; }
 
   /* Heuristic checkbox grid in scenario editor */
-  .h-check-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-  .h-check-item { display: flex; align-items: center; gap: 5px; cursor: pointer; }
-  .h-check-item input { cursor: pointer; accent-color: var(--blue); }
-  .h-check-label { font-size: 12px; font-family: var(--mono); }
 
   /* Confirm dialog */
   .confirm-body { padding: 24px 20px; text-align: center; }
@@ -736,9 +731,10 @@
           <label class="form-label">Customer Prompt (LLM system prompt for the customer simulator)</label>
           <textarea class="form-textarea xtall" id="sCustomerPrompt" placeholder="You are [Name], a [role].\n\nYour goal: …\n\nRules:\n- If asked X, say Y.\n- Do NOT end the conversation yourself."></textarea>
         </div>
-        <div class="form-group full">
-          <label class="form-label">Heuristics Targeted</label>
-          <div class="h-check-grid" id="sHeuristicsGrid"></div>
+        <div class="form-group">
+          <label class="form-label">Max Turns (default 10)</label>
+          <input class="form-input" id="sMaxTurns" type="number" min="4" max="30" step="1" placeholder="10" />
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Simple lookup: 6–8 · Standard change: 10 · Complex multi-step: 12–14</div>
         </div>
         <div class="form-group full">
           <label class="form-label">Notes (what this scenario tests)</label>
@@ -1273,8 +1269,8 @@ function renderScenarios() {
     const isOpen   = expandedScenIds.has(s.id);
     const scopeCls = s.scope === 'full-auto' ? 'scope-full' : 'scope-get';
     const scopeTxt = s.scope === 'full-auto' ? 'full-auto' : 'get-intent';
-    const hChips   = (s.heuristics ?? []).map(c => `<span class="h-chip">${c}</span>`).join('');
-    const client   = s.clientKey ? `<span class="scenario-client">${s.clientKey}</span>` : '';
+    const turnsLabel = s.maxTurns ? `<span class="scenario-turns">≤${s.maxTurns}t</span>` : '';
+    const client     = s.clientKey ? `<span class="scenario-client">${s.clientKey}</span>` : '';
 
     let bodyHtml = '';
     if (isOpen) {
@@ -1297,7 +1293,7 @@ function renderScenarios() {
         <span class="scenario-id">${escHtml(s.id)}</span>
         ${client}
         <span class="scenario-scope ${scopeCls}">${scopeTxt}</span>
-        <div class="scenario-heuristics">${hChips}</div>
+        ${turnsLabel}
       </div>
       <div class="scenario-body${isOpen ? ' open' : ''}" id="scen-body-${escHtml(s.id)}">
         ${bodyHtml}
@@ -1321,16 +1317,6 @@ function openScenarioEditor(id) {
   const delBtn   = document.getElementById('sDeleteBtn');
   const idInput  = document.getElementById('sId');
 
-  // Build heuristics checkbox grid
-  const grid = document.getElementById('sHeuristicsGrid');
-  grid.innerHTML = heuristics.map(h =>
-    `<label class="h-check-item">
-      <input type="checkbox" class="h-check" value="${h.code}" />
-      <span class="h-check-label">${h.code}</span>
-      <span style="font-size:11px;color:var(--muted)"> ${h.name}</span>
-    </label>`
-  ).join('');
-
   if (id === null) {
     titleEl.textContent = 'Add New Scenario';
     subEl.textContent   = 'Define what the customer wants and how to play them.';
@@ -1343,6 +1329,7 @@ function openScenarioEditor(id) {
     document.getElementById('sIntent').value = '';
     document.getElementById('sOpening').value = '';
     document.getElementById('sCustomerPrompt').value = '';
+    document.getElementById('sMaxTurns').value = '';
     document.getElementById('sNotes').value = '';
   } else {
     const s = scenarios.find(x => x.id === id);
@@ -1358,21 +1345,15 @@ function openScenarioEditor(id) {
     document.getElementById('sIntent').value = s.currentIntent ?? '';
     document.getElementById('sOpening').value = s.openingMessage ?? '';
     document.getElementById('sCustomerPrompt').value = s.customerPrompt ?? '';
+    document.getElementById('sMaxTurns').value = s.maxTurns ?? '';
     document.getElementById('sNotes').value = s.notes ?? '';
-    // Check relevant heuristics
-    const checked = new Set(s.heuristics ?? []);
-    grid.querySelectorAll('.h-check').forEach(cb => { cb.checked = checked.has(cb.value); });
   }
 
   document.getElementById('scenarioModal').classList.add('open');
 }
 
-function getCheckedHeuristics() {
-  return Array.from(document.getElementById('sHeuristicsGrid').querySelectorAll('.h-check:checked'))
-    .map(cb => cb.value);
-}
-
 async function saveScenario() {
+  const maxTurnsRaw = document.getElementById('sMaxTurns').value.trim();
   const payload = {
     id:            document.getElementById('sId').value.trim().toLowerCase().replace(/\s+/g, '-'),
     clientKey:     document.getElementById('sClientKey').value || null,
@@ -1380,7 +1361,7 @@ async function saveScenario() {
     currentIntent: document.getElementById('sIntent').value.trim() || null,
     openingMessage: document.getElementById('sOpening').value.trim(),
     customerPrompt: document.getElementById('sCustomerPrompt').value.trim(),
-    heuristics:    getCheckedHeuristics(),
+    maxTurns:      maxTurnsRaw ? parseInt(maxTurnsRaw, 10) : null,
     notes:         document.getElementById('sNotes').value.trim(),
   };
   if (!payload.openingMessage) { alert('Opening message is required.'); return; }
@@ -1484,7 +1465,7 @@ function renderCandidates() {
       <div class="candidate-meta">
         <span>scope: ${escHtml(s.scope ?? '?')}</span>
         <span>client: ${escHtml(s.clientKey ?? 'none')}</span>
-        <span>heuristics: ${(s.heuristics ?? []).join(', ') || '—'}</span>
+        <span>max turns: ${s.maxTurns ?? 10}</span>
       </div>
       ${s.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;font-style:italic">${escHtml(s.notes)}</div>` : ''}
     </div>`

@@ -15,7 +15,10 @@
  *   [{ role: 'customer'|'agent', content: string }, ...]
  *
  * SCENARIO (minimum required fields):
- *   { id, openingMessage, customerPrompt, heuristics, notes, ...appSpecificFields }
+ *   { id, openingMessage, customerPrompt, notes, maxTurns?, ...appSpecificFields }
+ *
+ * Per-scenario maxTurns: if scenario.maxTurns is set, it overrides the global
+ * options.maxTurns for that scenario only.
  */
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
@@ -64,12 +67,13 @@ async function simulateCustomerReply(scenario, agentMessage, history, llmConfig)
  * @param {object} adapter
  * @param {object} options
  * @param {object} options.llm         - { apiKey, baseUrl?, simulatorModel?, maxSimulatorTokens? }
- * @param {number} [options.maxTurns]  - max conversation turns (default 18)
+ * @param {number} [options.maxTurns]  - max conversation turns (default 10); overridden per-scenario by scenario.maxTurns
  * @param {boolean} [options.verbose]  - log each turn to stdout
  * @returns {Promise<RunResult>}
  */
 export async function runScenario(scenario, adapter, options = {}) {
-  const { llm, maxTurns = 18, verbose = false } = options;
+  const { llm, maxTurns = 10, verbose = false } = options;
+  const effectiveMaxTurns = scenario.maxTurns ?? maxTurns;
 
   const startMs = Date.now();
 
@@ -91,7 +95,7 @@ export async function runScenario(scenario, adapter, options = {}) {
     console.log(`  [${scenario.id}] CUSTOMER: ${scenario.openingMessage}`);
   }
 
-  for (let turnIndex = 0; turnIndex < maxTurns; turnIndex++) {
+  for (let turnIndex = 0; turnIndex < effectiveMaxTurns; turnIndex++) {
     // Call the system under test
     let sendResult;
     try {
@@ -139,7 +143,6 @@ export async function runScenario(scenario, adapter, options = {}) {
 
   return {
     scenarioId:  scenario.id,
-    heuristics:  scenario.heuristics ?? [],
     notes:       scenario.notes ?? '',
     transcript:  messages,
     metadata:    previousResponses,
@@ -183,7 +186,6 @@ export async function runAllScenarios(scenarios, adapter, options = {}) {
     } catch (err) {
       results.push({
         scenarioId:  scenario.id,
-        heuristics:  scenario.heuristics ?? [],
         notes:       scenario.notes ?? '',
         transcript:  [],
         metadata:    [],

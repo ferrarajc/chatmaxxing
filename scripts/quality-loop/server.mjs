@@ -521,7 +521,7 @@ const server = http.createServer(async (req, res) => {
     // Strip heavy customerPrompt from examples to save tokens
     const examples = existing.map(s => ({
       id: s.id, scope: s.scope, clientKey: s.clientKey,
-      openingMessage: s.openingMessage, heuristics: s.heuristics, notes: s.notes,
+      openingMessage: s.openingMessage, maxTurns: s.maxTurns, notes: s.notes,
     }));
 
     const responsibilities = Array.isArray(appProfile.responsibilities)
@@ -549,7 +549,7 @@ const server = http.createServer(async (req, res) => {
       `  currentIntent — short intent string for get-intent scope, null for full-auto`,
       `  openingMessage — the first message the customer sends (1-2 sentences)`,
       `  customerPrompt — detailed system prompt for the LLM playing the customer. Include: personality, age/role, specific goal, what to say in different situations (if asked X, say Y). End with "Do NOT end the conversation yourself."`,
-      `  heuristics   — array of heuristic codes most relevant to this scenario, e.g. ["H2","H3"]`,
+      `  maxTurns     — integer max turns before giving up (default 10; use higher for complex multi-step scenarios)`,
       `  notes        — 1-2 sentence description of what this scenario tests and why`,
     ].join('\n');
 
@@ -562,8 +562,8 @@ const server = http.createServer(async (req, res) => {
       `Requirements:`,
       `- Each scenario must target a different situation from the existing ones`,
       `- customerPrompt must be realistic and specific, giving the LLM clear rules for what to say`,
-      `- heuristics should be 2-4 codes that are genuinely at risk of failing in this scenario`,
       `- Vary the scope (include at least one full-auto if count > 2)`,
+      `- Set maxTurns appropriately: 6-8 for simple lookups, 10 for standard changes, 12-14 for complex multi-step requests`,
     ].join('\n');
 
     try {
@@ -606,7 +606,7 @@ const server = http.createServer(async (req, res) => {
       currentIntent: s.currentIntent ?? null,
       openingMessage: s.openingMessage.trim(),
       customerPrompt: s.customerPrompt ?? '',
-      heuristics:    s.heuristics    ?? [],
+      maxTurns:      s.maxTurns      != null ? parseInt(s.maxTurns, 10) : null,
       notes:         s.notes         ?? '',
     };
     arr.push(newS);
@@ -631,7 +631,7 @@ const server = http.createServer(async (req, res) => {
       currentIntent: patch.currentIntent !== undefined ? patch.currentIntent : arr[idx].currentIntent,
       openingMessage: patch.openingMessage ?? arr[idx].openingMessage,
       customerPrompt: patch.customerPrompt ?? arr[idx].customerPrompt,
-      heuristics:    patch.heuristics    ?? arr[idx].heuristics,
+      maxTurns:      patch.maxTurns      != null ? parseInt(patch.maxTurns, 10) : arr[idx].maxTurns ?? null,
       notes:         patch.notes         ?? arr[idx].notes,
     };
     writeScenariosFile(arr);

@@ -132,10 +132,13 @@ export async function evaluateConversation(runResult, heuristics, llm) {
     'Your job is to score the conversation against each heuristic.',
     '',
     'SCORING RULES:',
-    '- Pass = 2 points. The heuristic was fully satisfied.',
-    '- Marginal = 1 point. Partially satisfied or borderline.',
-    '- Fail = 0 points. Clearly violated or absent.',
-    '- N/A = excluded. This heuristic does not apply to this conversation type.',
+    '- Pass    = 2 pts. The heuristic condition could have applied in this conversation AND was fully satisfied.',
+    '- Marginal = 1 pt. The condition could have applied AND was partially satisfied or borderline.',
+    '- Fail    = 0 pts. The condition could have applied AND was clearly violated or absent.',
+    '- N/A     = excluded from scoring. The heuristic condition COULD NOT have occurred in this conversation',
+    '            (e.g. the math-accuracy heuristic when no math was performed; the handoff-clarity heuristic',
+    '            when no handoff occurred). Do NOT use N/A when the condition could have applied but the bot',
+    '            handled it correctly — that is a Pass.',
     '',
     'WEIGHTING:',
     weights,
@@ -160,7 +163,6 @@ ${heuristicsDoc}
 Scenario ID: ${runResult.scenarioId}
 Turn count: ${runResult.turnCount}
 Exit reason: ${runResult.exitReason}
-Primary heuristics this scenario probes: ${runResult.heuristics.join(', ')}
 Scenario notes: ${runResult.notes}
 
 ---
@@ -181,7 +183,7 @@ ${schema}
 Rules:
 - aggregateScore: compute using the weighting formula above.
 - notes: be specific — quote a turn or phrase from the transcript if possible.
-- If a heuristic is N/A for this scenario, put "N/A" in scores and "Not applicable to this scenario type." in notes.`;
+- Use N/A ONLY when the heuristic condition literally could not have occurred (e.g. no math was done, no handoff happened). If the condition could have occurred and the bot handled it correctly, that is Pass — not N/A.`;
 
   const res = await fetch(llm.baseUrl ?? OPENAI_URL, {
     method: 'POST',
