@@ -1,0 +1,16 @@
+{
+  "name": "heqya",
+  "version": "0.1.0",
+  "description": "AI conversation quality evaluation loop — run, evaluate, improve",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./adapters/http-json": "./adapters/http-json.mjs"
+  },
+  "keywords": ["ai", "quality", "evaluation", "conversation", "chatbot", "llm"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

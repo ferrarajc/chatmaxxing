@@ -1,0 +1,154 @@
+{
+  "alex": {
+    "clientId": "demo-client-001",
+    "name": "Alex Johnson",
+    "phone": "4842384838",
+    "displayPhone": "(484) 238-4838",
+    "email": "alex.johnson@email.com",
+    "address": "234 Maple Drive, Wayne, PA 19087",
+    "totalBalance": 241570,
+    "accounts": [
+      { "type": "Roth IRA",        "balance": 45230,  "id": "acc-001", "change": 4.2  },
+      { "type": "Traditional IRA", "balance": 128450, "id": "acc-002", "change": 2.8  },
+      { "type": "Taxable Account", "balance": 67890,  "id": "acc-003", "change": -0.9 }
+    ],
+    "holdings": [
+      { "name": "BobsFunds 500 Index",         "ticker": "BF500", "accountId": "acc-001", "shares": 142.3, "price": 218.40, "change": 1.2,  "value": 31072  },
+      { "name": "BobsFunds Growth",            "ticker": "BFGR",  "accountId": "acc-001", "shares": 88.1,  "price": 341.20, "change": 2.1,  "value": 30060  },
+      { "name": "BobsFunds Bond Income",       "ticker": "BFBI",  "accountId": "acc-002", "shares": 210.0, "price": 98.30,  "change": -0.3, "value": 20643  },
+      { "name": "BobsFunds International",     "ticker": "BFIN",  "accountId": "acc-002", "shares": 55.4,  "price": 87.60,  "change": 0.7,  "value": 4853   },
+      { "name": "BobsFunds ESG Leaders",       "ticker": "BFESG", "accountId": "acc-003", "shares": 31.2,  "price": 156.90, "change": 1.8,  "value": 4895   },
+      { "name": "BobsFunds Short-Term Treas.", "ticker": "BFST",  "accountId": "acc-003", "shares": 499.8, "price": 100.10, "change": 0.1,  "value": 50030  }
+    ],
+    "beneficiaries": [
+      { "accountId": "acc-001", "name": "Sarah Johnson",  "relationship": "Spouse", "percentage": 100, "type": "Primary"   },
+      { "accountId": "acc-002", "name": "Sarah Johnson",  "relationship": "Spouse", "percentage": 60,  "type": "Primary"   },
+      { "accountId": "acc-002", "name": "Tyler Johnson",  "relationship": "Child",  "percentage": 20,  "type": "Primary"   },
+      { "accountId": "acc-002", "name": "Emma Johnson",   "relationship": "Child",  "percentage": 20,  "type": "Primary"   },
+      { "accountId": "acc-002", "name": "Robert Johnson", "relationship": "Parent", "percentage": 100, "type": "Secondary" }
+    ],
+    "autoInvest": [
+      { "id": "ai-001", "accountId": "acc-001", "accountType": "Roth IRA", "fund": "BobsFunds 500 Index", "ticker": "BF500", "amount": 583.33, "frequency": "Monthly", "dayOfMonth": 1, "nextDate": "2025-05-01", "active": true }
+    ],
+    "transactions": [
+      { "date": "2025-04-10", "description": "Dividend reinvestment - BF500", "amount": 124.20,  "account": "Roth IRA" },
+      { "date": "2025-04-01", "description": "Monthly contribution",          "amount": 583.33,  "account": "Roth IRA" }
+    ],
+    "rmd": { "eligible": false, "projectedEligibilityYear": 2040 },
+    "recentChatHistory": []
+  },
+
+  "maria": {
+    "clientId": "demo-client-002",
+    "name": "Maria Chen",
+    "phone": "6175550192",
+    "displayPhone": "(617) 555-0192",
+    "email": "maria.chen@email.com",
+    "address": "18 Harbor View Lane, Wellesley, MA 02482",
+    "totalBalance": 890000,
+    "accounts": [
+      { "type": "Traditional IRA", "balance": 612000, "id": "acc-201", "change": 1.4 },
+      { "type": "Taxable Account", "balance": 278000, "id": "acc-202", "change": 0.8 }
+    ],
+    "holdings": [
+      { "name": "BobsFunds 500 Index",         "ticker": "BF500", "accountId": "acc-201", "shares": 850.0,  "price": 218.40, "change": 1.2,  "value": 185640 },
+      { "name": "BobsFunds Bond Income",       "ticker": "BFBI",  "accountId": "acc-201", "shares": 1500.0, "price": 98.30,  "change": -0.3, "value": 147450 },
+      { "name": "BobsFunds Short-Term Treas.", "ticker": "BFST",  "accountId": "acc-201", "shares": 2800.0, "price": 100.10, "change": 0.1,  "value": 280280 },
+      { "name": "BobsFunds International",     "ticker": "BFIN",  "accountId": "acc-202", "shares": 500.0,  "price": 87.60,  "change": 0.7,  "value": 43800  },
+      { "name": "BobsFunds ESG Leaders",       "ticker": "BFESG", "accountId": "acc-202", "shares": 150.0,  "price": 156.90, "change": 1.8,  "value": 23535  }
+    ],
+    "beneficiaries": [
+      { "accountId": "acc-201", "name": "David Chen", "relationship": "Child", "percentage": 50, "type": "Primary" },
+      { "accountId": "acc-201", "name": "Linda Chen", "relationship": "Child", "percentage": 50, "type": "Primary" }
+    ],
+    "autoInvest": [],
+    "transactions": [
+      { "date": "2025-04-10", "description": "RMD Distribution",             "amount": -15300.00, "account": "Traditional IRA" },
+      { "date": "2025-04-01", "description": "Dividend reinvestment - BFBI", "amount":   892.50,  "account": "Traditional IRA" }
+    ],
+    "rmd": {
+      "eligible": true,
+      "age": 74,
+      "accountId": "acc-201",
+      "priorYearBalance": 628000,
+      "lifeExpectancyFactor": 23.8,
+      "annualRmd": 26387,
+      "takenThisYear": 15300,
+      "remainingThisYear": 11087,
+      "nextDeadline": "2025-12-31",
+      "deliveryMethod": "Direct deposit (ACH)",
+      "frequency": "Annual (December)",
+      "taxWithholding": 10
+    },
+    "recentChatHistory": []
+  },
+
+  "jordan": {
+    "clientId": "demo-client-003",
+    "name": "Jordan Williams",
+    "phone": "5035550847",
+    "displayPhone": "(503) 555-0847",
+    "email": "jordan.williams@email.com",
+    "address": "512 NE Burnside St Apt 3B, Portland, OR 97214",
+    "totalBalance": 23300,
+    "accounts": [
+      { "type": "Roth IRA",        "balance": 18500, "id": "acc-301", "change": 3.1 },
+      { "type": "Taxable Account", "balance": 4800,  "id": "acc-302", "change": 1.4 }
+    ],
+    "holdings": [
+      { "name": "BobsFunds 500 Index",   "ticker": "BF500", "accountId": "acc-301", "shares": 65.0, "price": 218.40, "change": 1.2, "value": 14196 },
+      { "name": "BobsFunds Growth",      "ticker": "BFGR",  "accountId": "acc-301", "shares": 15.0, "price": 341.20, "change": 2.1, "value": 5118  },
+      { "name": "BobsFunds ESG Leaders", "ticker": "BFESG", "accountId": "acc-302", "shares": 25.0, "price": 156.90, "change": 1.8, "value": 3923  }
+    ],
+    "beneficiaries": [
+      { "accountId": "acc-301", "name": "Casey Williams", "relationship": "Sibling", "percentage": 100, "type": "Primary"   },
+      { "accountId": "acc-301", "name": "Pat Williams",   "relationship": "Parent",  "percentage": 100, "type": "Secondary" }
+    ],
+    "autoInvest": [
+      { "id": "ai-301", "accountId": "acc-301", "accountType": "Roth IRA", "fund": "BobsFunds 500 Index", "ticker": "BF500", "amount": 583.33, "frequency": "Monthly", "dayOfMonth": 1, "nextDate": "2025-05-01", "active": true }
+    ],
+    "transactions": [
+      { "date": "2025-04-01", "description": "Monthly contribution", "amount": 583.33, "account": "Roth IRA" }
+    ],
+    "rmd": { "eligible": false },
+    "recentChatHistory": []
+  },
+
+  "robert": {
+    "clientId": "demo-client-004",
+    "name": "Robert Martinez",
+    "phone": "7135550234",
+    "displayPhone": "(713) 555-0234",
+    "email": "robert.martinez@email.com",
+    "address": "4217 Westheimer Rd, Houston, TX 77027",
+    "totalBalance": 445000,
+    "accounts": [
+      { "type": "SEP-IRA",         "balance": 285000, "id": "acc-401", "change": 1.9  },
+      { "type": "Roth IRA",        "balance": 42000,  "id": "acc-402", "change": 3.2  },
+      { "type": "Taxable Account", "balance": 118000, "id": "acc-403", "change": -0.4 }
+    ],
+    "holdings": [
+      { "name": "BobsFunds 500 Index",         "ticker": "BF500", "accountId": "acc-401", "shares": 380.0,  "price": 218.40, "change": 1.2,  "value": 82992  },
+      { "name": "BobsFunds Bond Income",       "ticker": "BFBI",  "accountId": "acc-401", "shares": 800.0,  "price": 98.30,  "change": -0.3, "value": 78640  },
+      { "name": "BobsFunds Growth",            "ticker": "BFGR",  "accountId": "acc-402", "shares": 145.0,  "price": 341.20, "change": 2.1,  "value": 49474  },
+      { "name": "BobsFunds International",     "ticker": "BFIN",  "accountId": "acc-402", "shares": 250.0,  "price": 87.60,  "change": 0.7,  "value": 21900  },
+      { "name": "BobsFunds Short-Term Treas.", "ticker": "BFST",  "accountId": "acc-403", "shares": 1100.0, "price": 100.10, "change": 0.1,  "value": 110110 }
+    ],
+    "beneficiaries": [
+      { "accountId": "acc-401", "name": "Elena Martinez", "relationship": "Spouse", "percentage": 100, "type": "Primary" },
+      { "accountId": "acc-402", "name": "Elena Martinez", "relationship": "Spouse", "percentage": 60,  "type": "Primary" },
+      { "accountId": "acc-402", "name": "Sofia Martinez", "relationship": "Child",  "percentage": 20,  "type": "Primary" },
+      { "accountId": "acc-402", "name": "Marco Martinez", "relationship": "Child",  "percentage": 20,  "type": "Primary" }
+    ],
+    "autoInvest": [
+      { "id": "ai-401", "accountId": "acc-401", "accountType": "SEP-IRA", "fund": "BobsFunds 500 Index",   "ticker": "BF500", "amount": 5000, "frequency": "Quarterly", "nextDate": "2025-07-01", "active": true },
+      { "id": "ai-402", "accountId": "acc-401", "accountType": "SEP-IRA", "fund": "BobsFunds Bond Income", "ticker": "BFBI",  "amount": 2500, "frequency": "Quarterly", "nextDate": "2025-07-01", "active": true }
+    ],
+    "transactions": [
+      { "date": "2025-04-10", "description": "SEP-IRA Contribution",         "amount": 15000.00, "account": "SEP-IRA" },
+      { "date": "2025-04-01", "description": "Dividend reinvestment - BFBI", "amount":   374.50, "account": "SEP-IRA" }
+    ],
+    "rmd": { "eligible": false },
+    "recentChatHistory": []
+  }
+}

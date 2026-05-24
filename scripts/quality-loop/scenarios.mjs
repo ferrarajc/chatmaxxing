@@ -1,16 +1,13 @@
 /**
- * Quality Loop — Scenario Definitions
+ * Quality Loop — Scenario Definitions  [LEGACY — no longer imported]
  *
- * 11 test scenarios targeting specific QUALITY_HEURISTICS.md failure modes.
- * Each scenario supplies:
- *   - id: unique slug
- *   - client: which demo client (matches DynamoDB after reset)
- *   - scope: 'get-intent' | 'full-auto'
- *   - currentIntent: hint passed to autopilot-turn
- *   - openingMessage: the customer's first message
- *   - customerPrompt: system prompt for GPT-4o-mini playing the customer
- *   - heuristics: which H-codes this scenario primarily probes
- *   - notes: human description of what failure we're looking for
+ * Scenarios have been migrated to scenarios.json + client-profiles.json.
+ * Those files are the authoritative store, editable via the dashboard UI.
+ * This file is kept for historical reference only.
+ *
+ * Previously supplied 11 test scenarios with:
+ *   - id, client, scope, currentIntent, openingMessage
+ *   - customerPrompt, heuristics, notes
  */
 
 // ── Client profiles (inlined from lambda/shared/client-defaults.ts) ────────────
