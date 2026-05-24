@@ -9,6 +9,7 @@
   :root {
     --bg:        #0d1117;
     --surface:   #161b22;
+    --surface2:  #1c2128;
     --border:    #30363d;
     --border-hi: #484f58;
     --text:      #e6edf3;
@@ -41,15 +42,12 @@
   .logo span { color: var(--blue); }
   .status-dot {
     width: 10px; height: 10px; border-radius: 50%;
-    background: var(--muted); transition: background 0.3s;
-    flex-shrink: 0;
+    background: var(--muted); transition: background 0.3s; flex-shrink: 0;
   }
   .status-dot.running { background: var(--green); animation: pulse 1.5s infinite; }
   .status-dot.waiting { background: var(--yellow); animation: pulse 2s infinite; }
   .status-dot.error   { background: var(--red); }
-  @keyframes pulse {
-    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
-  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
   .status-text { color: var(--muted); font-size: 13px; }
   .header-right { display: flex; align-items: center; gap: 8px; }
   .iter-badge {
@@ -58,10 +56,7 @@
   }
 
   /* ── Cards ── */
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 20px;
-  }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
   .card-label {
     font-size: 11px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.8px; color: var(--muted); margin-bottom: 12px;
@@ -72,10 +67,7 @@
   @media (max-width: 700px) { .top-row { grid-template-columns: 1fr; } }
 
   /* ── Score card ── */
-  .score-num {
-    font-size: 52px; font-weight: 700; font-variant-numeric: tabular-nums;
-    line-height: 1; letter-spacing: -2px; margin-bottom: 4px;
-  }
+  .score-num { font-size: 52px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -2px; margin-bottom: 4px; }
   .score-num.green { color: var(--green); }
   .score-num.yellow{ color: var(--yellow); }
   .score-num.red   { color: var(--red); }
@@ -84,20 +76,11 @@
   .score-delta.up   { color: var(--green); }
   .score-delta.down { color: var(--red); }
   .score-delta.flat { color: var(--muted); }
-  .threshold-bar {
-    height: 4px; background: var(--border); border-radius: 2px; position: relative; margin-bottom: 8px;
-  }
-  .threshold-fill {
-    height: 100%; border-radius: 2px; transition: width 0.6s ease;
-    background: var(--green);
-  }
+  .threshold-bar { height: 4px; background: var(--border); border-radius: 2px; position: relative; margin-bottom: 8px; }
+  .threshold-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; background: var(--green); }
   .threshold-fill.yellow { background: var(--yellow); }
   .threshold-fill.red    { background: var(--red); }
-  .threshold-marker {
-    position: absolute; top: -4px; width: 2px; height: 12px;
-    background: var(--muted); border-radius: 1px;
-    left: 80%; /* 80% threshold */
-  }
+  .threshold-marker { position: absolute; top: -4px; width: 2px; height: 12px; background: var(--muted); border-radius: 1px; left: 80%; }
   .score-status { font-size: 12px; color: var(--muted); }
   .score-status.met { color: var(--green); }
   .sparkline-wrap { margin-top: 14px; }
@@ -111,40 +94,27 @@
     font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s;
     font-family: var(--sans);
   }
-  .btn-primary {
-    background: var(--blue-dim); border-color: var(--blue); color: var(--blue);
-  }
-  .btn-primary:hover { background: #1a3d7a; }
+  .btn-primary  { background: var(--blue-dim);  border-color: var(--blue);  color: var(--blue); }
+  .btn-primary:hover  { background: #1a3d7a; }
   .btn-primary:disabled { opacity: 0.4; cursor: default; }
-  .btn-danger {
-    background: var(--red-dim); border-color: var(--red); color: var(--red);
-  }
-  .btn-danger:hover { background: #5a1a1a; }
-  .btn-success {
-    background: var(--green-dim); border-color: var(--green); color: var(--green);
-  }
-  .btn-success:hover { background: #1f4a2a; }
-  .btn-ghost {
-    background: transparent; border-color: var(--border); color: var(--muted);
-  }
-  .btn-ghost:hover { border-color: var(--border-hi); color: var(--text); }
+  .btn-danger   { background: var(--red-dim);   border-color: var(--red);   color: var(--red); }
+  .btn-danger:hover   { background: #5a1a1a; }
+  .btn-success  { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .btn-success:hover  { background: #1f4a2a; }
+  .btn-ghost    { background: transparent; border-color: var(--border); color: var(--muted); }
+  .btn-ghost:hover    { border-color: var(--border-hi); color: var(--text); }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
 
   .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .loop-row { display: flex; align-items: center; gap: 12px; }
+  .loop-row   { display: flex; align-items: center; gap: 12px; }
   .loop-label { font-size: 13px; }
   .loop-label small { color: var(--muted); display: block; margin-top: 2px; font-size: 11px; }
 
   /* Toggle */
   .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
   .toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle-slider {
-    position: absolute; cursor: pointer; inset: 0;
-    background: var(--border); border-radius: 24px; transition: 0.25s;
-  }
-  .toggle-slider:before {
-    content: ""; position: absolute; height: 18px; width: 18px;
-    left: 3px; bottom: 3px; background: var(--text); border-radius: 50%; transition: 0.25s;
-  }
+  .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: var(--border); border-radius: 24px; transition: 0.25s; }
+  .toggle-slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: var(--text); border-radius: 50%; transition: 0.25s; }
   .toggle input:checked + .toggle-slider { background: var(--blue); }
   .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
   .toggle input:disabled + .toggle-slider { opacity: 0.4; cursor: default; }
@@ -153,14 +123,14 @@
   .key-hints span { color: var(--green); }
 
   /* ── Heuristic grid ── */
-  .heuristic-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .heuristic-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
   .h-cell {
     display: flex; flex-direction: column; align-items: center; gap: 3px;
     min-width: 52px; padding: 8px 6px; border-radius: 6px;
-    border: 1px solid var(--border); cursor: default;
-    transition: transform 0.1s; position: relative;
+    border: 1px solid var(--border); cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s; position: relative;
   }
-  .h-cell:hover { transform: translateY(-2px); z-index: 1; }
+  .h-cell:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 1; }
   .h-cell.pass   { background: var(--green-dim);  border-color: var(--green); }
   .h-cell.yellow { background: var(--yellow-dim); border-color: var(--yellow); }
   .h-cell.fail   { background: var(--red-dim);    border-color: var(--red); }
@@ -180,6 +150,15 @@
     padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap;
     pointer-events: none; z-index: 10;
   }
+  /* Add heuristic button */
+  .h-add-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 52px; border-radius: 6px;
+    border: 1px dashed var(--border-hi); cursor: pointer; color: var(--muted);
+    font-size: 18px; transition: all 0.15s; background: transparent;
+    flex-shrink: 0;
+  }
+  .h-add-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
 
   /* ── History table ── */
   .table-wrap { overflow-x: auto; }
@@ -192,24 +171,54 @@
   th.num { text-align: right; }
   td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  .td-iter { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; text-align: right; }
-  .td-score { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
-  .td-delta { font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .td-when  { color: var(--muted); font-size: 12px; white-space: nowrap; }
-  .td-critical span { font-size: 11px; font-family: var(--mono); }
-  .chip {
-    display: inline-block; padding: 2px 6px; border-radius: 4px;
-    font-size: 11px; font-family: var(--mono); font-weight: 600; white-space: nowrap;
+  .history-row { cursor: pointer; }
+  .history-row:hover td { background: rgba(255,255,255,0.02); }
+  .expand-icon { color: var(--muted); font-size: 11px; transition: transform 0.2s; display: inline-block; }
+  .expand-icon.open { transform: rotate(90deg); }
+  .expand-row td { padding: 0; background: var(--surface2); }
+  .expand-content {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: none;
   }
+  .expand-content.open { display: block; }
+  .expand-h-grid { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+  .expand-h-cell {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    min-width: 44px; padding: 6px 4px; border-radius: 5px;
+    border: 1px solid var(--border); cursor: pointer; transition: transform 0.1s; position: relative;
+  }
+  .expand-h-cell:hover { transform: translateY(-1px); z-index: 1; }
+  .expand-h-cell:hover::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%);
+    background: #222; border: 1px solid var(--border); color: var(--text);
+    padding: 3px 7px; border-radius: 3px; font-size: 10px; white-space: nowrap;
+    pointer-events: none; z-index: 10;
+  }
+  .expand-h-cell.pass   { background: var(--green-dim);  border-color: var(--green); }
+  .expand-h-cell.yellow { background: var(--yellow-dim); border-color: var(--yellow); }
+  .expand-h-cell.fail   { background: var(--red-dim);    border-color: var(--red); }
+  .expand-h-cell.na     { background: var(--surface);    border-color: var(--border); opacity: 0.5; }
+  .expand-h-cell .h-id  { font-size: 10px; font-weight: 700; font-family: var(--mono); }
+  .expand-h-cell .h-icon { font-size: 12px; line-height: 1; }
+  .expand-h-cell.pass .h-id   { color: var(--green); }
+  .expand-h-cell.yellow .h-id { color: var(--yellow); }
+  .expand-h-cell.fail .h-id   { color: var(--red); }
+  .expand-h-cell.na .h-id     { color: var(--muted); }
+  .expand-fail-list { font-size: 12px; color: var(--muted); }
+  .expand-fail-item { display: flex; gap: 8px; margin-bottom: 4px; align-items: flex-start; }
+  .expand-fail-code { font-family: var(--mono); font-size: 11px; color: var(--red); flex-shrink: 0; margin-top: 1px; }
+
+  .td-iter   { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; text-align: right; }
+  .td-score  { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .td-delta  { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .td-when   { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .td-critical span { font-size: 11px; font-family: var(--mono); }
+  .chip { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: var(--mono); font-weight: 600; white-space: nowrap; }
   .chip-red    { background: var(--red-dim);    color: var(--red);    border: 1px solid var(--red); }
   .chip-green  { background: var(--green-dim);  color: var(--green);  border: 1px solid var(--green); }
   .chip-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
   .chip-gray   { background: var(--surface);    color: var(--muted);  border: 1px solid var(--border); }
-  .report-link {
-    color: var(--blue); text-decoration: none; font-size: 12px;
-    display: inline-flex; align-items: center; gap: 4px;
-  }
+  .report-link { color: var(--blue); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
   .report-link:hover { text-decoration: underline; }
   .empty-row td { text-align: center; color: var(--muted); padding: 32px; }
 
@@ -217,58 +226,17 @@
   .log-header {
     display: flex; align-items: center; justify-content: space-between;
     cursor: pointer; user-select: none; padding: 14px 20px;
-    border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
-    margin-bottom: 0;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface); margin-bottom: 0;
   }
   .log-header:hover { border-color: var(--border-hi); }
   .log-toggle-icon { transition: transform 0.2s; font-size: 12px; color: var(--muted); }
   .log-toggle-icon.open { transform: rotate(180deg); }
-  .log-body {
-    border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px;
-    background: #0a0d12; overflow: hidden; max-height: 0; transition: max-height 0.3s ease;
-  }
+  .log-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; background: #0a0d12; overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
   .log-body.open { max-height: 400px; }
   .log-inner { overflow-y: auto; max-height: 400px; padding: 12px 16px; }
-  pre.log-text {
-    font-family: var(--mono); font-size: 12px; color: #98c379;
-    white-space: pre-wrap; word-break: break-all; line-height: 1.5;
-  }
+  pre.log-text { font-family: var(--mono); font-size: 12px; color: #98c379; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
 
-  /* ── Fix modal ── */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.75); z-index: 100;
-    align-items: center; justify-content: center; padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    max-width: 820px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;
-  }
-  .modal-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px; border-bottom: 1px solid var(--border);
-  }
-  .modal-title { font-weight: 600; font-size: 15px; }
-  .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; }
-  .modal-close:hover { color: var(--text); }
-  .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
-  .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
-  .modal-body .markdown { line-height: 1.7; }
-  .modal-body .markdown h1 { font-size: 18px; margin-bottom: 12px; color: var(--text); }
-  .modal-body .markdown h2 { font-size: 15px; margin: 16px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
-  .modal-body .markdown h3 { font-size: 13px; margin: 12px 0 6px; color: var(--blue); }
-  .modal-body .markdown p  { margin-bottom: 10px; color: var(--text); }
-  .modal-body .markdown code { font-family: var(--mono); background: #0a0d12; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #98c379; }
-  .modal-body .markdown pre { background: #0a0d12; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 10px 0; }
-  .modal-body .markdown pre code { padding: 0; background: none; }
-  .modal-body .markdown ul, .modal-body .markdown ol { margin: 8px 0 8px 20px; }
-  .modal-body .markdown li { margin-bottom: 4px; }
-  .modal-body .markdown strong { color: var(--text); }
-  .modal-body .markdown hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-  .modal-body .markdown blockquote { border-left: 3px solid var(--blue); padding-left: 12px; color: var(--muted); margin: 10px 0; }
-
-  /* ── Fix-waiting banner ── */
+  /* ── Fix banner ── */
   .fix-banner {
     display: none; background: var(--yellow-dim); border: 1px solid var(--yellow);
     border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;
@@ -277,11 +245,71 @@
   .fix-banner.show { display: flex; }
   .fix-banner-text { flex: 1; min-width: 200px; }
   .fix-banner-text strong { color: var(--yellow); display: block; margin-bottom: 2px; }
-  .fix-banner-text small { color: var(--muted); font-size: 12px; }
+  .fix-banner-text small  { color: var(--muted); font-size: 12px; }
 
-  /* ── Section spacer ── */
+  /* ── Section ── */
   .section { margin-bottom: 16px; }
-  .section-title { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+
+  /* ── Modals ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 100;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    max-width: 820px; width: 100%; max-height: 90vh; display: flex; flex-direction: column;
+  }
+  .modal.modal-sm { max-width: 480px; }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .modal-title { font-weight: 600; font-size: 15px; }
+  .modal-title-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+  .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+  .modal-footer-left { flex: 1; }
+
+  /* Markdown */
+  .markdown { line-height: 1.7; }
+  .markdown h1 { font-size: 18px; margin-bottom: 12px; }
+  .markdown h2 { font-size: 15px; margin: 16px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  .markdown h3 { font-size: 13px; margin: 12px 0 6px; color: var(--blue); }
+  .markdown p  { margin-bottom: 10px; }
+  .markdown code { font-family: var(--mono); background: #0a0d12; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #98c379; }
+  .markdown pre { background: #0a0d12; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 10px 0; }
+  .markdown pre code { padding: 0; background: none; }
+  .markdown ul, .markdown ol { margin: 8px 0 8px 20px; }
+  .markdown li { margin-bottom: 4px; }
+  .markdown strong { color: var(--text); }
+  .markdown hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .markdown blockquote { border-left: 3px solid var(--blue); padding-left: 12px; color: var(--muted); margin: 10px 0; }
+
+  /* ── Heuristic editor form ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+  .form-input, .form-select, .form-textarea {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--sans); font-size: 13px; padding: 8px 10px;
+    transition: border-color 0.15s; outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue); }
+  .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+  .form-select { cursor: pointer; }
+  .form-textarea { resize: vertical; min-height: 80px; font-size: 13px; line-height: 1.5; }
+  .form-textarea.tall { min-height: 120px; }
+
+  /* ── Confirm dialog ── */
+  .confirm-body { padding: 24px 20px; text-align: center; }
+  .confirm-icon { font-size: 32px; margin-bottom: 12px; }
+  .confirm-msg  { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .confirm-sub  { font-size: 13px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -311,8 +339,6 @@
 
   <!-- Top row: Score + Actions -->
   <div class="top-row">
-
-    <!-- Score card -->
     <div class="card">
       <div class="card-label">Latest Score</div>
       <div class="score-num" id="scoreNum">—</div>
@@ -330,19 +356,12 @@
       </div>
     </div>
 
-    <!-- Actions card -->
     <div class="card actions-card">
       <div class="card-label">Actions</div>
-
       <div class="action-row">
-        <button class="btn btn-primary" id="btnRun" onclick="startRun()">
-          ▶ Run Evaluation
-        </button>
-        <button class="btn btn-danger" id="btnStop" onclick="stopRun()" style="display:none">
-          ■ Stop
-        </button>
+        <button class="btn btn-primary" id="btnRun" onclick="startRun()">▶ Run Evaluation</button>
+        <button class="btn btn-danger"  id="btnStop" onclick="stopRun()" style="display:none">■ Stop</button>
       </div>
-
       <div class="loop-row">
         <label class="toggle">
           <input type="checkbox" id="loopToggle" onchange="toggleLoop(this)">
@@ -353,43 +372,44 @@
           <small id="loopHint">Auto: eval → apply fix → deploy → repeat</small>
         </div>
       </div>
-
       <div class="key-hints" id="keyHints">
         <span>OPENAI_API_KEY</span> required &nbsp;·&nbsp;
         <span id="anthropicHint">ANTHROPIC_API_KEY</span> for auto-fixes
       </div>
     </div>
-
   </div>
 
   <!-- Heuristic grid -->
   <div class="section card">
-    <div class="card-label">Latest Run — Heuristic Breakdown</div>
-    <div class="heuristic-grid" id="heuristicGrid">
-      <!-- populated by JS -->
+    <div class="card-label">Latest Run — Heuristic Breakdown
+      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click any to edit)</span>
     </div>
+    <div class="heuristic-grid" id="heuristicGrid"><!-- populated by JS --></div>
   </div>
 
   <!-- History table -->
   <div class="section card">
-    <div class="card-label">Evaluation History</div>
+    <div class="card-label">Evaluation History
+      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click row to expand)</span>
+    </div>
     <div class="table-wrap">
       <table id="historyTable">
         <thead>
           <tr>
+            <th style="width:20px"></th>
             <th class="num">#</th>
             <th>When</th>
             <th class="num">Score</th>
             <th class="num">Δ</th>
-            <th>H1/H2 Critical</th>
-            <th>High Severity</th>
+            <th>Critical</th>
+            <th>High Sev.</th>
             <th>Scenarios</th>
             <th>Status</th>
             <th>Report</th>
           </tr>
         </thead>
         <tbody id="historyBody">
-          <tr class="empty-row"><td colspan="9">No runs yet. Click Run Evaluation to start.</td></tr>
+          <tr class="empty-row"><td colspan="10">No runs yet. Click Run Evaluation to start.</td></tr>
         </tbody>
       </table>
     </div>
@@ -398,7 +418,7 @@
   <!-- Log console -->
   <div class="section">
     <div class="log-header" onclick="toggleLog()">
-      <span style="font-size:13px; font-weight:500">Live Output</span>
+      <span style="font-size:13px;font-weight:500">Live Output</span>
       <span class="log-toggle-icon" id="logIcon">▼</span>
     </div>
     <div class="log-body" id="logBody">
@@ -410,16 +430,16 @@
 
 </div><!-- /app -->
 
+<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+
 <!-- Report modal -->
 <div class="modal-overlay" id="reportModal" onclick="closeModal('reportModal')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title" id="reportModalTitle">Report</div>
+      <div><div class="modal-title" id="reportModalTitle">Report</div></div>
       <button class="modal-close" onclick="closeModal('reportModal')">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="markdown" id="reportContent"></div>
-    </div>
+    <div class="modal-body"><div class="markdown" id="reportContent"></div></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('reportModal')">Close</button>
     </div>
@@ -433,47 +453,117 @@
       <div class="modal-title">NEXT_FIX.md — Implementation Instructions</div>
       <button class="modal-close" onclick="closeModal('fixModal')">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="markdown" id="fixContent"></div>
-    </div>
+    <div class="modal-body"><div class="markdown" id="fixContent"></div></div>
     <div class="modal-footer">
-      <button class="btn btn-success" onclick="continueFix(); closeModal('fixModal')">
-        ✓ I've Applied the Fix — Continue Loop
-      </button>
+      <button class="btn btn-success" onclick="continueFix(); closeModal('fixModal')">✓ I've Applied the Fix — Continue Loop</button>
       <button class="btn btn-ghost" onclick="closeModal('fixModal')">Close</button>
     </div>
   </div>
 </div>
 
+<!-- Heuristic editor modal -->
+<div class="modal-overlay" id="heuristicModal" onclick="closeModal('heuristicModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="hModalTitle">Heuristic</div>
+        <div class="modal-title-sub" id="hModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('heuristicModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Code</label>
+          <input class="form-input" id="hCode" placeholder="e.g. H14" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input class="form-input" id="hName" placeholder="e.g. Factual Accuracy" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Severity</label>
+          <select class="form-select" id="hSeverity">
+            <option>Critical</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low-Med</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Weight (Critical=2, others=1)</label>
+          <input class="form-input" id="hWeight" type="number" min="1" max="5" step="1" value="1" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Criterion — plain-language definition of what "good" looks like</label>
+          <textarea class="form-textarea tall" id="hCriterion" placeholder="Every specific data point stated must match..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Failure Signals — what does a violation look like?</label>
+          <textarea class="form-textarea" id="hFailureSignals" placeholder="A stated value that does not appear in..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Fix Guidance — shown in NEXT_FIX.md when this heuristic fails</label>
+          <textarea class="form-textarea tall" id="hFixGuidance" placeholder="In the system prompt, add the rule..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-footer-left">
+        <button class="btn btn-danger btn-sm" id="hDeleteBtn" onclick="promptDeleteHeuristic()">🗑 Delete</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('heuristicModal')">Cancel</button>
+      <button class="btn btn-primary" id="hSaveBtn" onclick="saveHeuristic()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="confirmModal" onclick="closeModal('confirmModal')">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Confirm Delete</div>
+      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-icon">⚠️</div>
+      <div class="confirm-msg" id="confirmMsg"></div>
+      <div class="confirm-sub">This will remove it from all future runs.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">Delete Permanently</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ── Constants ──────────────────────────────────────────────────────────────────
-const HEURISTIC_NAMES = {
-  H1:'Factual Accuracy', H2:'Mathematical Integrity', H3:'Change Transparency',
-  H4:'Info Gathering Efficiency', H5:'Intent Capture Fidelity', H6:'Handoff Clarity',
-  H7:'Escalation Timing', H8:'Role Honesty', H9:'Routing Consistency',
-  H10:'Confirmation Completeness', H11:'Language Quality', H12:'Turn Economy',
-  H13:'Internal Consistency',
-};
-const HEURISTICS = Object.keys(HEURISTIC_NAMES);
+// ── State ──────────────────────────────────────────────────────────────────────
 const THRESHOLD = 0.80;
 
-// ── State ──────────────────────────────────────────────────────────────────────
-let appState   = { running: false, phase: 'Idle', iteration: 1, loopMode: false, waitingForFix: false, hasAnthropicKey: false };
-let history    = [];
+let appState    = { running: false, phase: 'Idle', iteration: 1, loopMode: false, waitingForFix: false, hasAnthropicKey: false };
+let history     = [];
+let heuristics  = [];   // array from /api/heuristics
+let expandedRows = new Set();  // iterations with expanded rows
 let eventSource = null;
-let logOpen    = false;
-let autoScroll = true;
+let logOpen     = false;
+let autoScroll  = true;
+
+// heuristic editor state
+let editingCode  = null;   // null = adding new
+let pendingDeleteCode = null;
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 async function boot() {
-  await Promise.all([fetchStatus(), fetchHistory()]);
+  await Promise.all([fetchStatus(), fetchHistory(), fetchHeuristics()]);
   connectSSE();
 }
 
 // ── API helpers ────────────────────────────────────────────────────────────────
 async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (body) opts.body = JSON.stringify(body);
+  if (body !== undefined) opts.body = JSON.stringify(body);
   const r = await fetch(path, opts);
   return r.json().catch(() => ({}));
 }
@@ -490,6 +580,11 @@ async function fetchHistory() {
   renderScoreCard();
 }
 
+async function fetchHeuristics() {
+  heuristics = await fetch('/api/heuristics').then(r => r.json()).catch(() => []);
+  renderHeuristicGrid();
+}
+
 // ── SSE ────────────────────────────────────────────────────────────────────────
 function connectSSE() {
   if (eventSource) eventSource.close();
@@ -498,52 +593,32 @@ function connectSSE() {
     const msg = JSON.parse(e.data);
     switch (msg.type) {
       case 'status':
-        appState = msg;
-        renderStatus();
-        break;
+        appState = msg; renderStatus(); break;
       case 'log':
-        appendLog(msg.text);
-        break;
+        appendLog(msg.text); break;
       case 'run_complete':
         history = [...history.filter(r => r.iteration !== msg.record.iteration), msg.record]
                     .sort((a,b) => a.iteration - b.iteration);
-        renderHistory();
-        renderHeuristicGrid();
-        renderScoreCard();
-        break;
+        renderHistory(); renderHeuristicGrid(); renderScoreCard(); break;
       case 'waiting_for_fix':
-        document.getElementById('fixBanner').classList.add('show');
-        break;
+        document.getElementById('fixBanner').classList.add('show'); break;
       case 'threshold_met':
-        document.getElementById('fixBanner').classList.remove('show');
-        break;
+        document.getElementById('fixBanner').classList.remove('show'); break;
+      case 'heuristics_updated':
+        heuristics = msg.heuristics ?? heuristics;
+        renderHeuristicGrid(); break;
     }
   };
   eventSource.onerror = () => setTimeout(connectSSE, 3000);
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────────
-async function startRun() {
-  await api('POST', '/api/run');
-  openLog();
-  await fetchStatus();
-}
-
-async function stopRun() {
-  await api('POST', '/api/stop');
-  await fetchStatus();
-  document.getElementById('loopToggle').checked = false;
-}
+async function startRun() { await api('POST', '/api/run'); openLog(); await fetchStatus(); }
+async function stopRun()  { await api('POST', '/api/stop'); await fetchStatus(); document.getElementById('loopToggle').checked = false; }
 
 async function toggleLoop(cb) {
-  if (cb.checked) {
-    await api('POST', '/api/loop');
-    openLog();
-    await fetchStatus();
-  } else {
-    await api('POST', '/api/stop');
-    await fetchStatus();
-  }
+  if (cb.checked) { await api('POST', '/api/loop'); openLog(); await fetchStatus(); }
+  else            { await api('POST', '/api/stop');  await fetchStatus(); }
 }
 
 async function continueFix() {
@@ -562,7 +637,7 @@ function renderStatus() {
   const loopHint = document.getElementById('loopHint');
   const anthropicHint = document.getElementById('anthropicHint');
 
-  ph.textContent = appState.phase || 'Idle';
+  ph.textContent  = appState.phase || 'Idle';
   iter.textContent = `Iter ${appState.iteration ?? '—'}`;
 
   dot.className = 'status-dot';
@@ -577,7 +652,6 @@ function renderStatus() {
   btnRun.disabled  = appState.running;
   btnStop.style.display = appState.running ? 'inline-flex' : 'none';
   btnRun.style.display  = appState.running ? 'none' : 'inline-flex';
-
   toggle.checked  = appState.loopMode;
   toggle.disabled = appState.running && !appState.loopMode;
 
@@ -595,16 +669,13 @@ function renderScoreCard() {
   const sorted = [...history].sort((a,b) => a.iteration - b.iteration);
   const latest = sorted[sorted.length - 1];
   const prev   = sorted[sorted.length - 2];
-
   const numEl    = document.getElementById('scoreNum');
   const deltaEl  = document.getElementById('scoreDelta');
   const fillEl   = document.getElementById('thresholdFill');
   const statusEl = document.getElementById('scoreStatus');
 
   if (!latest) {
-    numEl.textContent   = '—';
-    deltaEl.textContent = '—';
-    fillEl.style.width  = '0%';
+    numEl.textContent = '—'; deltaEl.textContent = '—'; fillEl.style.width = '0%';
     statusEl.textContent = 'No runs yet';
     document.getElementById('sparkline').innerHTML = '';
     return;
@@ -612,7 +683,6 @@ function renderScoreCard() {
 
   const score = latest.overallScore ?? 0;
   const pct   = Math.round(score * 100);
-
   numEl.textContent = pct + '%';
   numEl.className = 'score-num ' + scoreClass(score);
 
@@ -622,24 +692,15 @@ function renderScoreCard() {
 
   if (prev) {
     const diff = Math.round((score - prev.overallScore) * 100);
-    if (diff > 0) {
-      deltaEl.textContent = '↑ +' + diff + '%';
-      deltaEl.className = 'score-delta up';
-    } else if (diff < 0) {
-      deltaEl.textContent = '↓ ' + diff + '%';
-      deltaEl.className = 'score-delta down';
-    } else {
-      deltaEl.textContent = '→ flat';
-      deltaEl.className = 'score-delta flat';
-    }
+    if (diff > 0)      { deltaEl.textContent = '↑ +' + diff + '%'; deltaEl.className = 'score-delta up'; }
+    else if (diff < 0) { deltaEl.textContent = '↓ ' + diff + '%';  deltaEl.className = 'score-delta down'; }
+    else               { deltaEl.textContent = '→ flat';            deltaEl.className = 'score-delta flat'; }
   } else {
-    deltaEl.textContent = 'first run';
-    deltaEl.className = 'score-delta flat';
+    deltaEl.textContent = 'first run'; deltaEl.className = 'score-delta flat';
   }
 
   if (latest.thresholdMet) {
-    statusEl.textContent = '✓ Threshold met';
-    statusEl.className = 'score-status met';
+    statusEl.textContent = '✓ Threshold met'; statusEl.className = 'score-status met';
   } else {
     const crit = (latest.criticalFailures ?? []).length;
     statusEl.textContent = crit > 0
@@ -648,7 +709,6 @@ function renderScoreCard() {
     statusEl.className = 'score-status';
   }
 
-  // Sparkline
   if (sorted.length >= 2) {
     const scores = sorted.map(r => r.overallScore ?? 0);
     document.getElementById('sparkline').innerHTML = sparkline(scores, 220, 32);
@@ -673,8 +733,7 @@ function sparkline(values, w, h) {
   }).join(' ');
   const thresholdY = (h - pad - THRESHOLD * (h - pad * 2)).toFixed(1);
   return `<svg width="${w}" height="${h}" style="overflow:visible">
-    <line x1="${pad}" y1="${thresholdY}" x2="${w - pad}" y2="${thresholdY}"
-      stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="${pad}" y1="${thresholdY}" x2="${w-pad}" y2="${thresholdY}" stroke="var(--border-hi)" stroke-width="1" stroke-dasharray="3,3"/>
     <polyline points="${pts}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round"/>
     ${values.map((v, i) => {
       const x = (pad + (i / (values.length - 1)) * (w - pad * 2)).toFixed(1);
@@ -689,92 +748,93 @@ function sparkline(values, w, h) {
 function renderHeuristicGrid() {
   const sorted = [...history].sort((a,b) => a.iteration - b.iteration);
   const latest = sorted[sorted.length - 1];
-  const grid = document.getElementById('heuristicGrid');
+  const grid   = document.getElementById('heuristicGrid');
 
-  grid.innerHTML = HEURISTICS.map(h => {
+  const cells = heuristics.map(h => {
     if (!latest) {
-      return `<div class="h-cell empty" data-tip="${h}: ${HEURISTIC_NAMES[h]}">
-        <div class="h-id">${h}</div><div class="h-icon" style="color:var(--border)">·</div>
+      return `<div class="h-cell empty" data-tip="${h.code}: ${h.name}" onclick="openHeuristicEditor('${h.code}')">
+        <div class="h-id">${h.code}</div><div class="h-icon" style="color:var(--border)">·</div>
       </div>`;
     }
-    const stats = latest.heuristicStats?.[h] ?? { pass: 0, marginal: 0, fail: 0, na: 0 };
+    const stats = latest.heuristicStats?.[h.code] ?? { pass: 0, marginal: 0, fail: 0, na: 0 };
     const total = stats.pass + stats.marginal + stats.fail;
     let cls, icon, tip;
     if (total === 0) {
       cls = 'na'; icon = '–';
-      tip = `${h}: ${HEURISTIC_NAMES[h]} — N/A`;
+      tip = `${h.code}: ${h.name} — N/A`;
     } else if (stats.fail > 0) {
       cls = 'fail'; icon = '✗';
-      tip = `${h}: ${HEURISTIC_NAMES[h]} — ${stats.fail} fail${stats.fail>1?'s':''} / ${total}`;
+      tip = `${h.code}: ${h.name} — ${stats.fail} fail${stats.fail>1?'s':''} / ${total}`;
     } else if (stats.marginal > 0) {
       cls = 'yellow'; icon = '~';
-      tip = `${h}: ${HEURISTIC_NAMES[h]} — ${stats.marginal} marginal / ${total}`;
+      tip = `${h.code}: ${h.name} — ${stats.marginal} marginal / ${total}`;
     } else {
       cls = 'pass'; icon = '✓';
-      tip = `${h}: ${HEURISTIC_NAMES[h]} — all pass`;
+      tip = `${h.code}: ${h.name} — all pass`;
     }
-    return `<div class="h-cell ${cls}" data-tip="${tip}">
-      <div class="h-id">${h}</div>
+    return `<div class="h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicEditor('${h.code}')">
+      <div class="h-id">${h.code}</div>
       <div class="h-icon">${icon}</div>
     </div>`;
   }).join('');
+
+  // Add button at the end
+  const addBtn = `<button class="h-add-btn" title="Add new heuristic" onclick="openHeuristicEditor(null)">+</button>`;
+  grid.innerHTML = cells + addBtn;
 }
 
 // ── Render: history table ──────────────────────────────────────────────────────
 function renderHistory() {
   const tbody = document.getElementById('historyBody');
   if (!history.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No runs yet. Click Run Evaluation to start.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">No runs yet. Click Run Evaluation to start.</td></tr>';
     return;
   }
 
-  const sorted = [...history].sort((a,b) => b.iteration - a.iteration); // newest first
+  const sorted = [...history].sort((a,b) => b.iteration - a.iteration);
+  let html = '';
 
-  tbody.innerHTML = sorted.map((row, i) => {
-    const prev = sorted[i + 1]; // older record
+  sorted.forEach((row, i) => {
+    const prev  = sorted[i + 1];
     const score = row.overallScore ?? 0;
     const pct   = Math.round(score * 100);
+    const isExp = expandedRows.has(row.iteration);
 
     // Delta
     let deltaHtml = '<span class="score-delta flat">—</span>';
     if (prev) {
       const diff = Math.round((score - prev.overallScore) * 100);
-      if (diff > 0) deltaHtml = `<span class="score-delta up">↑ +${diff}%</span>`;
+      if (diff > 0)      deltaHtml = `<span class="score-delta up">↑ +${diff}%</span>`;
       else if (diff < 0) deltaHtml = `<span class="score-delta down">↓ ${diff}%</span>`;
-      else deltaHtml = `<span class="score-delta flat">→ flat</span>`;
+      else               deltaHtml = `<span class="score-delta flat">→</span>`;
     }
 
     // Critical
     const crits = row.criticalFailures ?? [];
     const critHtml = crits.length === 0
       ? '<span class="chip chip-green">✓ Clear</span>'
-      : crits.map(c => `<span class="chip chip-red">${c.heuristic} ✗</span>`).join(' ');
+      : crits.map(c => `<span class="chip chip-red">${c.code ?? c.heuristic} ✗</span>`).join(' ');
 
     // High severity
     const highFails = row.highSeverityFails ?? [];
     const highHtml  = highFails.length === 0
       ? '<span class="chip chip-green">✓ Clear</span>'
-      : `<span class="chip chip-yellow">${highFails.join(' ')} (${highFails.length})</span>`;
+      : `<span class="chip chip-yellow">${highFails.join(' ')}</span>`;
 
-    // Scenarios
-    const scenHtml = `${row.scenariosFailed ?? 0} fail / ${row.scenarioCount ?? '?'}`;
-
-    // Status
+    const scenHtml  = `${row.scenariosFailed ?? 0} fail / ${row.scenarioCount ?? '?'}`;
     const statusHtml = row.thresholdMet
       ? '<span class="chip chip-green">✓ Met</span>'
-      : `<span class="chip chip-red">✗ Fail</span>`;
-
-    // Report link
+      : '<span class="chip chip-red">✗ Fail</span>';
     const reportHtml = row.reportFile
-      ? `<a class="report-link" href="#" onclick="openReport('${row.reportFile}', ${row.iteration}); return false">📄 Report ${row.iteration}</a>`
+      ? `<a class="report-link" href="#" onclick="openReport('${row.reportFile}',${row.iteration}); event.stopPropagation(); return false">📄 ${row.iteration}</a>`
       : '—';
 
-    // Timestamp
     const ts = row.timestamp ? new Date(row.timestamp) : null;
     const when = ts ? formatTime(ts) : '—';
     const whenFull = ts ? ts.toLocaleString() : '';
 
-    return `<tr>
+    html += `<tr class="history-row" onclick="toggleExpandRow(${row.iteration})">
+      <td><span class="expand-icon${isExp ? ' open' : ''}">▶</span></td>
       <td class="td-iter">${row.iteration}</td>
       <td class="td-when" title="${whenFull}">${when}</td>
       <td class="td-score ${scoreClass(score)}">${pct}%</td>
@@ -783,40 +843,85 @@ function renderHistory() {
       <td>${highHtml}</td>
       <td style="color:var(--muted);font-size:12px">${scenHtml}</td>
       <td>${statusHtml}</td>
-      <td>${reportHtml}</td>
+      <td onclick="event.stopPropagation()">${reportHtml}</td>
     </tr>`;
-  }).join('');
+
+    // Expanded detail row
+    html += `<tr class="expand-row">
+      <td colspan="10"><div class="expand-content${isExp ? ' open' : ''}" id="expand-${row.iteration}">${isExp ? buildExpandContent(row) : ''}</div></td>
+    </tr>`;
+  });
+
+  tbody.innerHTML = html;
 }
 
-function formatTime(date) {
-  const now = Date.now();
-  const diff = now - date.getTime();
-  if (diff < 60000)   return 'just now';
-  if (diff < 3600000) return Math.round(diff / 60000) + 'm ago';
-  if (diff < 86400000) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function toggleExpandRow(iteration) {
+  if (expandedRows.has(iteration)) {
+    expandedRows.delete(iteration);
+  } else {
+    expandedRows.add(iteration);
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' +
-         date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  renderHistory();
+}
+
+function buildExpandContent(row) {
+  const stats = row.heuristicStats ?? {};
+
+  // Mini heuristic grid for this iteration
+  const cells = heuristics.map(h => {
+    const s = stats[h.code] ?? { pass: 0, marginal: 0, fail: 0 };
+    const total = s.pass + s.marginal + s.fail;
+    let cls, icon;
+    if (total === 0)          { cls = 'na';     icon = '–'; }
+    else if (s.fail > 0)      { cls = 'fail';   icon = '✗'; }
+    else if (s.marginal > 0)  { cls = 'yellow'; icon = '~'; }
+    else                       { cls = 'pass';   icon = '✓'; }
+    const tip = total === 0
+      ? `${h.code}: ${h.name} — N/A`
+      : cls === 'fail'
+        ? `${h.code}: ${h.name} — ${s.fail} fail / ${total}`
+        : cls === 'yellow'
+          ? `${h.code}: ${h.name} — ${s.marginal} marginal / ${total}`
+          : `${h.code}: ${h.name} — all pass`;
+
+    return `<div class="expand-h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicEditor('${h.code}')">
+      <div class="h-id">${h.code}</div>
+      <div class="h-icon">${icon}</div>
+    </div>`;
+  }).join('');
+
+  // List of failures
+  const failures = heuristics
+    .filter(h => {
+      const s = stats[h.code];
+      return s && s.fail > 0;
+    })
+    .map(h => {
+      const s = stats[h.code];
+      const total = s.pass + s.marginal + s.fail;
+      return `<div class="expand-fail-item">
+        <span class="expand-fail-code">${h.code}</span>
+        <span>${h.name} — ${s.fail} of ${total} scenarios failed</span>
+      </div>`;
+    }).join('');
+
+  return `
+    <div style="margin-bottom:10px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.6px">Heuristic Results — Iteration ${row.iteration}</div>
+    <div class="expand-h-grid">${cells}</div>
+    ${failures ? `<div class="expand-fail-list" style="margin-top:10px">${failures}</div>` : '<div style="font-size:12px;color:var(--green)">✓ No failures in this iteration</div>'}
+  `;
 }
 
 // ── Log console ────────────────────────────────────────────────────────────────
 function appendLog(line) {
   const el = document.getElementById('logText');
-  el.textContent += (el.textContent === 'Waiting for a run to start…' ? '' : '') + line + '\n';
-  if (el.textContent === '\n') el.textContent = '';
-  if (autoScroll) {
-    const inner = document.getElementById('logInner');
-    inner.scrollTop = inner.scrollHeight;
-  }
+  if (el.textContent === 'Waiting for a run to start…') el.textContent = '';
+  el.textContent += line + '\n';
+  if (autoScroll) document.getElementById('logInner').scrollTop = document.getElementById('logInner').scrollHeight;
 }
 
 function openLog() {
-  if (!logOpen) {
-    logOpen = true;
-    document.getElementById('logBody').classList.add('open');
-    document.getElementById('logIcon').classList.add('open');
-  }
+  if (!logOpen) { logOpen = true; document.getElementById('logBody').classList.add('open'); document.getElementById('logIcon').classList.add('open'); }
 }
 
 function toggleLog() {
@@ -825,7 +930,7 @@ function toggleLog() {
   document.getElementById('logIcon').classList.toggle('open', logOpen);
 }
 
-// ── Modals ─────────────────────────────────────────────────────────────────────
+// ── Modals: report + fix ───────────────────────────────────────────────────────
 async function openReport(filename, iteration) {
   const md = await fetch('/api/report/' + filename).then(r => r.text()).catch(() => 'Report not found.');
   document.getElementById('reportModalTitle').textContent = `Report — Iteration ${iteration}`;
@@ -834,30 +939,133 @@ async function openReport(filename, iteration) {
 }
 
 async function openNextFix() {
-  const md = await fetch('/api/next-fix').then(r => r.text()).catch(() => 'NEXT_FIX.md not found.');
+  const md = await fetch('/api/next-fix').then(r => r.text()).catch(() => '');
   document.getElementById('fixContent').innerHTML = marked.parse(md || '*(No fix file yet — run an evaluation first.)*');
   document.getElementById('fixModal').classList.add('open');
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── Heuristic editor ───────────────────────────────────────────────────────────
+function openHeuristicEditor(code) {
+  editingCode = code;  // null = new
+
+  const titleEl = document.getElementById('hModalTitle');
+  const subEl   = document.getElementById('hModalSub');
+  const saveBtn = document.getElementById('hSaveBtn');
+  const delBtn  = document.getElementById('hDeleteBtn');
+
+  if (code === null) {
+    // Adding a new heuristic
+    titleEl.textContent = 'Add New Heuristic';
+    subEl.textContent   = 'Define the criterion, failure signals, and fix guidance.';
+    saveBtn.textContent = 'Add Heuristic';
+    delBtn.style.display = 'none';
+    document.getElementById('hCode').disabled = false;
+    document.getElementById('hCode').value    = '';
+    document.getElementById('hName').value    = '';
+    document.getElementById('hSeverity').value = 'Medium';
+    document.getElementById('hWeight').value   = '1';
+    document.getElementById('hCriterion').value     = '';
+    document.getElementById('hFailureSignals').value = '';
+    document.getElementById('hFixGuidance').value    = '';
+  } else {
+    const h = heuristics.find(x => x.code === code);
+    if (!h) return;
+    titleEl.textContent = `${h.code} — ${h.name}`;
+    subEl.textContent   = `${h.severity} · Weight ×${h.weight}`;
+    saveBtn.textContent = 'Save Changes';
+    delBtn.style.display = 'inline-flex';
+    document.getElementById('hCode').disabled  = true;
+    document.getElementById('hCode').value     = h.code;
+    document.getElementById('hName').value     = h.name;
+    document.getElementById('hSeverity').value = h.severity;
+    document.getElementById('hWeight').value   = String(h.weight ?? 1);
+    document.getElementById('hCriterion').value     = h.criterion ?? '';
+    document.getElementById('hFailureSignals').value = h.failureSignals ?? '';
+    document.getElementById('hFixGuidance').value    = h.fixGuidance ?? '';
+  }
+
+  document.getElementById('heuristicModal').classList.add('open');
 }
 
-// Keyboard: Escape closes modals
+async function saveHeuristic() {
+  const payload = {
+    code:          document.getElementById('hCode').value.trim().toUpperCase(),
+    name:          document.getElementById('hName').value.trim(),
+    severity:      document.getElementById('hSeverity').value,
+    weight:        Number(document.getElementById('hWeight').value),
+    criterion:     document.getElementById('hCriterion').value.trim(),
+    failureSignals: document.getElementById('hFailureSignals').value.trim(),
+    fixGuidance:   document.getElementById('hFixGuidance').value.trim(),
+  };
+
+  if (!payload.name) { alert('Name is required.'); return; }
+
+  let result;
+  if (editingCode === null) {
+    if (!payload.code) { alert('Code is required.'); return; }
+    result = await api('POST', '/api/heuristics', payload);
+    if (result.error) { alert('Error: ' + result.error); return; }
+    heuristics.push(result);
+  } else {
+    result = await api('PUT', `/api/heuristics/${editingCode}`, payload);
+    if (result.error) { alert('Error: ' + result.error); return; }
+    const idx = heuristics.findIndex(x => x.code === editingCode);
+    if (idx >= 0) heuristics[idx] = result;
+  }
+
+  closeModal('heuristicModal');
+  renderHeuristicGrid();
+}
+
+function promptDeleteHeuristic() {
+  if (!editingCode) return;
+  const h = heuristics.find(x => x.code === editingCode);
+  if (!h) return;
+
+  pendingDeleteCode = editingCode;
+  document.getElementById('confirmMsg').textContent =
+    `Are you sure you want to delete ${h.code} — ${h.name}?`;
+  document.getElementById('confirmDeleteBtn').onclick = () => executeDeleteHeuristic();
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+async function executeDeleteHeuristic() {
+  if (!pendingDeleteCode) return;
+  const result = await api('DELETE', `/api/heuristics/${pendingDeleteCode}`);
+  if (result.error) { alert('Error: ' + result.error); return; }
+  heuristics = heuristics.filter(x => x.code !== pendingDeleteCode);
+  pendingDeleteCode = null;
+  closeModal('confirmModal');
+  closeModal('heuristicModal');
+  renderHeuristicGrid();
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────────
+function formatTime(date) {
+  const now  = Date.now();
+  const diff = now - date.getTime();
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return Math.round(diff / 60000) + 'm ago';
+  if (diff < 86400000) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' +
+         date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Keyboard: Escape closes top-most modal
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeModal('reportModal');
-    closeModal('fixModal');
+    for (const id of ['confirmModal', 'heuristicModal', 'fixModal', 'reportModal']) {
+      const el = document.getElementById(id);
+      if (el.classList.contains('open')) { el.classList.remove('open'); return; }
+    }
   }
 });
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 boot();
-
-// Poll status every 4s as fallback (SSE handles real-time, this covers reconnects)
-setInterval(async () => {
-  if (!appState.running) await fetchStatus();
-}, 4000);
+setInterval(async () => { if (!appState.running) await fetchStatus(); }, 4000);
 </script>
 </body>
 </html>

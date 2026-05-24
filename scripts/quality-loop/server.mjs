@@ -25,6 +25,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { resolveSecrets } from './secrets.mjs';
+import { HEURISTICS_FILE } from './heqya.config.mjs';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT  = path.resolve(__dirname, '..', '..');
@@ -253,6 +254,17 @@ function readIteration() {
   return isNaN(n) ? 1 : n;
 }
 
+// ── Heuristics CRUD ────────────────────────────────────────────────────────────
+
+function readHeuristics() {
+  if (!existsSync(HEURISTICS_FILE)) return [];
+  try { return JSON.parse(readFileSync(HEURISTICS_FILE, 'utf8')); } catch { return []; }
+}
+
+function writeHeuristics(arr) {
+  writeFileSync(HEURISTICS_FILE, JSON.stringify(arr, null, 2), 'utf8');
+}
+
 // ── HTTP router ────────────────────────────────────────────────────────────────
 
 function json(res, data, status = 200) {
@@ -377,6 +389,69 @@ const server = http.createServer(async (req, res) => {
       broadcast('status', { ...state });
     }
     return json(res, { ok: true });
+  }
+
+  // ── Heuristics: list all ──────────────────────────────────────────────────
+  if (req.method === 'GET' && p === '/api/heuristics') {
+    return json(res, readHeuristics());
+  }
+
+  // ── Heuristics: create new ────────────────────────────────────────────────
+  if (req.method === 'POST' && p === '/api/heuristics') {
+    const body = await readBody(req);
+    let h;
+    try { h = JSON.parse(body); } catch { return json(res, { error: 'Invalid JSON' }, 400); }
+    if (!h.code || !h.name) return json(res, { error: 'code and name are required' }, 400);
+    const arr = readHeuristics();
+    if (arr.find(x => x.code === h.code)) return json(res, { error: `Code ${h.code} already exists` }, 409);
+    const newH = {
+      code:          h.code.trim().toUpperCase(),
+      name:          h.name.trim(),
+      severity:      h.severity ?? 'Medium',
+      weight:        Number(h.weight ?? 1),
+      criterion:     h.criterion ?? '',
+      failureSignals: h.failureSignals ?? '',
+      fixGuidance:   h.fixGuidance ?? '',
+    };
+    arr.push(newH);
+    writeHeuristics(arr);
+    broadcast('heuristics_updated', { heuristics: arr });
+    return json(res, newH, 201);
+  }
+
+  // ── Heuristics: update one ────────────────────────────────────────────────
+  if (req.method === 'PUT' && p.startsWith('/api/heuristics/')) {
+    const code = p.replace('/api/heuristics/', '').toUpperCase();
+    const body = await readBody(req);
+    let patch;
+    try { patch = JSON.parse(body); } catch { return json(res, { error: 'Invalid JSON' }, 400); }
+    const arr = readHeuristics();
+    const idx = arr.findIndex(x => x.code === code);
+    if (idx < 0) return json(res, { error: `Heuristic ${code} not found` }, 404);
+    arr[idx] = {
+      ...arr[idx],
+      name:          patch.name          ?? arr[idx].name,
+      severity:      patch.severity      ?? arr[idx].severity,
+      weight:        Number(patch.weight ?? arr[idx].weight),
+      criterion:     patch.criterion     ?? arr[idx].criterion,
+      failureSignals: patch.failureSignals ?? arr[idx].failureSignals,
+      fixGuidance:   patch.fixGuidance   ?? arr[idx].fixGuidance,
+    };
+    writeHeuristics(arr);
+    broadcast('heuristics_updated', { heuristics: arr });
+    return json(res, arr[idx]);
+  }
+
+  // ── Heuristics: delete one ────────────────────────────────────────────────
+  if (req.method === 'DELETE' && p.startsWith('/api/heuristics/')) {
+    const code = p.replace('/api/heuristics/', '').toUpperCase();
+    const arr  = readHeuristics();
+    const idx  = arr.findIndex(x => x.code === code);
+    if (idx < 0) return json(res, { error: `Heuristic ${code} not found` }, 404);
+    arr.splice(idx, 1);
+    writeHeuristics(arr);
+    broadcast('heuristics_updated', { heuristics: arr });
+    return json(res, { deleted: code });
   }
 
   res.writeHead(404); res.end('Not found');
