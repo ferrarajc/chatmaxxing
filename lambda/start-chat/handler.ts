@@ -27,8 +27,9 @@ export const handler = async (
             intentSummary,
             `You are summarizing a full customer support chat transcript for a financial services agent.
 The transcript is formatted as "ROLE: message | ROLE: message | ...".
-Write a single concise sentence (max 20 words) capturing what the customer's core need or question is.
-Start with the client's first name if you can detect it, e.g. "Alex asked about RMD rules and wants withdrawal guidance".
+The customer's name is ${clientName}. Other names that appear in the transcript (beneficiaries, fund names, etc.) are NOT the customer.
+Write a single concise sentence (max 20 words) capturing what ${clientName}'s core need or question is.
+Start the sentence with their first name, e.g. "Robert wants to update the beneficiaries on his SEP-IRA".
 Focus on the customer's underlying goal — not just the last message.
 Do not mention that the customer asked to speak to an agent or requested escalation — that is implied and wastes space.
 Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
@@ -38,6 +39,7 @@ Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
             intentSummary,
             `You are writing 1-2 sentences for a financial services agent to close their opening chat greeting.
 The transcript below shows what the customer discussed with the chatbot before asking for a live agent.
+The customer's name is ${clientName}. Other names that appear in the transcript (beneficiaries, fund names, etc.) are NOT the customer.
 The transcript is formatted as "ROLE: message | ROLE: message | ...".
 
 If the customer's need is clearly and fully explained: briefly restate it in your own words to confirm understanding, then ask if you have it right. Example: "It sounds like you're trying to figure out how much you need to withdraw from your IRA this year and whether taxes will be withheld automatically — is that right?"
