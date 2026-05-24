@@ -28,11 +28,12 @@ export const handler = async (
             `You are summarizing a full customer support chat transcript for a financial services agent.
 The transcript is formatted as "ROLE: message | ROLE: message | ...".
 Write a single concise sentence (max 20 words) capturing what the customer's core need or question is.
-Start with the client's first name if you can detect it, e.g. "Alex asked about RMD rules and wants withdrawal guidance".
+Start with the client's first name if you can detect it, e.g. "Alex wants to **withdraw** from his **Roth IRA**".
 Focus on the customer's underlying goal — not just the last message.
 Do not mention that the customer asked to speak to an agent or requested escalation — that is implied and wastes space.
-Return only the plain text — no quotes, no JSON, no punctuation at the end.`,
-            80,
+Pick 1 or 2 words in your sentence that most distinguish the intent — typically the action and/or the account type or subject — and wrap them in **double asterisks** like **word**. Leave all other words unmarked.
+Return only the plain text sentence with those markers — no quotes, no JSON, no punctuation at the end.`,
+            90,
           ),
           invokeNovaMicro(
             intentSummary,
