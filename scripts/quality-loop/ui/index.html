@@ -104,7 +104,6 @@
   .btn-ghost    { background: transparent; border-color: var(--border); color: var(--muted); }
   .btn-ghost:hover    { border-color: var(--border-hi); color: var(--text); }
   .btn-sm { padding: 6px 12px; font-size: 13px; }
-
   .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .loop-row   { display: flex; align-items: center; gap: 12px; }
   .loop-label { font-size: 13px; }
@@ -118,7 +117,6 @@
   .toggle input:checked + .toggle-slider { background: var(--blue); }
   .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
   .toggle input:disabled + .toggle-slider { opacity: 0.4; cursor: default; }
-
   .key-hints { font-size: 11px; color: var(--muted); }
   .key-hints span { color: var(--green); }
 
@@ -142,7 +140,6 @@
   .h-cell.yellow .h-id { color: var(--yellow); }
   .h-cell.fail   .h-id { color: var(--red); }
   .h-cell.na     .h-id { color: var(--muted); }
-  /* Tooltip */
   .h-cell:hover::after {
     content: attr(data-tip);
     position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
@@ -150,15 +147,77 @@
     padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap;
     pointer-events: none; z-index: 10;
   }
-  /* Add heuristic button */
   .h-add-btn {
     display: flex; align-items: center; justify-content: center;
     width: 36px; height: 52px; border-radius: 6px;
     border: 1px dashed var(--border-hi); cursor: pointer; color: var(--muted);
-    font-size: 18px; transition: all 0.15s; background: transparent;
-    flex-shrink: 0;
+    font-size: 18px; transition: all 0.15s; background: transparent; flex-shrink: 0;
   }
   .h-add-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+
+  /* ── Accordion panels ── */
+  .panel { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; cursor: pointer; background: var(--surface); user-select: none;
+    transition: background 0.15s;
+  }
+  .panel-header:hover { background: var(--surface2); }
+  .panel-header-left { display: flex; align-items: center; gap: 10px; }
+  .panel-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
+  .panel-count { font-size: 11px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 1px 7px; }
+  .panel-header-right { display: flex; align-items: center; gap: 8px; }
+  .panel-chevron { color: var(--muted); font-size: 11px; transition: transform 0.2s; }
+  .panel-chevron.open { transform: rotate(180deg); }
+  .panel-body { background: var(--surface); border-top: 1px solid var(--border); display: none; }
+  .panel-body.open { display: block; }
+
+  /* ── App Profile panel ── */
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; }
+  .profile-resp { grid-column: 1 / -1; }
+  .resp-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 3px 8px; font-size: 12px; margin: 3px 3px 3px 0;
+  }
+  .resp-tag .del-tag { cursor: pointer; color: var(--muted); font-size: 14px; line-height: 1; background: none; border: none; padding: 0; }
+  .resp-tag .del-tag:hover { color: var(--red); }
+  .resp-input-row { display: flex; gap: 8px; margin-top: 8px; }
+
+  /* ── Scenarios panel ── */
+  .scenario-card { border-bottom: 1px solid var(--border); }
+  .scenario-card:last-child { border-bottom: none; }
+  .scenario-card-header {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .scenario-card-header:hover { background: rgba(255,255,255,0.02); }
+  .scenario-chevron { font-size: 10px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+  .scenario-chevron.open { transform: rotate(90deg); }
+  .scenario-id { font-size: 12px; font-family: var(--mono); color: var(--blue); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scenario-scope { font-size: 10px; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+  .scope-get  { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .scope-full { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .scenario-heuristics { display: flex; gap: 3px; flex-shrink: 0; }
+  .h-chip { font-size: 10px; font-family: var(--mono); font-weight: 700; padding: 1px 5px; border-radius: 3px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .scenario-client { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .scenario-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .scenario-body { padding: 0 16px 14px 36px; display: none; }
+  .scenario-body.open { display: block; }
+  .scenario-notes { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; font-style: italic; }
+  .scenario-field { margin-bottom: 8px; }
+  .scenario-field-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 3px; }
+  .scenario-field-val { font-size: 12px; line-height: 1.5; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow-y: auto; }
+  .scenario-empty { padding: 24px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* Candidate cards (for AI generate preview) */
+  .candidate-list { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; }
+  .candidate-card { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; position: relative; background: var(--surface2); }
+  .candidate-remove { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px; }
+  .candidate-remove:hover { color: var(--red); }
+  .candidate-id { font-size: 11px; font-family: var(--mono); color: var(--blue); margin-bottom: 4px; }
+  .candidate-opening { font-size: 13px; margin-bottom: 6px; }
+  .candidate-meta { font-size: 11px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
 
   /* ── History table ── */
   .table-wrap { overflow-x: auto; }
@@ -176,10 +235,7 @@
   .expand-icon { color: var(--muted); font-size: 11px; transition: transform 0.2s; display: inline-block; }
   .expand-icon.open { transform: rotate(90deg); }
   .expand-row td { padding: 0; background: var(--surface2); }
-  .expand-content {
-    padding: 14px 16px; border-bottom: 1px solid var(--border);
-    display: none;
-  }
+  .expand-content { padding: 14px 16px; border-bottom: 1px solid var(--border); display: none; }
   .expand-content.open { display: block; }
   .expand-h-grid { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
   .expand-h-cell {
@@ -191,8 +247,7 @@
   .expand-h-cell:hover::after {
     content: attr(data-tip); position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%);
     background: #222; border: 1px solid var(--border); color: var(--text);
-    padding: 3px 7px; border-radius: 3px; font-size: 10px; white-space: nowrap;
-    pointer-events: none; z-index: 10;
+    padding: 3px 7px; border-radius: 3px; font-size: 10px; white-space: nowrap; pointer-events: none; z-index: 10;
   }
   .expand-h-cell.pass   { background: var(--green-dim);  border-color: var(--green); }
   .expand-h-cell.yellow { background: var(--yellow-dim); border-color: var(--yellow); }
@@ -207,7 +262,6 @@
   .expand-fail-list { font-size: 12px; color: var(--muted); }
   .expand-fail-item { display: flex; gap: 8px; margin-bottom: 4px; align-items: flex-start; }
   .expand-fail-code { font-family: var(--mono); font-size: 11px; color: var(--red); flex-shrink: 0; margin-top: 1px; }
-
   .td-iter   { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; text-align: right; }
   .td-score  { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
   .td-delta  { font-size: 12px; font-weight: 600; white-space: nowrap; }
@@ -247,7 +301,6 @@
   .fix-banner-text strong { color: var(--yellow); display: block; margin-bottom: 2px; }
   .fix-banner-text small  { color: var(--muted); font-size: 12px; }
 
-  /* ── Section ── */
   .section { margin-bottom: 16px; }
 
   /* ── Modals ── */
@@ -262,17 +315,48 @@
     max-width: 820px; width: 100%; max-height: 90vh; display: flex; flex-direction: column;
   }
   .modal.modal-sm { max-width: 480px; }
+  .modal.modal-wide { max-width: 960px; }
   .modal-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
   }
   .modal-title { font-weight: 600; font-size: 15px; }
   .modal-title-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; }
   .modal-close:hover { color: var(--text); }
   .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
-  .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+  .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-shrink: 0; }
   .modal-footer-left { flex: 1; }
+
+  /* Report tabs */
+  .report-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .report-tab {
+    padding: 8px 16px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent;
+    color: var(--muted); transition: color 0.15s, border-color 0.15s; user-select: none;
+  }
+  .report-tab.active { color: var(--text); border-bottom-color: var(--blue); }
+  .report-tab:hover:not(.active) { color: var(--text); }
+  .report-pane { display: none; }
+  .report-pane.active { display: block; }
+
+  /* Transcript viewer */
+  .transcript-scenario { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .transcript-scenario-header {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: var(--surface2); cursor: pointer; user-select: none;
+  }
+  .transcript-scenario-header:hover { background: #222b36; }
+  .transcript-scenario-id { font-family: var(--mono); font-size: 12px; color: var(--blue); flex: 1; }
+  .transcript-scenario-meta { font-size: 11px; color: var(--muted); }
+  .transcript-messages { padding: 12px 14px; display: none; }
+  .transcript-messages.open { display: flex; flex-direction: column; gap: 8px; }
+  .t-msg { max-width: 85%; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+  .t-msg.customer { align-self: flex-end; background: var(--blue-dim); border: 1px solid var(--blue); }
+  .t-msg.agent    { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); }
+  .t-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .t-msg.customer .t-role { color: var(--blue); }
+  .t-msg.agent    .t-role { color: var(--muted); }
+  .t-no-transcript { padding: 20px; text-align: center; color: var(--muted); font-size: 13px; }
 
   /* Markdown */
   .markdown { line-height: 1.7; }
@@ -288,11 +372,15 @@
   .markdown strong { color: var(--text); }
   .markdown hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   .markdown blockquote { border-left: 3px solid var(--blue); padding-left: 12px; color: var(--muted); margin: 10px 0; }
+  .markdown table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+  .markdown th, .markdown td { border: 1px solid var(--border); padding: 6px 10px; }
+  .markdown th { background: var(--surface2); }
 
-  /* ── Heuristic editor form ── */
+  /* Form elements */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
   .form-group { display: flex; flex-direction: column; gap: 5px; }
   .form-group.full { grid-column: 1 / -1; }
+  .form-group.third { grid-column: span 1; }
   .form-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
   .form-input, .form-select, .form-textarea {
     background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
@@ -303,13 +391,25 @@
   .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
   .form-select { cursor: pointer; }
   .form-textarea { resize: vertical; min-height: 80px; font-size: 13px; line-height: 1.5; }
-  .form-textarea.tall { min-height: 120px; }
+  .form-textarea.tall { min-height: 140px; }
+  .form-textarea.xtall { min-height: 200px; }
 
-  /* ── Confirm dialog ── */
+  /* Heuristic checkbox grid in scenario editor */
+  .h-check-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .h-check-item { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .h-check-item input { cursor: pointer; accent-color: var(--blue); }
+  .h-check-label { font-size: 12px; font-family: var(--mono); }
+
+  /* Confirm dialog */
   .confirm-body { padding: 24px 20px; text-align: center; }
   .confirm-icon { font-size: 32px; margin-bottom: 12px; }
   .confirm-msg  { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
   .confirm-sub  { font-size: 13px; color: var(--muted); }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .generate-status { padding: 12px 0; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -382,15 +482,75 @@
   <!-- Heuristic grid -->
   <div class="section card">
     <div class="card-label">Latest Run — Heuristic Breakdown
-      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click any to edit)</span>
+      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click any to edit · threshold shown as % on each cell)</span>
     </div>
-    <div class="heuristic-grid" id="heuristicGrid"><!-- populated by JS --></div>
+    <div class="heuristic-grid" id="heuristicGrid"></div>
+  </div>
+
+  <!-- Bot Profile panel -->
+  <div class="panel section" id="profilePanel">
+    <div class="panel-header" onclick="togglePanel('profilePanel')">
+      <div class="panel-header-left">
+        <span class="panel-label">Bot Profile</span>
+        <span style="font-size:11px;color:var(--muted)" id="profileName"></span>
+      </div>
+      <div class="panel-header-right">
+        <span class="panel-chevron" id="profileChevron">▼</span>
+      </div>
+    </div>
+    <div class="panel-body" id="profileBody">
+      <div class="profile-grid">
+        <div class="form-group">
+          <label class="form-label">Bot / System Name</label>
+          <input class="form-input" id="pfName" placeholder="e.g. Acme Support Bot" oninput="profileDirty=true" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">User Base Description</label>
+          <input class="form-input" id="pfUsers" placeholder="e.g. Retail customers seeking support" oninput="profileDirty=true" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Description &amp; Purpose</label>
+          <textarea class="form-textarea" id="pfDesc" placeholder="Describe what this chatbot does, its scope, and its mode(s) of operation..." oninput="profileDirty=true"></textarea>
+        </div>
+        <div class="form-group full profile-resp">
+          <label class="form-label">Responsibilities <span style="font-weight:400;text-transform:none">(one per line — press Enter to add)</span></label>
+          <div id="respTags"></div>
+          <div class="resp-input-row">
+            <input class="form-input" id="respInput" placeholder="Add a responsibility…" style="flex:1"
+              onkeydown="if(event.key==='Enter'){addResp();event.preventDefault()}" oninput="profileDirty=true" />
+            <button class="btn btn-ghost btn-sm" onclick="addResp()">+ Add</button>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 16px 16px;display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="loadProfileIntoForm()">Revert</button>
+        <button class="btn btn-primary btn-sm" onclick="saveAppProfile()">Save Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenarios panel -->
+  <div class="panel section" id="scenariosPanel">
+    <div class="panel-header" onclick="togglePanel('scenariosPanel')">
+      <div class="panel-header-left">
+        <span class="panel-label">Scenarios</span>
+        <span class="panel-count" id="scenarioCount">0</span>
+      </div>
+      <div class="panel-header-right" onclick="event.stopPropagation()">
+        <button class="btn btn-primary btn-sm" onclick="openGenerateModal()">✦ Generate More</button>
+        <button class="btn btn-ghost btn-sm" onclick="openScenarioEditor(null)">+ Add</button>
+        <span class="panel-chevron" id="scenariosChevron">▼</span>
+      </div>
+    </div>
+    <div class="panel-body" id="scenariosBody">
+      <div id="scenarioList"><div class="scenario-empty">Loading…</div></div>
+    </div>
   </div>
 
   <!-- History table -->
   <div class="section card">
     <div class="card-label">Evaluation History
-      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click row to expand)</span>
+      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click row to expand · click report to view conversations)</span>
     </div>
     <div class="table-wrap">
       <table id="historyTable">
@@ -430,16 +590,27 @@
 
 </div><!-- /app -->
 
-<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+<!-- ═══════════════════════════════ MODALS ═══════════════════════════════════ -->
 
 <!-- Report modal -->
 <div class="modal-overlay" id="reportModal" onclick="closeModal('reportModal')">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal modal-wide" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div><div class="modal-title" id="reportModalTitle">Report</div></div>
       <button class="modal-close" onclick="closeModal('reportModal')">✕</button>
     </div>
-    <div class="modal-body"><div class="markdown" id="reportContent"></div></div>
+    <div class="modal-body">
+      <div class="report-tabs" id="reportTabs">
+        <div class="report-tab active" onclick="switchReportTab('report')">Report</div>
+        <div class="report-tab" id="convoTab" onclick="switchReportTab('conversations')">Conversations</div>
+      </div>
+      <div class="report-pane active" id="paneReport">
+        <div class="markdown" id="reportContent"></div>
+      </div>
+      <div class="report-pane" id="paneConversations">
+        <div id="transcriptView"></div>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('reportModal')">Close</button>
     </div>
@@ -484,16 +655,17 @@
         <div class="form-group">
           <label class="form-label">Severity</label>
           <select class="form-select" id="hSeverity">
-            <option>Critical</option>
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low-Med</option>
-            <option>Low</option>
+            <option>Critical</option><option>High</option><option>Medium</option>
+            <option>Low-Med</option><option>Low</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Weight (Critical=2, others=1)</label>
           <input class="form-input" id="hWeight" type="number" min="1" max="5" step="1" value="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pass Rate Threshold (0–1)</label>
+          <input class="form-input" id="hThreshold" type="number" min="0" max="1" step="0.05" placeholder="e.g. 0.75 — leave blank for none" />
         </div>
         <div class="form-group full">
           <label class="form-label">Criterion — plain-language definition of what "good" looks like</label>
@@ -519,7 +691,110 @@
   </div>
 </div>
 
-<!-- Delete confirmation modal -->
+<!-- Scenario editor modal -->
+<div class="modal-overlay" id="scenarioModal" onclick="closeModal('scenarioModal')">
+  <div class="modal modal-wide" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="sModalTitle">Scenario</div>
+        <div class="modal-title-sub" id="sModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('scenarioModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">ID (kebab-case slug)</label>
+          <input class="form-input" id="sId" placeholder="e.g. alex-update-email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client Profile</label>
+          <select class="form-select" id="sClientKey">
+            <option value="">— none —</option>
+            <option value="alex">alex (Alex Johnson)</option>
+            <option value="maria">maria (Maria Chen)</option>
+            <option value="jordan">jordan (Jordan Williams)</option>
+            <option value="robert">robert (Robert Martinez)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Scope</label>
+          <select class="form-select" id="sScope">
+            <option value="get-intent">get-intent (agent autopilot)</option>
+            <option value="full-auto">full-auto (customer-facing bot)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Intent (get-intent only)</label>
+          <input class="form-input" id="sIntent" placeholder="e.g. update beneficiaries" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Opening Message (first customer message)</label>
+          <textarea class="form-textarea" id="sOpening" placeholder="I'd like to update my beneficiaries…"></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Customer Prompt (LLM system prompt for the customer simulator)</label>
+          <textarea class="form-textarea xtall" id="sCustomerPrompt" placeholder="You are [Name], a [role].\n\nYour goal: …\n\nRules:\n- If asked X, say Y.\n- Do NOT end the conversation yourself."></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Heuristics Targeted</label>
+          <div class="h-check-grid" id="sHeuristicsGrid"></div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Notes (what this scenario tests)</label>
+          <textarea class="form-textarea" id="sNotes" placeholder="Tests whether the bot correctly calculates percentages…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-footer-left">
+        <button class="btn btn-danger btn-sm" id="sDeleteBtn" onclick="promptDeleteScenario()" style="display:none">🗑 Delete</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('scenarioModal')">Cancel</button>
+      <button class="btn btn-primary" id="sSaveBtn" onclick="saveScenario()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generate scenarios modal -->
+<div class="modal-overlay" id="generateModal" onclick="closeModal('generateModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">✦ Generate Scenarios</div>
+        <div class="modal-title-sub">Uses GPT to create test scenarios from your bot profile + existing scenarios as examples</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('generateModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="form-group">
+          <label class="form-label">Count</label>
+          <input class="form-input" id="genCount" type="number" min="1" max="10" value="3" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">&nbsp;</label>
+          <button class="btn btn-primary" id="genGoBtn" onclick="runGenerate()" style="align-self:flex-start">Go →</button>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Describe what you want (optional)</label>
+          <textarea class="form-textarea" id="genPrompt" placeholder="e.g. scenarios where the customer is confused or gives incomplete information, testing H4 and H5"></textarea>
+        </div>
+      </div>
+      <div id="genStatus" class="generate-status" style="display:none"></div>
+      <div id="genCandidates"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-footer-left">
+        <span id="genCandidateCount" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('generateModal')">Cancel</button>
+      <button class="btn btn-success" id="genAcceptBtn" onclick="acceptAllGenerated()" style="display:none">Add All to Scenarios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirmation modal (shared) -->
 <div class="modal-overlay" id="confirmModal" onclick="closeModal('confirmModal')">
   <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -529,7 +804,7 @@
     <div class="confirm-body">
       <div class="confirm-icon">⚠️</div>
       <div class="confirm-msg" id="confirmMsg"></div>
-      <div class="confirm-sub">This will remove it from all future runs.</div>
+      <div class="confirm-sub" id="confirmSub">This action cannot be undone.</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('confirmModal')">Cancel</button>
@@ -539,24 +814,42 @@
 </div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
 const THRESHOLD = 0.80;
 
-let appState    = { running: false, phase: 'Idle', iteration: 1, loopMode: false, waitingForFix: false, hasAnthropicKey: false };
-let history     = [];
-let heuristics  = [];   // array from /api/heuristics
-let expandedRows = new Set();  // iterations with expanded rows
+// ── State ──────────────────────────────────────────────────────────────────────
+let appState   = { running: false, phase: 'Idle', iteration: 1, loopMode: false, waitingForFix: false, hasAnthropicKey: false };
+let history    = [];
+let heuristics = [];
+let scenarios  = [];
+let appProfile = {};
+let profileDirty = false;
+let responsibilities = [];   // array of strings
+
+let expandedRows     = new Set();
+let expandedScenIds  = new Set();
+let openPanels       = new Set();   // panel IDs that are expanded
+
 let eventSource = null;
 let logOpen     = false;
 let autoScroll  = true;
 
-// heuristic editor state
-let editingCode  = null;   // null = adding new
-let pendingDeleteCode = null;
+// Editor state
+let editingCode        = null;   // heuristic editor: null = new
+let editingScenarioId  = null;   // scenario editor: null = new
+let pendingDeleteCode  = null;
+let pendingDeleteScenId = null;
+
+// Report / transcript state
+let currentReportIter = null;
+let transcriptCache   = {};      // iteration → [{scenarioId, transcript, ...}]
+let expandedTranscripts = new Set();
+let reportTabState    = 'report';
+let generatedCandidates = [];
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 async function boot() {
-  await Promise.all([fetchStatus(), fetchHistory(), fetchHeuristics()]);
+  await Promise.all([fetchStatus(), fetchHistory(), fetchHeuristics(), fetchScenarios(), fetchAppProfile()]);
   connectSSE();
 }
 
@@ -575,14 +868,23 @@ async function fetchStatus() {
 
 async function fetchHistory() {
   history = await fetch('/api/history').then(r => r.json()).catch(() => []);
-  renderHistory();
-  renderHeuristicGrid();
-  renderScoreCard();
+  renderHistory(); renderHeuristicGrid(); renderScoreCard();
 }
 
 async function fetchHeuristics() {
   heuristics = await fetch('/api/heuristics').then(r => r.json()).catch(() => []);
   renderHeuristicGrid();
+}
+
+async function fetchScenarios() {
+  scenarios = await fetch('/api/scenarios').then(r => r.json()).catch(() => []);
+  renderScenarios();
+}
+
+async function fetchAppProfile() {
+  appProfile = await fetch('/api/app-profile').then(r => r.json()).catch(() => ({}));
+  responsibilities = Array.isArray(appProfile.responsibilities) ? [...appProfile.responsibilities] : [];
+  loadProfileIntoForm();
 }
 
 // ── SSE ────────────────────────────────────────────────────────────────────────
@@ -592,10 +894,8 @@ function connectSSE() {
   eventSource.onmessage = e => {
     const msg = JSON.parse(e.data);
     switch (msg.type) {
-      case 'status':
-        appState = msg; renderStatus(); break;
-      case 'log':
-        appendLog(msg.text); break;
+      case 'status':       appState = msg; renderStatus(); break;
+      case 'log':          appendLog(msg.text); break;
       case 'run_complete':
         history = [...history.filter(r => r.iteration !== msg.record.iteration), msg.record]
                     .sort((a,b) => a.iteration - b.iteration);
@@ -607,6 +907,14 @@ function connectSSE() {
       case 'heuristics_updated':
         heuristics = msg.heuristics ?? heuristics;
         renderHeuristicGrid(); break;
+      case 'scenarios_updated':
+        scenarios = msg.scenarios ?? scenarios;
+        renderScenarios(); break;
+      case 'app_profile_updated':
+        appProfile = msg.profile ?? appProfile;
+        responsibilities = Array.isArray(appProfile.responsibilities) ? [...appProfile.responsibilities] : [];
+        document.getElementById('profileName').textContent = appProfile.name ?? '';
+        break;
     }
   };
   eventSource.onerror = () => setTimeout(connectSSE, 3000);
@@ -626,6 +934,23 @@ async function continueFix() {
   await api('POST', '/api/continue');
 }
 
+// ── Panels (accordion) ─────────────────────────────────────────────────────────
+function togglePanel(panelId) {
+  const body    = document.getElementById(panelId.replace('Panel', 'Body'));
+  const chevron = document.getElementById(panelId.replace('Panel', 'Chevron'));
+  if (!body) return;
+  const isOpen = openPanels.has(panelId);
+  if (isOpen) {
+    openPanels.delete(panelId);
+    body.classList.remove('open');
+    if (chevron) chevron.classList.remove('open');
+  } else {
+    openPanels.add(panelId);
+    body.classList.add('open');
+    if (chevron) chevron.classList.add('open');
+  }
+}
+
 // ── Render: status ─────────────────────────────────────────────────────────────
 function renderStatus() {
   const dot  = document.getElementById('statusDot');
@@ -639,7 +964,6 @@ function renderStatus() {
 
   ph.textContent  = appState.phase || 'Idle';
   iter.textContent = `Iter ${appState.iteration ?? '—'}`;
-
   dot.className = 'status-dot';
   if (appState.waitingForFix) {
     dot.classList.add('waiting');
@@ -648,8 +972,7 @@ function renderStatus() {
     dot.classList.add('running');
     document.getElementById('fixBanner').classList.remove('show');
   }
-
-  btnRun.disabled  = appState.running;
+  btnRun.disabled = appState.running;
   btnStop.style.display = appState.running ? 'inline-flex' : 'none';
   btnRun.style.display  = appState.running ? 'none' : 'inline-flex';
   toggle.checked  = appState.loopMode;
@@ -666,13 +989,13 @@ function renderStatus() {
 
 // ── Render: score card ─────────────────────────────────────────────────────────
 function renderScoreCard() {
-  const sorted = [...history].sort((a,b) => a.iteration - b.iteration);
-  const latest = sorted[sorted.length - 1];
-  const prev   = sorted[sorted.length - 2];
-  const numEl    = document.getElementById('scoreNum');
-  const deltaEl  = document.getElementById('scoreDelta');
-  const fillEl   = document.getElementById('thresholdFill');
-  const statusEl = document.getElementById('scoreStatus');
+  const sorted  = [...history].sort((a,b) => a.iteration - b.iteration);
+  const latest  = sorted[sorted.length - 1];
+  const prev    = sorted[sorted.length - 2];
+  const numEl   = document.getElementById('scoreNum');
+  const deltaEl = document.getElementById('scoreDelta');
+  const fillEl  = document.getElementById('thresholdFill');
+  const statusEl= document.getElementById('scoreStatus');
 
   if (!latest) {
     numEl.textContent = '—'; deltaEl.textContent = '—'; fillEl.style.width = '0%';
@@ -752,33 +1075,32 @@ function renderHeuristicGrid() {
 
   const cells = heuristics.map(h => {
     if (!latest) {
-      return `<div class="h-cell empty" data-tip="${h.code}: ${h.name}" onclick="openHeuristicEditor('${h.code}')">
+      const thr = h.threshold != null ? ` · ≥${Math.round(h.threshold*100)}%` : '';
+      return `<div class="h-cell empty" data-tip="${h.code}: ${h.name}${thr}" onclick="openHeuristicEditor('${h.code}')">
         <div class="h-id">${h.code}</div><div class="h-icon" style="color:var(--border)">·</div>
       </div>`;
     }
     const stats = latest.heuristicStats?.[h.code] ?? { pass: 0, marginal: 0, fail: 0, na: 0 };
     const total = stats.pass + stats.marginal + stats.fail;
     let cls, icon, tip;
+    const thr = h.threshold != null ? ` · needs ≥${Math.round(h.threshold*100)}%` : '';
     if (total === 0) {
-      cls = 'na'; icon = '–';
-      tip = `${h.code}: ${h.name} — N/A`;
+      cls = 'na'; icon = '–'; tip = `${h.code}: ${h.name} — N/A`;
     } else if (stats.fail > 0) {
       cls = 'fail'; icon = '✗';
-      tip = `${h.code}: ${h.name} — ${stats.fail} fail${stats.fail>1?'s':''} / ${total}`;
+      tip = `${h.code}: ${h.name} — ${stats.fail} fail / ${total}${thr}`;
     } else if (stats.marginal > 0) {
       cls = 'yellow'; icon = '~';
-      tip = `${h.code}: ${h.name} — ${stats.marginal} marginal / ${total}`;
+      tip = `${h.code}: ${h.name} — ${stats.marginal} marginal / ${total}${thr}`;
     } else {
       cls = 'pass'; icon = '✓';
-      tip = `${h.code}: ${h.name} — all pass`;
+      tip = `${h.code}: ${h.name} — all pass${thr}`;
     }
     return `<div class="h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicEditor('${h.code}')">
-      <div class="h-id">${h.code}</div>
-      <div class="h-icon">${icon}</div>
+      <div class="h-id">${h.code}</div><div class="h-icon">${icon}</div>
     </div>`;
   }).join('');
 
-  // Add button at the end
   const addBtn = `<button class="h-add-btn" title="Add new heuristic" onclick="openHeuristicEditor(null)">+</button>`;
   grid.innerHTML = cells + addBtn;
 }
@@ -793,14 +1115,12 @@ function renderHistory() {
 
   const sorted = [...history].sort((a,b) => b.iteration - a.iteration);
   let html = '';
-
   sorted.forEach((row, i) => {
     const prev  = sorted[i + 1];
     const score = row.overallScore ?? 0;
     const pct   = Math.round(score * 100);
     const isExp = expandedRows.has(row.iteration);
 
-    // Delta
     let deltaHtml = '<span class="score-delta flat">—</span>';
     if (prev) {
       const diff = Math.round((score - prev.overallScore) * 100);
@@ -809,19 +1129,17 @@ function renderHistory() {
       else               deltaHtml = `<span class="score-delta flat">→</span>`;
     }
 
-    // Critical
     const crits = row.criticalFailures ?? [];
     const critHtml = crits.length === 0
       ? '<span class="chip chip-green">✓ Clear</span>'
       : crits.map(c => `<span class="chip chip-red">${c.code ?? c.heuristic} ✗</span>`).join(' ');
 
-    // High severity
     const highFails = row.highSeverityFails ?? [];
     const highHtml  = highFails.length === 0
       ? '<span class="chip chip-green">✓ Clear</span>'
       : `<span class="chip chip-yellow">${highFails.join(' ')}</span>`;
 
-    const scenHtml  = `${row.scenariosFailed ?? 0} fail / ${row.scenarioCount ?? '?'}`;
+    const scenHtml   = `${row.scenariosFailed ?? 0} fail / ${row.scenarioCount ?? '?'}`;
     const statusHtml = row.thresholdMet
       ? '<span class="chip chip-green">✓ Met</span>'
       : '<span class="chip chip-red">✗ Fail</span>';
@@ -829,7 +1147,7 @@ function renderHistory() {
       ? `<a class="report-link" href="#" onclick="openReport('${row.reportFile}',${row.iteration}); event.stopPropagation(); return false">📄 ${row.iteration}</a>`
       : '—';
 
-    const ts = row.timestamp ? new Date(row.timestamp) : null;
+    const ts   = row.timestamp ? new Date(row.timestamp) : null;
     const when = ts ? formatTime(ts) : '—';
     const whenFull = ts ? ts.toLocaleString() : '';
 
@@ -845,72 +1163,559 @@ function renderHistory() {
       <td>${statusHtml}</td>
       <td onclick="event.stopPropagation()">${reportHtml}</td>
     </tr>`;
-
-    // Expanded detail row
     html += `<tr class="expand-row">
       <td colspan="10"><div class="expand-content${isExp ? ' open' : ''}" id="expand-${row.iteration}">${isExp ? buildExpandContent(row) : ''}</div></td>
     </tr>`;
   });
-
   tbody.innerHTML = html;
 }
 
 function toggleExpandRow(iteration) {
-  if (expandedRows.has(iteration)) {
-    expandedRows.delete(iteration);
-  } else {
-    expandedRows.add(iteration);
-  }
+  if (expandedRows.has(iteration)) expandedRows.delete(iteration);
+  else expandedRows.add(iteration);
   renderHistory();
 }
 
 function buildExpandContent(row) {
   const stats = row.heuristicStats ?? {};
-
-  // Mini heuristic grid for this iteration
   const cells = heuristics.map(h => {
     const s = stats[h.code] ?? { pass: 0, marginal: 0, fail: 0 };
     const total = s.pass + s.marginal + s.fail;
     let cls, icon;
-    if (total === 0)          { cls = 'na';     icon = '–'; }
-    else if (s.fail > 0)      { cls = 'fail';   icon = '✗'; }
-    else if (s.marginal > 0)  { cls = 'yellow'; icon = '~'; }
-    else                       { cls = 'pass';   icon = '✓'; }
-    const tip = total === 0
-      ? `${h.code}: ${h.name} — N/A`
-      : cls === 'fail'
-        ? `${h.code}: ${h.name} — ${s.fail} fail / ${total}`
-        : cls === 'yellow'
-          ? `${h.code}: ${h.name} — ${s.marginal} marginal / ${total}`
-          : `${h.code}: ${h.name} — all pass`;
-
+    if (total === 0)        { cls = 'na';     icon = '–'; }
+    else if (s.fail > 0)    { cls = 'fail';   icon = '✗'; }
+    else if (s.marginal > 0){ cls = 'yellow'; icon = '~'; }
+    else                     { cls = 'pass';   icon = '✓'; }
+    const tip = total === 0 ? `${h.code}: ${h.name} — N/A`
+      : cls === 'fail'   ? `${h.code}: ${h.name} — ${s.fail} fail / ${total}`
+      : cls === 'yellow' ? `${h.code}: ${h.name} — ${s.marginal} marginal / ${total}`
+      : `${h.code}: ${h.name} — all pass`;
     return `<div class="expand-h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicEditor('${h.code}')">
-      <div class="h-id">${h.code}</div>
-      <div class="h-icon">${icon}</div>
+      <div class="h-id">${h.code}</div><div class="h-icon">${icon}</div>
     </div>`;
   }).join('');
 
-  // List of failures
-  const failures = heuristics
-    .filter(h => {
-      const s = stats[h.code];
-      return s && s.fail > 0;
-    })
-    .map(h => {
-      const s = stats[h.code];
-      const total = s.pass + s.marginal + s.fail;
-      return `<div class="expand-fail-item">
-        <span class="expand-fail-code">${h.code}</span>
-        <span>${h.name} — ${s.fail} of ${total} scenarios failed</span>
-      </div>`;
-    }).join('');
+  const failures = heuristics.filter(h => (stats[h.code]?.fail ?? 0) > 0).map(h => {
+    const s = stats[h.code];
+    return `<div class="expand-fail-item">
+      <span class="expand-fail-code">${h.code}</span>
+      <span>${h.name} — ${s.fail} of ${s.pass + s.marginal + s.fail} scenarios failed</span>
+    </div>`;
+  }).join('');
 
   return `
     <div style="margin-bottom:10px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.6px">Heuristic Results — Iteration ${row.iteration}</div>
     <div class="expand-h-grid">${cells}</div>
-    ${failures ? `<div class="expand-fail-list" style="margin-top:10px">${failures}</div>` : '<div style="font-size:12px;color:var(--green)">✓ No failures in this iteration</div>'}
+    ${failures ? `<div class="expand-fail-list" style="margin-top:10px">${failures}</div>`
+               : '<div style="font-size:12px;color:var(--green)">✓ No failures in this iteration</div>'}
   `;
 }
+
+// ── App Profile ────────────────────────────────────────────────────────────────
+function loadProfileIntoForm() {
+  document.getElementById('pfName').value  = appProfile.name ?? '';
+  document.getElementById('pfDesc').value  = appProfile.description ?? '';
+  document.getElementById('pfUsers').value = appProfile.userDescription ?? '';
+  document.getElementById('profileName').textContent = appProfile.name ?? '';
+  renderRespTags();
+  profileDirty = false;
+}
+
+function renderRespTags() {
+  const container = document.getElementById('respTags');
+  container.innerHTML = responsibilities.map((r, i) =>
+    `<span class="resp-tag">${escHtml(r)}<button class="del-tag" onclick="removeResp(${i})">×</button></span>`
+  ).join('');
+}
+
+function addResp() {
+  const inp = document.getElementById('respInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  responsibilities.push(val);
+  inp.value = '';
+  renderRespTags();
+  profileDirty = true;
+}
+
+function removeResp(i) {
+  responsibilities.splice(i, 1);
+  renderRespTags();
+  profileDirty = true;
+}
+
+async function saveAppProfile() {
+  const data = {
+    name:            document.getElementById('pfName').value.trim(),
+    description:     document.getElementById('pfDesc').value.trim(),
+    userDescription: document.getElementById('pfUsers').value.trim(),
+    responsibilities: [...responsibilities],
+  };
+  appProfile = await api('PUT', '/api/app-profile', data);
+  document.getElementById('profileName').textContent = appProfile.name ?? '';
+  profileDirty = false;
+  // brief flash
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '✓ Saved'; setTimeout(() => { btn.textContent = orig; }, 1500);
+}
+
+// ── Scenarios ──────────────────────────────────────────────────────────────────
+function renderScenarios() {
+  document.getElementById('scenarioCount').textContent = scenarios.length;
+  const list = document.getElementById('scenarioList');
+  if (!scenarios.length) {
+    list.innerHTML = '<div class="scenario-empty">No scenarios yet. Click <strong>+ Add</strong> to create one or <strong>✦ Generate More</strong> to auto-generate.</div>';
+    return;
+  }
+
+  list.innerHTML = scenarios.map(s => {
+    const isOpen   = expandedScenIds.has(s.id);
+    const scopeCls = s.scope === 'full-auto' ? 'scope-full' : 'scope-get';
+    const scopeTxt = s.scope === 'full-auto' ? 'full-auto' : 'get-intent';
+    const hChips   = (s.heuristics ?? []).map(c => `<span class="h-chip">${c}</span>`).join('');
+    const client   = s.clientKey ? `<span class="scenario-client">${s.clientKey}</span>` : '';
+
+    let bodyHtml = '';
+    if (isOpen) {
+      bodyHtml = `
+        ${s.notes ? `<div class="scenario-notes">${escHtml(s.notes)}</div>` : ''}
+        <div class="scenario-field"><div class="scenario-field-label">Opening Message</div>
+          <div class="scenario-field-val">${escHtml(s.openingMessage ?? '')}</div></div>
+        ${s.currentIntent ? `<div class="scenario-field"><div class="scenario-field-label">Current Intent</div>
+          <div class="scenario-field-val">${escHtml(s.currentIntent)}</div></div>` : ''}
+        <div class="scenario-field"><div class="scenario-field-label">Customer Prompt</div>
+          <div class="scenario-field-val">${escHtml(s.customerPrompt ?? '')}</div></div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openScenarioEditor('${escHtml(s.id)}');event.stopPropagation()">Edit</button>
+        </div>`;
+    }
+
+    return `<div class="scenario-card">
+      <div class="scenario-card-header" onclick="toggleScenario('${escHtml(s.id)}')">
+        <span class="scenario-chevron${isOpen ? ' open' : ''}">▶</span>
+        <span class="scenario-id">${escHtml(s.id)}</span>
+        ${client}
+        <span class="scenario-scope ${scopeCls}">${scopeTxt}</span>
+        <div class="scenario-heuristics">${hChips}</div>
+      </div>
+      <div class="scenario-body${isOpen ? ' open' : ''}" id="scen-body-${escHtml(s.id)}">
+        ${bodyHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleScenario(id) {
+  if (expandedScenIds.has(id)) expandedScenIds.delete(id);
+  else expandedScenIds.add(id);
+  renderScenarios();
+}
+
+// ── Scenario editor ────────────────────────────────────────────────────────────
+function openScenarioEditor(id) {
+  editingScenarioId = id;
+  const titleEl  = document.getElementById('sModalTitle');
+  const subEl    = document.getElementById('sModalSub');
+  const saveBtn  = document.getElementById('sSaveBtn');
+  const delBtn   = document.getElementById('sDeleteBtn');
+  const idInput  = document.getElementById('sId');
+
+  // Build heuristics checkbox grid
+  const grid = document.getElementById('sHeuristicsGrid');
+  grid.innerHTML = heuristics.map(h =>
+    `<label class="h-check-item">
+      <input type="checkbox" class="h-check" value="${h.code}" />
+      <span class="h-check-label">${h.code}</span>
+      <span style="font-size:11px;color:var(--muted)"> ${h.name}</span>
+    </label>`
+  ).join('');
+
+  if (id === null) {
+    titleEl.textContent = 'Add New Scenario';
+    subEl.textContent   = 'Define what the customer wants and how to play them.';
+    saveBtn.textContent = 'Add Scenario';
+    delBtn.style.display = 'none';
+    idInput.disabled = false;
+    idInput.value = '';
+    document.getElementById('sClientKey').value = '';
+    document.getElementById('sScope').value = 'get-intent';
+    document.getElementById('sIntent').value = '';
+    document.getElementById('sOpening').value = '';
+    document.getElementById('sCustomerPrompt').value = '';
+    document.getElementById('sNotes').value = '';
+  } else {
+    const s = scenarios.find(x => x.id === id);
+    if (!s) return;
+    titleEl.textContent = s.id;
+    subEl.textContent   = `${s.scope} · ${s.clientKey ?? 'no client'}`;
+    saveBtn.textContent = 'Save Changes';
+    delBtn.style.display = 'inline-flex';
+    idInput.disabled = true;
+    idInput.value = s.id;
+    document.getElementById('sClientKey').value = s.clientKey ?? '';
+    document.getElementById('sScope').value = s.scope ?? 'get-intent';
+    document.getElementById('sIntent').value = s.currentIntent ?? '';
+    document.getElementById('sOpening').value = s.openingMessage ?? '';
+    document.getElementById('sCustomerPrompt').value = s.customerPrompt ?? '';
+    document.getElementById('sNotes').value = s.notes ?? '';
+    // Check relevant heuristics
+    const checked = new Set(s.heuristics ?? []);
+    grid.querySelectorAll('.h-check').forEach(cb => { cb.checked = checked.has(cb.value); });
+  }
+
+  document.getElementById('scenarioModal').classList.add('open');
+}
+
+function getCheckedHeuristics() {
+  return Array.from(document.getElementById('sHeuristicsGrid').querySelectorAll('.h-check:checked'))
+    .map(cb => cb.value);
+}
+
+async function saveScenario() {
+  const payload = {
+    id:            document.getElementById('sId').value.trim().toLowerCase().replace(/\s+/g, '-'),
+    clientKey:     document.getElementById('sClientKey').value || null,
+    scope:         document.getElementById('sScope').value,
+    currentIntent: document.getElementById('sIntent').value.trim() || null,
+    openingMessage: document.getElementById('sOpening').value.trim(),
+    customerPrompt: document.getElementById('sCustomerPrompt').value.trim(),
+    heuristics:    getCheckedHeuristics(),
+    notes:         document.getElementById('sNotes').value.trim(),
+  };
+  if (!payload.openingMessage) { alert('Opening message is required.'); return; }
+
+  let result;
+  if (editingScenarioId === null) {
+    if (!payload.id) { alert('ID is required.'); return; }
+    result = await api('POST', '/api/scenarios', payload);
+    if (result.error) { alert('Error: ' + result.error); return; }
+    scenarios.push(result);
+  } else {
+    result = await api('PUT', `/api/scenarios/${encodeURIComponent(editingScenarioId)}`, payload);
+    if (result.error) { alert('Error: ' + result.error); return; }
+    const idx = scenarios.findIndex(x => x.id === editingScenarioId);
+    if (idx >= 0) scenarios[idx] = result;
+  }
+  closeModal('scenarioModal');
+  renderScenarios();
+}
+
+function promptDeleteScenario() {
+  if (!editingScenarioId) return;
+  pendingDeleteScenId = editingScenarioId;
+  document.getElementById('confirmMsg').textContent = `Delete scenario "${editingScenarioId}"?`;
+  document.getElementById('confirmSub').textContent = 'This will remove it from all future runs.';
+  document.getElementById('confirmDeleteBtn').onclick = executeDeleteScenario;
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+async function executeDeleteScenario() {
+  if (!pendingDeleteScenId) return;
+  const result = await api('DELETE', `/api/scenarios/${encodeURIComponent(pendingDeleteScenId)}`);
+  if (result.error) { alert('Error: ' + result.error); return; }
+  scenarios = scenarios.filter(x => x.id !== pendingDeleteScenId);
+  pendingDeleteScenId = null;
+  closeModal('confirmModal');
+  closeModal('scenarioModal');
+  renderScenarios();
+}
+
+// ── Generate scenarios ─────────────────────────────────────────────────────────
+function openGenerateModal() {
+  generatedCandidates = [];
+  document.getElementById('genCandidates').innerHTML = '';
+  document.getElementById('genStatus').style.display = 'none';
+  document.getElementById('genAcceptBtn').style.display = 'none';
+  document.getElementById('genCandidateCount').textContent = '';
+  document.getElementById('genPrompt').value = '';
+  document.getElementById('genCount').value = '3';
+  document.getElementById('generateModal').classList.add('open');
+}
+
+async function runGenerate() {
+  const count  = parseInt(document.getElementById('genCount').value, 10) || 3;
+  const prompt = document.getElementById('genPrompt').value.trim();
+  const btn    = document.getElementById('genGoBtn');
+  const status = document.getElementById('genStatus');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+  status.innerHTML = '<span class="spinner"></span> Asking the model to generate scenarios…';
+  status.style.display = 'block';
+  document.getElementById('genCandidates').innerHTML = '';
+  document.getElementById('genAcceptBtn').style.display = 'none';
+  document.getElementById('genCandidateCount').textContent = '';
+
+  const result = await api('POST', '/api/scenarios/generate', { count, prompt });
+  btn.disabled = false;
+  btn.textContent = 'Go →';
+
+  if (result.error) {
+    status.innerHTML = `<span style="color:var(--red)">Error: ${escHtml(result.error)}</span>`;
+    return;
+  }
+
+  generatedCandidates = result.scenarios ?? [];
+  if (!generatedCandidates.length) {
+    status.innerHTML = '<span style="color:var(--yellow)">No scenarios returned — try a different prompt.</span>';
+    return;
+  }
+  status.style.display = 'none';
+  renderCandidates();
+}
+
+function renderCandidates() {
+  const container = document.getElementById('genCandidates');
+  if (!generatedCandidates.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0">All candidates removed.</div>';
+    document.getElementById('genAcceptBtn').style.display = 'none';
+    document.getElementById('genCandidateCount').textContent = '';
+    return;
+  }
+  document.getElementById('genAcceptBtn').style.display = 'inline-flex';
+  document.getElementById('genCandidateCount').textContent = `${generatedCandidates.length} candidate${generatedCandidates.length > 1 ? 's' : ''} ready`;
+
+  container.innerHTML = '<div class="candidate-list">' + generatedCandidates.map((s, i) =>
+    `<div class="candidate-card" id="candidate-${i}">
+      <button class="candidate-remove" onclick="removeCandidate(${i})" title="Remove">✕</button>
+      <div class="candidate-id">${escHtml(s.id ?? '(no id)')}</div>
+      <div class="candidate-opening">${escHtml(s.openingMessage ?? '')}</div>
+      <div class="candidate-meta">
+        <span>scope: ${escHtml(s.scope ?? '?')}</span>
+        <span>client: ${escHtml(s.clientKey ?? 'none')}</span>
+        <span>heuristics: ${(s.heuristics ?? []).join(', ') || '—'}</span>
+      </div>
+      ${s.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;font-style:italic">${escHtml(s.notes)}</div>` : ''}
+    </div>`
+  ).join('') + '</div>';
+}
+
+function removeCandidate(i) {
+  generatedCandidates.splice(i, 1);
+  renderCandidates();
+}
+
+async function acceptAllGenerated() {
+  const btn = document.getElementById('genAcceptBtn');
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+
+  const added = [];
+  const failed = [];
+  for (const s of generatedCandidates) {
+    // Ensure id is slug-safe
+    if (!s.id) s.id = `generated-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    s.id = s.id.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+    const result = await api('POST', '/api/scenarios', s);
+    if (result.error) failed.push(`${s.id}: ${result.error}`);
+    else { scenarios.push(result); added.push(result.id); }
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Add All to Scenarios';
+
+  if (failed.length) alert('Some scenarios failed to add:\n' + failed.join('\n'));
+  if (added.length) {
+    generatedCandidates = [];
+    closeModal('generateModal');
+    renderScenarios();
+    // Open scenarios panel if not already open
+    if (!openPanels.has('scenariosPanel')) togglePanel('scenariosPanel');
+  }
+}
+
+// ── Heuristic editor ───────────────────────────────────────────────────────────
+function openHeuristicEditor(code) {
+  editingCode = code;
+  const titleEl = document.getElementById('hModalTitle');
+  const subEl   = document.getElementById('hModalSub');
+  const saveBtn = document.getElementById('hSaveBtn');
+  const delBtn  = document.getElementById('hDeleteBtn');
+
+  if (code === null) {
+    titleEl.textContent = 'Add New Heuristic';
+    subEl.textContent   = 'Define the criterion, failure signals, and fix guidance.';
+    saveBtn.textContent = 'Add Heuristic';
+    delBtn.style.display = 'none';
+    document.getElementById('hCode').disabled = false;
+    document.getElementById('hCode').value    = '';
+    document.getElementById('hName').value    = '';
+    document.getElementById('hSeverity').value = 'Medium';
+    document.getElementById('hWeight').value   = '1';
+    document.getElementById('hThreshold').value = '';
+    document.getElementById('hCriterion').value = '';
+    document.getElementById('hFailureSignals').value = '';
+    document.getElementById('hFixGuidance').value    = '';
+  } else {
+    const h = heuristics.find(x => x.code === code);
+    if (!h) return;
+    titleEl.textContent = `${h.code} — ${h.name}`;
+    subEl.textContent   = `${h.severity} · Weight ×${h.weight}${h.threshold != null ? ' · Threshold ≥' + Math.round(h.threshold * 100) + '%' : ''}`;
+    saveBtn.textContent = 'Save Changes';
+    delBtn.style.display = 'inline-flex';
+    document.getElementById('hCode').disabled  = true;
+    document.getElementById('hCode').value     = h.code;
+    document.getElementById('hName').value     = h.name;
+    document.getElementById('hSeverity').value = h.severity;
+    document.getElementById('hWeight').value   = String(h.weight ?? 1);
+    document.getElementById('hThreshold').value = h.threshold != null ? String(h.threshold) : '';
+    document.getElementById('hCriterion').value = h.criterion ?? '';
+    document.getElementById('hFailureSignals').value = h.failureSignals ?? '';
+    document.getElementById('hFixGuidance').value    = h.fixGuidance ?? '';
+  }
+  document.getElementById('heuristicModal').classList.add('open');
+}
+
+async function saveHeuristic() {
+  const thrVal = document.getElementById('hThreshold').value.trim();
+  const payload = {
+    code:          document.getElementById('hCode').value.trim().toUpperCase(),
+    name:          document.getElementById('hName').value.trim(),
+    severity:      document.getElementById('hSeverity').value,
+    weight:        Number(document.getElementById('hWeight').value),
+    threshold:     thrVal === '' ? null : Number(thrVal),
+    criterion:     document.getElementById('hCriterion').value.trim(),
+    failureSignals: document.getElementById('hFailureSignals').value.trim(),
+    fixGuidance:   document.getElementById('hFixGuidance').value.trim(),
+  };
+  if (!payload.name) { alert('Name is required.'); return; }
+
+  let result;
+  if (editingCode === null) {
+    if (!payload.code) { alert('Code is required.'); return; }
+    result = await api('POST', '/api/heuristics', payload);
+    if (result.error) { alert('Error: ' + result.error); return; }
+    heuristics.push(result);
+  } else {
+    result = await api('PUT', `/api/heuristics/${editingCode}`, payload);
+    if (result.error) { alert('Error: ' + result.error); return; }
+    const idx = heuristics.findIndex(x => x.code === editingCode);
+    if (idx >= 0) heuristics[idx] = result;
+  }
+  closeModal('heuristicModal');
+  renderHeuristicGrid();
+}
+
+// Also update PUT heuristics to pass threshold field through
+// (already handled server-side via the patch spread)
+
+function promptDeleteHeuristic() {
+  if (!editingCode) return;
+  const h = heuristics.find(x => x.code === editingCode);
+  if (!h) return;
+  pendingDeleteCode = editingCode;
+  document.getElementById('confirmMsg').textContent = `Delete ${h.code} — ${h.name}?`;
+  document.getElementById('confirmSub').textContent = 'This will remove it from all future runs.';
+  document.getElementById('confirmDeleteBtn').onclick = executeDeleteHeuristic;
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+async function executeDeleteHeuristic() {
+  if (!pendingDeleteCode) return;
+  const result = await api('DELETE', `/api/heuristics/${pendingDeleteCode}`);
+  if (result.error) { alert('Error: ' + result.error); return; }
+  heuristics = heuristics.filter(x => x.code !== pendingDeleteCode);
+  pendingDeleteCode = null;
+  closeModal('confirmModal');
+  closeModal('heuristicModal');
+  renderHeuristicGrid();
+}
+
+// ── Report + transcript viewer ─────────────────────────────────────────────────
+async function openReport(filename, iteration) {
+  currentReportIter = iteration;
+  reportTabState = 'report';
+
+  // Fetch report markdown
+  const md = await fetch('/api/report/' + filename).then(r => r.text()).catch(() => 'Report not found.');
+  document.getElementById('reportContent').innerHTML = marked.parse(md);
+
+  // Fetch transcripts (may be null for older iterations)
+  const transcripts = await fetch(`/api/transcripts/${iteration}`).then(r => r.json()).catch(() => null);
+  transcriptCache[iteration] = transcripts;  // null means no file
+
+  // Update Conversations tab label
+  const convoTab = document.getElementById('convoTab');
+  const count = transcripts ? transcripts.length : 0;
+  convoTab.textContent = transcripts ? `Conversations (${count})` : 'Conversations';
+
+  document.getElementById('reportModalTitle').textContent = `Report — Iteration ${iteration}`;
+  switchReportTab('report');
+  document.getElementById('reportModal').classList.add('open');
+}
+
+function switchReportTab(tab) {
+  reportTabState = tab;
+  document.querySelectorAll('.report-tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.report-pane').forEach(el => el.classList.remove('active'));
+
+  if (tab === 'report') {
+    document.querySelector('.report-tab:first-child').classList.add('active');
+    document.getElementById('paneReport').classList.add('active');
+  } else {
+    document.getElementById('convoTab').classList.add('active');
+    document.getElementById('paneConversations').classList.add('active');
+    renderTranscripts(currentReportIter);
+  }
+}
+
+function renderTranscripts(iteration) {
+  const container = document.getElementById('transcriptView');
+  const data = transcriptCache[iteration];
+
+  if (!data) {
+    container.innerHTML = `<div class="t-no-transcript">
+      <div style="font-size:24px;margin-bottom:8px">📭</div>
+      <div>No conversation transcripts found for iteration ${iteration}.</div>
+      <div style="margin-top:6px;font-size:12px;color:var(--muted)">Transcripts are saved automatically starting with the next evaluation run.</div>
+    </div>`;
+    return;
+  }
+
+  if (!data.length) {
+    container.innerHTML = '<div class="t-no-transcript">No conversations recorded for this iteration.</div>';
+    return;
+  }
+
+  container.innerHTML = data.map(item => {
+    const isOpen = expandedTranscripts.has(`${iteration}:${item.scenarioId}`);
+    const messages = item.transcript ?? [];
+    const key = `${iteration}:${item.scenarioId}`;
+
+    const msgHtml = messages.map(m =>
+      `<div class="t-msg ${m.role}">
+        <div class="t-role">${m.role}</div>
+        <div>${escHtml(m.content ?? '')}</div>
+      </div>`
+    ).join('');
+
+    return `<div class="transcript-scenario">
+      <div class="transcript-scenario-header" onclick="toggleTranscript('${key}')">
+        <div class="transcript-scenario-id">${escHtml(item.scenarioId)}</div>
+        <div class="transcript-scenario-meta">${item.turnCount ?? 0} turns · ${item.exitReason ?? ''}</div>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">${isOpen ? '▲' : '▼'}</span>
+      </div>
+      <div class="transcript-messages${isOpen ? ' open' : ''}" id="tmsg-${key.replace(/[^a-z0-9]/gi,'_')}">
+        ${msgHtml || '<div style="color:var(--muted);font-size:13px">No messages recorded.</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTranscript(key) {
+  if (expandedTranscripts.has(key)) expandedTranscripts.delete(key);
+  else expandedTranscripts.add(key);
+  renderTranscripts(currentReportIter);
+}
+
+async function openNextFix() {
+  const md = await fetch('/api/next-fix').then(r => r.text()).catch(() => '');
+  document.getElementById('fixContent').innerHTML = marked.parse(md || '*(No fix file yet — run an evaluation first.)*');
+  document.getElementById('fixModal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ── Log console ────────────────────────────────────────────────────────────────
 function appendLog(line) {
@@ -930,119 +1735,11 @@ function toggleLog() {
   document.getElementById('logIcon').classList.toggle('open', logOpen);
 }
 
-// ── Modals: report + fix ───────────────────────────────────────────────────────
-async function openReport(filename, iteration) {
-  const md = await fetch('/api/report/' + filename).then(r => r.text()).catch(() => 'Report not found.');
-  document.getElementById('reportModalTitle').textContent = `Report — Iteration ${iteration}`;
-  document.getElementById('reportContent').innerHTML = marked.parse(md);
-  document.getElementById('reportModal').classList.add('open');
-}
-
-async function openNextFix() {
-  const md = await fetch('/api/next-fix').then(r => r.text()).catch(() => '');
-  document.getElementById('fixContent').innerHTML = marked.parse(md || '*(No fix file yet — run an evaluation first.)*');
-  document.getElementById('fixModal').classList.add('open');
-}
-
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-// ── Heuristic editor ───────────────────────────────────────────────────────────
-function openHeuristicEditor(code) {
-  editingCode = code;  // null = new
-
-  const titleEl = document.getElementById('hModalTitle');
-  const subEl   = document.getElementById('hModalSub');
-  const saveBtn = document.getElementById('hSaveBtn');
-  const delBtn  = document.getElementById('hDeleteBtn');
-
-  if (code === null) {
-    // Adding a new heuristic
-    titleEl.textContent = 'Add New Heuristic';
-    subEl.textContent   = 'Define the criterion, failure signals, and fix guidance.';
-    saveBtn.textContent = 'Add Heuristic';
-    delBtn.style.display = 'none';
-    document.getElementById('hCode').disabled = false;
-    document.getElementById('hCode').value    = '';
-    document.getElementById('hName').value    = '';
-    document.getElementById('hSeverity').value = 'Medium';
-    document.getElementById('hWeight').value   = '1';
-    document.getElementById('hCriterion').value     = '';
-    document.getElementById('hFailureSignals').value = '';
-    document.getElementById('hFixGuidance').value    = '';
-  } else {
-    const h = heuristics.find(x => x.code === code);
-    if (!h) return;
-    titleEl.textContent = `${h.code} — ${h.name}`;
-    subEl.textContent   = `${h.severity} · Weight ×${h.weight}`;
-    saveBtn.textContent = 'Save Changes';
-    delBtn.style.display = 'inline-flex';
-    document.getElementById('hCode').disabled  = true;
-    document.getElementById('hCode').value     = h.code;
-    document.getElementById('hName').value     = h.name;
-    document.getElementById('hSeverity').value = h.severity;
-    document.getElementById('hWeight').value   = String(h.weight ?? 1);
-    document.getElementById('hCriterion').value     = h.criterion ?? '';
-    document.getElementById('hFailureSignals').value = h.failureSignals ?? '';
-    document.getElementById('hFixGuidance').value    = h.fixGuidance ?? '';
-  }
-
-  document.getElementById('heuristicModal').classList.add('open');
-}
-
-async function saveHeuristic() {
-  const payload = {
-    code:          document.getElementById('hCode').value.trim().toUpperCase(),
-    name:          document.getElementById('hName').value.trim(),
-    severity:      document.getElementById('hSeverity').value,
-    weight:        Number(document.getElementById('hWeight').value),
-    criterion:     document.getElementById('hCriterion').value.trim(),
-    failureSignals: document.getElementById('hFailureSignals').value.trim(),
-    fixGuidance:   document.getElementById('hFixGuidance').value.trim(),
-  };
-
-  if (!payload.name) { alert('Name is required.'); return; }
-
-  let result;
-  if (editingCode === null) {
-    if (!payload.code) { alert('Code is required.'); return; }
-    result = await api('POST', '/api/heuristics', payload);
-    if (result.error) { alert('Error: ' + result.error); return; }
-    heuristics.push(result);
-  } else {
-    result = await api('PUT', `/api/heuristics/${editingCode}`, payload);
-    if (result.error) { alert('Error: ' + result.error); return; }
-    const idx = heuristics.findIndex(x => x.code === editingCode);
-    if (idx >= 0) heuristics[idx] = result;
-  }
-
-  closeModal('heuristicModal');
-  renderHeuristicGrid();
-}
-
-function promptDeleteHeuristic() {
-  if (!editingCode) return;
-  const h = heuristics.find(x => x.code === editingCode);
-  if (!h) return;
-
-  pendingDeleteCode = editingCode;
-  document.getElementById('confirmMsg').textContent =
-    `Are you sure you want to delete ${h.code} — ${h.name}?`;
-  document.getElementById('confirmDeleteBtn').onclick = () => executeDeleteHeuristic();
-  document.getElementById('confirmModal').classList.add('open');
-}
-
-async function executeDeleteHeuristic() {
-  if (!pendingDeleteCode) return;
-  const result = await api('DELETE', `/api/heuristics/${pendingDeleteCode}`);
-  if (result.error) { alert('Error: ' + result.error); return; }
-  heuristics = heuristics.filter(x => x.code !== pendingDeleteCode);
-  pendingDeleteCode = null;
-  closeModal('confirmModal');
-  closeModal('heuristicModal');
-  renderHeuristicGrid();
-}
-
 // ── Utils ──────────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function formatTime(date) {
   const now  = Date.now();
   const diff = now - date.getTime();
@@ -1053,10 +1750,10 @@ function formatTime(date) {
          date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// Keyboard: Escape closes top-most modal
+// ── Keyboard shortcuts ─────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    for (const id of ['confirmModal', 'heuristicModal', 'fixModal', 'reportModal']) {
+    for (const id of ['confirmModal', 'generateModal', 'scenarioModal', 'heuristicModal', 'fixModal', 'reportModal']) {
       const el = document.getElementById(id);
       if (el.classList.contains('open')) { el.classList.remove('open'); return; }
     }

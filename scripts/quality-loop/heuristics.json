@@ -4,6 +4,7 @@
     "name": "Factual Accuracy",
     "severity": "Critical",
     "weight": 2,
+    "threshold": 1.0,
     "criterion": "Every specific client data point stated (balance, account name, beneficiary name, percentage, transaction amount, contact info) must match what the system retrieved via tool call or pre-loaded context. The AI must not state figures it does not have.",
     "failureSignals": "A stated value (dollar amount, percentage, name, ticker) that does not appear in any tool result or pre-loaded profile in the conversation.",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, find the shared hallucination protection rule (search for \"hallucination\" or \"do not invent\"). Strengthen the rule to explicitly cover financial figures:\n---\n\"FACTUAL ACCURACY — CRITICAL: Never state any dollar amount, share count, percentage, account balance, fund name, or beneficiary name unless it was explicitly provided in the client profile or returned by a tool call. If you are unsure of a value, use a tool to retrieve it or say you will verify. Guessing a financial figure is a serious error.\"\n---"
@@ -13,6 +14,7 @@
     "name": "Mathematical Integrity",
     "severity": "Critical",
     "weight": 2,
+    "threshold": 1.0,
     "criterion": "Any time allocation percentages, totals, or derived figures are discussed, they must be arithmetically correct. When a change affects existing values (e.g., adding a beneficiary reduces an existing one's share), the impact must be explicitly computed, stated, and confirmed before the bot exits.",
     "failureSignals": "Percentages in the final state that don't sum to 100% go unaddressed; Adding new beneficiaries at stated percentages without noting that an existing beneficiary's share decreases as a result; Contradictory arithmetic across turns about the same set of values.",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, find UPDATE_BENEFICIARIES_PROMPT (around line 348). In the ALLOCATION RULE section, add:\n---\n\"PERCENTAGE IMPACT DISCLOSURE — REQUIRED: Before collecting confirmation of any ADD operation, you must state the resulting percentage for EVERY beneficiary in the final list — including existing ones whose shares change. Do not make the client figure out the math. Example (client adds Marco 25% and Sofia 25%, Elena is currently 100%): 'That would bring Elena from 100% down to 50%, with Marco at 25% and Sofia at 25%. Does that sound right?' Always state: [existing name] goes from [old %] to [new %]. Never proceed to proposedAction without this explicit acknowledgment.\"\n---"
@@ -22,6 +24,7 @@
     "name": "Change Transparency",
     "severity": "High",
     "weight": 1,
+    "threshold": 0.75,
     "criterion": "When a change is confirmed (in the bot's exit response), both the prior state and the new state must be explicitly stated. \"Updated to X\" is not sufficient — it must be \"Changed from Y to X.\"",
     "failureSignals": "Confirmation states only the new value: \"Updated frequency to Quarterly\" (prior frequency not mentioned); Confirmation lists the final beneficiaries without stating what they replaced; Confirmation says \"adding [person]\" without saying what the account looked like before.",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, find FORBIDDEN_TOPICS (around line 40). Add a new rule at the end:\n---\n\"CHANGE TRANSPARENCY — REQUIRED FOR ALL CONFIRMATIONS: When confirming a change in the exit response, you MUST state both the prior state and the new state. Never state only the final result. Examples:\n- Frequency: 'changing from Annual (December) to Quarterly'\n- Percentage: 'Elena goes from 100% to 50%'\n- Email: 'updating from old@email.com to new@email.com'\nIf the prior state was none/zero, say 'previously none'.\"\n---"
@@ -31,6 +34,7 @@
     "name": "Info Gathering Efficiency",
     "severity": "Medium",
     "weight": 1,
+    "threshold": 0.60,
     "criterion": "The AI must not request information already present in the conversation transcript or retrievable from available tools.",
     "failureSignals": "Asking a customer for a value that: (a) the customer already stated earlier in the conversation, (b) the system has on file and accessible via tool, or (c) is directly derivable from information already provided. Each unnecessary request = 1 demerit; >2 = Fail.",
     "fixGuidance": "Check the evaluator's notes for what specific information was re-requested. Add a rule to the relevant task expert prompt: \"Do not ask the customer for information they already provided earlier in this conversation. Review the full transcript before asking any clarifying question.\""
@@ -40,6 +44,7 @@
     "name": "Intent Capture Fidelity",
     "severity": "High",
     "weight": 1,
+    "threshold": 0.75,
     "criterion": "The AI's interpretation of the customer's intent must remain consistent with what the customer actually said, including through corrections and ambiguous statements. The AI must not infer a meaning that contradicts the plain reading of the request.",
     "failureSignals": "Customer makes a statement with a clear plain-language meaning (e.g., \"she stays on the account\") and the bot interprets it in a way that contradicts that meaning (e.g., treating \"stays on\" as \"keeps her current percentage unchanged\" when the context implies otherwise).",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, in the update-beneficiaries task expert prompt, add:\n---\n\"INTENT FIDELITY: When the customer says 'make it match X' or 'same as Y,' interpret this as: replicate the exact beneficiary set and percentages from account Y to this account. When the customer says 'she stays on,' interpret this as: include that person in the updated list at the proportion that results from the new additions, not at 100%.\"\n---"
@@ -49,6 +54,7 @@
     "name": "Handoff Clarity",
     "severity": "Medium",
     "weight": 1,
+    "threshold": 0.60,
     "criterion": "The bot must not announce a handoff to a live agent and then continue gathering information as if it is the active conversation handler. The handoff announcement should come only once all information collection is complete.\n\nNote: Mark N/A for scenarios where no handoff occurs.",
     "failureSignals": "'I'll pass those details to a live agent... [immediately followed by] Please provide the full names, relationships, and percentages...' (handoff announced, then collection continues); Agent joins and re-asks questions already answered in the bot session.",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, in FULL_AUTO_PROMPT or the escalation logic (search for \"live agent\" or \"escalate\"), add:\n---\n\"HANDOFF DISCIPLINE: Never announce that you are transferring to a live agent and then ask additional questions. The sequence must be: (1) gather all necessary information, (2) summarize what you have, (3) THEN announce the handoff. The handoff announcement is the final thing you say.\"\n---"
@@ -58,6 +64,7 @@
     "name": "Escalation Timing",
     "severity": "Medium",
     "weight": 1,
+    "threshold": 0.60,
     "criterion": "The customer-facing bot should escalate after gathering enough context to be useful to the agent, not immediately on first mention of a change request.\n\nGrading: Escalated with full confirmed intent = Pass; Escalated with partial intent = Marginal; Escalated with no intent captured = Fail.",
     "failureSignals": "Bot escalates immediately on hearing that a change is wanted, before confirming what account, what change, or what the target state is — leaving the agent with a cold handoff.",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, in FULL_AUTO_PROMPT, add:\n---\n\"ESCALATION TIMING: When a customer requests an account change, do NOT escalate immediately. First: (1) confirm which account, (2) confirm the basic nature of the change. Only after gathering this context should you escalate.\"\n---"
@@ -67,6 +74,7 @@
     "name": "Role Honesty",
     "severity": "High",
     "weight": 1,
+    "threshold": 0.75,
     "criterion": "The customer-facing bot must never imply it can execute account changes, process transactions, or take actions that require a human agent. It may gather information and confirm intent, but must frame execution as something the agent will do.",
     "failureSignals": "\"We can make those changes for you!\"; \"Shall I proceed?\"; \"Please hold on while I process this change.\"",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, find FULL_AUTO_PROMPT (around line 1830). Add after the FORBIDDEN_TOPICS injection:\n---\n\"ROLE BOUNDARY: You can answer questions, give information, and collect details — but you cannot execute account changes. Never say 'I'll process that', 'I can update that for you', 'Shall I proceed with that change?'. If a client wants a change made, frame it as: 'I'll gather those details and connect you with an agent who will take care of it.'\"\n---"
@@ -76,6 +84,7 @@
     "name": "Routing Consistency",
     "severity": "Medium",
     "weight": 1,
+    "threshold": 0.60,
     "criterion": "When the bot offers a self-service path for a task, it must not then escalate to a live agent for that same task without explaining why self-service is insufficient.",
     "failureSignals": "Bot: \"You can do this directly at [self-service link].\" Then, without the customer declining or explaining a complication, the bot escalates to a live agent for the same task.",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, in FULL_AUTO_PROMPT, after the self-service link logic, add:\n---\n\"ROUTING CONSISTENCY: If you have already provided a self-service link for a specific task, do NOT then escalate to a live agent for that same task without explaining why. Acknowledge: 'Since self-service doesn't cover your situation, I'll connect you with an agent.'\"\n---"
@@ -85,6 +94,7 @@
     "name": "Confirmation Completeness",
     "severity": "Medium",
     "weight": 1,
+    "threshold": 0.60,
     "criterion": "The bot's exit message (the last message before handing off to the agent) must be a complete summary of the proposed change: (1) what is being changed, (2) the full final state with all relevant values for all parties, and (3) what happens next. It should be complete enough that a customer could read it alone and verify the correct action will be taken.\n\nNote: Do not penalize for lacking a reference number — that is generated by the execution system, not the bot.",
     "failureSignals": "Exit message says only \"Got it — I have everything I need\" with no summary; Exit message omits values for one or more affected parties; Exit message does not mention the account being changed.",
     "fixGuidance": "Add a confirmation template requirement to the relevant task expert prompt:\n---\n\"CONFIRMATION COMPLETENESS — REQUIRED: Your confirmation message MUST include ALL of the following:\n1. What was changed (the action taken)\n2. The final resulting state — all parties, all percentages/amounts/values\n3. The account name\nIf any of these is missing, the confirmation is incomplete.\"\n---"
@@ -94,6 +104,7 @@
     "name": "Language Quality",
     "severity": "Low-Med",
     "weight": 1,
+    "threshold": 0.50,
     "criterion": "Bot and agent messages must be free of grammatical errors, typos, and broken syntax.\n\nGrading: Each error = 1 demerit; >1 in a conversation = Fail.",
     "failureSignals": "Any message containing a grammar error, garbled construction, or apparent autocomplete artifact (e.g., \"Please ask provide their relationships to you\").",
     "fixGuidance": "This is typically a model-level issue. If recurring, add to the shared system prompt:\n---\n\"LANGUAGE QUALITY: Every message must be grammatically correct and free of typos. Common errors to avoid: missing subjects, split verb phrases, run-on sentences.\"\n---"
@@ -103,6 +114,7 @@
     "name": "Turn Economy",
     "severity": "Medium",
     "weight": 1,
+    "threshold": 0.60,
     "criterion": "The total number of turns to resolve a request should be proportionate to its complexity.\n\nBenchmarks:\n- Simple factual lookup: 2–4 turns\n- Single account change with clear parameters: 4–8 turns\n- Complex change requiring negotiation: 8–14 turns",
     "failureSignals": "Turn count significantly exceeds the benchmark for the complexity level, typically caused by repeated re-asking of answered questions, failure to act on already-provided information, or circular clarification loops.",
     "fixGuidance": "Usually a symptom of H4 (unnecessary questions). Address H4 first. If H4 is passing, add to the task expert prompts:\n---\n\"TURN ECONOMY: Be decisive. If you have enough information to proceed, proceed — do not ask for confirmation of information the customer already gave. If the customer has provided all required fields, move directly to the exit confirmation.\"\n---"
@@ -112,6 +124,7 @@
     "name": "Internal Consistency",
     "severity": "High",
     "weight": 1,
+    "threshold": 0.75,
     "criterion": "Within a single conversation, the AI must not contradict itself. Statements about data, math, or customer intent must remain coherent across turns.",
     "failureSignals": "The AI states a value or interpretation in one turn and contradicts it in a later turn without acknowledging the correction. Examples: computing a total as 100% in one turn and 40% in another; describing a beneficiary as \"staying on\" then later treating them as removed.",
     "fixGuidance": "In lambda/autopilot-turn/handler.ts, add to the task expert prompts:\n---\n\"INTERNAL CONSISTENCY: Review what you have said in prior turns before each new message. Never state a percentage, amount, or interpretation that contradicts what you said earlier without explicitly correcting it: 'I need to correct what I said earlier — the correct figure is X, not Y.'\"\n---"

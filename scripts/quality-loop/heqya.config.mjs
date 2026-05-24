@@ -3,8 +3,9 @@
  *
  * Wires the heqya generic engine to Bob's systems:
  *   - autopilot-turn API (via bobs-adapter.mjs)
- *   - 13 quality heuristics from docs/QUALITY_HEURISTICS.md
- *   - 11 test scenarios from scenarios.mjs
+ *   - Heuristics from heuristics.json (editable at runtime via the dashboard)
+ *   - Scenarios from scenarios.json + client profiles from client-profiles.json
+ *   - App profile from app-profile.json
  *   - Bob's-specific thresholds and improvement loop settings
  *
  * To use in a script:
@@ -16,15 +17,19 @@ import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { createBobsAdapter } from './bobs-adapter.mjs';
-import SCENARIOS from './scenarios.mjs';
 
-const __dirname  = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ── Load heuristics from heuristics.json ──────────────────────────────────────
+// ── File paths (exported so server.mjs can import them) ───────────────────────
+
+export const HEURISTICS_FILE      = path.join(__dirname, 'heuristics.json');
+export const APP_PROFILE_FILE     = path.join(__dirname, 'app-profile.json');
+export const SCENARIOS_FILE       = path.join(__dirname, 'scenarios.json');
+export const CLIENT_PROFILES_FILE = path.join(__dirname, 'client-profiles.json');
+
+// ── Heuristics ─────────────────────────────────────────────────────────────────
 // The JSON is the authoritative store — editable via the UI at runtime.
-// Format: array of { code, name, severity, weight, criterion, failureSignals, fixGuidance }
-
-export const HEURISTICS_FILE = path.join(__dirname, 'heuristics.json');
+// Format: array of { code, name, severity, weight, threshold, criterion, failureSignals, fixGuidance }
 
 export function loadHeuristics() {
   if (!existsSync(HEURISTICS_FILE)) return [];
@@ -38,8 +43,9 @@ export function heuristicsArrayToCodes(arr) {
     codes[h.code] = {
       name:        h.name,
       severity:    h.severity,
-      weight:      h.weight ?? 1,
+      weight:      h.weight      ?? 1,
       fixGuidance: h.fixGuidance ?? '',
+      threshold:   h.threshold   ?? null,   // per-heuristic pass rate (0-1), null = no check
     };
   }
   return codes;
@@ -57,12 +63,37 @@ export function generateHeuristicsDocument(arr) {
   return lines.join('\n');
 }
 
-const rawHeuristics = loadHeuristics();
-const HEURISTIC_CODES = heuristicsArrayToCodes(rawHeuristics);
+// ── App profile ────────────────────────────────────────────────────────────────
+// { name, description, responsibilities, userDescription }
 
-// ── Heuristics document for the evaluator (generated from JSON) ───────────────
+export function loadAppProfile() {
+  if (!existsSync(APP_PROFILE_FILE)) return {};
+  try { return JSON.parse(readFileSync(APP_PROFILE_FILE, 'utf8')); } catch { return {}; }
+}
 
-const heuristicsDocument = generateHeuristicsDocument(rawHeuristics);
+// ── Client profiles ────────────────────────────────────────────────────────────
+// { alex: {...}, maria: {...}, jordan: {...}, robert: {...} }
+
+export function loadClientProfiles() {
+  if (!existsSync(CLIENT_PROFILES_FILE)) return {};
+  try { return JSON.parse(readFileSync(CLIENT_PROFILES_FILE, 'utf8')); } catch { return {}; }
+}
+
+// ── Scenarios ──────────────────────────────────────────────────────────────────
+// scenarios.json stores { clientKey } instead of the full client profile blob.
+// loadScenarios() hydrates the full client object from client-profiles.json.
+
+export function loadScenarios() {
+  if (!existsSync(SCENARIOS_FILE)) return [];
+  try {
+    const raw      = JSON.parse(readFileSync(SCENARIOS_FILE, 'utf8'));
+    const profiles = loadClientProfiles();
+    return raw.map(s => ({
+      ...s,
+      client: s.clientKey ? (profiles[s.clientKey] ?? null) : null,
+    }));
+  } catch { return []; }
+}
 
 // ── Domain knowledge for the evaluator ────────────────────────────────────────
 
@@ -81,15 +112,20 @@ BENEFICIARY TIERS (apply when scoring H1/H2 for beneficiary scenarios):
 `.trim();
 
 // ── Thresholds ─────────────────────────────────────────────────────────────────
+// Note: per-heuristic thresholds are stored in heuristics.json (the "threshold" field).
+// These global thresholds are additional checks on top of per-heuristic ones.
 
 const THRESHOLDS = {
-  minOverallScore:    0.80,
-  zeroCriticalCodes:  ['H1', 'H2'],  // must have 0 Fail across all scenarios
-  highSeverityPassRate: {
-    codes:   ['H3', 'H5', 'H8', 'H13'],
-    minRate: 0.75,                   // ≥75% of applicable scenarios must pass
-  },
+  minOverallScore:   0.80,
+  zeroCriticalCodes: ['H1', 'H2'],  // must have 0 Fail across all scenarios
+  // highSeverityPassRate is now handled per-heuristic via the "threshold" field
 };
+
+// ── Initialise at load time ────────────────────────────────────────────────────
+
+const rawHeuristics      = loadHeuristics();
+const HEURISTIC_CODES    = heuristicsArrayToCodes(rawHeuristics);
+const heuristicsDocument = generateHeuristicsDocument(rawHeuristics);
 
 // ── Full config export ─────────────────────────────────────────────────────────
 
@@ -97,12 +133,12 @@ export default {
   adapter: createBobsAdapter(),
 
   heuristics: {
-    document:        heuristicsDocument,   // generated from heuristics.json
-    codes:           HEURISTIC_CODES,      // derived from heuristics.json
+    document:        heuristicsDocument,
+    codes:           HEURISTIC_CODES,
     domainKnowledge: DOMAIN_KNOWLEDGE,
   },
 
-  scenarios: SCENARIOS,
+  scenarios: loadScenarios(),
 
   thresholds: THRESHOLDS,
 
