@@ -7,12 +7,12 @@ Derived from transcript analysis. Apply to customer bot, agent autopilot, and ne
 ## Source Transcripts (Reference)
 
 ### bb736f72 — Robert Martinez, Beneficiary Change (~4.5 min, 20 messages)
-Customer asked to copy Roth IRA beneficiaries to SEP-IRA. Bot escalated immediately after hearing the change request, before fully confirming the intent. Agent then asked for allocation percentages the customer had already specified ("same as Roth") and which the agent had access to via tool. Agent produced three mutually inconsistent statements about the math in four turns, ultimately arriving at the correct outcome through a muddled path. Confirmation stated final state only, not what changed.
+Customer asked to copy Roth IRA beneficiaries to SEP-IRA. Bot escalated immediately after hearing the change request, before fully confirming the intent. Agent then asked for allocation percentages the customer had already specified and which the agent had access to via tool. Agent produced three mutually inconsistent statements about the math in four turns, ultimately arriving at the correct outcome through a muddled path. Confirmation stated final state only, not what changed.
 
 Key failures: H2, H3, H4, H5, H10, H12, H13.
 
 ### 4b56e6e3 — Robert Martinez, Beneficiary Change (~1.5 min, 15 messages)
-Customer asked to add Marco and Sofia Martinez as beneficiaries to SEP-IRA alongside Elena. Bot offered self-service link then escalated — inconsistent routing. During collection, bot announced handoff to agent before finishing gathering information, creating a confusing mid-message pivot. Customer said 25% each for Marco and Sofia; nobody noted Elena's allocation would drop from 100% to 50%. Confirmation omitted all allocation percentages. Grammatical error in one bot message.
+Customer asked to add two new beneficiaries to an IRA alongside an existing one. Bot offered self-service link then escalated — inconsistent routing. During collection, bot announced handoff to agent before finishing gathering information, creating a confusing mid-message pivot. Customer stated percentages for the new beneficiaries; nobody noted the existing beneficiary's allocation would drop as a result. Confirmation omitted all allocation percentages. Grammatical error in one bot message.
 
 Key failures: H3, H6, H9, H10, H11.
 
@@ -21,42 +21,43 @@ Key failures: H3, H6, H9, H10, H11.
 ## Heuristics
 
 ### H1 — Factual Accuracy
-**Criterion:** Every specific client data point stated (balance, account name, beneficiary name, percentage, transaction amount, contact info) must match what the system retrieved via tool call or pre-loaded context.  
-**Failure signal:** A stated figure that does not appear in any tool result in the conversation.  
+**Criterion:** Every specific client data point stated (balance, account name, beneficiary name, percentage, transaction amount, contact info) must match what the system retrieved via tool call or pre-loaded context. The AI must not state figures it does not have.  
+**Failure signal:** A stated value (dollar amount, percentage, name, ticker) that does not appear in any tool result or pre-loaded profile in the conversation.  
 **Severity:** Critical
 
 ---
 
 ### H2 — Mathematical Integrity
-**Criterion:** Any time allocation percentages, totals, or derived figures are discussed, they must be arithmetically correct. When a change affects existing values (e.g., adding a beneficiary reduces an existing one's share), the impact must be explicitly acknowledged and confirmed before execution.  
+**Criterion:** Any time allocation percentages, totals, or derived figures are discussed, they must be arithmetically correct. When a change affects existing values (e.g., adding a beneficiary reduces an existing one's share), the impact must be explicitly computed, stated, and confirmed before the bot exits.  
 **Failure signals:**
-- Percentages that don't sum to 100% go unaddressed
-- Adding Marco and Sofia at 25% each without noting Elena drops from 100% to 50%
-- "Sofia and Marco need to sum to 0%" in the same turn Elena is described as being at 60%  
+- Percentages in the final state that don't sum to 100% go unaddressed
+- Adding new beneficiaries at stated percentages without noting that an existing beneficiary's share decreases as a result
+- Contradictory arithmetic across turns about the same set of values  
 **Severity:** Critical
 
 ---
 
 ### H3 — Change Transparency (Before → After)
-**Criterion:** When a change is confirmed and executed, both the prior state and the new state must be explicitly stated. "Updated to X" is not sufficient — it must be "Changed from Y to X."  
+**Criterion:** When a change is confirmed (in the bot's exit response), both the prior state and the new state must be explicitly stated. "Updated to X" is not sufficient — it must be "Changed from Y to X."  
 **Failure signals:**
-- Confirmation: "Updated beneficiaries on Robert Martinez's SEP-IRA to Elena at 60%..." (no mention of Elena's prior 100%)
-- Confirmation: "include Marco and Sofia Martinez" (no allocation percentages at all)  
+- Confirmation states only the new value: "Updated frequency to Quarterly" (prior frequency not mentioned)
+- Confirmation lists the final beneficiaries without stating what they replaced
+- Confirmation says "adding [person]" without saying what the account looked like before  
 **Severity:** High
 
 ---
 
 ### H4 — Information Gathering Efficiency
-**Criterion:** The AI must not request information already present in the conversation or retrievable from available tools.  
-**Failure signal:** Agent asks "What allocation percentages would you like?" after the customer said "same as the Roth" and the agent has access to Roth beneficiary data.  
-**Grading:** Each unnecessary information request = 1 demerit; >2 in a conversation = fail.  
+**Criterion:** The AI must not request information already present in the conversation transcript or retrievable from available tools.  
+**Failure signal:** Asking a customer for a value that: (a) the customer already stated earlier in the conversation, (b) the system has on file and accessible via tool, or (c) is directly derivable from information already provided.  
+**Grading:** Each unnecessary information request = 1 demerit; >2 in a conversation = Fail.  
 **Severity:** Medium
 
 ---
 
 ### H5 — Intent Capture Fidelity
 **Criterion:** The AI's interpretation of the customer's intent must remain consistent with what the customer actually said, including through corrections and ambiguous statements. The AI must not infer a meaning that contradicts the plain reading of the request.  
-**Failure signal:** Customer says "she stays on" (meaning "include her in the updated list") and agent interprets it as "keep her at 100%."  
+**Failure signal:** Customer makes a statement with a clear plain-language meaning (e.g., "she stays on the account") and the bot interprets it in a way that contradicts that meaning (e.g., treating "stays on" as "keeps her current percentage unchanged" when the customer explicitly said the new people get specific percentages).  
 **Severity:** High
 
 ---
@@ -64,8 +65,9 @@ Key failures: H3, H6, H9, H10, H11.
 ### H6 — Handoff Clarity (Bot → Agent Transition)
 **Criterion:** The bot must not announce a handoff to a live agent and then continue gathering information as if it is the active conversation handler. The handoff announcement should come only once all information collection is complete. The agent, upon joining, must demonstrate awareness of context already established.  
 **Failure signals:**
-- "I'll pass those details to a live agent... Please provide the full names, relationships, and allocation percentages..." (handoff announced, then collection continues in the same message)
+- "I'll pass those details to a live agent... [immediately followed by] Please provide the full names, relationships, and percentages..." (handoff announced, then collection continues)
 - Agent joins and re-asks questions already answered in the bot session  
+**Note on test coverage:** This heuristic requires a scenario where the bot hands off mid-session to a live agent who then continues the conversation. Current automated tests do not cover this transition — they test the bot and agent phases separately. Mark N/A for scenarios where no handoff occurs.  
 **Severity:** Medium
 
 ---
@@ -76,7 +78,7 @@ Key failures: H3, H6, H9, H10, H11.
 - Escalated with full confirmed intent = Pass
 - Escalated with partial intent (agent must rework collection) = Marginal
 - Escalated with no intent captured = Fail  
-**Failure signal:** Bot escalates immediately on hearing "I'd like to make them the same" without confirming which accounts or what the target state is.  
+**Failure signal:** Bot escalates immediately on hearing that a change is wanted, before confirming what account, what change, or what the target state is — leaving the agent with a cold handoff.  
 **Severity:** Medium
 
 ---
@@ -96,26 +98,27 @@ Key failures: H3, H6, H9, H10, H11.
 
 ### H9 — Routing Consistency (Self-Service vs. Agent)
 **Criterion:** When the bot offers a self-service path for a task, it must not then escalate to a live agent for that same task without explaining why self-service is insufficient.  
-**Failure signal:** Bot: "You can add beneficiaries directly at [Beneficiaries] – it only takes a minute." Three turns later: escalates to live agent to add beneficiaries.  
+**Failure signal:** Bot: "You can do this directly at [self-service link]." Then, without the customer declining or explaining a complication, the bot escalates to a live agent for the same task.  
 **Severity:** Medium
 
 ---
 
 ### H10 — Confirmation Completeness
-**Criterion:** The post-execution confirmation message must include: (1) what was changed, (2) the final resulting state with all relevant values for all parties, (3) a reference number. It should be complete enough that a customer could read it alone and verify the correct action was taken.  
+**Criterion:** The bot's exit message (the last message before handing off to the agent) must be a complete summary of the proposed change: (1) what is being changed, (2) the full final state with all relevant values for all parties, and (3) what happens next (e.g., "a live agent will review and process this"). It should be complete enough that a customer could read it alone and verify the correct action will be taken.  
 **Failure signals:**
-- Confirmation omits allocation percentages for any party
-- No reference number
-- Account name not specified  
+- Exit message says only "Got it — I have everything I need" with no summary of the change
+- Exit message omits values for one or more affected parties (e.g., lists new beneficiaries but not retained ones)
+- Exit message does not mention the account being changed  
+**Note:** Reference numbers are generated by the execution system, not the bot. Do not penalize the bot for lacking a reference number in its pre-execution handoff message. Penalize only if the message is substantively incomplete as a summary of intent.  
 **Severity:** Medium
 
 ---
 
 ### H11 — Language Quality
-**Criterion:** Bot and agent messages must be free of grammatical errors, typos, and broken syntax. LLM-generated messages have no excuse for consistent errors.  
-**Failure signal:** "Please ask provide their relationships to you" (should be "Please provide").  
-**Grading:** Each error = 1 demerit; >1 in a conversation = fail.  
-**Severity:** Low-Medium
+**Criterion:** Bot and agent messages must be free of grammatical errors, typos, and broken syntax.  
+**Failure signal:** Any message containing a grammar error, garbled construction, or apparent autocomplete artifact (e.g., "Please ask provide their relationships to you").  
+**Grading:** Each error = 1 demerit; >1 in a conversation = Fail.  
+**Severity:** Low-Med
 
 ---
 
@@ -124,19 +127,15 @@ Key failures: H3, H6, H9, H10, H11.
 **Benchmarks:**
 - Simple factual lookup: 2–4 turns
 - Single account change with clear parameters: 4–8 turns
-- Complex change requiring negotiation: 8–14 turns  
-**Failure signal:** 20 turns for "copy Roth beneficiaries to SEP-IRA" — a request stated unambiguously in turn 3.  
+- Complex change requiring negotiation (multiple parties, ambiguous intent): 8–14 turns  
+**Failure signal:** Turn count significantly exceeds the benchmark for the complexity level, typically caused by repeated re-asking of answered questions, failure to act on already-provided information, or circular clarification loops.  
 **Severity:** Medium
 
 ---
 
 ### H13 — Internal Consistency
-**Criterion:** Within a single conversation, the AI must not contradict itself. Statements about data, math, or customer intent must remain coherent turn to turn.  
-**Failure signal:**
-- Turn 10: "Adding these totals 100%, which would effectively remove Elena"
-- Turn 12: "Sofia and Marco need to sum to 40%"
-- Turn 15: "Sofia and Marco need to sum to 0%"
-(Three different treatments of the same arithmetic in four turns.)  
+**Criterion:** Within a single conversation, the AI must not contradict itself. Statements about data, math, or customer intent must remain coherent across turns.  
+**Failure signal:** The AI states a value or interpretation in one turn and contradicts it in a later turn without acknowledging the correction. Examples: computing a total as 100% in one turn and 40% in another; describing a beneficiary as "staying on" then later treating them as removed.  
 **Severity:** High
 
 ---
