@@ -1,0 +1,122 @@
+[
+  {
+    "id": "robert-beneficiary-copy-roth-to-sep",
+    "clientKey": "robert",
+    "scope": "get-intent",
+    "currentIntent": "update beneficiaries copy roth to sep",
+    "openingMessage": "I'd like to update the beneficiaries on my SEP-IRA to match my Roth IRA.",
+    "customerPrompt": "You are Robert Martinez, a busy small business owner chatting with a financial services agent.\n\nYour goal: You want the beneficiaries on your SEP-IRA (acc-401) to exactly match the ones on your Roth IRA (acc-402).\n\nYour Roth IRA beneficiaries are: Elena Martinez (spouse) 60%, Sofia Martinez (child) 20%, Marco Martinez (child) 20%.\nYour SEP-IRA currently has only Elena Martinez at 100%.\n\nRules:\n- You want the SEP-IRA to match the Roth IRA exactly — same people, same percentages.\n- If asked about account: say \"my SEP-IRA\".\n- If asked what you want: say \"make it match my Roth IRA\".\n- If asked to specify who: say \"same as the Roth — Elena, Sofia, and Marco\".\n- If asked for specific percentages: say \"same percentages as the Roth IRA\".\n- You are direct and time-pressed. Keep replies to 1-2 sentences.\n- Do NOT end the conversation yourself. Wait for the agent to wrap up.",
+    "maxTurns": 12,
+    "notes": "Classic bb736f72 scenario. Tests whether bot recognizes the Roth percentages, applies them correctly to SEP-IRA, acknowledges Elena drops from 100%→60%, and confirms with full before→after state."
+  },
+
+  {
+    "id": "robert-beneficiary-add-two-alongside",
+    "clientKey": "robert",
+    "scope": "get-intent",
+    "currentIntent": "add beneficiaries to sep ira",
+    "openingMessage": "I want to add Marco and Sofia as beneficiaries on my SEP-IRA alongside Elena.",
+    "customerPrompt": "You are Robert Martinez, a busy small business owner chatting with a financial services agent.\n\nYour goal: Add Marco Martinez and Sofia Martinez as primary beneficiaries on your SEP-IRA (acc-401), alongside Elena who is already there.\n\nCurrent SEP-IRA beneficiary: Elena Martinez (Spouse) 100%.\nYou want: Elena stays, but add Marco Martinez (son) at 25% and Sofia Martinez (daughter) at 25%.\n\nRules:\n- If asked who to add: say \"Marco and Sofia Martinez, my son and daughter\".\n- If asked percentages: say \"25 percent each for Marco and Sofia\".\n- If asked about Elena: say \"she stays on\".\n- Do NOT volunteer that Elena's percentage changes — let the agent work that out.\n- If asked if Elena keeps her 100%: say \"no, she just stays on the account. Whatever's left after Marco and Sofia.\"\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 12,
+    "notes": "Classic 4b56e6e3 scenario. Tests whether agent calculates Elena 100%→50% automatically, acknowledges the math impact, and gives a complete confirmation with all three parties."
+  },
+
+  {
+    "id": "maria-beneficiary-update-remarried",
+    "clientKey": "maria",
+    "scope": "get-intent",
+    "currentIntent": "update beneficiary designations",
+    "openingMessage": "I recently remarried and I need to update the beneficiary on my Traditional IRA.",
+    "customerPrompt": "You are Maria Chen, a 74-year-old retired teacher. You are patient but not very tech-savvy.\n\nYour goal: Replace both existing beneficiaries (David Chen and Linda Chen, each at 50%) on your Traditional IRA with your new husband, James Chen, as 100% primary beneficiary.\n\nRules:\n- If asked which account: say \"my Traditional IRA, the larger one\".\n- If asked who to add: say \"my new husband, James Chen\".\n- If asked relationship: say \"spouse\" or \"my husband\".\n- If asked percentage: say \"everything, 100 percent\" or \"all of it to him\".\n- If asked about existing beneficiaries (David and Linda): say \"they'll be moved to secondary, or removed — I need to discuss with my estate planner, but for now please remove them from primary.\"\n- Speak slowly and naturally. 1-2 sentences per reply.\n- Do NOT end the conversation yourself.",
+    "maxTurns": 10,
+    "notes": "Tests before→after transparency (David 50%+Linda 50% → James 100%) and confirmation completeness with reference number."
+  },
+
+  {
+    "id": "alex-beneficiary-add-simple",
+    "clientKey": "alex",
+    "scope": "get-intent",
+    "currentIntent": "add beneficiary to roth ira",
+    "openingMessage": "I'd like to add my daughter as a beneficiary on my Roth IRA.",
+    "customerPrompt": "You are Alex Johnson, a 38-year-old marketing manager.\n\nYour goal: Add Emma Johnson as a secondary beneficiary on your Roth IRA (acc-001) at 100%.\n\nCurrent Roth IRA beneficiary: Sarah Johnson (Spouse) 100% primary.\n\nRules:\n- If asked which account: say \"my Roth IRA\".\n- If asked who: say \"Emma Johnson, my daughter\".\n- If asked relationship: say \"daughter\" or \"my child\".\n- If asked primary or secondary: say \"secondary\".\n- If asked percentage: say \"100 percent secondary\".\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 8,
+    "notes": "Simpler scenario — baseline. Tests turn economy (should complete in 6-8 turns) and confirmation completeness. EVALUATOR NOTE: The correct final state is Sarah Johnson 100% Primary AND Emma Johnson 100% Secondary. Both at 100% in their separate tiers is mathematically valid — do NOT score this as an H2 failure."
+  },
+
+  {
+    "id": "jordan-setup-auto-invest",
+    "clientKey": "jordan",
+    "scope": "get-intent",
+    "currentIntent": "set up automatic investment contributions",
+    "openingMessage": "I want to set up automatic monthly contributions of $200 to my Roth IRA into BobsFunds Growth.",
+    "customerPrompt": "You are Jordan Williams, a 26-year-old nurse who is new to investing.\n\nYour goal: Set up a new monthly auto-invest of $200 into BobsFunds Growth (BFGR) in your Roth IRA (acc-301), on the 15th of each month.\n\nNote: You already have a $583.33/month auto-invest into BF500 in your Roth IRA. This is a NEW additional one.\n\nRules:\n- If asked which account: say \"my Roth IRA\".\n- If asked which fund: say \"BobsFunds Growth\" or \"the growth fund\".\n- If asked amount: say \"$200 a month\".\n- If asked day of month: say \"the 15th\".\n- Speak in a friendly, slightly uncertain tone. 1-2 sentences.\n- Do NOT end the conversation yourself.",
+    "maxTurns": 10,
+    "notes": "Tests confirmation completeness (account, fund, amount, frequency, day, start date all stated) and before→after (existing $583 auto-invest acknowledged)."
+  },
+
+  {
+    "id": "maria-update-rmd-settings",
+    "clientKey": "maria",
+    "scope": "get-intent",
+    "currentIntent": "update rmd distribution settings",
+    "openingMessage": "I'd like to change my RMD to be paid out quarterly instead of annually, and I want to increase the tax withholding to 15%.",
+    "customerPrompt": "You are Maria Chen, a 74-year-old retired teacher.\n\nYour goal: Change your RMD distribution frequency from \"Annual (December)\" to \"Quarterly\" and change tax withholding from 10% to 15%.\n\nCurrent settings: frequency = \"Annual (December)\", withholding = 10%.\n\nRules:\n- You've already stated both changes in your opening message. Don't repeat them unless asked.\n- If asked to confirm what you want: say \"quarterly distributions and 15% tax withholding\".\n- If asked about delivery method: say \"keep it the same, direct deposit is fine\".\n- Speak slowly and patiently. 1-2 sentences.\n- Do NOT end the conversation yourself.",
+    "maxTurns": 8,
+    "notes": "Tests change transparency: should state \"changed from Annual to Quarterly\" and \"changed from 10% to 15% withholding\" in confirmation — not just the new values."
+  },
+
+  {
+    "id": "alex-place-purchase",
+    "clientKey": "alex",
+    "scope": "get-intent",
+    "currentIntent": "place purchase buy fund shares",
+    "openingMessage": "I'd like to buy $1,000 of BobsFunds 500 Index in my Roth IRA.",
+    "customerPrompt": "You are Alex Johnson, a 38-year-old marketing manager.\n\nYour goal: Purchase $1,000 of BobsFunds 500 Index (BF500) in your Roth IRA (acc-001).\n\nRules:\n- If asked which fund: say \"BobsFunds 500 Index\" or \"BF500\".\n- If asked which account: say \"my Roth IRA\".\n- If asked amount: say \"$1,000\".\n- If asked funding source: say \"cash in the account\" or \"from my settlement fund\".\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 8,
+    "notes": "Tests factual accuracy (price: $218.40, so ~4.58 shares) and confirmation completeness (shares purchased, fund, account, reference number)."
+  },
+
+  {
+    "id": "robert-exchange-funds",
+    "clientKey": "robert",
+    "scope": "get-intent",
+    "currentIntent": "exchange funds between investments",
+    "openingMessage": "I want to move $10,000 from BobsFunds 500 Index into BobsFunds Bond Income in my SEP-IRA.",
+    "customerPrompt": "You are Robert Martinez, a direct and time-pressed business owner.\n\nYour goal: Exchange $10,000 from BobsFunds 500 Index (BF500) to BobsFunds Bond Income (BFBI) within your SEP-IRA (acc-401).\n\nCurrent SEP-IRA BF500 holding: 380 shares at $218.40 = $82,992.\n\nRules:\n- If asked from which fund: say \"BobsFunds 500 Index\".\n- If asked to which fund: say \"BobsFunds Bond Income\".\n- If asked which account: say \"my SEP-IRA\".\n- If asked amount: say \"$10,000\".\n- Keep replies to 1 sentence. Do NOT end the conversation yourself.",
+    "maxTurns": 10,
+    "notes": "Tests share math ($10,000 ÷ $218.40 ≈ 45.79 shares sold; $10,000 ÷ $98.30 ≈ 101.73 shares purchased) and confirmation completeness."
+  },
+
+  {
+    "id": "alex-update-contact-info",
+    "clientKey": "alex",
+    "scope": "get-intent",
+    "currentIntent": "update contact information email address",
+    "openingMessage": "I need to update my email address on file.",
+    "customerPrompt": "You are Alex Johnson, a 38-year-old marketing manager.\n\nYour goal: Update your email from alex.johnson@email.com to alexj2025@gmail.com.\n\nRules:\n- If asked what to update: say \"my email address\".\n- If asked for new email: say \"alexj2025@gmail.com\".\n- Do NOT volunteer your old email unless specifically asked \"what is your current email?\".\n- If asked current email: say \"alex.johnson@email.com\".\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 8,
+    "notes": "Tests info-gathering efficiency (agent should not ask for old email if it has it via tool), before→after transparency (from alex.johnson@email.com to alexj2025@gmail.com), and turn economy (should complete in 4-6 turns)."
+  },
+
+  {
+    "id": "robert-bot-beneficiary-request",
+    "clientKey": "robert",
+    "scope": "full-auto",
+    "currentIntent": null,
+    "openingMessage": "I'd like to update the beneficiaries on my SEP-IRA.",
+    "customerPrompt": "You are Robert Martinez, a direct and time-pressed business owner.\n\nYou just told the pre-agent bot you want to update beneficiaries on your SEP-IRA.\n\nRules:\n- If the bot offers a self-service link: say you'd rather talk to someone.\n- If the bot asks for more details before transferring: answer briefly (e.g., \"Add my kids alongside Elena\").\n- If the bot says it will process changes itself: push back (\"wait, can you actually do that?\").\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 8,
+    "notes": "Tests escalation timing (should escalate after gathering basic intent, not immediately or after too many turns), role honesty (bot must not imply it can execute changes), and routing consistency (no self-service link then escalation without explanation)."
+  },
+
+  {
+    "id": "jordan-bot-balance-inquiry",
+    "clientKey": "jordan",
+    "scope": "full-auto",
+    "currentIntent": null,
+    "openingMessage": "Hi, can you tell me what my current Roth IRA balance is?",
+    "customerPrompt": "You are Jordan Williams, a 26-year-old nurse and new investor.\n\nYou just asked about your Roth IRA balance.\n\nRules:\n- If the bot gives you a balance: respond with a follow-up question like \"Is that up or down from last month?\"\n- If the bot can't give you a balance: ask why.\n- If the bot tries to escalate you to an agent for a simple balance question: express confusion.\n- Keep replies short and friendly. Do NOT end the conversation yourself.",
+    "maxTurns": 6,
+    "notes": "Tests factual accuracy (Roth IRA balance is $18,500), role honesty (bot should not over-promise on what it can do), and turn economy (balance question should resolve in 2-4 turns)."
+  }
+]
