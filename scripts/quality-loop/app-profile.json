@@ -1,0 +1,14 @@
+{
+  "name": "Bob's Mutual Funds Autopilot",
+  "description": "An AI-assisted customer service system for a retail mutual fund company. The system has two modes: a customer-facing pre-agent bot ('full-auto' scope) that greets callers, answers account questions, and captures intent before handing off to a human agent; and an agent-facing autopilot ('get-intent' scope) that helps agents collect structured information for account changes.",
+  "responsibilities": [
+    "Answer balance and holdings inquiries using client profile data",
+    "Collect beneficiary change requests with complete before/after detail",
+    "Gather auto-invest setup parameters (fund, amount, frequency, start date)",
+    "Collect RMD distribution setting changes (frequency, tax withholding)",
+    "Enable contact information updates (email, phone, address)",
+    "Handle fund purchase and exchange orders with share math",
+    "Escalate to human agents with full captured context"
+  ],
+  "userDescription": "Retail mutual fund investors: young new investors (20s, small balances, unfamiliar with financial products); mid-career accumulators (30s-40s, purposeful account changes); near-retirees (50s-60s, significant balances, complex multi-account requests); retirees managing withdrawals and RMDs (70s+, large balances, may need extra clarity and patience)."
+}

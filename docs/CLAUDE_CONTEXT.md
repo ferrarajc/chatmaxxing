@@ -214,15 +214,46 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 ---
 
-## Active Branch / Current State (as of 2026-05-23)
+## Heqya — Quality Evaluation System
 
-No branch currently in flight. Main is up to date.
+Lives in `heqya/` (npm-extractable package). The Bob's implementation uses it via `scripts/quality-loop/`.
+
+| File | Purpose |
+|------|---------|
+| `heqya/core/runner.mjs` | Generic conversation runner (adapter-based) |
+| `heqya/core/evaluator.mjs` | Generic LLM evaluator (heuristics-config-driven) |
+| `heqya/core/reporter.mjs` | Generic reporter (report-NNN.md, latest.json, NEXT_FIX.md, transcripts-NNN.json) |
+| `heqya/core/loop.mjs` | Generic improvement loop |
+| `heqya/adapters/http-json.mjs` | Configurable HTTP/JSON adapter |
+| `scripts/quality-loop/bobs-adapter.mjs` | Bob's adapter (autopilot-turn API wiring) |
+| `scripts/quality-loop/heqya.config.mjs` | Bob's config (heuristics, scenarios, thresholds) — loads from JSON files |
+| `scripts/quality-loop/heuristics.json` | 13 heuristics (editable via dashboard) |
+| `scripts/quality-loop/scenarios.json` | 11 test scenarios (editable via dashboard) |
+| `scripts/quality-loop/client-profiles.json` | 4 client profiles (alex, maria, jordan, robert) |
+| `scripts/quality-loop/app-profile.json` | Bot description used for AI scenario generation |
+| `scripts/quality-loop/run-quality-loop.mjs` | Active entry point (one evaluation pass) |
+| `scripts/quality-loop/improvement-loop.mjs` | Full loop with Claude API + CDK deploy |
+| `scripts/quality-loop/server.mjs` | Dashboard server with CRUD for heuristics, scenarios, app profile |
+
+The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are **legacy/deprecated** — kept for reference but no longer imported by active scripts.
+
+---
+
+## Active Branch / Current State (as of 2026-05-24)
+
+Branch in flight: `heqya/generalize` — dashboard scenario management + transcript viewer
 
 Recent shipped features (last several PRs):
+- Prompt quality improvements (PR 42): account type labels, capability claims rule, no-repeat/frustrated-yes rule; also heuristic management UI + editable heuristics.json store
 - On-demand LLM tool calling (PR 41): all three AI systems (customer bot, NBR, autopilot task experts) can fetch client data from DynamoDB via OpenAI function calling; two-phase agentic loop (tool gather → json_object reformat); 7 tools in `lambda/shared/client-tools.ts`; rotating TypingIndicator messages; "Data fetched from your account" annotation; hallucination protection rule in all system prompts; customer-bot cannot imply it can process account changes
 - DB-driven portal (PR 40): all client data in DynamoDB; reset-all-data Lambda; 9 execute-task tasks upgraded to real writes; fetchAll() in clientStore; "↺ Reset all" button in TopNavV2
 - Idle-check auto-trigger (PR 39): 3-min timer when agent asks question; fix Accept/Close in dev StrictMode
-- Customer-bot scope separation (PR 38): dedicated customer-bot scope with CUSTOMER_BOT_PROMPT
+
+In-flight (uncommitted on `heqya/generalize`):
+- Scenarios + app-profile management in dashboard (CRUD + AI generation via GPT)
+- Transcript viewer in report modal (conversations tab shows full turn-by-turn transcripts)
+- Per-heuristic threshold system: each heuristic has a `threshold` pass-rate field; reporter checks all, includes failures in NEXT_FIX.md
+- start-chat fix: passes clientName explicitly to Nova Micro to prevent beneficiary-name confusion
 
 ---
 

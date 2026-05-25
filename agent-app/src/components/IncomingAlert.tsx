@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ContactSlot } from '../types';
 import { useAgentStore } from '../store/agentStore';
+import { IntentLabel } from './IntentLabel';
 
 interface Props { slot: ContactSlot; }
 
@@ -100,7 +101,7 @@ export function IncomingAlert({ slot }: Props) {
       {/* Client info */}
       <div style={{ textAlign: 'center', marginBottom: 12 }}>
         <div style={{ fontWeight: 700, fontSize: 20 }}>{slot.clientName}</div>
-        <div style={{ fontSize: 15, color: '#6b7280', marginTop: 3 }}>{slot.intentSummary}</div>
+        <div style={{ fontSize: 15, color: '#6b7280', marginTop: 3 }}><IntentLabel text={slot.intentSummary} /></div>
         <div style={{ fontSize: 14, color: '#9ca3af', marginTop: 2 }}>
           Roth IRA · Traditional IRA · Taxable Account
         </div>

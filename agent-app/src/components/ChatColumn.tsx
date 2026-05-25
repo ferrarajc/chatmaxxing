@@ -3,6 +3,7 @@ import { ContactSlot, ChatMessage, AutopilotScope, ACWData } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { post } from '../api/client';
 import { log } from '../api/logger';
+import { IntentLabel } from './IntentLabel';
 import { IncomingAlert } from './IncomingAlert';
 import { ResponseTimer } from './ResponseTimer';
 import { AISupport } from './AISupport';
@@ -620,7 +621,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             </div>
             {slot.intentSummary && (
               <div style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.3, marginTop: 2 }}>
-                {slot.intentSummary}
+                <IntentLabel text={slot.intentSummary} />
               </div>
             )}
           </div>
