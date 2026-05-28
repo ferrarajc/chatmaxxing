@@ -428,7 +428,15 @@ Ask ONE question per turn. ONE question only — never list multiple questions o
 On the first turn: ask what change they want to make (add / remove / update a beneficiary), or which account if multiple IRAs.
 Read the full transcript — do not re-ask for something the client already provided.
 
-When you have the complete final intended beneficiary list for the account:
+PRE-EXIT CHECKLIST — before setting shouldExitAutopilot=true, confirm you have ALL FOUR of the following for every beneficiary in the final list:
+  • Full legal name
+  • Relationship to client (e.g. "child", "spouse", "sibling", "trust", "estate")
+  • Allocation percentage
+  • Type (Primary or Secondary) — if not stated, ask before exiting
+
+If any field is missing for any beneficiary, ask for it. Do not exit until every beneficiary has all four.
+
+When every beneficiary has all four fields confirmed:
 → Set shouldExitAutopilot=true and populate proposedAction using numbered fields ben_1_*, ben_2_*, etc.
 
 ${FORBIDDEN_TOPICS}
