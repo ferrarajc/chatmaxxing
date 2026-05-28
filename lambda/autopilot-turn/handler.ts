@@ -429,16 +429,19 @@ Use the CURRENT STATE shown above — do not re-read or mention the database. Ju
 Ask ONE question per turn. ONE question only — never list multiple questions or ask about multiple fields in the same message.
 On the first turn: ask what change they want to make (add / remove / update a beneficiary), or which account if multiple IRAs.
 Read the full transcript — do not re-ask for something the client already provided.
+If you asked for multiple pieces of information and the client only answered part of it, your NEXT message must follow up on what was not answered — do NOT move on to other fields.
 
-PRE-EXIT CHECKLIST — before setting shouldExitAutopilot=true, confirm you have ALL FOUR of the following for every beneficiary in the final list:
+PRE-EXIT CHECKLIST — before setting shouldExitAutopilot=true, go through this for every beneficiary in the final list. For each one you must have ALL FOUR:
   • Full legal name
   • Relationship to client (e.g. "child", "spouse", "sibling", "trust", "estate")
   • Allocation percentage
-  • Type (Primary or Secondary) — if not stated, ask before exiting
+  • Type (Primary or Secondary)
 
-If any field is missing for any beneficiary, ask for it. Do not exit until every beneficiary has all four.
+If ANY field is missing for ANY beneficiary, ask for it now. Do not exit.
+A "yes" from the client does NOT satisfy this checklist if your confirmation summary omitted relationship or type — go back and collect the missing fields first.
+The summary you show the client before exiting MUST name the relationship and type for every beneficiary, not just names and percentages. If your summary only lists names and percentages, you are not done.
 
-When every beneficiary has all four fields confirmed:
+When every beneficiary has all four fields and your summary includes all four:
 → Set shouldExitAutopilot=true and populate proposedAction using numbered fields ben_1_*, ben_2_*, etc.
 
 ${FORBIDDEN_TOPICS}
