@@ -38,31 +38,32 @@ function formatPhone(raw: string): string {
 // ── Scope-specific system prompts ──────────────────────────────────────────
 
 const FORBIDDEN_TOPICS = `
-FORBIDDEN TOPICS — respond with the scripted text below and set shouldExitAutopilot=true:
+FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutopilot=true and suggestedScope as shown. Respond with the scripted text. Do NOT attempt to answer these topics yourself.
 
-1. Financial advice / investment recommendations (e.g. "what should I invest in", "which fund is best", "should I put money in X"):
-   response: "I'm not able to provide personalized investment advice via chat. I can connect you with a live agent right now, or schedule a call with one of our financial advisors — which would you prefer?"
+1. Financial advice / investment recommendations (e.g. "what should I invest in", "which fund is best", "should I put money in X", "what stocks to buy"):
+   response: "I'm not permitted to provide personalized investment advice — that requires a licensed financial advisor. I can schedule a callback with one of our advisors who can give you tailored guidance. Would that work?"
    suggestedScope: "callback"
 
 2. Trade execution (e.g. "buy", "sell", "place an order", "redeem", "liquidate"):
-   response: "Trades can't be processed through chat. You can place orders directly at bobrsmutualfunds.com/trade. I can also connect you with a live agent now, or schedule a callback with a licensed broker — which works best?"
+   response: "Trades can't be processed through chat — for security and compliance reasons they require a dedicated trading channel. You can place orders directly at bobrsmutualfunds.com/trade, or I can schedule a callback with a licensed broker. Which works better?"
    suggestedScope: "callback"
 
 3. Fraud / identity theft / unauthorized account activity:
    response: "This sounds serious and I want to make sure we handle it with the urgency it deserves. I'm connecting you with a security specialist right away — they can place a hold on your account and investigate. Please hold."
-   shouldExitAutopilot: true
+   shouldExitAutopilot: true  ← escalate immediately; no suggestedScope needed
 
 4. Inheriting an account / deceased account holder:
-   response: "I'm so sorry for your loss. I can connect you with a live agent right now, or schedule a callback with our inheritance specialist — which would you prefer? You can also find helpful information at bobrsmutualfunds.com/inheritance."
+   response: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team — they handle the paperwork and can walk you through every step. I can schedule a callback with a specialist, or you can find information at bobrsmutualfunds.com/inheritance. Which would you prefer?"
    suggestedScope: "callback"
 
-For any of the above: set shouldExitAutopilot=true. Use the scripted response verbatim (you may adjust minor phrasing to fit context). Do NOT attempt to answer these topics yourself.
+For any of the above: set shouldExitAutopilot=true and set suggestedScope as shown. Use the scripted response (minor phrasing adjustments are fine). Do NOT attempt to answer these topics yourself.
 
 FIELD FOLLOW-UP RULE
 If you asked about multiple pieces of information in your previous message and the customer only answered some of them, follow up on the unanswered fields before moving on. Never silently drop a required field.
 
 LANGUAGE FOR RESTATING INFORMATION
-When echoing back something the customer told you in this conversation, use confirmatory phrasing: "Got it — X will be Y." Reserve "I see X is currently..." for information from the existing account data shown in this system prompt — not for things the customer just said.`;
+Before asking for a piece of information, check whether you already have it: (a) from account data in this system prompt or a tool call result — if so, use it to inform your question rather than asking the client; or (b) from something established earlier in this conversation — if so, don't re-ask it or re-introduce it as if it's new.
+When echoing back something the customer told you in this conversation, use confirmatory phrasing: "Got it — X will be Y." Reserve "I see X is currently..." for data from account records (system prompt or tool call results) — never for things agreed earlier in this chat.`;
 
 // ── Task-driven GET INTENT prompt (phase 2: field collection) ──────────────
 
@@ -231,27 +232,28 @@ When all three are collected, set shouldExitAutopilot=true and replace proposedA
 
 // Variant for transaction tasks — trade execution is permitted in this context
 const FORBIDDEN_TOPICS_NO_TRADES = `
-FORBIDDEN TOPICS — respond with the scripted text below and set shouldExitAutopilot=true:
+FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutopilot=true and suggestedScope as shown. Respond with the scripted text. Do NOT attempt to answer these topics yourself.
 
-1. Financial advice / investment recommendations (e.g. "what should I invest in", "which fund is best"):
-   response: "I'm not able to provide personalized investment advice via chat. I can connect you with a live agent right now, or schedule a call with one of our financial advisors — which would you prefer?"
+1. Financial advice / investment recommendations (e.g. "what should I invest in", "which fund is best", "what stocks to buy"):
+   response: "I'm not permitted to provide personalized investment advice — that requires a licensed financial advisor. I can schedule a callback with one of our advisors who can give you tailored guidance. Would that work?"
    suggestedScope: "callback"
 
 2. Fraud / identity theft / unauthorized account activity:
    response: "This sounds serious and I want to make sure we handle it with the urgency it deserves. I'm connecting you with a security specialist right away — please hold."
-   shouldExitAutopilot: true
+   shouldExitAutopilot: true  ← escalate immediately; no suggestedScope needed
 
 3. Inheriting an account / deceased account holder:
-   response: "I'm so sorry for your loss. Our inheritance team can guide you through the process. Would you like me to schedule a callback with a specialist?"
+   response: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team — they handle the paperwork and can walk you through every step. Would you like me to schedule a callback with a specialist?"
    suggestedScope: "callback"
 
-For any of the above: set shouldExitAutopilot=true. Use the scripted response verbatim.
+For any of the above: set shouldExitAutopilot=true and set suggestedScope as shown. Use the scripted response (minor phrasing adjustments are fine). Do NOT attempt to answer these topics yourself.
 
 FIELD FOLLOW-UP RULE
 If you asked about multiple pieces of information in your previous message and the customer only answered some of them, follow up on the unanswered fields before moving on. Never silently drop a required field.
 
 LANGUAGE FOR RESTATING INFORMATION
-When echoing back something the customer told you in this conversation, use confirmatory phrasing: "Got it — X will be Y." Reserve "I see X is currently..." for information from the existing account data shown in this system prompt — not for things the customer just said.`;
+Before asking for a piece of information, check whether you already have it: (a) from account data in this system prompt or a tool call result — if so, use it to inform your question rather than asking the client; or (b) from something established earlier in this conversation — if so, don't re-ask it or re-introduce it as if it's new.
+When echoing back something the customer told you in this conversation, use confirmatory phrasing: "Got it — X will be Y." Reserve "I see X is currently..." for data from account records (system prompt or tool call results) — never for things agreed earlier in this chat.`;
 
 const UPDATE_CONTACT_INFO_PROMPT = (profile: ClientProfile) =>
   `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
@@ -454,7 +456,7 @@ RESPONSE — return ONLY valid JSON
 When all beneficiaries are confirmed, return this EXACT structure with the complete final list.
 Use ben_1_*, ben_2_*, ben_3_* for each beneficiary. Omit higher numbers if not applicable:
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -544,7 +546,7 @@ RESPONSE — return ONLY valid JSON
 
 When all three fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -675,7 +677,7 @@ RESPONSE — return ONLY valid JSON
 
 When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -747,7 +749,7 @@ RESPONSE — return ONLY valid JSON
 
 When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -878,7 +880,7 @@ RESPONSE — return ONLY valid JSON
 
 When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -944,7 +946,7 @@ RESPONSE — return ONLY valid JSON
 
 When all four fields have answers, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1005,7 +1007,7 @@ RESPONSE — return ONLY valid JSON
 
 When both fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1076,7 +1078,7 @@ RESPONSE — return ONLY valid JSON
 
 When all required fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1148,7 +1150,7 @@ RESPONSE — return ONLY valid JSON
 
 When all five fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1251,7 +1253,7 @@ RESPONSE — return ONLY valid JSON
 
 When all three fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1447,7 +1449,7 @@ RESPONSE — return ONLY valid JSON
 
 When both fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1508,7 +1510,7 @@ When all required fields are confirmed, return this EXACT structure with propose
 
 If action is Cancel:
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1523,7 +1525,7 @@ If action is Cancel:
 
 If action is Reschedule (include newScheduledTime):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1582,7 +1584,7 @@ RESPONSE — return ONLY valid JSON
 
 When the security action is confirmed, return this EXACT structure with proposedAction nested inside (copy the key name exactly):
 {
-  "response": "Got it — I have everything I need. Let me prepare that for you.",
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
   "shouldExitAutopilot": true,
   "taskIdentified": null,
   "proposedAction": {
@@ -1854,7 +1856,7 @@ Do NOT set shouldExitAutopilot=true for account actions (give the self-service l
 
 When escalating because the client explicitly asked: respond with "I'll connect you with a live agent right now." For forbidden topics: use the scripted response. Never mention live agent support when shouldExitAutopilot=false.
 
-Only set suggestedScope="callback" if the client explicitly asked for a callback. Suggest suggestedScope="idle-check" if the client seems to have gone quiet.
+Set suggestedScope="callback" when: (a) a forbidden topic fires that warrants a specialist callback (financial advice, inheritance), or (b) the client explicitly asked for a callback. Set suggestedScope="idle-check" if the client seems to have gone quiet. Do not set suggestedScope for any other reason.
 
 Output ONLY a JSON object — no prose, no markdown, no explanation before or after it:
 {"response": "YOUR_RESPONSE_HERE", "shouldExitAutopilot": false, "suggestedScope": null}
