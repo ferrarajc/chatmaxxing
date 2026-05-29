@@ -36,6 +36,7 @@ interface ConnectContact {
 interface ConnectConnection {
   getType: () => string;
   getMediaType: () => string;
+  destroy: (opts?: unknown) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getMediaController: () => Promise<any>;
 }
@@ -200,14 +201,17 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       store.clearSlot(contactId);
     };
     // End the active chat in Amazon Connect (agent-initiated disconnect → moves to ACW).
-    // Calls contact.disconnect() via the Connect Streams contact object, which fires
-    // contact.onEnded() and lets the normal ACW transition handle the rest.
+    // Destroys the agent connection via Connect Streams, which fires contact.onEnded()
+    // and lets the normal ACW transition handle the rest.
     const handleEndChat = (e: Event) => {
       const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
       const contact = contactRefs.current.get(contactId);
       if (contact) {
-        try { contact.disconnect({}); } catch (err) {
-          log.warn('useConnectStreams:endChat:disconnectFailed', err);
+        try {
+          contact.getAgentConnection().destroy({});
+        } catch (err) {
+          log.warn('useConnectStreams:endChat:destroyFailed', err);
+          store.patchSlot(contactId, { status: 'acw' });
         }
       } else {
         log.warn('useConnectStreams:endChat:noContact', { contactId });
