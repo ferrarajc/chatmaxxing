@@ -154,6 +154,7 @@ export async function invokeWithTools(
   maxTokens: number,
   ctx: LlmCallContext & { clientId: string },
   jsonMode = false,
+  model = OPENAI_MODEL,
 ): Promise<InvokeWithToolsResult> {
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set');
 
@@ -164,7 +165,7 @@ export async function invokeWithTools(
   // response_format is intentionally omitted; incompatible with tools in OpenAI API.
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
     const { choice } = await openAiCall({
-      model: OPENAI_MODEL,
+      model,
       messages: [{ role: 'system', content: systemPrompt }, ...current],
       tools,
       tool_choice: 'auto',
@@ -216,7 +217,7 @@ export async function invokeWithTools(
   // message (when no tools were called but jsonMode=true). Either way, the model
   // synthesizes them into the required JSON shape with response_format enforced.
   const { choice: finalChoice } = await openAiCall({
-    model: OPENAI_MODEL,
+    model,
     messages: [{ role: 'system', content: systemPrompt }, ...current],
     max_tokens: maxTokens,
     temperature: 0.3,

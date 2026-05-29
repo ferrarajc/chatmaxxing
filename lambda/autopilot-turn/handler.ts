@@ -2063,6 +2063,11 @@ export const handler = async (
         let taskExitMessage: string | null = null;
         let taskToolsUsed: string[] = [];
 
+        const TASK_MODEL_OVERRIDES: Record<string, string> = {
+          'update-beneficiaries': process.env.OPENAI_MODEL_BENEFICIARIES ?? 'gpt-4o',
+        };
+        const taskModel = TASK_MODEL_OVERRIDES[activeTaskId];
+
         try {
           const result = await invokeWithTools(
             taskSystemPrompt,
@@ -2072,6 +2077,7 @@ export const handler = async (
             700,
             { fn: 'autopilot-turn', contactId: p2ContactId, clientId: profile.clientId, scope: `get-intent:${activeTaskId}` },
             true,
+            taskModel,
           );
           taskToolsUsed = result.toolsUsed;
           const parsed = parseJsonFromBedrock<{
