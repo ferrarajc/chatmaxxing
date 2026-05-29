@@ -37,6 +37,21 @@ function formatPhone(raw: string): string {
 
 // ── Scope-specific system prompts ──────────────────────────────────────────
 
+const TASK_FIELD_RULES = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FIELD COLLECTION RULES — apply at every turn
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ONE QUESTION PER TURN. Never ask about multiple fields in a single message. Ask the next uncollected field, then stop.
+
+FOLLOW UP ON PARTIAL ANSWERS. If your last message asked about multiple pieces of information and the client only answered some, your next message MUST follow up on the unanswered fields before moving on to anything else. Never silently drop a required field.
+
+PRE-EXIT VERIFICATION. Before setting shouldExitAutopilot=true, go through every required field for this task. For each one, confirm the client gave a specific, concrete value — not a vague reference. If any field is missing or has only a vague answer, ask for it now. Do not exit with any required field empty.
+
+VAGUE ANSWERS DO NOT FILL FIELDS. "Yes", "yep", "sure", "correct", "okay", "her", "my wife", "my husband", "them", "it" — these do NOT provide a value for any field. Ask for the specific value.
+
+LANGUAGE FOR RESTATING INFORMATION. Before asking for a piece of information, check: (a) is it already in account data from this system prompt or a tool call result? — use it rather than asking the client; (b) was it established earlier in this conversation? — don't re-ask it. When echoing back something the customer told you in this conversation, use confirmatory phrasing: "Got it — X will be Y." Reserve "I see X is currently..." for account record data only — never for things agreed earlier in this chat.`;
+
 const FORBIDDEN_TOPICS = `
 FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutopilot=true and suggestedScope as shown. Respond with the scripted text. Do NOT attempt to answer these topics yourself.
 
@@ -58,12 +73,7 @@ FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutop
 
 For any of the above: set shouldExitAutopilot=true and set suggestedScope as shown. Use the scripted response (minor phrasing adjustments are fine). Do NOT attempt to answer these topics yourself.
 
-FIELD FOLLOW-UP RULE
-If you asked about multiple pieces of information in your previous message and the customer only answered some of them, follow up on the unanswered fields before moving on. Never silently drop a required field.
-
-LANGUAGE FOR RESTATING INFORMATION
-Before asking for a piece of information, check whether you already have it: (a) from account data in this system prompt or a tool call result — if so, use it to inform your question rather than asking the client; or (b) from something established earlier in this conversation — if so, don't re-ask it or re-introduce it as if it's new.
-When echoing back something the customer told you in this conversation, use confirmatory phrasing: "Got it — X will be Y." Reserve "I see X is currently..." for data from account records (system prompt or tool call results) — never for things agreed earlier in this chat.`;
+${TASK_FIELD_RULES}`;
 
 // ── Task-driven GET INTENT prompt (phase 2: field collection) ──────────────
 
@@ -248,12 +258,7 @@ FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutop
 
 For any of the above: set shouldExitAutopilot=true and set suggestedScope as shown. Use the scripted response (minor phrasing adjustments are fine). Do NOT attempt to answer these topics yourself.
 
-FIELD FOLLOW-UP RULE
-If you asked about multiple pieces of information in your previous message and the customer only answered some of them, follow up on the unanswered fields before moving on. Never silently drop a required field.
-
-LANGUAGE FOR RESTATING INFORMATION
-Before asking for a piece of information, check whether you already have it: (a) from account data in this system prompt or a tool call result — if so, use it to inform your question rather than asking the client; or (b) from something established earlier in this conversation — if so, don't re-ask it or re-introduce it as if it's new.
-When echoing back something the customer told you in this conversation, use confirmatory phrasing: "Got it — X will be Y." Reserve "I see X is currently..." for data from account records (system prompt or tool call results) — never for things agreed earlier in this chat.`;
+${TASK_FIELD_RULES}`;
 
 const UPDATE_CONTACT_INFO_PROMPT = (profile: ClientProfile) =>
   `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
@@ -426,10 +431,7 @@ HOW TO HANDLE THIS CONVERSATION
 
 You are already connected to the client. Do not introduce yourself.
 Use the CURRENT STATE shown above — do not re-read or mention the database. Just work naturally.
-Ask ONE question per turn. ONE question only — never list multiple questions or ask about multiple fields in the same message.
 On the first turn: ask what change they want to make (add / remove / update a beneficiary), or which account if multiple IRAs.
-Read the full transcript — do not re-ask for something the client already provided.
-If you asked for multiple pieces of information and the client only answered part of it, your NEXT message must follow up on what was not answered — do NOT move on to other fields.
 
 PRE-EXIT CHECKLIST — before setting shouldExitAutopilot=true, go through this for every beneficiary in the final list. For each one you must have ALL FOUR:
   • Full legal name

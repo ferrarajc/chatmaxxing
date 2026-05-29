@@ -26,6 +26,7 @@ interface ConnectContact {
   accept: (opts?: unknown) => void;
   reject: (opts?: unknown) => void;
   clear: (opts?: unknown) => void;
+  disconnect: (opts?: unknown) => void;
   onConnecting: (cb: () => void) => void;
   onConnected: (cb: () => void) => void;
   onEnded: (cb: () => void) => void;
@@ -165,7 +166,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       return;
     }
 
-    // ── Manual Accept / Skip / Close ─────────────────────────────────────────
+    // ── Manual Accept / Skip / Close / EndChat ────────────────────────────────
     // Defined before the ccpInitialized guard so listeners survive StrictMode's
     // cleanup-and-remount cycle (the guard blocks CCP re-init, not listener re-registration).
     const handleAccept = (e: Event) => {
@@ -198,15 +199,32 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       agentChatSessions.delete(contactId);
       store.clearSlot(contactId);
     };
+    // End the active chat in Amazon Connect (agent-initiated disconnect → moves to ACW).
+    // Calls contact.disconnect() via the Connect Streams contact object, which fires
+    // contact.onEnded() and lets the normal ACW transition handle the rest.
+    const handleEndChat = (e: Event) => {
+      const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
+      const contact = contactRefs.current.get(contactId);
+      if (contact) {
+        try { contact.disconnect({}); } catch (err) {
+          log.warn('useConnectStreams:endChat:disconnectFailed', err);
+        }
+      } else {
+        log.warn('useConnectStreams:endChat:noContact', { contactId });
+        store.patchSlot(contactId, { status: 'acw' });
+      }
+    };
     window.addEventListener('bobs:acceptContact', handleAccept);
     window.addEventListener('bobs:skipContact', handleSkip);
     window.addEventListener('bobs:closeContact', handleCloseContact);
+    window.addEventListener('bobs:endChat', handleEndChat);
 
     if (ccpInitialized) {
       return () => {
         window.removeEventListener('bobs:acceptContact', handleAccept);
         window.removeEventListener('bobs:skipContact', handleSkip);
         window.removeEventListener('bobs:closeContact', handleCloseContact);
+        window.removeEventListener('bobs:endChat', handleEndChat);
       };
     }
     ccpInitialized = true;
@@ -371,11 +389,13 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
 
       contact.onDestroy(() => {
         trackedContactIds.delete(contactId);
-        contactRefs.current.delete(contactId);
         agentChatSessions.delete(contactId);
-        // Preserve the slot if we're in ACW so the agent can still review and close.
-        // The contact is already gone from Connect; Close Contact will just clear locally.
-        if (useAgentStore.getState().getSlot(contactId)?.status !== 'acw') {
+        const currentStatus = useAgentStore.getState().getSlot(contactId)?.status;
+        if (currentStatus === 'acw') {
+          // Preserve contactRef so the Close Contact button can still call contact.clear()
+          // to signal Connect the agent is done with ACW. Ref is cleaned up by handleCloseContact.
+        } else {
+          contactRefs.current.delete(contactId);
           store.clearSlot(contactId);
         }
       });
@@ -428,6 +448,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       window.removeEventListener('bobs:acceptContact', handleAccept);
       window.removeEventListener('bobs:skipContact', handleSkip);
       window.removeEventListener('bobs:closeContact', handleCloseContact);
+      window.removeEventListener('bobs:endChat', handleEndChat);
       if (agentStatePollHandle) { clearInterval(agentStatePollHandle); agentStatePollHandle = null; }
     };
   }, []);
