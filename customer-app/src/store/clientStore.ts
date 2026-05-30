@@ -13,6 +13,15 @@ function loadActivePersona(): Persona {
   }
 }
 
+interface BuyParams {
+  ticker: string;
+  fundName: string;
+  accountId: string;
+  amount: number;
+  shares: number;
+  price: number;
+}
+
 interface ClientStore {
   activePersona: Persona;
   setActivePersona: (id: string) => void;
@@ -26,6 +35,7 @@ interface ClientStore {
   updateRmd: (updates: Partial<RmdData>) => void;
   fetchRmd: () => Promise<void>;
   saveRmdPreferences: (updates: Partial<RmdData>) => Promise<void>;
+  buyFund: (params: BuyParams) => Promise<void>;
 }
 
 export const useClientStore = create<ClientStore>((set, get) => {
@@ -169,6 +179,63 @@ export const useClientStore = create<ClientStore>((set, get) => {
       } catch {
         // optimistic update stays; non-critical
       }
+    },
+
+    buyFund: async ({ ticker, fundName, accountId, amount, shares, price }) => {
+      const { activePersona } = get();
+      const { clientId } = activePersona;
+
+      // Merge into existing holding or add new
+      const existingIdx = activePersona.holdings.findIndex(
+        h => h.ticker === ticker && h.accountId === accountId,
+      );
+      const newHoldings = [...activePersona.holdings];
+      if (existingIdx >= 0) {
+        const h = newHoldings[existingIdx];
+        const newShares = +(h.shares + shares).toFixed(4);
+        newHoldings[existingIdx] = { ...h, shares: newShares, price, value: +(newShares * price).toFixed(2) };
+      } else {
+        newHoldings.push({ name: fundName, ticker, accountId, shares: +shares.toFixed(4), price, change: 0, value: +amount.toFixed(2) });
+      }
+
+      const accountType = activePersona.accounts.find(a => a.id === accountId)?.type ?? accountId;
+      const newTxn = {
+        date: new Date().toISOString().slice(0, 10),
+        description: `Purchase - ${fundName}`,
+        amount: -amount,
+        account: accountType,
+      };
+      const newTransactions = [newTxn, ...activePersona.transactions];
+
+      const newAccounts = activePersona.accounts.map(a =>
+        a.id === accountId ? { ...a, balance: +(a.balance + amount).toFixed(2) } : a,
+      );
+      const newTotalBalance = +(activePersona.totalBalance + amount).toFixed(2);
+
+      // Optimistic update
+      set(state => ({
+        activePersona: {
+          ...state.activePersona,
+          holdings: newHoldings,
+          transactions: newTransactions,
+          accounts: newAccounts,
+          totalBalance: newTotalBalance,
+        },
+      }));
+
+      // Persist to DynamoDB
+      await Promise.all([
+        post<{ ok: boolean }>('/client-data', { action: 'put-holdings', clientId, data: newHoldings }),
+        post<{ ok: boolean }>('/client-data', { action: 'put-transactions', clientId, data: newTransactions }),
+        post<{ ok: boolean }>('/client-data', {
+          action: 'put-profile', clientId,
+          data: {
+            name: activePersona.name, phone: activePersona.phone, displayPhone: activePersona.displayPhone,
+            email: activePersona.email, address: activePersona.address,
+            totalBalance: newTotalBalance, accounts: newAccounts,
+          },
+        }),
+      ]);
     },
   };
 

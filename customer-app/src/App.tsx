@@ -7,6 +7,8 @@ import { AccessGate } from './components-v2/AccessGate';
 import { HomePage } from './components-v2/pages/home/HomePage';
 import { PortfolioPage } from './components-v2/pages/portfolio/PortfolioPage';
 import { ResearchPage } from './components-v2/pages/research/ResearchPage';
+import { FundProfilePage } from './components-v2/pages/research/FundProfilePage';
+import { BuyPage } from './components-v2/pages/research/BuyPage';
 import { AccountPage } from './components-v2/pages/account/AccountPage';
 import { AccountDetailPage } from './components-v2/pages/account/AccountDetailPage';
 import { BeneficiariesPage } from './components-v2/pages/account/BeneficiariesPage';
@@ -67,6 +69,8 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/research" element={<ResearchPage />} />
+              <Route path="/research/fund/:ticker" element={<FundProfilePage />} />
+              <Route path="/research/fund/:ticker/buy" element={<BuyPage />} />
               <Route path="/account" element={<AccountPage />} />
               <Route path="/account/detail/:accountId" element={<AccountDetailPage />} />
               <Route path="/account/beneficiaries" element={<BeneficiariesPage />} />
