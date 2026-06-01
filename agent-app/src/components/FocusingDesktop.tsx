@@ -132,6 +132,13 @@ export function FocusingDesktop() {
     if (selectedSlot?.suggestedText) setInputText(selectedSlot.suggestedText);
   };
 
+  const handleEndChat = () => {
+    if (!selectedSlot) return;
+    window.dispatchEvent(
+      new CustomEvent('bobs:endChat', { detail: { contactId: selectedSlot.contactId } }),
+    );
+  };
+
   const handleSendResource = (resource: { title: string; url: string }) => {
     if (!selectedSlot) return;
     sendText(selectedSlot, `Here's a helpful resource: ${resource.title}\n${resource.url}`, store);
@@ -220,12 +227,28 @@ export function FocusingDesktop() {
               background: C.leftBg, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#0f2d5e' }}>
-                  Conversation
-                </div>
-                <div style={{ fontSize: 11, color: C.sectionLabel, marginTop: 1 }}>
-                  {selectedSlot.clientName} · <IntentLabel text={selectedSlot.intentSummary} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <button
+                  type="button"
+                  className="end-chat"
+                  aria-label="End chat"
+                  title="End chat"
+                  onClick={e => { e.stopPropagation(); handleEndChat(); }}
+                  style={{ marginLeft: '-10px', marginRight: '-10px', marginTop: '-5px', paddingRight: '5px' }}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    <path d="M9.5 7.5 14.5 12.5" />
+                    <path d="M14.5 7.5 9.5 12.5" />
+                  </svg>
+                </button>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#0f2d5e' }}>
+                    Conversation
+                  </div>
+                  <div style={{ fontSize: 11, color: C.sectionLabel, marginTop: 1 }}>
+                    {selectedSlot.clientName} · <IntentLabel text={selectedSlot.intentSummary} />
+                  </div>
                 </div>
               </div>
               <ResponseTimer lastEventAt={

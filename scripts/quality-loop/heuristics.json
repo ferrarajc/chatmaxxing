@@ -2,51 +2,7 @@
   {
     "code": "H1",
     "name": "Scope Decline Clarity",
-    "severity": "Critical",
-    "weight": 2,
-    "threshold": 0.90,
-    "criterion": "When the agent cannot handle a request — because it is a forbidden topic, outside its scope, or requires specialist handling — it must explicitly name what it cannot help with and why before pivoting to any alternative action. Silently redirecting to a callback or escalation without acknowledging the original request is a failure.",
-    "failureSignals": "Agent offers a callback or transfer without stating which topic it cannot handle; Agent changes subject abruptly after a restricted question with no acknowledgment; Customer is redirected to callback scheduling with no explanation of why their original question is not being answered.",
-    "fixGuidance": "In lambda/autopilot-turn/handler.ts, in FORBIDDEN_TOPICS, add a required preamble before any escalation offer:\n---\n\"SCOPE DECLINE RULE: When you cannot help with a topic, always name it and explain why before offering an alternative. Required format: 'I'm not able to [topic] — [reason]. What I can do is [alternative].' Never pivot to a callback or escalation without first acknowledging what you cannot do and why. Example: 'Investment advice is something I need to leave to a licensed advisor — I can't make those recommendations directly. What I can do is schedule a callback with one of our advisors.'\"\n---"
-  },
-  {
-    "code": "H2",
-    "name": "Operational Fact Grounding",
-    "severity": "Critical",
-    "weight": 2,
-    "threshold": 1.0,
-    "criterion": "The agent must not state operational facts — business hours, agent availability windows, processing times, callback SLAs, or policy details — unless those facts are explicitly provided in this conversation's system context. When uncertain, the agent must hedge or say it cannot confirm, rather than stating a specific value.",
-    "failureSignals": "Agent states specific hours ('we're available until 7:30 PM Eastern') without a sourced data point in the conversation; Agent confirms a time slot as available without verifiable basis; Agent tells the customer agents are available when the customer's own message indicates it may be after hours.",
-    "fixGuidance": "In lambda/autopilot-turn/handler.ts, in the cancel-reschedule-callback task expert prompt, add:\n---\n\"HOURS & AVAILABILITY — CRITICAL: You do not know our business hours unless they are explicitly stated in this prompt. Do not invent them. If a customer asks whether a specific time is available, say: 'I want to make sure we get you the right time — I'll note your preference and the scheduling team will confirm availability.' Never state specific hours as fact unless they are provided to you.\"\n---"
-  },
-  {
-    "code": "H3",
-    "name": "Within-Conversation Memory",
-    "severity": "High",
-    "weight": 1,
-    "threshold": 0.85,
-    "criterion": "The agent must retain and act on all information the customer has already provided in the current conversation. Re-asking for something the customer already gave — a phone number, a preferred time, a correction, a stated preference — is a failure regardless of how many turns have passed.",
-    "failureSignals": "Agent asks for a phone number the customer stated 1–3 turns earlier; Agent asks what time when the customer already named one; Agent asks the customer to repeat a correction they already made (e.g., re-asks for a new number after the customer provided it).",
-    "fixGuidance": "In lambda/autopilot-turn/handler.ts, add to all task expert prompts:\n---\n\"MEMORY RULE — REQUIRED: Before asking any question, read the full conversation above. If the customer already provided a value (time, phone number, name, date, preference, correction), do not ask for it again. In callback scheduling specifically: if a time and number have both been stated, move directly to confirmation — do not re-collect either.\"\n---"
-  },
-  {
-    "code": "H4",
-    "name": "Response Non-Repetition",
-    "severity": "High",
-    "weight": 1,
-    "threshold": 0.90,
-    "criterion": "The agent must not send the same substantive message more than once in a conversation. Every agent turn must either advance the conversation or respond specifically to a new customer statement. Repeating a prior confirmation, a prior question, or any prior status message verbatim (or near-verbatim) is a failure.",
-    "failureSignals": "Two or more agent messages in the same conversation that are identical or near-identical in content; A callback confirmation re-sent after the customer has acknowledged it; A clarifying question asked again after the customer already answered it.",
-    "fixGuidance": "In lambda/autopilot-turn/handler.ts, add to all task expert prompts:\n---\n\"NON-REPETITION RULE — REQUIRED: Never send a message you have already sent in this conversation. Before each response, check your prior turns. If a callback was already confirmed, do not re-confirm it — instead respond to what the customer just said. If the customer asks a follow-up after a confirmation, answer only the follow-up.\"\n---"
-  },
-  {
-    "code": "H5",
-    "name": "Callback Confirmation Completeness",
-    "severity": "High",
-    "weight": 1,
-    "threshold": 0.80,
-    "criterion": "When a callback is scheduled or rescheduled, the agent's confirmation must contain all three elements in a single message: (1) the day and date, (2) the time with timezone, (3) the phone number to be called. The agent must also confirm the callback number with the customer rather than assuming the number on file is correct.",
-    "failureSignals": "Confirmation omits the date, the time, or the phone number; Agent schedules to the on-file number without asking which number the customer wants to use; Confirmation includes a number the customer already corrected earlier in the conversation; Confirmation details are split across two or more messages.",
-    "fixGuidance": "In lambda/autopilot-turn/handler.ts, in the cancel-reschedule-callback task expert prompt, add:\n---\n\"CALLBACK CONFIRMATION TEMPLATE — REQUIRED: Your final confirmation must be a single message containing all three: (1) day and date, (2) time with timezone, (3) phone number. Before scheduling, always ask which number to use — do not assume the on-file number is correct. Example confirmation: 'To confirm: we'll call you on Tuesday, May 27th at 9:00 AM Eastern at (555) 867-5309. Does that look right?'\"\n---"
+    "criterion": "When the client makes a request that the chatbot or human agent cannot— for example, because it's a forbidden topic--because it is a forbidden topic, outside its scope, or requires specialist handling — the AI must explicitly explain that it cannot help with the request of that type (naming the type), then offer to set up a callback.  For example, if the user says \"Can you advise me on whether my investments are any good\",  the AI may respond with something like \"I'm not permitted to provide financial advice, but I can set up a callback from one of our financial advisors.  Would you like me to set that up?\"",
+    "failureSignals": "The AI offers a callback or transfer without any explanation of why.   For example, the client says \"Can you advise me on whether my investments are any good\" and the AI responds with \"The number I have on file for you is (713) 555-0234. Is that the best number to reach you for a callback?\".  In this example, the AI failed to explain that it was not permitted to provide that information and would need to set up a callback instead."
   }
 ]

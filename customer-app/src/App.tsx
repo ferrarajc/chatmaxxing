@@ -1,5 +1,11 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 import { theme } from './theme';
 import { TopNavV2 } from './components-v2/layout/TopNavV2';
 import { ChatWidget } from './components-v2/chat/ChatWidget';
@@ -25,6 +31,9 @@ import { EstatePlanningPage } from './components-v2/pages/resources/EstatePlanni
 import { SelfEmployedRetirementPage } from './components-v2/pages/resources/SelfEmployedRetirementPage';
 import { TaxDeductionsPage } from './components-v2/pages/resources/TaxDeductionsPage';
 import { RolloverPage } from './components-v2/pages/resources/RolloverPage';
+import { RetirementCalculatorPage } from './components-v2/pages/resources/RetirementCalculatorPage';
+import { LibraryPage } from './components-v2/pages/library/LibraryPage';
+import { ArticlePage } from './components-v2/pages/library/ArticlePage';
 import { AccountAccessPage } from './components-v2/pages/help/AccountAccessPage';
 import { AccountTransferPage } from './components-v2/pages/help/AccountTransferPage';
 import { BeneficiaryPage } from './components-v2/pages/help/BeneficiaryPage';
@@ -63,6 +72,7 @@ export default function App() {
     <AccessGate>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <div style={{ minHeight: '100vh', background: theme.color.bg, fontFamily: theme.font.sans, textAlign: 'left' }}>
+          <ScrollToTop />
           <TopNavV2 />
           <main>
             <Routes>
@@ -87,6 +97,10 @@ export default function App() {
               <Route path="/resources/self-employed-retirement" element={<SelfEmployedRetirementPage />} />
               <Route path="/resources/tax-deductions" element={<TaxDeductionsPage />} />
               <Route path="/resources/rollover" element={<RolloverPage />} />
+              <Route path="/resources/retirement-calculator" element={<RetirementCalculatorPage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/library/guide/:slug" element={<ArticlePage category="guide" />} />
+              <Route path="/library/opinion/:slug" element={<ArticlePage category="opinion" />} />
               <Route path="/help/account-access" element={<AccountAccessPage />} />
               <Route path="/help/account-transfer" element={<AccountTransferPage />} />
               <Route path="/help/beneficiary" element={<BeneficiaryPage />} />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { theme } from '../../../theme';
 
 const card: React.CSSProperties = {
@@ -75,6 +76,13 @@ export function SelfEmployedRetirementPage() {
           <li>Also contribute to a SEP-IRA based on your self-employment net income</li>
           <li>Also contribute $7,000 to a Roth IRA (if income-eligible)</li>
         </ul>
+      </div>
+
+      <div style={{ background: theme.color.primarySoft, border: `1px solid ${theme.color.primarySoftBorder}`, borderRadius: 10, padding: '14px 16px', fontSize: 13, color: theme.color.text, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <span>Not sure how much your self-employment savings will grow? Run the numbers.</span>
+        <Link to="/resources/retirement-calculator" style={{ flexShrink: 0, background: theme.color.primary, color: theme.color.textOnPrimary, borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Retirement Calculator →
+        </Link>
       </div>
 
       <div style={{ background: theme.color.successSoft, border: `1px solid ${theme.color.successBorder}`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: theme.color.success }}>

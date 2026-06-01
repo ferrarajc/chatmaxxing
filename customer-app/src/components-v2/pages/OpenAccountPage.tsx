@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { theme } from '../../theme';
 
 const card: React.CSSProperties = {
@@ -51,7 +51,11 @@ const ACCOUNT_TYPES = [
 ];
 
 export function OpenAccountPage() {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const preselectedType = searchParams.get('accountType');
+  const [selected, setSelected] = useState<string | null>(
+    ACCOUNT_TYPES.find(t => t.id === preselectedType) ? preselectedType : null
+  );
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
 

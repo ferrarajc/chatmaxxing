@@ -26,62 +26,7 @@ export const MOCK_CLIENT = {
   ],
 };
 
-export const FUNDS = [
-  {
-    name: 'BobsFunds 500 Index',
-    ticker: 'BF500',
-    category: 'Large Cap Blend',
-    description: 'Tracks the performance of 500 large-cap US companies.',
-    returns: { ytd: 8.4, oneYear: 24.1, threeYear: 9.8, fiveYear: 13.2 },
-    expenseRatio: 0.03,
-    minInvestment: 1,
-  },
-  {
-    name: 'BobsFunds Growth',
-    ticker: 'BFGR',
-    category: 'Large Cap Growth',
-    description: 'High-growth US companies with strong earnings momentum.',
-    returns: { ytd: 11.2, oneYear: 31.4, threeYear: 12.1, fiveYear: 18.7 },
-    expenseRatio: 0.25,
-    minInvestment: 1,
-  },
-  {
-    name: 'BobsFunds Bond Income',
-    ticker: 'BFBI',
-    category: 'Intermediate Bond',
-    description: 'Investment-grade corporate and government bonds.',
-    returns: { ytd: 1.8, oneYear: 4.2, threeYear: 2.1, fiveYear: 3.8 },
-    expenseRatio: 0.10,
-    minInvestment: 1,
-  },
-  {
-    name: 'BobsFunds International',
-    ticker: 'BFIN',
-    category: 'International Blend',
-    description: 'Diversified exposure to developed international markets.',
-    returns: { ytd: 6.3, oneYear: 15.3, threeYear: 6.4, fiveYear: 9.1 },
-    expenseRatio: 0.20,
-    minInvestment: 1,
-  },
-  {
-    name: 'BobsFunds ESG Leaders',
-    ticker: 'BFESG',
-    category: 'Large Cap ESG',
-    description: 'Companies with top environmental, social & governance scores.',
-    returns: { ytd: 7.9, oneYear: 22.7, threeYear: 9.3, fiveYear: 12.8 },
-    expenseRatio: 0.18,
-    minInvestment: 1,
-  },
-  {
-    name: 'BobsFunds Short-Term Treasury',
-    ticker: 'BFST',
-    category: 'Short-Term Bond',
-    description: 'US Treasury securities with maturities of 1-3 years.',
-    returns: { ytd: 1.9, oneYear: 5.1, threeYear: 3.2, fiveYear: 2.9 },
-    expenseRatio: 0.08,
-    minInvestment: 1,
-  },
-];
+export { FUNDS } from './funds';
 
 export const MARKET_DATA = [
   { name: 'S&P 500',  value: '5,248.33', change: '+0.83%', up: true },

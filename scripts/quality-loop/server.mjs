@@ -20,7 +20,7 @@
  */
 
 import http from 'http';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -39,6 +39,8 @@ const UI_FILE    = path.join(__dirname, 'ui', 'index.html');
 const HISTORY    = path.join(RESULTS, 'history.json');
 const LATEST     = path.join(RESULTS, 'latest.json');
 const NEXT_FIX   = path.join(RESULTS, 'NEXT_FIX.md');
+const FIXES_FILE = path.join(RESULTS, 'fixes.json');
+const ARCHIVES   = path.join(RESULTS, 'archives.json');
 const ITER_FILE  = path.join(RESULTS, 'iteration.txt');
 
 const PORT = parseInt(process.env.PORT ?? '3456', 10);
@@ -79,33 +81,26 @@ function appendHistory(record) {
 function buildHistoryRecord(latest) {
   if (!latest) return null;
 
-  const highHeuristics = ['H3', 'H5', 'H8', 'H13'];
-  const highFails = highHeuristics.filter(h => {
-    const s = latest.heuristicStats?.[h];
-    return s && s.fail > 0;
-  });
-
-  const totalScenarios = latest.scenarios?.length ?? 0;
+  const totalScenarios  = latest.scenarios?.length ?? 0;
   const failedScenarios = (latest.scenarios ?? []).filter(s =>
     Object.values(s.scores ?? {}).some(g => g === 'Fail'),
   ).length;
 
-  const topFix = latest.criticalFailures?.length > 0
-    ? latest.criticalFailures[0].heuristic
-    : (highFails[0] ?? null);
+  // Derive failing heuristics dynamically from the stats (no hardcoded codes)
+  const failingHeuristics = Object.entries(latest.heuristicStats ?? {})
+    .filter(([, s]) => s.fail > 0)
+    .map(([code]) => code);
 
   return {
-    iteration:       latest.iteration,
-    timestamp:       latest.timestamp ?? new Date().toISOString(),
-    overallScore:    latest.overallScore,
-    thresholdMet:    latest.thresholdMet,
-    criticalFailures: latest.criticalFailures ?? [],
-    highSeverityFails: highFails,
-    heuristicStats:  latest.heuristicStats ?? {},
-    scenarioCount:   totalScenarios,
-    scenariosFailed: failedScenarios,
-    topFix,
-    reportFile:      `report-${String(latest.iteration).padStart(3, '0')}.md`,
+    iteration:        latest.iteration,
+    timestamp:        latest.timestamp ?? new Date().toISOString(),
+    overallScore:     latest.overallScore,
+    thresholdMet:     latest.thresholdMet,
+    heuristicStats:   latest.heuristicStats ?? {},
+    failingHeuristics,
+    scenarioCount:    totalScenarios,
+    scenariosFailed:  failedScenarios,
+    reportFile:       `report-${String(latest.iteration).padStart(3, '0')}.md`,
   };
 }
 
@@ -432,13 +427,10 @@ const server = http.createServer(async (req, res) => {
     const arr = readHeuristics();
     if (arr.find(x => x.code === h.code)) return json(res, { error: `Code ${h.code} already exists` }, 409);
     const newH = {
-      code:          h.code.trim().toUpperCase(),
-      name:          h.name.trim(),
-      severity:      h.severity ?? 'Medium',
-      weight:        Number(h.weight ?? 1),
-      criterion:     h.criterion ?? '',
+      code:           h.code.trim().toUpperCase(),
+      name:           h.name.trim(),
+      criterion:      h.criterion      ?? '',
       failureSignals: h.failureSignals ?? '',
-      fixGuidance:   h.fixGuidance ?? '',
     };
     arr.push(newH);
     writeHeuristics(arr);
@@ -457,12 +449,9 @@ const server = http.createServer(async (req, res) => {
     if (idx < 0) return json(res, { error: `Heuristic ${code} not found` }, 404);
     arr[idx] = {
       ...arr[idx],
-      name:          patch.name          ?? arr[idx].name,
-      severity:      patch.severity      ?? arr[idx].severity,
-      weight:        Number(patch.weight ?? arr[idx].weight),
-      criterion:     patch.criterion     ?? arr[idx].criterion,
+      name:           patch.name           ?? arr[idx].name,
+      criterion:      patch.criterion      ?? arr[idx].criterion,
       failureSignals: patch.failureSignals ?? arr[idx].failureSignals,
-      fixGuidance:   patch.fixGuidance   ?? arr[idx].fixGuidance,
     };
     writeHeuristics(arr);
     broadcast('heuristics_updated', { heuristics: arr });
@@ -663,6 +652,76 @@ const server = http.createServer(async (req, res) => {
     } catch {
       return json(res, null);  // null = no transcript file for this iteration
     }
+  }
+
+  // ── Latest JSON ───────────────────────────────────────────────────────────
+  if (req.method === 'GET' && p === '/api/latest') {
+    try {
+      const data = JSON.parse(readFileSync(LATEST, 'utf8'));
+      return json(res, data);
+    } catch {
+      return json(res, null);
+    }
+  }
+
+  // ── Fixes: get current ────────────────────────────────────────────────────
+  if (req.method === 'GET' && p === '/api/fixes') {
+    try {
+      const data = JSON.parse(readFileSync(FIXES_FILE, 'utf8'));
+      return json(res, data);
+    } catch {
+      return json(res, []);
+    }
+  }
+
+  // ── Fixes: save edited version to NEXT_FIX.md ────────────────────────────
+  if (req.method === 'POST' && p === '/api/fixes/save') {
+    const body = await readBody(req);
+    let fixes;
+    try { fixes = JSON.parse(body); } catch { return json(res, { error: 'Invalid JSON' }, 400); }
+    if (!Array.isArray(fixes)) return json(res, { error: 'Expected array of fixes' }, 400);
+
+    // Write fixes.json (updated)
+    writeFileSync(FIXES_FILE, JSON.stringify(fixes, null, 2), 'utf8');
+
+    // Rewrite NEXT_FIX.md with edited content
+    let md = `# NEXT_FIX — Edited\n\n## Proposed Fixes\n\n`;
+    for (const fix of fixes) {
+      md += `### ${fix.title ?? 'Fix'}\n\n${fix.body ?? ''}\n\n`;
+    }
+    writeFileSync(NEXT_FIX, md, 'utf8');
+
+    return json(res, { saved: true });
+  }
+
+  // ── History: archive selected iterations ──────────────────────────────────
+  if (req.method === 'POST' && p === '/api/history/archive') {
+    const body = await readBody(req);
+    let params;
+    try { params = JSON.parse(body); } catch { return json(res, { error: 'Invalid JSON' }, 400); }
+    const { name, iterations } = params;
+    if (!name || !Array.isArray(iterations) || iterations.length === 0) {
+      return json(res, { error: 'name and iterations array required' }, 400);
+    }
+
+    const hist   = readHistory();
+    const toArchive = hist.filter(r => iterations.includes(r.iteration));
+    const remaining = hist.filter(r => !iterations.includes(r.iteration));
+
+    writeFileSync(HISTORY, JSON.stringify(remaining, null, 2), 'utf8');
+
+    // Append to archives.json
+    let archives = [];
+    try { archives = JSON.parse(readFileSync(ARCHIVES, 'utf8')); } catch { archives = []; }
+    archives.push({
+      name,
+      archivedAt: new Date().toISOString(),
+      records: toArchive,
+    });
+    writeFileSync(ARCHIVES, JSON.stringify(archives, null, 2), 'utf8');
+
+    broadcast('history_updated', { history: remaining });
+    return json(res, { archived: toArchive.length, remaining: remaining.length });
   }
 
   res.writeHead(404); res.end('Not found');

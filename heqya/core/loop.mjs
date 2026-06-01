@@ -106,13 +106,14 @@ export async function runLoop(config) {
 
     // ── Phase 3: Report ──────────────────────────────────────────
     process.stdout.write('\nPhase 3 — Writing reports\n\n');
-    const { score, thresholdMet, topFix } = writeReports({
+    const { score, thresholdMet } = await writeReports({
       iteration,
       runResults,
       evaluations,
       heuristics,
       thresholds,
       resultsDir,
+      llm,
     });
 
     process.stdout.write(`[ITERATION_COMPLETE ${iteration} ${score.toFixed(2)}]\n`);
@@ -132,10 +133,6 @@ export async function runLoop(config) {
 
     // ── Phase 4: Apply fix ────────────────────────────────────────
     process.stdout.write('\n  Applying fix...\n');
-
-    if (topFix) {
-      process.stdout.write(`  Top issue: ${topFix.code} — ${topFix.name}\n`);
-    }
 
     const nextFixContent = readFileSync(path.join(resultsDir, 'NEXT_FIX.md'), 'utf8');
 

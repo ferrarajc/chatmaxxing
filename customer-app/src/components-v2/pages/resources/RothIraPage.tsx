@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { theme } from '../../../theme';
 
 const card: React.CSSProperties = {
@@ -74,6 +75,13 @@ export function RothIraPage() {
           <li>You're in a temporarily low-income year (good time to convert at low tax rate)</li>
           <li>You want to leave tax-free assets to heirs</li>
         </ul>
+      </div>
+
+      <div style={{ background: theme.color.primarySoft, border: `1px solid ${theme.color.primarySoftBorder}`, borderRadius: 10, padding: '14px 16px', fontSize: 13, color: theme.color.text, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <span>Wondering how much you'll need to retire? See how a Roth IRA fits into your long-term plan.</span>
+        <Link to="/resources/retirement-calculator" style={{ flexShrink: 0, background: theme.color.primary, color: theme.color.textOnPrimary, borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Retirement Calculator →
+        </Link>
       </div>
 
       <div style={{ background: theme.color.warningSoft, border: `1px solid ${theme.color.warningBorder}`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: theme.color.warning }}>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { theme } from '../../../theme';
 import { FUND_BY_TICKER, AllocationSlice, Distribution } from '../../../data/funds';
@@ -128,24 +128,135 @@ function RiskMeter({ level }: { level: string }) {
   );
 }
 
-function AllocationChart({ data, label }: { data: AllocationSlice[]; label: string }) {
+// ── Allocation ring chart + table ─────────────────────────────────────────
+
+const ALLOC_COLORS = [
+  '#0F2340', // deep navy
+  '#A05A2C', // cognac
+  '#2A7B6E', // teal
+  '#B07E2A', // amber
+  '#4A6080', // steel blue
+  '#5C7A60', // sage
+  '#7A4A6A', // plum
+];
+
+function polarXY(cx: number, cy: number, r: number, deg: number) {
+  const rad = deg * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function donutArc(cx: number, cy: number, outerR: number, innerR: number, startDeg: number, endDeg: number): string {
+  const os = polarXY(cx, cy, outerR, startDeg);
+  const oe = polarXY(cx, cy, outerR, endDeg);
+  const ie = polarXY(cx, cy, innerR, endDeg);
+  const is_ = polarXY(cx, cy, innerR, startDeg);
+  const large = (endDeg - startDeg) > 180 ? 1 : 0;
+  return `M ${os.x} ${os.y} A ${outerR} ${outerR} 0 ${large} 1 ${oe.x} ${oe.y} L ${ie.x} ${ie.y} A ${innerR} ${innerR} 0 ${large} 0 ${is_.x} ${is_.y} Z`;
+}
+
+function AllocationSection({ data, label }: { data: AllocationSlice[]; label: string }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const cx = 90, cy = 90, outerR = 78, innerR = 50;
+  const total = data.reduce((s, d) => s + d.pct, 0);
+
+  let cumDeg = -90;
+  const segments = data.map((slice, i) => {
+    const span = Math.min((slice.pct / total) * 360, 359.99);
+    const start = cumDeg;
+    cumDeg += span;
+    return { path: donutArc(cx, cy, outerR, innerR, start, cumDeg), color: ALLOC_COLORS[i % ALLOC_COLORS.length], slice };
+  });
+
+  const h = hovered !== null ? data[hovered] : null;
+  const words = h ? h.name.split(' ') : [];
+  const line1 = words[0] ?? '';
+  const line2 = words.slice(1).join(' ');
+  const hasTwoLines = !!line2;
+
   return (
     <div>
-      <div style={{ fontSize: 11, color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 14 }}>
+      <div style={{ fontSize: 11, color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 16 }}>
         {label}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {data.map(row => (
-          <div key={row.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 200, fontSize: 13, color: theme.color.text, flexShrink: 0 }}>{row.name}</div>
-            <div style={{ flex: 1, height: 10, background: theme.color.border, borderRadius: 5, overflow: 'hidden' }}>
-              <div style={{ width: `${row.pct}%`, height: '100%', background: theme.color.primary, borderRadius: 5 }} />
-            </div>
-            <div style={{ width: 44, fontSize: 13, color: theme.color.textMuted, textAlign: 'right', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-              {row.pct}%
-            </div>
-          </div>
-        ))}
+      <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+
+        {/* Legend table */}
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <tbody>
+              {data.map((row, i) => (
+                <tr
+                  key={row.name}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                  style={{ cursor: 'default', transition: 'background 0.1s' }}
+                >
+                  <td style={{ ...S.td, width: 20, paddingRight: 10 }}>
+                    <span style={{
+                      display: 'inline-block', width: 10, height: 10,
+                      background: ALLOC_COLORS[i % ALLOC_COLORS.length],
+                      borderRadius: 2,
+                    }} />
+                  </td>
+                  <td style={{
+                    ...S.td, textAlign: 'left',
+                    color: hovered === i ? theme.color.text : theme.color.textMuted,
+                    fontWeight: hovered === i ? 600 : 400,
+                    transition: 'color 0.1s, font-weight 0.1s',
+                  }}>
+                    {row.name}
+                  </td>
+                  <td style={{ ...S.td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 500, color: theme.color.text }}>
+                    {row.pct}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Donut chart */}
+        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+          <svg width={180} height={180}>
+            {segments.map((seg, i) => (
+              <path
+                key={i}
+                d={seg.path}
+                fill={seg.color}
+                stroke={theme.color.surface}
+                strokeWidth={2}
+                opacity={hovered === null || hovered === i ? 1 : 0.4}
+                style={{ cursor: 'pointer', transition: 'opacity 0.15s' }}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+              />
+            ))}
+            {h ? (
+              <>
+                {line1 && (
+                  <text x={cx} y={hasTwoLines ? cy - 15 : cy - 9}
+                    textAnchor="middle" fontSize={9} fill={theme.color.textMuted}>
+                    {line1}
+                  </text>
+                )}
+                {line2 && (
+                  <text x={cx} y={cy - 3} textAnchor="middle" fontSize={9} fill={theme.color.textMuted}>
+                    {line2}
+                  </text>
+                )}
+                <text x={cx} y={hasTwoLines ? cy + 16 : cy + 13}
+                  textAnchor="middle" fontSize={22} fontWeight="bold"
+                  fill={theme.color.text} fontFamily={theme.font.serif}>
+                  {h.pct}%
+                </text>
+              </>
+            ) : (
+              <text x={cx} y={cy + 5} textAnchor="middle" fontSize={10} fill={theme.color.textSubtle}>
+                hover to explore
+              </text>
+            )}
+          </svg>
+        </div>
       </div>
     </div>
   );
@@ -441,7 +552,7 @@ export function FundProfilePage() {
       {/* ── Portfolio Composition ─────────────────────────────────────────── */}
       <div style={S.card}>
         <h2 style={S.sectionTitle}>Portfolio Composition</h2>
-        <AllocationChart data={fundDef.sectorAllocation} label={fundDef.allocationLabel} />
+        <AllocationSection data={fundDef.sectorAllocation} label={fundDef.allocationLabel} />
 
         {topHoldings.length > 0 && (
           <>
