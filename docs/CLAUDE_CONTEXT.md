@@ -94,7 +94,7 @@ chatmaxxing/
 
 **Two AI families, one Lambda:**
 - **Nova Micro** (Amazon Bedrock): used for `full-auto`, `get-intent` task identification (Phase 1), ACW, NBR, intent label/greeting
-- **OpenAI GPT** (via `OPENAI_API_KEY`): used for `get-intent` task expert turns (Phase 2)
+- **OpenAI GPT** (via `OPENAI_API_KEY`): used for `get-intent` task expert turns (Phase 2). Experts run on **`gpt-4o`** (set by `taskExpertModel()` / `DEFAULT_TASK_EXPERT_MODEL`, overridable via `OPENAI_MODEL_TASK_EXPERT`); gpt-4o-mini was too weak for the experts' conversational rules (it hallucinated and stonewalled). Customer bot, NBR, and intent labels stay on the `gpt-4o-mini` default for cost.
 
 **Scopes:**
 - `full-auto` → FULL_AUTO_PROMPT → handles pre-agent bot Q&A, links to self-service pages, exits on escalation/account modification
