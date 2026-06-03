@@ -2055,6 +2055,19 @@ const EXIT_MESSAGE_INSTRUCTION = `
 EXIT MESSAGE RULE
 When shouldExitAutopilot is true, also set exitMessage to a ≤20-word sentence addressed to the human agent explaining why autopilot is handing back control (third person, e.g. "All fields collected — proposed action is ready for review." or "Customer requested escalation to a supervisor."). When shouldExitAutopilot is false, set exitMessage to null.`;
 
+// ── Task-expert model selection ────────────────────────────────────────────
+// The agent-side task experts carry the nuanced conversational load (warm
+// openings, natural confirmations, answering mid-flow questions, recap gating).
+// gpt-4o-mini follows those rules unreliably — it hallucinates and stonewalls —
+// validated by A/B test on add-account-access. So all experts run on gpt-4o.
+// Everything else (customer bot, NBR, intent labels) stays on the mini default
+// for cost. Override globally via OPENAI_MODEL_TASK_EXPERT, or per task below.
+const DEFAULT_TASK_EXPERT_MODEL = process.env.OPENAI_MODEL_TASK_EXPERT ?? 'gpt-4o';
+const TASK_MODEL_OVERRIDES: Record<string, string> = {};
+function taskExpertModel(taskId: string): string {
+  return TASK_MODEL_OVERRIDES[taskId] ?? DEFAULT_TASK_EXPERT_MODEL;
+}
+
 // ── Escalation hard-override ───────────────────────────────────────────────
 const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
@@ -2150,10 +2163,7 @@ export const handler = async (
         let taskExitMessage: string | null = null;
         let taskToolsUsed: string[] = [];
 
-        const TASK_MODEL_OVERRIDES: Record<string, string> = {
-          'update-beneficiaries': process.env.OPENAI_MODEL_BENEFICIARIES ?? 'gpt-4o',
-        };
-        const taskModel = TASK_MODEL_OVERRIDES[activeTaskId];
+        const taskModel = taskExpertModel(activeTaskId);
 
         try {
           const result = await invokeWithTools(
@@ -2236,6 +2246,7 @@ export const handler = async (
               700,
               { fn: 'autopilot-turn', contactId: p1ContactId, clientId: profile.clientId, scope: `get-intent:identify:${resolvedTask.id}` },
               true,
+              taskExpertModel(resolvedTask.id),
             );
             p1ToolsUsed = result.toolsUsed;
             const parsed = parseJsonFromBedrock<{
