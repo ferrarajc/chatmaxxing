@@ -18,6 +18,16 @@ export interface FundDef {
   allocationLabel: string;
   sectorAllocation: AllocationSlice[];
   distributions: Distribution[];
+  // ── New fields ──────────────────────────────────────────────────────────────
+  annualReturns: { year: number; pct: number }[];      // newest first
+  yield: number;                                        // trailing 12-month distribution yield %
+  beta: number | null;                                  // vs. S&P 500
+  stdDev: number | null;                               // annualized 3-year standard deviation
+  peRatio: number | null;                              // portfolio P/E (null for bond funds)
+  pbRatio: number | null;                              // portfolio P/B
+  medianMarketCapB: number | null;                     // median market cap in billions
+  avgDuration: number | null;                          // bond fund avg duration in years
+  styleBox: { style: 'Value' | 'Blend' | 'Growth'; size: 'Small' | 'Mid' | 'Large' } | null;
 }
 
 export const FUNDS: FundDef[] = [
@@ -53,6 +63,22 @@ export const FUNDS: FundDef[] = [
       { date: '2025-09-25', type: 'Dividend',     amount: 1.484 },
       { date: '2025-06-25', type: 'Dividend',     amount: 1.499 },
     ],
+    annualReturns: [
+      { year: 2025, pct: 12.6 },
+      { year: 2024, pct: 25.0 },
+      { year: 2023, pct: 26.3 },
+      { year: 2022, pct: -18.2 },
+      { year: 2021, pct: 28.7 },
+      { year: 2020, pct: 18.4 },
+    ],
+    yield: 1.21,
+    beta: 1.00,
+    stdDev: 14.8,
+    peRatio: 27.4,
+    pbRatio: 4.8,
+    medianMarketCapB: 95.8,
+    avgDuration: null,
+    styleBox: { style: 'Blend', size: 'Large' },
   },
   {
     ticker: 'BFGR',
@@ -84,6 +110,22 @@ export const FUNDS: FundDef[] = [
       { date: '2025-09-25', type: 'Dividend', amount: 0.242 },
       { date: '2025-06-25', type: 'Dividend', amount: 0.251 },
     ],
+    annualReturns: [
+      { year: 2025, pct: 15.4 },
+      { year: 2024, pct: 33.5 },
+      { year: 2023, pct: 46.8 },
+      { year: 2022, pct: -33.2 },
+      { year: 2021, pct: 27.4 },
+      { year: 2020, pct: 40.2 },
+    ],
+    yield: 0.49,
+    beta: 1.12,
+    stdDev: 18.3,
+    peRatio: 38.2,
+    pbRatio: 9.2,
+    medianMarketCapB: 142.3,
+    avgDuration: null,
+    styleBox: { style: 'Growth', size: 'Large' },
   },
   {
     ticker: 'BFBI',
@@ -116,6 +158,22 @@ export const FUNDS: FundDef[] = [
       { date: '2025-12-07', type: 'Dividend', amount: 0.181 },
       { date: '2025-11-07', type: 'Dividend', amount: 0.178 },
     ],
+    annualReturns: [
+      { year: 2025, pct: 4.2  },
+      { year: 2024, pct: 1.4  },
+      { year: 2023, pct: 5.5  },
+      { year: 2022, pct: -13.1 },
+      { year: 2021, pct: -1.7 },
+      { year: 2020, pct: 7.7  },
+    ],
+    yield: 3.82,
+    beta: 0.05,
+    stdDev: 5.2,
+    peRatio: null,
+    pbRatio: null,
+    medianMarketCapB: null,
+    avgDuration: 6.0,
+    styleBox: null,
   },
   {
     ticker: 'BFIN',
@@ -146,6 +204,22 @@ export const FUNDS: FundDef[] = [
       { date: '2025-06-15', type: 'Dividend', amount: 0.584 },
       { date: '2024-12-15', type: 'Dividend', amount: 0.552 },
     ],
+    annualReturns: [
+      { year: 2025, pct: 10.8 },
+      { year: 2024, pct: 4.9  },
+      { year: 2023, pct: 15.6 },
+      { year: 2022, pct: -16.0 },
+      { year: 2021, pct: 8.6  },
+      { year: 2020, pct: 11.0 },
+    ],
+    yield: 2.96,
+    beta: 0.72,
+    stdDev: 14.1,
+    peRatio: 14.2,
+    pbRatio: 1.8,
+    medianMarketCapB: 24.5,
+    avgDuration: null,
+    styleBox: { style: 'Blend', size: 'Large' },
   },
   {
     ticker: 'BFESG',
@@ -177,6 +251,22 @@ export const FUNDS: FundDef[] = [
       { date: '2025-09-25', type: 'Dividend', amount: 0.198 },
       { date: '2025-06-25', type: 'Dividend', amount: 0.187 },
     ],
+    annualReturns: [
+      { year: 2025, pct: 12.8 },
+      { year: 2024, pct: 28.1 },
+      { year: 2023, pct: 34.2 },
+      { year: 2022, pct: -22.5 },
+      { year: 2021, pct: 28.6 },
+      { year: 2020, pct: 25.3 },
+    ],
+    yield: 0.91,
+    beta: 0.97,
+    stdDev: 15.2,
+    peRatio: 31.6,
+    pbRatio: 7.1,
+    medianMarketCapB: 78.4,
+    avgDuration: null,
+    styleBox: { style: 'Blend', size: 'Large' },
   },
   {
     ticker: 'BFST',
@@ -206,6 +296,22 @@ export const FUNDS: FundDef[] = [
       { date: '2025-12-07', type: 'Dividend', amount: 0.229 },
       { date: '2025-11-07', type: 'Dividend', amount: 0.225 },
     ],
+    annualReturns: [
+      { year: 2025, pct: 4.3  },
+      { year: 2024, pct: 4.9  },
+      { year: 2023, pct: 4.7  },
+      { year: 2022, pct: -4.2 },
+      { year: 2021, pct: -1.4 },
+      { year: 2020, pct: 3.2  },
+    ],
+    yield: 4.58,
+    beta: -0.02,
+    stdDev: 1.4,
+    peRatio: null,
+    pbRatio: null,
+    medianMarketCapB: null,
+    avgDuration: 1.8,
+    styleBox: null,
   },
 ];
 

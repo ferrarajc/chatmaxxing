@@ -34,6 +34,7 @@ import { RolloverPage } from './components-v2/pages/resources/RolloverPage';
 import { RetirementCalculatorPage } from './components-v2/pages/resources/RetirementCalculatorPage';
 import { LibraryPage } from './components-v2/pages/library/LibraryPage';
 import { ArticlePage } from './components-v2/pages/library/ArticlePage';
+import { BobPodPage } from './components-v2/pages/library/BobPodPage';
 import { AccountAccessPage } from './components-v2/pages/help/AccountAccessPage';
 import { AccountTransferPage } from './components-v2/pages/help/AccountTransferPage';
 import { BeneficiaryPage } from './components-v2/pages/help/BeneficiaryPage';
@@ -99,6 +100,7 @@ export default function App() {
               <Route path="/resources/rollover" element={<RolloverPage />} />
               <Route path="/resources/retirement-calculator" element={<RetirementCalculatorPage />} />
               <Route path="/library" element={<LibraryPage />} />
+              <Route path="/library/bob-pod" element={<BobPodPage />} />
               <Route path="/library/guide/:slug" element={<ArticlePage category="guide" />} />
               <Route path="/library/opinion/:slug" element={<ArticlePage category="opinion" />} />
               <Route path="/help/account-access" element={<AccountAccessPage />} />
