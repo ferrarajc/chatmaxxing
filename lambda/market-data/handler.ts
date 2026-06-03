@@ -196,10 +196,10 @@ async function fetchFundData(ticker: string, realSymbol: string, expenseRatio: n
 }
 
 async function fetchIndexQuote(symbol: string, name: string): Promise<IndexQuote> {
-  const chart = await fetchChart(symbol, '1d', '5d');
+  const chart = await fetchChart(symbol, '1d', '1d');
   const meta  = chart.meta as Record<string, number>;
   const price = (meta.regularMarketPrice ?? 0) as number;
-  const prev  = (meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPreviousClose ?? price) as number;
+  const prev  = (meta.chartPreviousClose ?? meta.regularMarketPreviousClose ?? price) as number;
   return { symbol, name, value: price, change: prev > 0 ? pctRound((price - prev) / prev) : 0 };
 }
 

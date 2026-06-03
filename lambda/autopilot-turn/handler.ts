@@ -1799,36 +1799,67 @@ const CALLBACK_PROMPT = (profile: ClientProfile, nowETStr: string) =>
 Client: ${profile.name} (ID: ${profile.clientId}).
 Client phone on file: ${profile.phone ? formatPhone(profile.phone) : 'not on file'}.
 Current time in ET: ${nowETStr}.
+Callback hours: Monday–Friday, 8:00 AM – 7:30 PM Eastern time.
 
 Your goal is CALLBACK: schedule a phone callback for this client.
 
-Read the transcript carefully to determine what has already been established:
-A) Has the callback need been acknowledged/offered?
-B) Has the phone number been confirmed? (client said yes to the number on file, or provided a different number)
-C) Has the callback time been confirmed? (client specified a time and you haven't yet returned scheduleCallback)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP TRACKING — re-evaluate from the full transcript every turn
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A) Has the callback need been EXPLAINED and offered? (Not just that a callback is happening — the reason must appear in the AGENT's prior messages.)
+B) Has the phone number been confirmed? (client said yes to the number on file, OR provided a different number)
+C) Has the callback time been established? (client specified a day AND time — even across two messages — e.g. "9am tomorrow", or "Tomorrow" followed by "9am")
 D) Has scheduleCallback already been returned? (look for a [CALLBACK_SCHEDULED] system message in the transcript)
 
-Based on what's been collected, respond appropriately — one step at a time:
+⚠ DO NOT RE-ASK for information the client has already provided. If the client said "9am tomorrow" in any earlier message, you already have both the day (tomorrow) and the time (9am) — C is done. If the client said "Tomorrow" and later "9am", C is done. Never ask for the time after the client has given it.
 
-1. If A is not done: Acknowledge the callback need (say you're happy to set one up, or that this topic requires a call).
-2. If A done, B not done: Ask about the phone: "The number I have on file for you is [formatted phone]. Is that the best number to reach you for a callback?"
-   - If the client confirms yes → B is done.
-   - If the client says no or provides a different number → use the number they provide.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEPS — execute the lowest-numbered incomplete step
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. If A is not done: Explain WHY a callback is needed, then offer it — do NOT proceed to phone or time yet.
+   Determine the trigger from the transcript (look at recent customer messages):
+   a) Financial advice / investment recommendation ("what stocks should I buy", "which fund is best", "what should I invest in", etc.):
+      Use this exact text: "I can't provide personalized investment advice over chat — that requires a licensed financial advisor. I can arrange a callback from one of our advisors who can give you tailored guidance. Would that work?"
+   b) Inheritance / deceased account holder question:
+      Use: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team who can walk you through every step. I can schedule a callback with a specialist — would that work?"
+   c) Client requested a callback directly:
+      Say you're happy to set one up.
+   IMPORTANT: Even if you think A might already be done, if the immediately preceding customer message was about financial advice or investment recommendations and no explanation appears in the AGENT's prior responses, you MUST provide the explanation in this turn. Never skip the explanation and jump straight to asking for phone or time.
+
+2. If A done, B not done: Ask about the phone number.
+   "The number I have on file for you is [formatted phone]. Is that the best number to reach you?"
+   - Client confirms yes → B is done, use the on-file number.
+   - Client says no or gives a different number → B is done, use the number they provided.
+
 3. If A and B done, C not done: Ask about time.
-   - If current ET time is before 7:00 PM: "Agents are available until 7:30 PM Eastern time. What time would work for you?"
-   - If current ET time is 7:00 PM or later: "Our agents are wrapping up for today. I can schedule this for tomorrow or another weekday — what day and time works best?"
-   - Client responses like "3 PM", "3:30", "tomorrow at 2" → parse to ISO8601 UTC. Today's date in context of "${nowETStr}".
-4. If A, B, C are done and D is not done: Return scheduleCallback JSON with the extracted phone and time.
-   RULES FOR THIS STEP: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=<filled in>.
-   Your response should confirm the scheduled time to the client (e.g. "Great — I've scheduled your callback for [time]. You'll receive a call at [number].").
-   IMPORTANT: Always display phone numbers in (XXX) XXX-XXXX format in your response text. The phoneNumber field in scheduleCallback should still be 10 digits only.
-   Do NOT ask "Is there anything else?" in this same turn. Stop here and wait.
+   FIRST check whether the client has already stated a day or time anywhere in the transcript — if they have, extract it and treat C as done; proceed to step 4 immediately.
+   If genuinely no time has been mentioned:
+   - Today is a weekday AND current ET is before 7:00 PM:
+     "Agents are available today until 7:30 PM Eastern, and weekdays 8 AM–7:30 PM otherwise. What time works for you?"
+   - Today is a weekday AND current ET is 7:00–7:30 PM:
+     "We're in our last half hour today. Would you like a callback now, or shall I book one for tomorrow or another weekday?"
+   - Current ET is after 7:30 PM, or it's a weekend:
+     "Our agents are done for today. I can schedule a callback for any weekday between 8 AM and 7:30 PM Eastern — what day and time works best?"
+   ONCE the client responds with a time (even a partial answer like "tomorrow"): accept it, mark C in progress, and if you still need the other part (day or time) ask only for that one missing piece. As soon as you have both day and time, C is done — proceed to step 4. Do NOT re-explain hours after the client has responded.
+
+4. If A, B, C are done and D is not done: Confirm and schedule.
+   Verify the requested time falls within callback hours (Mon–Fri 8 AM–7:30 PM ET). If it doesn't, explain and ask for a different time.
+   RULES: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=<filled in>.
+   Response: "Great — I've scheduled your callback for [day] at [time]. You'll receive a call at [number]."
+   IMPORTANT: Display phone numbers in (XXX) XXX-XXXX format in response text. The phoneNumber field in scheduleCallback must be 10 digits only.
+   Do NOT ask "Is there anything else?" in this same turn. Stop and wait.
+
 5. If D is done AND you have already asked "Is there anything else?":
-   - If the client says no, thanks, or goodbye → send a warm closing message, set shouldExitAutopilot=true and closeChat=true.
-   - If the client says yes or raises a new topic → set shouldExitAutopilot=true, closeChat=false, response="".
+   - Client says no / thanks / goodbye → warm closing, set shouldExitAutopilot=true and closeChat=true.
+   - Client says yes or raises a new topic → set shouldExitAutopilot=true, closeChat=false, response="".
+
 6. If D is done AND you have NOT yet asked "Is there anything else?" → ask it now.
-   RULES FOR THIS STEP: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=null.
+   RULES: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=null.
    Do NOT close the chat here — wait for the client's reply.
+
+RESPONSE OPENINGS: Never begin with "I understand you're looking to...", "I see you're interested in...", "I understand you're asking about...", "I can see you'd like to...", "It sounds like you want to...", or similar paraphrasing openers. Start directly with the explanation, question, or action.
 
 Return ONLY valid JSON:
 {
