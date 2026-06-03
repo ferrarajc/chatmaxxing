@@ -4,15 +4,6 @@ import { useChatStore, ChatStore } from '../store/chatStore';
 import { useClientStore } from '../store/clientStore';
 import { post } from '../api/client';
 
-// Phrases that the BOT says which signal escalation is being offered.
-const BOT_ESCALATION_PHRASES = [
-  "i'll connect you with a live agent",
-  'connect you to a live',
-  'connect you to a real',
-  'connecting you to',
-  'transfer you to',
-];
-
 // Phrases the CUSTOMER says that clearly signal they want to escalate.
 // Checked client-side for 99% reliability — bypasses Lex classification.
 const CUSTOMER_ESCALATION_PHRASES = [
@@ -30,15 +21,8 @@ const CUSTOMER_ESCALATION_PHRASES = [
   'someone who can help', 'speak to someone', 'talk to someone',
 ];
 
-function checkBotEscalation(text: string, store: ChatStore): void {
-  const s = useChatStore.getState().state;
-  if (s === 'WAITING_FOR_AGENT' || s === 'CONNECTED_TO_AGENT') return;
-  const lower = text.toLowerCase();
-  if (BOT_ESCALATION_PHRASES.some(p => lower.includes(p))) {
-    store.transitionTo('ESCALATION_OFFERED');
-    store.setEscalationWaitTime(3);
-  }
-}
+// Simple affirmatives — only checked when the bot has just asked about escalating (escalationPending=true).
+const ESCALATION_AFFIRMATIVES = /^(yes|yeah|yep|yup|sure|ok|okay|please|go ahead|yes please|please do|sounds good|that works|connect me now)\b/i;
 
 function isCustomerEscalationRequest(text: string): boolean {
   const lower = text.toLowerCase();
@@ -111,7 +95,6 @@ function createAndBindSession(
         clearTimeout(botReplyTimerRef.current);
         botReplyTimerRef.current = null;
       }
-      checkBotEscalation(msg.Content, store);
     }
 
     if (msg.ParticipantRole === 'AGENT') {
@@ -243,6 +226,22 @@ export function useChatSession() {
 
     const isAgentMode = currentState === 'CONNECTED_TO_AGENT' || currentState === 'WAITING_FOR_AGENT';
 
+    // If the bot just asked "would you like to connect?" and the customer responds,
+    // check for an affirmative before doing anything else.
+    if (!isAgentMode && useChatStore.getState().escalationPending) {
+      store.setEscalationPending(false);
+      if (ESCALATION_AFFIRMATIVES.test(text.trim()) || isCustomerEscalationRequest(text)) {
+        store.addMessage({
+          role: 'BOT',
+          content: "Of course! Would you prefer to chat with a live agent now, or would a callback at a time of your choosing work better?",
+        });
+        store.transitionTo('ESCALATION_OFFERED');
+        store.setEscalationWaitTime(3);
+        return;
+      }
+      // Customer said something else — continue the conversation normally (fall through)
+    }
+
     // Client-side escalation detection: if customer clearly wants an agent,
     // offer escalation immediately without waiting for Lex to classify the intent.
     if (!isAgentMode && currentState !== 'ESCALATION_OFFERED' && isCustomerEscalationRequest(text)) {
@@ -288,8 +287,9 @@ export function useChatSession() {
             if (result.shouldExitAutopilot) {
               const s = useChatStore.getState().state;
               if (s !== 'WAITING_FOR_AGENT' && s !== 'CONNECTED_TO_AGENT' && s !== 'ESCALATION_OFFERED') {
-                store.transitionTo('ESCALATION_OFFERED');
-                store.setEscalationWaitTime(3);
+                // Don't auto-open the escalation panel — wait for the customer to confirm.
+                // The bot's message should already be asking "would you like to connect?"
+                store.setEscalationPending(true);
               }
             }
           }

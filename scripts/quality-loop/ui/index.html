@@ -405,6 +405,43 @@
   .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .generate-status { padding: 12px 0; color: var(--muted); font-size: 13px; }
+
+  /* ── H-dots (scenario inline indicators) ── */
+  .h-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 2px; cursor: default; position: relative; flex-shrink: 0; }
+  .h-dot.pass   { background: var(--green); }
+  .h-dot.yellow { background: var(--yellow); }
+  .h-dot.fail   { background: var(--red); }
+  .h-dot.na     { background: var(--border-hi); }
+  .h-dot:hover::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%);
+    background: #1c2128; border: 1px solid var(--border); color: var(--text);
+    padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap;
+    pointer-events: none; z-index: 30; max-width: 340px; white-space: normal; text-align: left;
+  }
+
+  /* ── Detail turns (drilldown + scenario modal) ── */
+  .detail-turn { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 13px; line-height: 1.6; background: var(--surface2); border: 1px solid var(--border); }
+  .detail-turn.violated { background: rgba(210,153,34,0.12); border-color: var(--yellow); }
+  .detail-turn-hdr { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .detail-turn-hdr.customer { color: var(--blue); }
+  .violated-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+
+  /* ── Fix groups (in scenario modal) ── */
+  .fix-group { margin-bottom: 16px; }
+  .fix-group-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+
+  /* ── Drilldown accordion ── */
+  .drilldown-item { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+  .drilldown-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; background: var(--surface2); user-select: none; }
+  .drilldown-header:hover { background: #222b36; }
+  .drilldown-chevron { font-size: 10px; color: var(--muted); transition: transform 0.2s; }
+  .drilldown-body { padding: 12px 14px; display: none; }
+  .drilldown-body.open { display: block; }
+  .drilldown-note { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 10px; line-height: 1.5; padding: 8px 10px; background: var(--surface); border-radius: 4px; border-left: 3px solid var(--yellow); }
+
+  /* ── History: archive controls + checkboxes ── */
+  .archive-btn-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; min-height: 30px; }
+  .hist-cb { width: 14px; height: 14px; cursor: pointer; accent-color: var(--blue); }
 </style>
 </head>
 <body>
@@ -477,7 +514,7 @@
   <!-- Heuristic grid -->
   <div class="section card">
     <div class="card-label">Latest Run — Heuristic Breakdown
-      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click any to edit · threshold shown as % on each cell)</span>
+      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click any to view failures · + adds new)</span>
     </div>
     <div class="heuristic-grid" id="heuristicGrid"></div>
   </div>
@@ -545,19 +582,23 @@
   <!-- History table -->
   <div class="section card">
     <div class="card-label">Evaluation History
-      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click row to expand · click report to view conversations)</span>
+      <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;margin-left:6px">(click row to expand · click report to view)</span>
+    </div>
+    <div class="archive-btn-row" id="archiveBtnRow" style="visibility:hidden">
+      <button class="btn btn-ghost btn-sm" onclick="showArchiveDialog()">📦 Archive Selected</button>
+      <span id="archiveSelCount" style="font-size:12px;color:var(--muted)"></span>
     </div>
     <div class="table-wrap">
       <table id="historyTable">
         <thead>
           <tr>
+            <th style="width:20px"><input type="checkbox" class="hist-cb" id="histSelectAll" onchange="toggleAllHistoryCb(this.checked)" /></th>
             <th style="width:20px"></th>
             <th class="num">#</th>
             <th>When</th>
             <th class="num">Score</th>
             <th class="num">Δ</th>
-            <th>Critical</th>
-            <th>High Sev.</th>
+            <th>Failing H.</th>
             <th>Scenarios</th>
             <th>Status</th>
             <th>Report</th>
@@ -647,21 +688,6 @@
           <label class="form-label">Name</label>
           <input class="form-input" id="hName" placeholder="e.g. Factual Accuracy" />
         </div>
-        <div class="form-group">
-          <label class="form-label">Severity</label>
-          <select class="form-select" id="hSeverity">
-            <option>Critical</option><option>High</option><option>Medium</option>
-            <option>Low-Med</option><option>Low</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Weight (Critical=2, others=1)</label>
-          <input class="form-input" id="hWeight" type="number" min="1" max="5" step="1" value="1" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Pass Rate Threshold (0–1)</label>
-          <input class="form-input" id="hThreshold" type="number" min="0" max="1" step="0.05" placeholder="e.g. 0.75 — leave blank for none" />
-        </div>
         <div class="form-group full">
           <label class="form-label">Criterion — plain-language definition of what "good" looks like</label>
           <textarea class="form-textarea tall" id="hCriterion" placeholder="Every specific data point stated must match..."></textarea>
@@ -669,10 +695,6 @@
         <div class="form-group full">
           <label class="form-label">Failure Signals — what does a violation look like?</label>
           <textarea class="form-textarea" id="hFailureSignals" placeholder="A stated value that does not appear in..."></textarea>
-        </div>
-        <div class="form-group full">
-          <label class="form-label">Fix Guidance — shown in NEXT_FIX.md when this heuristic fails</label>
-          <textarea class="form-textarea tall" id="hFixGuidance" placeholder="In the system prompt, add the rule..."></textarea>
         </div>
       </div>
     </div>
@@ -809,6 +831,76 @@
   </div>
 </div>
 
+<!-- Heuristic drilldown modal -->
+<div class="modal-overlay" id="heuristicDrilldownModal" onclick="closeModal('heuristicDrilldownModal')">
+  <div class="modal modal-wide" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="drilldownTitle">Heuristic</div>
+        <div class="modal-title-sub" id="drilldownSub" style="max-width:580px;line-height:1.4"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="drilldownEditBtn">Edit Heuristic →</button>
+        <button class="modal-close" onclick="closeModal('heuristicDrilldownModal')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="drilldownBody">
+      <div style="color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('heuristicDrilldownModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scenario detail modal -->
+<div class="modal-overlay" id="scenarioDetailModal" onclick="closeModal('scenarioDetailModal')">
+  <div class="modal modal-wide" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="scenDetailTitle">Scenario</div>
+        <div class="modal-title-sub" id="scenDetailSub"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="scenDetailEditBtn">Edit Scenario →</button>
+        <button class="modal-close" onclick="closeModal('scenarioDetailModal')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="scenDetailBody">
+      <div style="color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+    <div class="modal-footer" style="flex-direction:column;align-items:stretch;gap:12px">
+      <div id="scenDetailFixes"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal('scenarioDetailModal')">Close</button>
+        <button class="btn btn-primary" id="scenDetailSaveBtn" onclick="saveFixes()">Save Edits to NEXT_FIX.md</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Archive modal -->
+<div class="modal-overlay" id="archiveModal" onclick="closeModal('archiveModal')">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Archive Selected Runs</div>
+      <button class="modal-close" onclick="closeModal('archiveModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Selected runs will be removed from the history table and saved to an archive file with a timestamp.</p>
+      <div class="form-group">
+        <label class="form-label">Archive Name</label>
+        <input class="form-input" id="archiveName" placeholder="e.g. baseline-before-prompt-v2"
+          onkeydown="if(event.key==='Enter')executeArchive()" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('archiveModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="executeArchive()">Archive</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────────
 const THRESHOLD = 0.80;
@@ -822,9 +914,14 @@ let appProfile = {};
 let profileDirty = false;
 let responsibilities = [];   // array of strings
 
-let expandedRows     = new Set();
-let expandedScenIds  = new Set();
-let openPanels       = new Set();   // panel IDs that are expanded
+let expandedRows        = new Set();
+let expandedScenIds     = new Set();  // kept for backward compat, unused
+let openPanels          = new Set();  // panel IDs that are expanded
+let selectedHistoryIters = new Set(); // iterations checked for archive
+
+// Latest run data (from /api/latest → latest.json)
+let latestData = null;  // { iteration, scenarios: { id: { scores, notes, violatedTurns } }, ... }
+let fixesData  = [];    // [{ title, body }]
 
 let eventSource = null;
 let logOpen     = false;
@@ -845,7 +942,7 @@ let generatedCandidates = [];
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 async function boot() {
-  await Promise.all([fetchStatus(), fetchHistory(), fetchHeuristics(), fetchScenarios(), fetchAppProfile()]);
+  await Promise.all([fetchStatus(), fetchHistory(), fetchHeuristics(), fetchScenarios(), fetchAppProfile(), fetchLatest(), fetchFixes()]);
   connectSSE();
 }
 
@@ -883,6 +980,14 @@ async function fetchAppProfile() {
   loadProfileIntoForm();
 }
 
+async function fetchLatest() {
+  latestData = await fetch('/api/latest').then(r => r.json()).catch(() => null);
+}
+
+async function fetchFixes() {
+  fixesData = await fetch('/api/fixes').then(r => r.json()).catch(() => []);
+}
+
 // ── SSE ────────────────────────────────────────────────────────────────────────
 function connectSSE() {
   if (eventSource) eventSource.close();
@@ -895,17 +1000,23 @@ function connectSSE() {
       case 'run_complete':
         history = [...history.filter(r => r.iteration !== msg.record.iteration), msg.record]
                     .sort((a,b) => a.iteration - b.iteration);
-        renderHistory(); renderHeuristicGrid(); renderScoreCard(); break;
+        transcriptCache = {};  // invalidate on new run
+        fetchLatest().then(() => { renderScenarios(); fetchFixes(); });
+        renderHistory(); renderHeuristicGrid(); renderScoreCard();
+        break;
       case 'waiting_for_fix':
         document.getElementById('fixBanner').classList.add('show'); break;
       case 'threshold_met':
         document.getElementById('fixBanner').classList.remove('show'); break;
       case 'heuristics_updated':
         heuristics = msg.heuristics ?? heuristics;
-        renderHeuristicGrid(); break;
+        renderHeuristicGrid(); renderScenarios(); break;
       case 'scenarios_updated':
         scenarios = msg.scenarios ?? scenarios;
         renderScenarios(); break;
+      case 'history_updated':
+        history = msg.history ?? history;
+        renderHistory(); renderHeuristicGrid(); renderScoreCard(); break;
       case 'app_profile_updated':
         appProfile = msg.profile ?? appProfile;
         responsibilities = Array.isArray(appProfile.responsibilities) ? [...appProfile.responsibilities] : [];
@@ -1003,7 +1114,7 @@ function renderScoreCard() {
   const score = latest.overallScore ?? 0;
   const pct   = Math.round(score * 100);
   numEl.textContent = pct + '%';
-  numEl.className = 'score-num ' + scoreClass(score);
+  numEl.className = 'score-num';  // always white — no color class
 
   const fillClass = score >= THRESHOLD ? '' : score >= 0.6 ? ' yellow' : ' red';
   fillEl.className = 'threshold-fill' + fillClass;
@@ -1021,10 +1132,7 @@ function renderScoreCard() {
   if (latest.thresholdMet) {
     statusEl.textContent = '✓ Threshold met'; statusEl.className = 'score-status met';
   } else {
-    const crit = (latest.criticalFailures ?? []).length;
-    statusEl.textContent = crit > 0
-      ? `✗ ${crit} critical failure${crit > 1 ? 's' : ''} — needs ${Math.round(THRESHOLD * 100)}%`
-      : `✗ Needs ${Math.round(THRESHOLD * 100)}% (${pct}% now)`;
+    statusEl.textContent = `✗ Needs ${Math.round(THRESHOLD * 100)}% (${pct}% now)`;
     statusEl.className = 'score-status';
   }
 
@@ -1063,36 +1171,50 @@ function sparkline(values, w, h) {
   </svg>`;
 }
 
+// ── Helpers: heuristic coloring ───────────────────────────────────────────────
+function hcellColor(stats, code) {
+  const s = stats?.[code] ?? { pass: 0, marginal: 0, fail: 0 };
+  const applicable = s.pass + s.marginal + s.fail;
+  if (applicable === 0) return 'na';
+  const passRate = s.pass / applicable;
+  if (passRate === 1.0) return 'pass';
+  if (passRate > 0.5)  return 'yellow';
+  return 'fail';
+}
+
+function dotColor(grade) {
+  if (grade === 'Pass')     return 'pass';
+  if (grade === 'Marginal') return 'yellow';
+  if (grade === 'Fail')     return 'fail';
+  return 'na';
+}
+
 // ── Render: heuristic grid ─────────────────────────────────────────────────────
 function renderHeuristicGrid() {
   const sorted = [...history].sort((a,b) => a.iteration - b.iteration);
   const latest = sorted[sorted.length - 1];
   const grid   = document.getElementById('heuristicGrid');
+  const stats  = latest?.heuristicStats ?? {};
 
   const cells = heuristics.map(h => {
     if (!latest) {
-      const thr = h.threshold != null ? ` · ≥${Math.round(h.threshold*100)}%` : '';
-      return `<div class="h-cell empty" data-tip="${h.code}: ${h.name}${thr}" onclick="openHeuristicEditor('${h.code}')">
+      return `<div class="h-cell empty" data-tip="${h.code}: ${h.name}" onclick="openHeuristicEditor('${h.code}')">
         <div class="h-id">${h.code}</div><div class="h-icon" style="color:var(--border)">·</div>
       </div>`;
     }
-    const stats = latest.heuristicStats?.[h.code] ?? { pass: 0, marginal: 0, fail: 0, na: 0 };
-    const total = stats.pass + stats.marginal + stats.fail;
-    let cls, icon, tip;
-    const thr = h.threshold != null ? ` · needs ≥${Math.round(h.threshold*100)}%` : '';
-    if (total === 0) {
-      cls = 'na'; icon = '–'; tip = `${h.code}: ${h.name} — N/A`;
-    } else if (stats.fail > 0) {
-      cls = 'fail'; icon = '✗';
-      tip = `${h.code}: ${h.name} — ${stats.fail} fail / ${total}${thr}`;
-    } else if (stats.marginal > 0) {
-      cls = 'yellow'; icon = '~';
-      tip = `${h.code}: ${h.name} — ${stats.marginal} marginal / ${total}${thr}`;
+    const s = stats[h.code] ?? { pass: 0, marginal: 0, fail: 0 };
+    const applicable = s.pass + s.marginal + s.fail;
+    const cls = hcellColor(stats, h.code);
+    let icon, tip;
+    if (cls === 'na') {
+      icon = '–';
+      tip  = `${h.code}: ${h.name} — N/A (not applicable in this run)`;
     } else {
-      cls = 'pass'; icon = '✓';
-      tip = `${h.code}: ${h.name} — all pass${thr}`;
+      const passRate = Math.round((s.pass / applicable) * 100);
+      icon = cls === 'pass' ? '✓' : cls === 'yellow' ? '~' : '✗';
+      tip  = `${h.code}: ${h.name} — ${passRate}% pass rate (${s.pass}/${applicable})`;
     }
-    return `<div class="h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicEditor('${h.code}')">
+    return `<div class="h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicDrilldown('${h.code}')">
       <div class="h-id">${h.code}</div><div class="h-icon">${icon}</div>
     </div>`;
   }).join('');
@@ -1103,9 +1225,14 @@ function renderHeuristicGrid() {
 
 // ── Render: history table ──────────────────────────────────────────────────────
 function renderHistory() {
-  const tbody = document.getElementById('historyBody');
+  const tbody       = document.getElementById('historyBody');
+  const archiveRow  = document.getElementById('archiveBtnRow');
+  const archiveCnt  = document.getElementById('archiveSelCount');
+  const selectAll   = document.getElementById('histSelectAll');
+
   if (!history.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="10">No runs yet. Click Run Evaluation to start.</td></tr>';
+    if (archiveRow) archiveRow.style.visibility = 'hidden';
     return;
   }
 
@@ -1116,6 +1243,7 @@ function renderHistory() {
     const score = row.overallScore ?? 0;
     const pct   = Math.round(score * 100);
     const isExp = expandedRows.has(row.iteration);
+    const isCb  = selectedHistoryIters.has(row.iteration);
 
     let deltaHtml = '<span class="score-delta flat">—</span>';
     if (prev) {
@@ -1125,15 +1253,10 @@ function renderHistory() {
       else               deltaHtml = `<span class="score-delta flat">→</span>`;
     }
 
-    const crits = row.criticalFailures ?? [];
-    const critHtml = crits.length === 0
+    const failingH = row.failingHeuristics ?? [];
+    const failingHtml = failingH.length === 0
       ? '<span class="chip chip-green">✓ Clear</span>'
-      : crits.map(c => `<span class="chip chip-red">${c.code ?? c.heuristic} ✗</span>`).join(' ');
-
-    const highFails = row.highSeverityFails ?? [];
-    const highHtml  = highFails.length === 0
-      ? '<span class="chip chip-green">✓ Clear</span>'
-      : `<span class="chip chip-yellow">${highFails.join(' ')}</span>`;
+      : failingH.map(code => `<span class="chip chip-red">${code}</span>`).join(' ');
 
     const scenHtml   = `${row.scenariosFailed ?? 0} fail / ${row.scenarioCount ?? '?'}`;
     const statusHtml = row.thresholdMet
@@ -1148,13 +1271,13 @@ function renderHistory() {
     const whenFull = ts ? ts.toLocaleString() : '';
 
     html += `<tr class="history-row" onclick="toggleExpandRow(${row.iteration})">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="hist-cb" ${isCb ? 'checked' : ''} onchange="toggleHistoryCb(${row.iteration}, this.checked)" /></td>
       <td><span class="expand-icon${isExp ? ' open' : ''}">▶</span></td>
       <td class="td-iter">${row.iteration}</td>
       <td class="td-when" title="${whenFull}">${when}</td>
-      <td class="td-score ${scoreClass(score)}">${pct}%</td>
+      <td class="td-score">${pct}%</td>
       <td>${deltaHtml}</td>
-      <td class="td-critical">${critHtml}</td>
-      <td>${highHtml}</td>
+      <td>${failingHtml}</td>
       <td style="color:var(--muted);font-size:12px">${scenHtml}</td>
       <td>${statusHtml}</td>
       <td onclick="event.stopPropagation()">${reportHtml}</td>
@@ -1164,6 +1287,49 @@ function renderHistory() {
     </tr>`;
   });
   tbody.innerHTML = html;
+
+  // Archive button visibility
+  const anySelected = selectedHistoryIters.size > 0;
+  if (archiveRow) archiveRow.style.visibility = anySelected ? 'visible' : 'hidden';
+  if (archiveCnt) archiveCnt.textContent = anySelected ? `${selectedHistoryIters.size} selected` : '';
+  if (selectAll)  selectAll.checked = history.length > 0 && history.every(r => selectedHistoryIters.has(r.iteration));
+}
+
+function toggleHistoryCb(iter, checked) {
+  if (checked) selectedHistoryIters.add(iter);
+  else         selectedHistoryIters.delete(iter);
+  // Update archive button without full re-render
+  const archiveRow = document.getElementById('archiveBtnRow');
+  const archiveCnt = document.getElementById('archiveSelCount');
+  const selectAll  = document.getElementById('histSelectAll');
+  const anySelected = selectedHistoryIters.size > 0;
+  if (archiveRow) archiveRow.style.visibility = anySelected ? 'visible' : 'hidden';
+  if (archiveCnt) archiveCnt.textContent = anySelected ? `${selectedHistoryIters.size} selected` : '';
+  if (selectAll)  selectAll.checked = history.length > 0 && history.every(r => selectedHistoryIters.has(r.iteration));
+}
+
+function toggleAllHistoryCb(checked) {
+  if (checked) history.forEach(r => selectedHistoryIters.add(r.iteration));
+  else         selectedHistoryIters.clear();
+  renderHistory();
+}
+
+function showArchiveDialog() {
+  if (!selectedHistoryIters.size) return;
+  document.getElementById('archiveName').value = '';
+  document.getElementById('archiveModal').classList.add('open');
+}
+
+async function executeArchive() {
+  const name = document.getElementById('archiveName').value.trim();
+  if (!name) { alert('Please enter an archive name.'); return; }
+  const iterations = [...selectedHistoryIters];
+  const result = await api('POST', '/api/history/archive', { name, iterations });
+  if (result.error) { alert('Error: ' + result.error); return; }
+  history = history.filter(r => !iterations.includes(r.iteration));
+  selectedHistoryIters.clear();
+  closeModal('archiveModal');
+  renderHistory(); renderScoreCard(); renderHeuristicGrid();
 }
 
 function toggleExpandRow(iteration) {
@@ -1176,17 +1342,13 @@ function buildExpandContent(row) {
   const stats = row.heuristicStats ?? {};
   const cells = heuristics.map(h => {
     const s = stats[h.code] ?? { pass: 0, marginal: 0, fail: 0 };
-    const total = s.pass + s.marginal + s.fail;
-    let cls, icon;
-    if (total === 0)        { cls = 'na';     icon = '–'; }
-    else if (s.fail > 0)    { cls = 'fail';   icon = '✗'; }
-    else if (s.marginal > 0){ cls = 'yellow'; icon = '~'; }
-    else                     { cls = 'pass';   icon = '✓'; }
-    const tip = total === 0 ? `${h.code}: ${h.name} — N/A`
-      : cls === 'fail'   ? `${h.code}: ${h.name} — ${s.fail} fail / ${total}`
-      : cls === 'yellow' ? `${h.code}: ${h.name} — ${s.marginal} marginal / ${total}`
-      : `${h.code}: ${h.name} — all pass`;
-    return `<div class="expand-h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicEditor('${h.code}')">
+    const applicable = s.pass + s.marginal + s.fail;
+    const cls  = hcellColor(stats, h.code);
+    const icon = cls === 'pass' ? '✓' : cls === 'yellow' ? '~' : cls === 'fail' ? '✗' : '–';
+    const tip  = cls === 'na'
+      ? `${h.code}: ${h.name} — N/A`
+      : `${h.code}: ${h.name} — ${Math.round((s.pass / applicable) * 100)}% pass rate`;
+    return `<div class="expand-h-cell ${cls}" data-tip="${tip}" onclick="openHeuristicDrilldown('${h.code}')">
       <div class="h-id">${h.code}</div><div class="h-icon">${icon}</div>
     </div>`;
   }).join('');
@@ -1266,46 +1428,34 @@ function renderScenarios() {
   }
 
   list.innerHTML = scenarios.map(s => {
-    const isOpen   = expandedScenIds.has(s.id);
     const scopeCls = s.scope === 'full-auto' ? 'scope-full' : 'scope-get';
     const scopeTxt = s.scope === 'full-auto' ? 'full-auto' : 'get-intent';
     const turnsLabel = s.maxTurns ? `<span class="scenario-turns">≤${s.maxTurns}t</span>` : '';
     const client     = s.clientKey ? `<span class="scenario-client">${s.clientKey}</span>` : '';
 
-    let bodyHtml = '';
-    if (isOpen) {
-      bodyHtml = `
-        ${s.notes ? `<div class="scenario-notes">${escHtml(s.notes)}</div>` : ''}
-        <div class="scenario-field"><div class="scenario-field-label">Opening Message</div>
-          <div class="scenario-field-val">${escHtml(s.openingMessage ?? '')}</div></div>
-        ${s.currentIntent ? `<div class="scenario-field"><div class="scenario-field-label">Current Intent</div>
-          <div class="scenario-field-val">${escHtml(s.currentIntent)}</div></div>` : ''}
-        <div class="scenario-field"><div class="scenario-field-label">Customer Prompt</div>
-          <div class="scenario-field-val">${escHtml(s.customerPrompt ?? '')}</div></div>
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="openScenarioEditor('${escHtml(s.id)}');event.stopPropagation()">Edit</button>
-        </div>`;
-    }
+    // Build inline dot row from latestData
+    const scenData  = latestData?.scenarios?.[s.id];
+    const dotsHtml  = heuristics.map(h => {
+      const grade = scenData?.scores?.[h.code];
+      const note  = scenData?.notes?.[h.code] ?? '';
+      const cls   = dotColor(grade);
+      const tipRaw = note ? `${h.code} — ${h.name}: ${note.length > 100 ? note.slice(0,100)+'…' : note}` : `${h.code} — ${h.name}`;
+      return `<span class="h-dot ${cls}" data-tip="${escHtml(tipRaw)}"></span>`;
+    }).join('');
 
     return `<div class="scenario-card">
-      <div class="scenario-card-header" onclick="toggleScenario('${escHtml(s.id)}')">
-        <span class="scenario-chevron${isOpen ? ' open' : ''}">▶</span>
+      <div class="scenario-card-header" onclick="openScenarioDetail('${escHtml(s.id)}')">
         <span class="scenario-id">${escHtml(s.id)}</span>
+        <span style="display:inline-flex;align-items:center;gap:2px;margin:0 6px;flex-shrink:0">${dotsHtml}</span>
         ${client}
         <span class="scenario-scope ${scopeCls}">${scopeTxt}</span>
         ${turnsLabel}
-      </div>
-      <div class="scenario-body${isOpen ? ' open' : ''}" id="scen-body-${escHtml(s.id)}">
-        ${bodyHtml}
+        <div class="scenario-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" onclick="openScenarioEditor('${escHtml(s.id)}')">Edit</button>
+        </div>
       </div>
     </div>`;
   }).join('');
-}
-
-function toggleScenario(id) {
-  if (expandedScenIds.has(id)) expandedScenIds.delete(id);
-  else expandedScenIds.add(id);
-  renderScenarios();
 }
 
 // ── Scenario editor ────────────────────────────────────────────────────────────
@@ -1516,49 +1666,36 @@ function openHeuristicEditor(code) {
 
   if (code === null) {
     titleEl.textContent = 'Add New Heuristic';
-    subEl.textContent   = 'Define the criterion, failure signals, and fix guidance.';
+    subEl.textContent   = 'Define the criterion and failure signals.';
     saveBtn.textContent = 'Add Heuristic';
     delBtn.style.display = 'none';
     document.getElementById('hCode').disabled = false;
     document.getElementById('hCode').value    = '';
     document.getElementById('hName').value    = '';
-    document.getElementById('hSeverity').value = 'Medium';
-    document.getElementById('hWeight').value   = '1';
-    document.getElementById('hThreshold').value = '';
     document.getElementById('hCriterion').value = '';
     document.getElementById('hFailureSignals').value = '';
-    document.getElementById('hFixGuidance').value    = '';
   } else {
     const h = heuristics.find(x => x.code === code);
     if (!h) return;
     titleEl.textContent = `${h.code} — ${h.name}`;
-    subEl.textContent   = `${h.severity} · Weight ×${h.weight}${h.threshold != null ? ' · Threshold ≥' + Math.round(h.threshold * 100) + '%' : ''}`;
+    subEl.textContent   = '';
     saveBtn.textContent = 'Save Changes';
     delBtn.style.display = 'inline-flex';
     document.getElementById('hCode').disabled  = true;
     document.getElementById('hCode').value     = h.code;
     document.getElementById('hName').value     = h.name;
-    document.getElementById('hSeverity').value = h.severity;
-    document.getElementById('hWeight').value   = String(h.weight ?? 1);
-    document.getElementById('hThreshold').value = h.threshold != null ? String(h.threshold) : '';
     document.getElementById('hCriterion').value = h.criterion ?? '';
     document.getElementById('hFailureSignals').value = h.failureSignals ?? '';
-    document.getElementById('hFixGuidance').value    = h.fixGuidance ?? '';
   }
   document.getElementById('heuristicModal').classList.add('open');
 }
 
 async function saveHeuristic() {
-  const thrVal = document.getElementById('hThreshold').value.trim();
   const payload = {
     code:          document.getElementById('hCode').value.trim().toUpperCase(),
     name:          document.getElementById('hName').value.trim(),
-    severity:      document.getElementById('hSeverity').value,
-    weight:        Number(document.getElementById('hWeight').value),
-    threshold:     thrVal === '' ? null : Number(thrVal),
     criterion:     document.getElementById('hCriterion').value.trim(),
     failureSignals: document.getElementById('hFailureSignals').value.trim(),
-    fixGuidance:   document.getElementById('hFixGuidance').value.trim(),
   };
   if (!payload.name) { alert('Name is required.'); return; }
 
@@ -1601,6 +1738,198 @@ async function executeDeleteHeuristic() {
   closeModal('confirmModal');
   closeModal('heuristicModal');
   renderHeuristicGrid();
+}
+
+// ── Heuristic drilldown ────────────────────────────────────────────────────────
+async function openHeuristicDrilldown(code) {
+  const h = heuristics.find(x => x.code === code);
+  if (!h) return;
+
+  document.getElementById('drilldownTitle').textContent = `${h.code} — ${h.name}`;
+  document.getElementById('drilldownSub').textContent   = h.criterion ?? '';
+  document.getElementById('drilldownEditBtn').onclick = () => {
+    closeModal('heuristicDrilldownModal');
+    openHeuristicEditor(code);
+  };
+
+  const bodyEl = document.getElementById('drilldownBody');
+  bodyEl.innerHTML = '<div style="color:var(--muted);font-size:13px"><span class="spinner"></span> Loading…</div>';
+  document.getElementById('heuristicDrilldownModal').classList.add('open');
+
+  // Ensure we have latestData
+  if (!latestData) await fetchLatest();
+  const scenarioResults = latestData?.scenarios ?? {};
+
+  // Fetch transcripts for latest iteration
+  const latestIter = latestData?.iteration ?? (history.length ? Math.max(...history.map(r => r.iteration)) : null);
+  if (latestIter && !transcriptCache[latestIter]) {
+    transcriptCache[latestIter] = await fetch(`/api/transcripts/${latestIter}`).then(r => r.json()).catch(() => null);
+  }
+  const transcripts = transcriptCache[latestIter] ?? [];
+
+  // Collect scenarios where this heuristic got Fail or Marginal
+  const failingScens = Object.entries(scenarioResults)
+    .filter(([, ev]) => ev.scores?.[code] === 'Fail' || ev.scores?.[code] === 'Marginal')
+    .map(([id, ev]) => ({ id, ev }));
+
+  if (!failingScens.length) {
+    bodyEl.innerHTML = `<div style="color:var(--green);font-size:13px;padding:24px 0;text-align:center">
+      ✓ No failures or marginal scores for <strong>${code}</strong> in the latest run.
+    </div>`;
+    return;
+  }
+
+  bodyEl.innerHTML = failingScens.map(({ id, ev }) => {
+    const grade = ev.scores[code];
+    const note  = ev.notes?.[code] ?? '';
+    const vTurns = new Set(Array.isArray(ev.violatedTurns?.[code]) ? ev.violatedTurns[code] : []);
+    const tItem  = transcripts.find(t => t.scenarioId === id);
+    const messages = tItem?.transcript ?? [];
+
+    const gradeCls = grade === 'Fail' ? 'chip-red' : 'chip-yellow';
+    const turnHtml = messages.length === 0
+      ? '<div style="color:var(--muted);font-size:12px;padding:8px 0">No transcript available.</div>'
+      : messages.map((m, i) => {
+          const isV = vTurns.has(i);
+          const role = m.role === 'customer' ? 'customer' : 'agent';
+          return `<div class="detail-turn${isV ? ' violated' : ''}">
+            <div class="detail-turn-hdr${role === 'customer' ? ' customer' : ''}">
+              <span>[Turn ${i}]</span><span>${role === 'customer' ? 'Customer' : 'Agent'}</span>
+              ${isV ? '<span style="color:var(--yellow);font-size:10px">⚠ violation</span>' : ''}
+            </div>
+            <div>${escHtml(m.content ?? '')}</div>
+          </div>`;
+        }).join('');
+
+    const itemId = `dditem_${id.replace(/[^a-z0-9]/gi,'_')}_${code}`;
+    return `<div class="drilldown-item">
+      <div class="drilldown-header" onclick="toggleDrilldownItem('${itemId}')">
+        <span class="chip ${gradeCls}">${grade}</span>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--blue);flex:1">${escHtml(id)}</span>
+        ${note ? `<span style="font-size:11px;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(note.length > 80 ? note.slice(0,80)+'…' : note)}</span>` : ''}
+        <span class="drilldown-chevron">▶</span>
+      </div>
+      <div class="drilldown-body" id="${itemId}">
+        ${note ? `<div class="drilldown-note">${escHtml(note)}</div>` : ''}
+        <div style="max-height:400px;overflow-y:auto">${turnHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDrilldownItem(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+  const chevron = el.previousElementSibling?.querySelector('.drilldown-chevron');
+  if (chevron) chevron.style.transform = el.classList.contains('open') ? 'rotate(90deg)' : '';
+}
+
+// ── Scenario detail modal ──────────────────────────────────────────────────────
+async function openScenarioDetail(id) {
+  const s = scenarios.find(x => x.id === id);
+  if (!s) return;
+
+  document.getElementById('scenDetailTitle').textContent = id;
+  document.getElementById('scenDetailEditBtn').onclick = () => {
+    closeModal('scenarioDetailModal');
+    openScenarioEditor(id);
+  };
+
+  const bodyEl = document.getElementById('scenDetailBody');
+  bodyEl.innerHTML = '<div style="color:var(--muted);font-size:13px"><span class="spinner"></span> Loading…</div>';
+  document.getElementById('scenDetailFixes').innerHTML = '';
+  document.getElementById('scenarioDetailModal').classList.add('open');
+
+  // Ensure latestData is fresh
+  if (!latestData) await fetchLatest();
+  const scenData = latestData?.scenarios?.[id];
+
+  // Populate subtitle
+  const subParts = [s.scope, s.clientKey ? `client: ${s.clientKey}` : null,
+    scenData ? `${scenData.turnCount ?? '?'} turns` : null, scenData?.exitReason ?? null].filter(Boolean);
+  document.getElementById('scenDetailSub').textContent = subParts.join(' · ');
+
+  // Fetch transcript
+  const latestIter = latestData?.iteration ?? (history.length ? Math.max(...history.map(r => r.iteration)) : null);
+  if (latestIter && !transcriptCache[latestIter]) {
+    transcriptCache[latestIter] = await fetch(`/api/transcripts/${latestIter}`).then(r => r.json()).catch(() => null);
+  }
+  const transcripts = transcriptCache[latestIter] ?? [];
+  const tItem = transcripts.find(t => t.scenarioId === id);
+  const messages = tItem?.transcript ?? [];
+
+  // Build turnIndex → heuristic codes map from violatedTurns
+  const violatedTurnsMap = scenData?.violatedTurns ?? tItem?.violatedTurns ?? {};
+  const turnToHeuristics = {};
+  for (const [code, turns] of Object.entries(violatedTurnsMap)) {
+    for (const t of (Array.isArray(turns) ? turns : [])) {
+      (turnToHeuristics[t] = turnToHeuristics[t] ?? []).push(code);
+    }
+  }
+  const violatedSet = new Set(Object.keys(turnToHeuristics).map(Number));
+
+  // Render transcript
+  if (!messages.length) {
+    bodyEl.innerHTML = '<div class="t-no-transcript">No transcript for this scenario in the latest run. Run an evaluation first.</div>';
+  } else {
+    bodyEl.innerHTML = messages.map((m, i) => {
+      const isV  = violatedSet.has(i);
+      const role = m.role === 'customer' ? 'customer' : 'agent';
+      const codes = isV ? (turnToHeuristics[i] ?? []) : [];
+      const chipsHtml = codes.length
+        ? `<div class="violated-chips">${codes.map(c => `<span class="chip chip-red">${c}</span>`).join('')}</div>`
+        : '';
+      return `<div class="detail-turn${isV ? ' violated' : ''}">
+        <div class="detail-turn-hdr${role === 'customer' ? ' customer' : ''}">
+          <span>[Turn ${i}]</span>
+          <span>${role === 'customer' ? 'Customer' : 'Agent'}</span>
+          ${isV ? '<span style="color:var(--yellow);font-size:10px">⚠ heuristic violation</span>' : ''}
+        </div>
+        <div>${escHtml(m.content ?? '')}</div>
+        ${chipsHtml}
+      </div>`;
+    }).join('');
+  }
+
+  // Load and render fixes
+  await fetchFixes();
+  renderScenDetailFixes();
+}
+
+function renderScenDetailFixes() {
+  const container = document.getElementById('scenDetailFixes');
+  if (!fixesData.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0">No proposed fixes yet — run an evaluation to generate them.</div>';
+    return;
+  }
+  container.innerHTML =
+    `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);margin-bottom:10px">Proposed Fixes</div>` +
+    fixesData.map((fix, i) => `
+      <div class="fix-group">
+        <div class="fix-group-title">${escHtml(fix.title ?? `Fix ${i+1}`)}</div>
+        <textarea class="form-textarea tall" id="fix-ta-${i}">${escHtml(fix.body ?? '')}</textarea>
+      </div>
+    `).join('');
+}
+
+async function saveFixes() {
+  const fixes = fixesData.map((fix, i) => {
+    const ta = document.getElementById(`fix-ta-${i}`);
+    return { title: fix.title, body: ta ? ta.value : fix.body };
+  });
+  const btn  = document.getElementById('scenDetailSaveBtn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const result = await api('POST', '/api/fixes/save', { fixes });
+  btn.disabled = false;
+  if (result.ok) {
+    fixesData = fixes;
+    btn.textContent = '✓ Saved';
+  } else {
+    btn.textContent = '✗ Error';
+  }
+  setTimeout(() => { btn.textContent = orig; }, 2000);
 }
 
 // ── Report + transcript viewer ─────────────────────────────────────────────────
@@ -1734,9 +2063,9 @@ function formatTime(date) {
 // ── Keyboard shortcuts ─────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    for (const id of ['confirmModal', 'generateModal', 'scenarioModal', 'heuristicModal', 'fixModal', 'reportModal']) {
+    for (const id of ['archiveModal', 'scenarioDetailModal', 'heuristicDrilldownModal', 'confirmModal', 'generateModal', 'scenarioModal', 'heuristicModal', 'fixModal', 'reportModal']) {
       const el = document.getElementById(id);
-      if (el.classList.contains('open')) { el.classList.remove('open'); return; }
+      if (el && el.classList.contains('open')) { el.classList.remove('open'); return; }
     }
   }
 });

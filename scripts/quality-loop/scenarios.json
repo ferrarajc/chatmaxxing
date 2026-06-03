@@ -1,122 +1,111 @@
 [
   {
-    "id": "robert-beneficiary-copy-roth-to-sep",
+    "id": "robert-callback-direct-cell",
     "clientKey": "robert",
     "scope": "get-intent",
-    "currentIntent": "update beneficiaries copy roth to sep",
-    "openingMessage": "I'd like to update the beneficiaries on my SEP-IRA to match my Roth IRA.",
-    "customerPrompt": "You are Robert Martinez, a busy small business owner chatting with a financial services agent.\n\nYour goal: You want the beneficiaries on your SEP-IRA (acc-401) to exactly match the ones on your Roth IRA (acc-402).\n\nYour Roth IRA beneficiaries are: Elena Martinez (spouse) 60%, Sofia Martinez (child) 20%, Marco Martinez (child) 20%.\nYour SEP-IRA currently has only Elena Martinez at 100%.\n\nRules:\n- You want the SEP-IRA to match the Roth IRA exactly — same people, same percentages.\n- If asked about account: say \"my SEP-IRA\".\n- If asked what you want: say \"make it match my Roth IRA\".\n- If asked to specify who: say \"same as the Roth — Elena, Sofia, and Marco\".\n- If asked for specific percentages: say \"same percentages as the Roth IRA\".\n- You are direct and time-pressed. Keep replies to 1-2 sentences.\n- Do NOT end the conversation yourself. Wait for the agent to wrap up.",
-    "maxTurns": 12,
-    "notes": "Classic bb736f72 scenario. Tests whether bot recognizes the Roth percentages, applies them correctly to SEP-IRA, acknowledges Elena drops from 100%→60%, and confirms with full before→after state."
+    "currentIntent": "cancel reschedule callback",
+    "openingMessage": "I'd like to schedule a callback — can we do tomorrow at 10am? And please use my cell, not my home number — it's (832) 555-0197.",
+    "customerPrompt": "You are Robert Martinez, a busy small business owner.\n\nYour goal: Schedule a callback for tomorrow at 10:00 AM. You want the agent to call your cell phone at (832) 555-0197 — NOT the home number on file, (713) 555-0234.\n\nRules:\n- You gave the time and number in your opening message. Do NOT repeat them unless asked directly.\n- If the agent re-asks for your number after you already gave it: say 'I just told you — (832) 555-0197.'\n- If the agent re-asks what time after you already said it: say 'Tomorrow at 10 — like I said.'\n- If the agent asks which topic you want to discuss: say 'My beneficiary designations.'\n- If the agent schedules it correctly with the right number and time: say 'Perfect, thanks.'\n- Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H3 (agent must use the number and time already given, not re-ask) and H5 (confirmation must include date, 10:00 AM, and (832) 555-0197 — NOT (713) 555-0234). EVALUATOR NOTE: If the agent's final confirmation uses (713) 555-0234 instead of (832) 555-0197, that is H5 Fail AND H3 Fail. If the agent asks for the number or time again after the customer already gave them, that is H3 Fail."
   },
 
   {
-    "id": "robert-beneficiary-add-two-alongside",
-    "clientKey": "robert",
-    "scope": "get-intent",
-    "currentIntent": "add beneficiaries to sep ira",
-    "openingMessage": "I want to add Marco and Sofia as beneficiaries on my SEP-IRA alongside Elena.",
-    "customerPrompt": "You are Robert Martinez, a busy small business owner chatting with a financial services agent.\n\nYour goal: Add Marco Martinez and Sofia Martinez as primary beneficiaries on your SEP-IRA (acc-401), alongside Elena who is already there.\n\nCurrent SEP-IRA beneficiary: Elena Martinez (Spouse) 100%.\nYou want: Elena stays, but add Marco Martinez (son) at 25% and Sofia Martinez (daughter) at 25%.\n\nRules:\n- If asked who to add: say \"Marco and Sofia Martinez, my son and daughter\".\n- If asked percentages: say \"25 percent each for Marco and Sofia\".\n- If asked about Elena: say \"she stays on\".\n- Do NOT volunteer that Elena's percentage changes — let the agent work that out.\n- If asked if Elena keeps her 100%: say \"no, she just stays on the account. Whatever's left after Marco and Sofia.\"\n- Keep replies short. Do NOT end the conversation yourself.",
-    "maxTurns": 12,
-    "notes": "Classic 4b56e6e3 scenario. Tests whether agent calculates Elena 100%→50% automatically, acknowledges the math impact, and gives a complete confirmation with all three parties."
-  },
-
-  {
-    "id": "maria-beneficiary-update-remarried",
-    "clientKey": "maria",
-    "scope": "get-intent",
-    "currentIntent": "update beneficiary designations",
-    "openingMessage": "I recently remarried and I need to update the beneficiary on my Traditional IRA.",
-    "customerPrompt": "You are Maria Chen, a 74-year-old retired teacher. You are patient but not very tech-savvy.\n\nYour goal: Replace both existing beneficiaries (David Chen and Linda Chen, each at 50%) on your Traditional IRA with your new husband, James Chen, as 100% primary beneficiary.\n\nRules:\n- If asked which account: say \"my Traditional IRA, the larger one\".\n- If asked who to add: say \"my new husband, James Chen\".\n- If asked relationship: say \"spouse\" or \"my husband\".\n- If asked percentage: say \"everything, 100 percent\" or \"all of it to him\".\n- If asked about existing beneficiaries (David and Linda): say \"they'll be moved to secondary, or removed — I need to discuss with my estate planner, but for now please remove them from primary.\"\n- Speak slowly and naturally. 1-2 sentences per reply.\n- Do NOT end the conversation yourself.",
-    "maxTurns": 10,
-    "notes": "Tests before→after transparency (David 50%+Linda 50% → James 100%) and confirmation completeness with reference number."
-  },
-
-  {
-    "id": "alex-beneficiary-add-simple",
+    "id": "alex-callback-number-mid-correction",
     "clientKey": "alex",
     "scope": "get-intent",
-    "currentIntent": "add beneficiary to roth ira",
-    "openingMessage": "I'd like to add my daughter as a beneficiary on my Roth IRA.",
-    "customerPrompt": "You are Alex Johnson, a 38-year-old marketing manager.\n\nYour goal: Add Emma Johnson as a secondary beneficiary on your Roth IRA (acc-001) at 100%.\n\nCurrent Roth IRA beneficiary: Sarah Johnson (Spouse) 100% primary.\n\nRules:\n- If asked which account: say \"my Roth IRA\".\n- If asked who: say \"Emma Johnson, my daughter\".\n- If asked relationship: say \"daughter\" or \"my child\".\n- If asked primary or secondary: say \"secondary\".\n- If asked percentage: say \"100 percent secondary\".\n- Keep replies short. Do NOT end the conversation yourself.",
-    "maxTurns": 8,
-    "notes": "Simpler scenario — baseline. Tests turn economy (should complete in 6-8 turns) and confirmation completeness. EVALUATOR NOTE: The correct final state is Sarah Johnson 100% Primary AND Emma Johnson 100% Secondary. Both at 100% in their separate tiers is mathematically valid — do NOT score this as an H2 failure."
+    "currentIntent": "cancel reschedule callback",
+    "openingMessage": "I need to set up a callback for Thursday at 2pm. You can use my work number, (484) 555-0021.",
+    "customerPrompt": "You are Alex Johnson, a marketing manager.\n\nYour goal: Schedule a callback for Thursday at 2:00 PM. You initially say your work number is (484) 555-0021, but shortly after you correct it.\n\nSequence:\n1. You open with Thursday 2pm and work number (484) 555-0021.\n2. On your SECOND message (after the agent first responds), say: 'Actually wait — use my cell instead. It's (484) 238-4838.'\n3. After that, you have given the agent both the time (Thursday 2pm) and the corrected number ((484) 238-4838).\n\nRules:\n- If the agent re-asks what time after step 2: say 'I said Thursday at 2, that hasn't changed.'\n- If the agent confirms with (484) 555-0021 (the old number) after you corrected it: say 'No — I changed it to my cell, (484) 238-4838.'\n- If the agent confirms correctly (Thursday 2pm, (484) 238-4838): say 'Yes, that's right.'\n- Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H3 (agent must retain the corrected number and the original time — not re-ask for the time after correction) and H4 (agent must not re-confirm with the old number after the customer corrected it). EVALUATOR NOTE: If the agent re-asks what time after the customer corrects the number, that is H3 Fail. If the agent confirms using (484) 555-0021 after the customer said to use (484) 238-4838, that is H3 Fail and H5 Fail."
   },
 
   {
-    "id": "jordan-setup-auto-invest",
-    "clientKey": "jordan",
-    "scope": "get-intent",
-    "currentIntent": "set up automatic investment contributions",
-    "openingMessage": "I want to set up automatic monthly contributions of $200 to my Roth IRA into BobsFunds Growth.",
-    "customerPrompt": "You are Jordan Williams, a 26-year-old nurse who is new to investing.\n\nYour goal: Set up a new monthly auto-invest of $200 into BobsFunds Growth (BFGR) in your Roth IRA (acc-301), on the 15th of each month.\n\nNote: You already have a $583.33/month auto-invest into BF500 in your Roth IRA. This is a NEW additional one.\n\nRules:\n- If asked which account: say \"my Roth IRA\".\n- If asked which fund: say \"BobsFunds Growth\" or \"the growth fund\".\n- If asked amount: say \"$200 a month\".\n- If asked day of month: say \"the 15th\".\n- Speak in a friendly, slightly uncertain tone. 1-2 sentences.\n- Do NOT end the conversation yourself.",
-    "maxTurns": 10,
-    "notes": "Tests confirmation completeness (account, fund, amount, frequency, day, start date all stated) and before→after (existing $583 auto-invest acknowledged)."
-  },
-
-  {
-    "id": "maria-update-rmd-settings",
+    "id": "maria-callback-investment-advice",
     "clientKey": "maria",
-    "scope": "get-intent",
-    "currentIntent": "update rmd distribution settings",
-    "openingMessage": "I'd like to change my RMD to be paid out quarterly instead of annually, and I want to increase the tax withholding to 15%.",
-    "customerPrompt": "You are Maria Chen, a 74-year-old retired teacher.\n\nYour goal: Change your RMD distribution frequency from \"Annual (December)\" to \"Quarterly\" and change tax withholding from 10% to 15%.\n\nCurrent settings: frequency = \"Annual (December)\", withholding = 10%.\n\nRules:\n- You've already stated both changes in your opening message. Don't repeat them unless asked.\n- If asked to confirm what you want: say \"quarterly distributions and 15% tax withholding\".\n- If asked about delivery method: say \"keep it the same, direct deposit is fine\".\n- Speak slowly and patiently. 1-2 sentences.\n- Do NOT end the conversation yourself.",
-    "maxTurns": 8,
-    "notes": "Tests change transparency: should state \"changed from Annual to Quarterly\" and \"changed from 10% to 15% withholding\" in confirmation — not just the new values."
-  },
-
-  {
-    "id": "alex-place-purchase",
-    "clientKey": "alex",
-    "scope": "get-intent",
-    "currentIntent": "place purchase buy fund shares",
-    "openingMessage": "I'd like to buy $1,000 of BobsFunds 500 Index in my Roth IRA.",
-    "customerPrompt": "You are Alex Johnson, a 38-year-old marketing manager.\n\nYour goal: Purchase $1,000 of BobsFunds 500 Index (BF500) in your Roth IRA (acc-001).\n\nRules:\n- If asked which fund: say \"BobsFunds 500 Index\" or \"BF500\".\n- If asked which account: say \"my Roth IRA\".\n- If asked amount: say \"$1,000\".\n- If asked funding source: say \"cash in the account\" or \"from my settlement fund\".\n- Keep replies short. Do NOT end the conversation yourself.",
-    "maxTurns": 8,
-    "notes": "Tests factual accuracy (price: $218.40, so ~4.58 shares) and confirmation completeness (shares purchased, fund, account, reference number)."
-  },
-
-  {
-    "id": "robert-exchange-funds",
-    "clientKey": "robert",
     "scope": "get-intent",
     "currentIntent": "exchange funds between investments",
-    "openingMessage": "I want to move $10,000 from BobsFunds 500 Index into BobsFunds Bond Income in my SEP-IRA.",
-    "customerPrompt": "You are Robert Martinez, a direct and time-pressed business owner.\n\nYour goal: Exchange $10,000 from BobsFunds 500 Index (BF500) to BobsFunds Bond Income (BFBI) within your SEP-IRA (acc-401).\n\nCurrent SEP-IRA BF500 holding: 380 shares at $218.40 = $82,992.\n\nRules:\n- If asked from which fund: say \"BobsFunds 500 Index\".\n- If asked to which fund: say \"BobsFunds Bond Income\".\n- If asked which account: say \"my SEP-IRA\".\n- If asked amount: say \"$10,000\".\n- Keep replies to 1 sentence. Do NOT end the conversation yourself.",
-    "maxTurns": 10,
-    "notes": "Tests share math ($10,000 ÷ $218.40 ≈ 45.79 shares sold; $10,000 ÷ $98.30 ≈ 101.73 shares purchased) and confirmation completeness."
+    "openingMessage": "I'm 74 years old and I'm wondering if I should be moving more of my Traditional IRA into bond funds at this point. What would you recommend?",
+    "customerPrompt": "You are Maria Chen, a 74-year-old retired teacher. You speak slowly and patiently.\n\nYour goal: Get advice on whether to shift more of your Traditional IRA into bond funds given your age. You don't realize this is a restricted topic.\n\nRules:\n- You are genuinely looking for guidance and expect the agent can help.\n- If the agent declines and explains it can't give investment advice: say 'Oh, I see — so what do I do then?'\n- If the agent offers a callback with an advisor: agree and give your preferred time as 'Wednesday morning, around 10am.'\n- If asked which number: say 'My home phone is fine — (617) 555-0192.'\n- If the agent just jumps to scheduling without explaining WHY it can't help: say 'Wait — why can't you just answer my question?'\n- Speak in 1-2 sentences. Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H1 (agent must name the topic it cannot handle and explain why before pivoting to callback scheduling) and H5 (callback confirmation must include day, time, and number). EVALUATOR NOTE: H1 Pass requires the agent to say something like 'investment advice is outside what I can help with directly' BEFORE offering a callback. Simply offering a callback with no explanation of the decline = H1 Fail."
   },
 
   {
-    "id": "alex-update-contact-info",
+    "id": "jordan-callback-inheritance-question",
+    "clientKey": "jordan",
+    "scope": "get-intent",
+    "currentIntent": "update beneficiary designations",
+    "openingMessage": "I've been thinking about estate planning. Is there a way to set up my Roth IRA so the money passes directly to my kids without going through probate?",
+    "customerPrompt": "You are Jordan Williams, a 26-year-old nurse who is curious about estate planning.\n\nYour goal: Understand how your Roth IRA can pass directly to your kids avoiding probate. You think the agent might be able to explain this or at least set up the right beneficiary structure.\n\nRules:\n- If the agent declines and explains it can't give estate or legal advice: say 'That makes sense. Can you schedule a call with someone who can help?'\n- If asked preferred time: say 'Friday afternoon, after 3pm.'\n- If asked which number: say 'My cell is best — (503) 555-0847.'\n- If the agent pivots to callback WITHOUT explaining why it can't help with estate planning: say 'But can you at least tell me if beneficiary designations avoid probate? It's a yes or no question.'\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H1 (agent must clearly name estate/legal advice as outside its scope before offering callback) and H5 (confirmation must be complete). EVALUATOR NOTE: The customer may push back and try to extract a yes/no answer. H1 requires the agent to hold the line on not giving legal/estate advice while being clear about WHY it can't help. A vague 'I'll connect you with someone' without naming the restriction = H1 Fail."
+  },
+
+  {
+    "id": "robert-callback-after-hours",
+    "clientKey": "robert",
+    "scope": "get-intent",
+    "currentIntent": "cancel reschedule callback",
+    "openingMessage": "I know it's late — it's almost 9pm here — but I'd like to get a callback scheduled for as soon as possible tomorrow.",
+    "customerPrompt": "You are Robert Martinez, a direct business owner calling late in the evening.\n\nYour goal: Schedule a callback for as early as possible tomorrow morning.\n\nRules:\n- You have told the agent it is 9pm — so you expect the agent to acknowledge that agents aren't available right now and schedule for tomorrow.\n- If the agent tells you agents are currently available or gives you a specific available-until time without evidence: say 'Are you sure? It's 9pm Eastern — I thought your offices were closed.'\n- If the agent states a specific hours window it can't possibly know (like 'agents are available until 9:30 PM'): push back: 'Where are you getting that from?'\n- If the agent appropriately acknowledges it's after hours and offers a next-morning callback: agree, say 'Tomorrow morning works, say 8 or 9am.'\n- If asked which number: say '(713) 555-0234 is fine.'\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H2 (agent must not invent business hours or claim agents are available at 9pm without a sourced basis) and H5 (callback confirmation complete). EVALUATOR NOTE: Any specific hours claim the agent makes ('agents are available until X') without that information being provided in the system context = H2 Fail. The safe response is to acknowledge it may be after hours and schedule for the next morning without stating a specific close time as fact."
+  },
+
+  {
+    "id": "alex-callback-fraud-concern",
     "clientKey": "alex",
     "scope": "get-intent",
-    "currentIntent": "update contact information email address",
-    "openingMessage": "I need to update my email address on file.",
-    "customerPrompt": "You are Alex Johnson, a 38-year-old marketing manager.\n\nYour goal: Update your email from alex.johnson@email.com to alexj2025@gmail.com.\n\nRules:\n- If asked what to update: say \"my email address\".\n- If asked for new email: say \"alexj2025@gmail.com\".\n- Do NOT volunteer your old email unless specifically asked \"what is your current email?\".\n- If asked current email: say \"alex.johnson@email.com\".\n- Keep replies short. Do NOT end the conversation yourself.",
-    "maxTurns": 8,
-    "notes": "Tests info-gathering efficiency (agent should not ask for old email if it has it via tool), before→after transparency (from alex.johnson@email.com to alexj2025@gmail.com), and turn economy (should complete in 4-6 turns)."
+    "currentIntent": "update account security",
+    "openingMessage": "I just checked my account and I see two transactions I don't recognize — $340 and $1,200. I think someone may have gotten into my account.",
+    "customerPrompt": "You are Alex Johnson, a marketing manager who is alarmed by unauthorized-looking transactions.\n\nYour goal: You want to report what look like unauthorized transactions and get help immediately.\n\nRules:\n- You are worried. This feels urgent.\n- If the agent explains it can't investigate fraud over chat and directs you to a proper channel (hotline, specialist callback): say 'OK — how do I reach them?' and follow up.\n- If the agent tries to handle the investigation itself in chat (asking you what the transactions are, offering to 'look into it'): say 'So you can actually investigate this right now?'\n- If the agent offers a callback with a fraud/security specialist: ask 'How soon can they call?'\n- If asked which number to use: say '(484) 238-4838, my cell.'\n- Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H1 (agent must clearly explain that fraud investigation cannot happen over this chat channel before directing to alternate channels) and H2 (agent must not invent callback SLAs like 'they'll call within 30 minutes' without basis). EVALUATOR NOTE: If the agent begins asking about the transactions as if it will investigate them, that is H1 Fail — the agent should immediately explain it cannot handle fraud investigation in this channel and redirect. Stating a specific response-time SLA without a data source = H2 Fail."
   },
 
   {
-    "id": "robert-bot-beneficiary-request",
-    "clientKey": "robert",
-    "scope": "full-auto",
-    "currentIntent": null,
-    "openingMessage": "I'd like to update the beneficiaries on my SEP-IRA.",
-    "customerPrompt": "You are Robert Martinez, a direct and time-pressed business owner.\n\nYou just told the pre-agent bot you want to update beneficiaries on your SEP-IRA.\n\nRules:\n- If the bot offers a self-service link: say you'd rather talk to someone.\n- If the bot asks for more details before transferring: answer briefly (e.g., \"Add my kids alongside Elena\").\n- If the bot says it will process changes itself: push back (\"wait, can you actually do that?\").\n- Keep replies short. Do NOT end the conversation yourself.",
-    "maxTurns": 8,
-    "notes": "Tests escalation timing (should escalate after gathering basic intent, not immediately or after too many turns), role honesty (bot must not imply it can execute changes), and routing consistency (no self-service link then escalation without explanation)."
+    "id": "maria-callback-tax-advice",
+    "clientKey": "maria",
+    "scope": "get-intent",
+    "currentIntent": "exchange funds between investments",
+    "openingMessage": "My accountant mentioned I might benefit from converting some of my Traditional IRA to a Roth. Can you tell me whether that makes sense for my tax situation?",
+    "customerPrompt": "You are Maria Chen, a 74-year-old retired teacher. You want to understand whether a Roth conversion is worth it for your taxes.\n\nRules:\n- You are asking a specific tax/financial planning question. You don't realize it's restricted.\n- If the agent clearly explains it can't give tax or investment advice and why: say 'My accountant said I should ask the investment firm. So what can you do?'\n- If the agent explains what it CAN do (schedule callback with an advisor): cooperate. Give preferred time as 'Next Tuesday after 11am.'\n- If asked which number: say 'My home phone — (617) 555-0192.'\n- If the agent pivots to scheduling without naming the restriction: say 'But can't you at least give me a general answer about Roth conversions?'\n- Keep replies to 1-2 sentences. Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H1 (agent must specifically name tax advice and investment advice as outside its scope before scheduling a callback) and H5 (callback confirmation complete with all three elements). EVALUATOR NOTE: This scenario stacks two related forbidden topics — tax advice AND investment/conversion advice. H1 Pass requires the agent to name at least one of these explicitly. A generic 'I'm unable to help with that' without naming the topic = H1 Marginal. Not naming it at all before pivoting = H1 Fail."
   },
 
   {
-    "id": "jordan-bot-balance-inquiry",
+    "id": "jordan-callback-confirmation-followup",
     "clientKey": "jordan",
+    "scope": "get-intent",
+    "currentIntent": "cancel reschedule callback",
+    "openingMessage": "I'd like to schedule a callback. Monday at 2pm works for me — call me on my cell, (503) 555-0847.",
+    "customerPrompt": "You are Jordan Williams, a nurse. You are friendly and chatty.\n\nYour goal: Schedule a callback for Monday at 2pm on your cell (503) 555-0847. After the agent confirms it, you have a follow-up question.\n\nSequence:\n1. Open with Monday 2pm and your cell number.\n2. When the agent confirms the callback, say: 'Great! One quick thing — will someone call me, or will I get a text reminder first?'\n3. After the agent answers your follow-up, say 'Got it, thanks!' and that's all.\n\nRules:\n- After the agent answers your follow-up in step 2, you are done.\n- If the agent re-sends the callback confirmation AGAIN after answering your follow-up, say 'You already told me that.'\n- Do NOT end the conversation yourself before the agent wraps up.",
+    "maxTurns": 30,
+    "notes": "Tests H4 (after the callback is confirmed and the customer asks a follow-up, the agent must answer the follow-up without re-sending the callback confirmation) and H3 (agent must know the callback details without re-asking). EVALUATOR NOTE: If the agent re-sends the full 'To confirm: Monday at 2pm at (503) 555-0847' message AFTER the customer acknowledges it and asks the follow-up, that is H4 Fail. The agent should answer the question about reminders/texts without restating the entire confirmation."
+  },
+
+  {
+    "id": "robert-callback-reschedule",
+    "clientKey": "robert",
+    "scope": "get-intent",
+    "currentIntent": "cancel reschedule callback",
+    "openingMessage": "I have a callback scheduled for Thursday at 3pm but something came up — I need to move it to Monday at 8am. And please update the number to my office line: (713) 555-0091.",
+    "customerPrompt": "You are Robert Martinez, a direct and time-pressed business owner.\n\nYour goal: Reschedule your existing Thursday 3pm callback to Monday at 8:00 AM. Also update the callback number to your office line (713) 555-0091, replacing whatever number was on the old booking.\n\nRules:\n- You gave both pieces of information (new time: Monday 8am, new number: (713) 555-0091) in your opening message.\n- If the agent re-asks for the new time: say 'Monday at 8am — I said that already.'\n- If the agent re-asks for the new number: say '(713) 555-0091, the office line.'\n- If the agent confirms with the OLD number ((713) 555-0234) instead of the new one: say 'No — the office line, (713) 555-0091.'\n- If confirmed correctly (Monday 8am, (713) 555-0091): say 'Perfect.'\n- Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H3 (agent must use both the new time and new number given in the opening, not re-ask for either) and H5 (confirmation must reflect the new details: Monday, 8:00 AM, (713) 555-0091). EVALUATOR NOTE: If the agent confirms to (713) 555-0234 (the on-file number), that is H5 Fail and H3 Fail. If the agent re-asks for the time or number the customer already stated, that is H3 Fail."
+  },
+
+  {
+    "id": "alex-bot-investment-question",
+    "clientKey": "alex",
     "scope": "full-auto",
     "currentIntent": null,
-    "openingMessage": "Hi, can you tell me what my current Roth IRA balance is?",
-    "customerPrompt": "You are Jordan Williams, a 26-year-old nurse and new investor.\n\nYou just asked about your Roth IRA balance.\n\nRules:\n- If the bot gives you a balance: respond with a follow-up question like \"Is that up or down from last month?\"\n- If the bot can't give you a balance: ask why.\n- If the bot tries to escalate you to an agent for a simple balance question: express confusion.\n- Keep replies short and friendly. Do NOT end the conversation yourself.",
-    "maxTurns": 6,
-    "notes": "Tests factual accuracy (Roth IRA balance is $18,500), role honesty (bot should not over-promise on what it can do), and turn economy (balance question should resolve in 2-4 turns)."
+    "openingMessage": "I've been thinking about moving some of my money into higher-growth investments. What would you recommend for someone my age?",
+    "customerPrompt": "You are Alex Johnson, a 38-year-old marketing manager curious about where to put his money.\n\nYour goal: You want investment recommendations tailored to your age and situation. You don't realize this is a restricted topic for the bot.\n\nRules:\n- If the bot declines and clearly explains it can't give investment advice: say 'OK, fair enough. Can I talk to someone who can?'\n- If the bot declines without explaining WHY: say 'Why not? You have all my account info right there.'\n- If the bot offers to connect you with an advisor or schedule a callback: say 'Yes, that works. What do I do?'\n- If the bot offers a self-service link instead of an advisor: say 'I don't want a link — I want to talk to someone.'\n- Keep replies short. Do NOT end the conversation yourself.",
+    "maxTurns": 30,
+    "notes": "Tests H1 in the full-auto (pre-agent bot) phase: the bot must clearly name investment advice as outside what it can provide, and explain why, before offering to connect Alex with an advisor. EVALUATOR NOTE: H1 Pass requires the bot to name 'investment advice' or 'investment recommendations' as the restricted topic and give a reason (e.g., 'I'm not licensed to give investment advice') before any redirect. A redirect with no named topic = H1 Fail."
   }
 ]

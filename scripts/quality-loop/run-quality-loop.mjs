@@ -26,9 +26,9 @@
 
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { runAllScenarios }                  from '../../heqya/core/runner.mjs';
-import { evaluateAll }                      from '../../heqya/core/evaluator.mjs';
-import { writeReports, checkHighSeverityPassRates } from '../../heqya/core/reporter.mjs';
+import { runAllScenarios }  from '../../heqya/core/runner.mjs';
+import { evaluateAll }      from '../../heqya/core/evaluator.mjs';
+import { writeReports }     from '../../heqya/core/reporter.mjs';
 import { resolveSecrets }                   from './secrets.mjs';
 import CONFIG                               from './heqya.config.mjs';
 
@@ -123,40 +123,38 @@ async function main() {
 
   // ── Phase 3: Report ────────────────────────────────────────────────────────
   console.log('\nPhase 3 — Writing reports\n');
-  const { score, criticalFailures, topFix, reportFile, thresholdMet, stats } =
-    writeReports({
+  const { score, reportFile, thresholdMet, stats, fixes } =
+    await writeReports({
       iteration,
       runResults,
       evaluations,
       heuristics:  CONFIG.heuristics,
       thresholds:  CONFIG.thresholds,
       resultsDir:  RESULTS_DIR,
+      llm:         CONFIG.llm,
     });
 
-  const highSeverityFailures = checkHighSeverityPassRates(stats, CONFIG.thresholds);
-
   // ── Summary ────────────────────────────────────────────────────────────────
+  const passed = evaluations.filter(ev => !Object.values(ev.scores ?? {}).some(g => g === 'Fail')).length;
   console.log(`${'─'.repeat(64)}`);
   console.log(`  Overall Score:    ${(score * 100).toFixed(1)}% / 100%  (threshold: ${(THRESHOLD_SCORE * 100).toFixed(0)}%)`);
+  console.log(`  Conversations:    ${passed} of ${evaluations.length} passed all heuristics`);
 
-  if (criticalFailures.length > 0) {
-    console.log(`  Critical Fails:   ${criticalFailures.map(c => `${c.code} in ${c.scenarioId}`).join(', ')}`);
-  } else {
-    console.log(`  Critical Fails:   none`);
-  }
-
-  for (const f of highSeverityFailures) {
-    console.log(`  ${f.code} (High):      ${(f.rate * 100).toFixed(0)}% pass rate (threshold: 75%)`);
+  const failingHeuristics = Object.entries(stats).filter(([, s]) => s.fail > 0);
+  for (const [code, s] of failingHeuristics) {
+    const applicable = s.pass + s.marginal + s.fail;
+    console.log(`  ${code}:              ${s.fail} fail / ${applicable} applicable`);
   }
 
   console.log(`  Report:           ${reportFile}`);
   console.log(`  NEXT_FIX.md:      ${path.join(RESULTS_DIR, 'NEXT_FIX.md')}`);
+  if (fixes?.length > 0 && fixes[0].title !== 'No fixes required') {
+    console.log(`  Proposed fixes:   ${fixes.length} (see fixes.json)`);
+  }
   console.log(`${'─'.repeat(64)}\n`);
 
   // ── Threshold check ────────────────────────────────────────────────────────
-  const allThresholdsMet = thresholdMet && highSeverityFailures.length === 0;
-
-  if (allThresholdsMet) {
+  if (thresholdMet) {
     console.log('✓  ALL THRESHOLDS MET\n');
     console.log('   Next steps:');
     console.log('   1. Review the final report for any marginal heuristics worth improving');
@@ -164,13 +162,7 @@ async function main() {
     process.exit(0);
   } else {
     console.log('✗  BELOW THRESHOLD\n');
-
-    if (topFix) {
-      console.log(`   Top priority fix: ${topFix.code} — ${topFix.name}`);
-      console.log(`   Failing in ${topFix.failCount}/${topFix.applicableCount} scenarios\n`);
-    }
-
-    console.log('   Read  scripts/quality-loop/results/NEXT_FIX.md  for implementation instructions.');
+    console.log('   Review scripts/quality-loop/results/NEXT_FIX.md for fix guidance.');
     console.log('   After implementing and deploying, increment iteration.txt and rerun.\n');
     process.exit(1);
   }

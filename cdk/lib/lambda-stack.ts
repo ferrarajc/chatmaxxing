@@ -392,6 +392,26 @@ export class LambdaStack extends cdk.Stack {
       });
     }
 
+    // ── market-data (Yahoo Finance delayed quotes proxy) ──────────────
+    const marketDataFn = new NodejsFunction(this, 'MarketDataFn', {
+      functionName: 'bobs-market-data',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'market-data/handler.ts'),
+      timeout: cdk.Duration.seconds(29),
+      memorySize: 256,
+      environment: {},
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    // No DynamoDB access — fetches Yahoo Finance over HTTPS
+
+    api.addRoutes({
+      path: '/market-data',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('MarketDataIntegration', marketDataFn),
+    });
+
     // GET routes for browser-accessible reset endpoints
     api.addRoutes({
       path: '/reset-beneficiaries',

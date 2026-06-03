@@ -85,9 +85,14 @@ export interface Resource {
   tags: string[];
 }
 
-const BASE = 'https://ferrarajc.github.io/chatmaxxing/help';
+const BASE     = 'https://ferrarajc.github.io/chatmaxxing/help';
+const RES      = 'https://ferrarajc.github.io/chatmaxxing/resources';
+const LIB      = 'https://ferrarajc.github.io/chatmaxxing/library';
+const LIB_G    = `${LIB}/guide`;
+const LIB_O    = `${LIB}/opinion`;
 
 export const KNOWLEDGE_BASE: Resource[] = [
+  // ── Help / reference pages (existing) ─────────────────────────────────────
   { id: 'kb-001', title: 'Fund Performance FAQ',              url: `${BASE}/fund-performance`,  tags: ['performance', 'returns', 'fund', 'yield', 'benchmark'] },
   { id: 'kb-002', title: 'IRA Contribution Limits 2025',      url: `${BASE}/ira-limits`,         tags: ['ira', 'contribution', 'roth', 'traditional', 'limit', '2025'] },
   { id: 'kb-003', title: 'Change of Ownership Form',          url: `${BASE}/ownership-form`,     tags: ['ownership', 'transfer', 'estate', 'deceased', 'inherited', 'change'] },
@@ -110,6 +115,37 @@ export const KNOWLEDGE_BASE: Resource[] = [
   { id: 'kb-020', title: 'Contact Us & Support Hours',        url: `${BASE}/contact`,            tags: ['contact', 'support', 'hours', 'phone', 'email', 'chat', 'help'] },
   { id: 'kb-021', title: 'How to Place a Trade',              url: `${BASE}/place-trade`,        tags: ['trade', 'buy', 'sell', 'purchase', 'redeem', 'exchange', 'order', 'liquidate'] },
   { id: 'kb-022', title: 'Inheriting an Account',             url: `${BASE}/inheritance`,        tags: ['inherit', 'inheritance', 'deceased', 'death', 'beneficiary', 'estate', 'transfer', 'condolence'] },
+
+  // ── Resource pages (new) ───────────────────────────────────────────────────
+  { id: 'kb-023', title: 'Retirement Calculator',             url: `${RES}/retirement-calculator`, tags: ['retire', 'retirement', 'calculate', 'on track', 'nest egg', 'projection', 'enough to retire', 'retirement savings', 'retirement planning'] },
+  { id: 'kb-024', title: 'SEP-IRA vs. Solo 401(k)',           url: `${RES}/sep-ira-vs-solo`,       tags: ['sep', 'solo 401k', 'self-employed', 'which is better', 'freelance', 'small business retirement', 'compare plans'] },
+
+  // ── Library — Investor's Handbook (how-to guides) ─────────────────────────
+  { id: 'kb-025', title: 'Guide: Your First Investment Account',          url: `${LIB_G}/first-investment-account`,    tags: ['beginner', 'first investment', 'getting started investing', 'how to invest', 'new investor', 'open brokerage', 'where to start'] },
+  { id: 'kb-026', title: 'Guide: Index Funds vs. Active Funds',           url: `${LIB_G}/index-vs-active-funds`,       tags: ['index fund', 'active fund', 'passive investing', 'actively managed', 'spiva', 'fund comparison', 'should i use index funds'] },
+  { id: 'kb-027', title: 'Guide: Asset Allocation',                       url: `${LIB_G}/asset-allocation`,            tags: ['asset allocation', 'how to allocate', 'stocks vs bonds', 'portfolio mix', '60 40', 'portfolio composition', 'balance my portfolio'] },
+  { id: 'kb-028', title: 'Guide: Dollar-Cost Averaging',                  url: `${LIB_G}/dollar-cost-averaging`,       tags: ['dollar cost averaging', 'dca', 'invest regularly', 'automatic investing', 'market timing', 'lump sum', 'buy over time'] },
+  { id: 'kb-029', title: 'Guide: How to Read a Prospectus',               url: `${LIB_G}/reading-a-prospectus`,        tags: ['read prospectus', 'understand prospectus', 'fund document', 'turnover rate', 'fund fees explained'] },
+  { id: 'kb-030', title: 'Guide: Rebalancing Your Portfolio',             url: `${LIB_G}/rebalancing`,                 tags: ['rebalance', 'rebalancing', 'portfolio drift', 'drift', 'reset allocation', 'portfolio maintenance', 'restore balance'] },
+  { id: 'kb-031', title: 'Guide: Understanding Expense Ratios',           url: `${LIB_G}/expense-ratios`,              tags: ['expense ratio', 'fund cost', 'management fee', 'annual fee', 'fee impact', 'how much does a fund cost', 'low cost fund'] },
+  { id: 'kb-032', title: 'Guide: Compound Interest',                      url: `${LIB_G}/compound-interest`,           tags: ['compound interest', 'compounding', 'grow my money', 'start investing early', 'time value of money', 'reinvest dividends', 'rule of 72'] },
+  { id: 'kb-033', title: 'Guide: Tax-Loss Harvesting',                    url: `${LIB_G}/tax-loss-harvesting`,         tags: ['tax loss harvesting', 'capital loss', 'wash sale', 'offset gains', 'tax savings', 'realize a loss', 'tax strategy'] },
+  { id: 'kb-034', title: 'Guide: Investing Through Market Volatility',    url: `${LIB_G}/investing-through-volatility`, tags: ['volatility', 'market drop', 'bear market', 'market crash', 'downturn', 'nervous about market', 'scared', 'panic selling', 'stay invested'] },
+
+  // ── Library — Bob's Views (opinion columns) ───────────────────────────────
+  { id: 'kb-035', title: "Bob's View: Sixty Years of Markets",            url: `${LIB_O}/sixty-years-of-markets`,          tags: ['wisdom', 'lessons', 'long term investing', 'investing advice', 'what matters', 'experience', 'founder'] },
+  { id: 'kb-036', title: "Bob's View: The Illusion of Market Timing",     url: `${LIB_O}/illusion-of-market-timing`,        tags: ['market timing', 'timing the market', 'call the market', 'predict market', 'buy the dip', 'sell before crash'] },
+  { id: 'kb-037', title: "Bob's View: AI and Your Portfolio",             url: `${LIB_O}/the-age-of-artificial-intelligence`, tags: ['ai', 'artificial intelligence', 'technology stocks', 'tech bubble', 'ai investing', 'future of investing'] },
+  { id: 'kb-038', title: "Bob's View: The Hidden Tax of Inflation",       url: `${LIB_O}/hidden-tax-of-inflation`,          tags: ['inflation', 'purchasing power', 'real return', 'cash losing value', 'inflation risk', 'beat inflation'] },
+  { id: 'kb-039', title: "Bob's View: Stop Checking Your Portfolio Daily",url: `${LIB_O}/case-against-checking-daily`,       tags: ['check portfolio', 'anxiety', 'obsessing over portfolio', 'loss aversion', 'emotional investing', 'portfolio monitoring'] },
+  { id: 'kb-040', title: "Bob's View: Why Boring Investments Win",        url: `${LIB_O}/why-boring-investments-win`,        tags: ['boring investing', 'simple portfolio', 'exciting stocks', 'glamour stocks', 'why index funds work', 'keep it simple'] },
+  { id: 'kb-041', title: "Bob's View: What Young Investors Get Wrong",    url: `${LIB_O}/what-young-investors-get-wrong`,    tags: ['young investor', 'millennial investor', 'too conservative', 'not enough risk', 'young and investing', 'time horizon'] },
+  { id: 'kb-042', title: "Bob's View: The Real Retirement Crisis",        url: `${LIB_O}/real-retirement-crisis`,            tags: ['retirement crisis', 'longevity risk', 'sequence of returns', 'outlive savings', 'drawdown risk', 'retirement spending', '4 percent rule'] },
+  { id: 'kb-043', title: "Bob's View: The Virtue of Patience",            url: `${LIB_O}/virtue-of-patience`,               tags: ['patience', 'stay the course', 'long term', 'hold through volatility', 'behavioral finance', 'conviction'] },
+  { id: 'kb-044', title: "Bob's View: Diversification — The Free Lunch",  url: `${LIB_O}/diversification-free-lunch`,        tags: ['diversification', 'diversify', 'spread risk', 'not diversified', 'concentrated', 'markowitz', 'home country bias', 'employer stock'] },
+
+  // ── Library landing page ──────────────────────────────────────────────────
+  { id: 'kb-045', title: "The Library — Education, Guides & Opinion",     url: LIB,                                          tags: ['learn', 'education', 'library', 'articles', 'guides', 'read more', 'learn about investing', 'financial education'] },
 ];
 
 export const PAGE_TOPIC_MAP: Record<string, string[]> = {

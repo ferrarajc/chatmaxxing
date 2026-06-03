@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { PERSONAS } from '../../data/personas';
 import { useClientStore } from '../../store/clientStore';
 import { theme } from '../../theme';
@@ -7,10 +7,10 @@ import { theme } from '../../theme';
 const RESET_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001'}/reset-client-data?key=bobs-reset-2025`;
 
 const NAV_LINKS = [
-  { to: '/', label: 'Home' },
   { to: '/portfolio', label: 'Portfolio' },
   { to: '/research', label: 'Research' },
   { to: '/account', label: 'Account' },
+  { to: '/library', label: 'Library' },
 ];
 
 export function TopNavV2() {
@@ -57,8 +57,8 @@ export function TopNavV2() {
       borderBottom: `1px solid ${theme.color.primaryDeep}`,
       fontFamily: theme.font.sans,
     }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 12 }}>
+      {/* Logo — links to home */}
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 12, textDecoration: 'none', color: 'inherit' }}>
         <div style={{
           width: 36, height: 36, borderRadius: 6, background: theme.color.bg,
           color: theme.color.primary, display: 'flex', alignItems: 'center',
@@ -69,7 +69,7 @@ export function TopNavV2() {
           fontFamily: theme.font.serif, fontWeight: 600, fontSize: 18,
           letterSpacing: '-0.01em',
         }}>Bob's Mutual Funds</span>
-      </div>
+      </Link>
 
       {/* Nav links */}
       {NAV_LINKS.map(({ to, label }) => (

@@ -41,11 +41,9 @@ export function heuristicsArrayToCodes(arr) {
   const codes = {};
   for (const h of arr) {
     codes[h.code] = {
-      name:        h.name,
-      severity:    h.severity,
-      weight:      h.weight      ?? 1,
-      fixGuidance: h.fixGuidance ?? '',
-      threshold:   h.threshold   ?? null,   // per-heuristic pass rate (0-1), null = no check
+      name:         h.name,
+      criterion:    h.criterion    ?? '',
+      failureSignals: h.failureSignals ?? '',
     };
   }
   return codes;
@@ -55,7 +53,7 @@ export function heuristicsArrayToCodes(arr) {
 export function generateHeuristicsDocument(arr) {
   const lines = ['# Quality Evaluation Heuristics\n'];
   for (const h of arr) {
-    lines.push(`## ${h.code} — ${h.name} (${h.severity})`);
+    lines.push(`## ${h.code} — ${h.name}`);
     lines.push(`**Criterion:** ${h.criterion}`);
     if (h.failureSignals) lines.push(`**Failure signals:** ${h.failureSignals}`);
     lines.push('');
@@ -116,9 +114,7 @@ BENEFICIARY TIERS (apply when scoring H1/H2 for beneficiary scenarios):
 // These global thresholds are additional checks on top of per-heuristic ones.
 
 const THRESHOLDS = {
-  minOverallScore:   0.80,
-  zeroCriticalCodes: ['H1', 'H2'],  // must have 0 Fail across all scenarios
-  // highSeverityPassRate is now handled per-heuristic via the "threshold" field
+  minOverallScore: 0.80,   // % conversations with zero Fail grades
 };
 
 // ── Initialise at load time ────────────────────────────────────────────────────

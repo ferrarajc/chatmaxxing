@@ -6,7 +6,7 @@
  *
  * HEURISTICS CONFIG:
  *   heuristics.document      — full text of the heuristics document
- *   heuristics.codes         — { [code]: { name, severity, weight } }
+ *   heuristics.codes         — { [code]: { name } }
  *   heuristics.domainKnowledge  — optional extra context for the evaluator system prompt
  *
  * LLM CONFIG:
@@ -17,40 +17,13 @@
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 
-// ── Score math ─────────────────────────────────────────────────────────────────
-
-const SCORE_MAP = { Pass: 2, Marginal: 1, Fail: 0, 'N/A': null };
-
-/**
- * Compute aggregate score from a scores object and heuristics config.
- * aggregateScore = sum(weight × points) / sum(weight × 2)  [non-N/A only]
- *
- * @param {{ [code: string]: 'Pass'|'Marginal'|'Fail'|'N/A' }} scores
- * @param {{ [code: string]: { weight: number } }} codes
- * @returns {number} 0–1
- */
-export function computeAggregateScore(scores, codes) {
-  let earned   = 0;
-  let possible = 0;
-
-  for (const [code, grade] of Object.entries(scores)) {
-    const weight = codes[code]?.weight ?? 1;
-    const pts    = SCORE_MAP[grade];
-    if (pts === null) continue;  // N/A excluded
-    earned   += pts * weight;
-    possible += 2  * weight;
-  }
-
-  return possible > 0 ? Math.round((earned / possible) * 100) / 100 : 0;
-}
-
 // ── Format transcript for evaluator ──────────────────────────────────────────
 
 function formatTranscript(transcript) {
   return transcript
-    .map(m => {
+    .map((m, i) => {
       const label = m.role === 'customer' ? 'CUSTOMER' : 'BOT/AGENT';
-      return `${label}: ${m.content}`;
+      return `[Turn ${i}] ${label}: ${m.content}`;
     })
     .join('\n\n');
 }
@@ -58,41 +31,30 @@ function formatTranscript(transcript) {
 // ── Build the expected JSON schema for the evaluator response ─────────────────
 
 function buildResponseSchema(codes) {
-  const codeEntries = Object.keys(codes)
+  const codeList = Object.keys(codes);
+
+  const scoreEntries = codeList
     .map(c => `    "${c}": "Pass|Marginal|Fail|N/A"`)
     .join(',\n');
-  const noteEntries = Object.keys(codes)
+  const noteEntries = codeList
     .map(c => `    "${c}": "one-sentence explanation"`)
+    .join(',\n');
+  const turnEntries = codeList
+    .map(c => `    "${c}": []`)
     .join(',\n');
 
   return `{
   "scenarioId": "<from scenario information>",
   "scores": {
-${codeEntries}
+${scoreEntries}
   },
   "notes": {
 ${noteEntries}
   },
-  "aggregateScore": 0.00
+  "violatedTurns": {
+${turnEntries}
+  }
 }`;
-}
-
-// ── Build heuristic weight summary for the evaluator prompt ──────────────────
-
-function buildWeightSummary(codes) {
-  const critical = Object.entries(codes)
-    .filter(([, c]) => c.weight > 1)
-    .map(([code, c]) => `${code} (${c.name}) ×${c.weight}`)
-    .join(', ');
-  const standard = Object.entries(codes)
-    .filter(([, c]) => !c.weight || c.weight === 1)
-    .map(([code, c]) => `${code} (${c.name}) ×1`)
-    .join(', ');
-
-  const lines = [];
-  if (critical) lines.push(`- Weighted ×${Object.values(codes).find(c => c.weight > 1)?.weight ?? 2}: ${critical}`);
-  if (standard) lines.push(`- Weighted ×1: ${standard}`);
-  return lines.join('\n');
 }
 
 // ── Single scenario evaluation ─────────────────────────────────────────────────
@@ -111,12 +73,14 @@ export async function evaluateConversation(runResult, heuristics, llm) {
 
   if (runResult.error) {
     // Scenario errored — mark all heuristics N/A
-    const scores = Object.fromEntries(codeList.map(c => [c, 'N/A']));
-    const notes  = Object.fromEntries(codeList.map(c => [c, 'Scenario did not complete due to runner error.']));
+    const scores       = Object.fromEntries(codeList.map(c => [c, 'N/A']));
+    const notes        = Object.fromEntries(codeList.map(c => [c, 'Scenario did not complete due to runner error.']));
+    const violatedTurns = Object.fromEntries(codeList.map(c => [c, []]));
     return {
       scenarioId:      runResult.scenarioId,
       scores,
       notes,
+      violatedTurns,
       aggregateScore:  0,
       evaluatorError:  runResult.error,
     };
@@ -124,7 +88,6 @@ export async function evaluateConversation(runResult, heuristics, llm) {
 
   const transcript = formatTranscript(runResult.transcript);
   const schema     = buildResponseSchema(codes);
-  const weights    = buildWeightSummary(codes);
 
   const systemPrompt = [
     'You are a rigorous quality evaluator for AI chatbot conversations.',
@@ -132,22 +95,24 @@ export async function evaluateConversation(runResult, heuristics, llm) {
     'Your job is to score the conversation against each heuristic.',
     '',
     'SCORING RULES:',
-    '- Pass    = 2 pts. The heuristic condition could have applied in this conversation AND was fully satisfied.',
-    '- Marginal = 1 pt. The condition could have applied AND was partially satisfied or borderline.',
-    '- Fail    = 0 pts. The condition could have applied AND was clearly violated or absent.',
-    '- N/A     = excluded from scoring. The heuristic condition COULD NOT have occurred in this conversation',
+    '- Pass    = The heuristic condition could have applied in this conversation AND was fully satisfied.',
+    '- Marginal = The condition could have applied AND was partially satisfied or borderline.',
+    '- Fail    = The condition could have applied AND was clearly violated or absent.',
+    '- N/A     = The heuristic condition COULD NOT have occurred in this conversation',
     '            (e.g. the math-accuracy heuristic when no math was performed; the handoff-clarity heuristic',
     '            when no handoff occurred). Do NOT use N/A when the condition could have applied but the bot',
     '            handled it correctly — that is a Pass.',
     '',
-    'WEIGHTING:',
-    weights,
-    '- aggregateScore = sum(weight × points) / sum(weight × 2)  [non-N/A heuristics only]',
-    '',
     'EVALUATION RULES:',
     '- Base your evaluation ONLY on what actually appears in the transcript.',
     '- Do not assume the bot did something correctly if you do not see it in the transcript.',
-    '- Be strict on high-weight heuristics — any violation = Fail.',
+    '',
+    'VIOLATED TURNS RULES:',
+    '- For each heuristic that received Fail or Marginal, list the 0-based turn index (indices) in',
+    '  "violatedTurns" where the violation is most clearly visible.',
+    '- Turn 0 is the first message in the transcript (customer or agent).',
+    '- If the heuristic got Pass or N/A, set its violatedTurns to an empty array [].',
+    '- It is OK to list multiple turns if the violation spans several exchanges.',
     '',
     domainKnowledge ? `DOMAIN KNOWLEDGE:\n${domainKnowledge}` : '',
   ].filter(Boolean).join('\n');
@@ -181,9 +146,9 @@ Return a JSON object with this exact structure — no extra text, just the JSON:
 ${schema}
 
 Rules:
-- aggregateScore: compute using the weighting formula above.
-- notes: be specific — quote a turn or phrase from the transcript if possible.
-- Use N/A ONLY when the heuristic condition literally could not have occurred (e.g. no math was done, no handoff happened). If the condition could have occurred and the bot handled it correctly, that is Pass — not N/A.`;
+- notes: be specific — quote a turn or phrase from the transcript if possible. One sentence only.
+- violatedTurns: list 0-based turn indices for Fail/Marginal heuristics; empty array [] for Pass/N/A.
+- Use N/A ONLY when the heuristic condition literally could not have occurred. If it could have occurred and the bot handled it correctly, that is Pass — not N/A.`;
 
   const res = await fetch(llm.baseUrl ?? OPENAI_URL, {
     method: 'POST',
@@ -197,7 +162,7 @@ Rules:
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userMessage  },
       ],
-      max_tokens:      1500,
+      max_tokens:      1800,
       temperature:     0.1,
       response_format: { type: 'json_object' },
     }),
@@ -218,14 +183,24 @@ Rules:
     throw new Error(`Evaluator returned invalid JSON: ${raw.slice(0, 200)}`);
   }
 
-  // Recompute locally to ensure formula consistency
-  parsed.aggregateScore = computeAggregateScore(parsed.scores ?? {}, codes);
+  // Compute aggregate score as fraction of scenarios with no Fail
+  const scores = parsed.scores ?? {};
+  const hasFail = Object.values(scores).some(g => g === 'Fail');
+  const aggregateScore = hasFail ? 0 : 1;
+
+  // Normalise violatedTurns — ensure every code is present as an array
+  const violatedTurns = {};
+  for (const code of codeList) {
+    const raw = parsed.violatedTurns?.[code];
+    violatedTurns[code] = Array.isArray(raw) ? raw : [];
+  }
 
   return {
     scenarioId:     runResult.scenarioId,
-    scores:         parsed.scores         ?? {},
+    scores,
     notes:          parsed.notes          ?? {},
-    aggregateScore: parsed.aggregateScore ?? 0,
+    violatedTurns,
+    aggregateScore,
   };
 }
 
@@ -248,13 +223,15 @@ export async function evaluateAll(runResults, heuristics, llm) {
       const ev = await evaluateConversation(r, heuristics, llm);
       evaluations.push(ev);
 
-      const score    = (ev.aggregateScore * 100).toFixed(0);
-      console.log(`score ${score}%`);
+      const failCount = Object.values(ev.scores ?? {}).filter(g => g === 'Fail').length;
+      const status    = failCount === 0 ? '✓' : `✗ ${failCount} fail`;
+      console.log(status);
     } catch (err) {
       evaluations.push({
         scenarioId:     r.scenarioId,
         scores:         {},
         notes:          {},
+        violatedTurns:  {},
         aggregateScore: 0,
         evaluatorError: err.message,
       });

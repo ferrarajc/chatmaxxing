@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { theme } from '../../../theme';
 
 const card: React.CSSProperties = {
@@ -89,6 +90,13 @@ export function IraContributionLimitsPage() {
         <p style={{ margin: 0, fontSize: 14, color: theme.color.text, lineHeight: 1.6 }}>
           To correct an excess: withdraw the excess plus any attributable earnings before your tax filing deadline (including extensions). Contact Bob's Mutual Funds to process a corrective withdrawal.
         </p>
+      </div>
+
+      <div style={{ background: theme.color.primarySoft, border: `1px solid ${theme.color.primarySoftBorder}`, borderRadius: 10, padding: '14px 16px', fontSize: 13, color: theme.color.text, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <span>Know the limits — now see whether you're on track to retire comfortably.</span>
+        <Link to="/resources/retirement-calculator" style={{ flexShrink: 0, background: theme.color.primary, color: theme.color.textOnPrimary, borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Retirement Calculator →
+        </Link>
       </div>
 
       <div style={{ background: theme.color.warningSoft, border: `1px solid ${theme.color.warningBorder}`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: theme.color.warning }}>

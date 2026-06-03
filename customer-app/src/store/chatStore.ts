@@ -18,6 +18,7 @@ export interface ChatStore {
   levelTwoQuestions: KBQuestionResult[] | null;  // null = not yet fetched; [] = fetch failed/empty
   isTyping: boolean;
   escalationWaitTime: number | null;
+  escalationPending: boolean;
   callbackConfirmation: CallbackConfirmation | null;
 
   // Actions
@@ -29,6 +30,7 @@ export interface ChatStore {
   setLevelTwoQuestions: (questions: KBQuestionResult[] | null) => void;
   setTyping: (v: boolean) => void;
   setEscalationWaitTime: (v: number | null) => void;
+  setEscalationPending: (v: boolean) => void;
   setCallbackConfirmation: (v: CallbackConfirmation) => void;
   reset: () => void;
 }
@@ -45,6 +47,7 @@ const initial = {
   levelTwoQuestions: null,
   isTyping: false,
   escalationWaitTime: null,
+  escalationPending: false,
   callbackConfirmation: null,
 };
 
@@ -70,6 +73,7 @@ export const useChatStore = create<ChatStore>(set => ({
   setLevelTwoQuestions: (levelTwoQuestions) => set({ levelTwoQuestions }),
   setTyping: (isTyping) => set({ isTyping }),
   setEscalationWaitTime: (escalationWaitTime) => set({ escalationWaitTime }),
+  setEscalationPending: (escalationPending) => set({ escalationPending }),
   setCallbackConfirmation: (callbackConfirmation) => set({ callbackConfirmation }),
   reset: () => set(initial),
 }));

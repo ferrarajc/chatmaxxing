@@ -68,12 +68,17 @@ export const ALL_CLIENT_TOOLS: OpenAITool[] = [
       parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'get_chat_history',
+      description: "Fetch the client's recent chat history with Bob's Mutual Funds support: dates, topics discussed, and what was resolved in each session.",
+      parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
+    },
+  },
 ];
 
-// Lighter tool list for next-best-response — accounts already pre-loaded in system prompt
-export const NBR_CLIENT_TOOLS: OpenAITool[] = ALL_CLIENT_TOOLS.filter(t =>
-  ['get_holdings', 'get_transactions', 'get_beneficiaries', 'get_auto_invest'].includes(t.function.name),
-);
+export const NBR_CLIENT_TOOLS = ALL_CLIENT_TOOLS;
 
 const TABLE = () => process.env.CLIENTS_TABLE ?? 'bobs-clients';
 const MAX_RESULT_CHARS = 2000;
@@ -215,6 +220,14 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
         `Frequency: ${(rmd.frequency as string | undefined) ?? 'not set'}`,
         `Tax withholding: ${(rmd.taxWithholding as number | undefined) ?? 0}%`,
       ];
+      return cap(lines.join('\n'));
+    }
+
+    case 'get_chat_history': {
+      const item = await fetchField(clientId, 'recentChatHistory');
+      const history = (item.recentChatHistory as Array<{ date: string; topic: string; summary: string }> | undefined) ?? [];
+      if (!history.length) return 'No recent chat history on file.';
+      const lines = history.map(h => `${h.date} — ${h.topic}: ${h.summary}`);
       return cap(lines.join('\n'));
     }
 

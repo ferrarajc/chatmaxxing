@@ -44,9 +44,18 @@ export interface RmdData {
   taxWithholding?: number;
 }
 
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountType: 'Checking' | 'Savings';
+  maskedNumber: string;
+}
+
 export interface Persona {
   clientId: string;
   name: string;
+  age: number;
+  salary: number;
   phone: string;
   displayPhone: string;
   email: string;
@@ -58,12 +67,15 @@ export interface Persona {
   beneficiaries: Beneficiary[];
   autoInvest: AutoInvestSchedule[];
   rmd: RmdData;
+  bankAccounts: BankAccount[];
 }
 
 // ── Alex Johnson ──────────────────────────────────────────────────────────────
 const alexJohnson: Persona = {
   clientId: 'demo-client-001',
   name: 'Alex Johnson',
+  age: 59,       // turns 73 in 2040 per rmd.projectedEligibilityYear
+  salary: 95000,
   phone: '4842384838',
   displayPhone: '(484) 238-4838',
   email: 'alex.johnson@email.com',
@@ -103,12 +115,18 @@ const alexJohnson: Persona = {
     eligible: false,
     projectedEligibilityYear: 2040,  // Alex turns 73 in ~2040
   },
+  bankAccounts: [
+    { id: 'bank-001', bankName: 'Keystone Community Bank',        accountType: 'Checking', maskedNumber: '...7832' },
+    { id: 'bank-002', bankName: 'Philadelphia Federal Savings',   accountType: 'Savings',  maskedNumber: '...4419' },
+  ],
 };
 
 // ── Maria Chen ────────────────────────────────────────────────────────────────
 const mariaChen: Persona = {
   clientId: 'demo-client-002',
   name: 'Maria Chen',
+  age: 74,   // rmd.age is explicit
+  salary: 0, // retired
   phone: '6175550192',
   displayPhone: '(617) 555-0192',
   email: 'maria.chen@email.com',
@@ -137,6 +155,10 @@ const mariaChen: Persona = {
     { id: 'ben-202', accountId: 'acc-201', accountType: 'Traditional IRA', type: 'Primary', name: 'Linda Chen', relationship: 'Child', dob: '1978-02-27', ssn: '***-**-8843', percentage: 50 },
   ],
   autoInvest: [],
+  bankAccounts: [
+    { id: 'bank-201', bankName: 'Wellesley Savings Bank',               accountType: 'Checking', maskedNumber: '...2291' },
+    { id: 'bank-202', bankName: 'New England Federal Credit Union',     accountType: 'Savings',  maskedNumber: '...6074' },
+  ],
   rmd: {
     eligible: true,
     age: 74,
@@ -162,6 +184,8 @@ const mariaChen: Persona = {
 const jordanWilliams: Persona = {
   clientId: 'demo-client-003',
   name: 'Jordan Williams',
+  age: 28,
+  salary: 52000,
   phone: '5035550847',
   displayPhone: '(503) 555-0847',
   email: 'jordan.williams@email.com',
@@ -191,12 +215,18 @@ const jordanWilliams: Persona = {
     { id: 'ai-301', accountId: 'acc-301', accountType: 'Roth IRA', fund: 'BobsFunds 500 Index', ticker: 'BF500', amount: 583.33, frequency: 'Monthly', dayOfMonth: 1, nextDate: '2025-05-01', active: true },
   ],
   rmd: { eligible: false },
+  bankAccounts: [
+    { id: 'bank-301', bankName: 'Pacific Northwest Credit Union',  accountType: 'Checking', maskedNumber: '...5583' },
+    { id: 'bank-302', bankName: 'Cascade Community Bank',          accountType: 'Savings',  maskedNumber: '...9027' },
+  ],
 };
 
 // ── Robert Martinez ───────────────────────────────────────────────────────────
 const robertMartinez: Persona = {
   clientId: 'demo-client-004',
   name: 'Robert Martinez',
+  age: 52,        // kids born 2008/2011, self-employed with substantial SEP-IRA
+  salary: 140000,
   phone: '7135550234',
   displayPhone: '(713) 555-0234',
   email: 'robert.martinez@email.com',
@@ -232,6 +262,10 @@ const robertMartinez: Persona = {
     { id: 'ai-402', accountId: 'acc-401', accountType: 'SEP-IRA', fund: 'BobsFunds Bond Income', ticker: 'BFBI', amount: 2500, frequency: 'Quarterly', nextDate: '2025-07-01', active: true },
   ],
   rmd: { eligible: false },
+  bankAccounts: [
+    { id: 'bank-401', bankName: 'Lone Star National Bank',         accountType: 'Checking', maskedNumber: '...8847' },
+    { id: 'bank-402', bankName: 'Gulf Coast Federal Credit Union', accountType: 'Savings',  maskedNumber: '...3319' },
+  ],
 };
 
 export const PERSONAS: Persona[] = [alexJohnson, mariaChen, jordanWilliams, robertMartinez];
