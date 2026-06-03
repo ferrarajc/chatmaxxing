@@ -196,6 +196,22 @@ ${proposedActionFieldsSchema}
 
 // ── Per-process expert prompts ─────────────────────────────────────────────
 
+// ── Account access levels (single source of truth) ─────────────────────────
+// Modeled on Vanguard's authorized-account-access tiers. Injected into the
+// add-account-access expert and both customer-facing bot prompts so every
+// surface describes the three levels identically. The human-readable version
+// lives on the /help/account-access page — keep them in sync.
+const ACCESS_LEVELS_REFERENCE = `
+ACCOUNT ACCESS LEVELS — the three levels of access an account owner can grant another person:
+
+• View-only access — The person can log in and see everything: balances, holdings, transaction history, and performance. They CANNOT buy or sell, move money, or change anything on the account.
+
+• Limited access — Everything View-only can do, PLUS they can buy investments, move assets between the owner's own Bob's accounts, and request distributions — but any distribution can only be paid to the account owner and sent to the owner's address or bank account on record. They CANNOT send money to anyone other than the owner, write checks, change account ownership, change beneficiaries, or open or close accounts.
+
+• Full access — Complete authority over the account: buy and sell, transfer or withdraw assets (including to outside accounts), update personal and banking information, and even close the account — all without the owner's prior approval.
+
+Quick way to explain the difference: View-only can look but not touch. Limited can trade and move money, but only back to the owner, and can't make structural changes (ownership, beneficiaries, opening or closing accounts). Full is unrestricted — effectively the same as the owner.`;
+
 const ADD_ACCOUNT_ACCESS_PROMPT = (profile: ClientProfile) =>
   `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
 Client accounts: ${summarizeAccounts(profile.accounts)}.
@@ -213,9 +229,11 @@ FULL NAME of the person being added
 EMAIL ADDRESS of the person being added
   Required to set up their account login. Must be a real email address.
 
-ACCESS LEVEL — one of:
-  • Full access — can view balances, place trades, and manage the account
-  • View only — read-only, can see the account but cannot make changes
+ACCESS LEVEL — one of: View-only, Limited, or Full access.
+  The three levels are defined in the ACCOUNT ACCESS LEVELS reference below. Use that reference
+  to answer any question the client has about how the levels differ before they choose — explain
+  it plainly, then return to confirming which level they want.
+${ACCESS_LEVELS_REFERENCE}
 
 ════════════════════════════════════
 HOW TO HANDLE THIS CONVERSATION
@@ -225,6 +243,7 @@ You are already connected to the client. Do not introduce yourself or say your n
 Collect the three pieces of information naturally — in any order that fits the conversation.
 If the client volunteers a piece of information before you ask, capture it and move on.
 Ask one thing at a time. If an answer is vague, ask for the specific detail.
+If the client asks how the access levels differ, answer using the reference above, then ask which they'd like.
 Read the full transcript — do not re-ask for something the client already provided.
 
 When you have all three with specific, confirmed values:
@@ -252,7 +271,7 @@ When all three are collected, set shouldExitAutopilot=true and replace proposedA
   "fields": [
     {"key": "personName",  "label": "Person's full name",    "value": "[the name provided]"},
     {"key": "personEmail", "label": "Email address",          "value": "[the email provided]"},
-    {"key": "accessLevel", "label": "Access level",           "value": "[Full access or View only]"}
+    {"key": "accessLevel", "label": "Access level",           "value": "[View-only, Limited access, or Full access]"}
   ]
 }
 
@@ -1997,6 +2016,8 @@ Current topic: "${intent}".
 Your goal is FULL AUTO: serve this client completely through this conversation. You are knowledgeable and capable — engage with the customer, understand their need, and provide real answers. You may ask clarifying or follow-up questions. You may write freeform answers. Use page links as helpful supplements, not as your primary mode of response.
 ${FORBIDDEN_TOPICS}
 ${SELF_SERVICE_PAGES}
+${ACCESS_LEVELS_REFERENCE}
+If the client asks about authorized users or how account access works, answer using the ACCOUNT ACCESS LEVELS reference above, and point them to the Account Access page to start the process.
 ${currentPage ? `CURRENT PAGE: The client is already viewing "${currentPage}". Do not link to this page — they are on it. Use your awareness of what is on this page to give specific, contextual guidance.` : ''}
 ${(() => { const excluded = [...alreadyLinked, ...(currentPage ? [currentPage] : [])]; return excluded.length > 0 ? `DO NOT LINK to any of these pages (already visited or currently viewing): ${excluded.join(', ')}. If the most relevant page is on this list, help a different way: answer directly, ask a follow-up question, or reference a different resource.` : ''; })()}
 
@@ -2029,6 +2050,8 @@ GOOD: "Adding an authorized user lets someone view and manage your account on th
 
 ${FORBIDDEN_TOPICS}
 ${SELF_SERVICE_PAGES}
+${ACCESS_LEVELS_REFERENCE}
+If the client asks about authorized users or how account access works, answer using the ACCOUNT ACCESS LEVELS reference above, and point them to the Account Access page to start the process.
 ${currentPage ? `CURRENT PAGE: The client is already viewing "${currentPage}". Do not link to this page. Use your knowledge of what's on it to give specific, contextual guidance.` : ''}
 ${(() => { const excluded = [...alreadyLinked, ...(currentPage ? [currentPage] : [])]; return excluded.length > 0 ? `DO NOT LINK to these pages (already visited/viewing): ${excluded.join(', ')}.` : ''; })()}
 

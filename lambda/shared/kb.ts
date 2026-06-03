@@ -218,6 +218,33 @@ export const KB: KBTopic[] = [
   },
 
   {
+    id: 't-account-access',
+    label: 'Authorized account access',
+    pages: ['account'],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-access-001',
+        text: 'What are the account access levels?',
+        answer: "You can grant another person one of three levels of access. View-only lets them see balances, holdings, and transaction history but make no changes. Limited access adds the ability to buy investments, move assets between your own Bob's accounts, and request distributions paid only to you. Full access gives complete authority — buying, selling, withdrawing to outside accounts, updating your information, and even closing the account.",
+        link: { text: 'Manage account access', url: '/help/account-access' },
+      },
+      {
+        id: 'q-access-002',
+        text: 'What is the difference between limited and full access?',
+        answer: "Limited access lets the person trade and move money, but distributions can only go back to you (the owner), and they can't change account ownership, change beneficiaries, or open or close accounts. Full access has none of those restrictions — the person can withdraw to outside accounts, update banking and personal information, and close the account without your prior approval. Choose Limited when you want help managing investments without handing over full control.",
+        link: { text: 'Manage account access', url: '/help/account-access' },
+      },
+      {
+        id: 'q-access-003',
+        text: 'Can an authorized user withdraw my money?',
+        answer: "It depends on the access level. A View-only user cannot move money at all. A Limited-access user can request distributions, but only paid to you and sent to your address or bank account on record. A Full-access user can transfer or withdraw assets to outside accounts without your prior approval, so grant Full access only to someone you trust completely.",
+        link: { text: 'Manage account access', url: '/help/account-access' },
+      },
+    ],
+  },
+
+  {
     id: 't-callback',
     label: 'Schedule a callback',
     pages: ['home'],
