@@ -14,6 +14,10 @@ import {
 
 const RESOURCE_LIST = KNOWLEDGE_BASE.map(r => `${r.id}: ${r.title}`).join('\n');
 
+// Deterministic detectors: advice/trade requests should always suggest a callback.
+const ADVICE_RE = /\b(what|which|any|recommend|suggest|your)\b[^?.!]{0,50}\b(stock|stocks|fund|funds|invest|investment|investments|portfolio|allocation)\b|\b(should i (buy|sell|invest|put|move)|what should i do with|where should i (invest|put)|investment advice|financial advice|best (stock|stocks|fund|funds|investment|investments)|hot (stock|stocks|tip|tips))\b/i;
+const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
+
 const NBR_HALLUCINATION_RULE = `
 
 CRITICAL DATA RULE: You only know what is in this system prompt or what a tool returned. Never state specific financial figures (balances, holdings, transaction amounts, phone numbers, email addresses, or any client-specific numbers) that were not provided. Call the appropriate tool if you need that data.`;
@@ -103,6 +107,13 @@ export const handler = async (
         .map(m => m.content)
         .join(' ');
       resources = matchResources(conversationText);
+    }
+
+    // Deterministic guardrail: financial-advice or trade requests must suggest a
+    // callback with a licensed advisor, regardless of the LLM's judgment.
+    const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
+    if (ADVICE_RE.test(lastCustomerMsg) || TRADE_RE.test(lastCustomerMsg)) {
+      suggestedScope = 'callback';
     }
 
     return jsonResponse(200, { suggestedText, resources, suggestedScope, toolsUsed });
