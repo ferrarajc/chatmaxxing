@@ -146,6 +146,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Proposed Action card | `agent-app/src/components/ProposedActionCard.tsx` |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |
+| Research fund lineup (36 funds) | `customer-app/src/data/funds.ts` (static profiles + `group` field) **and** `lambda/market-data/handler.ts` → `FUND_MAP` (ticker→Vanguard realSymbol for live Yahoo quotes). Keep the two in sync. The Research index page (`components-v2/pages/research/ResearchPage.tsx`) is a search/filter/sortable screener grouped by `group`. |
 | Intent summary label | `lambda/start-chat/handler.ts` → intentLabel prompt |
 | Agent greeting | `lambda/start-chat/handler.ts` → intentGreeting prompt |
 | ACW generation | `lambda/generate-acw/handler.ts` |
