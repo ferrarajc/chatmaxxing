@@ -1913,7 +1913,7 @@ If the client asks to escalate or seems frustrated, set shouldExitAutopilot=true
 
 Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
 
-const CALLBACK_PROMPT = (profile: ClientProfile, availability: { nowStr: string; status: string }) =>
+const CALLBACK_PROMPT = (profile: ClientProfile, availability: { nowStr: string; status: string }, alreadyExplained: boolean) =>
   `You are a warm, capable human agent at Bob's Mutual Funds in a live chat with ${profile.name}. You ARE the live agent — never offer to "connect" or "transfer" them; you're already here, helping.
 Phone on file: ${profile.phone ? formatPhone(profile.phone) : 'none on file'}.
 
@@ -1924,13 +1924,16 @@ CURRENT TIME & AVAILABILITY (authoritative — trust this completely; do NOT com
 
 YOUR JOB: arrange a phone callback with an advisor. Move through the four things below naturally, like a real person — one thing at a time, adapting to whatever the client says. Do not recite a script and never repeat a sentence you already said.
 
-1) EXPLAIN WHY — but only once.
-   If you (the agent) have NOT yet explained the callback in this conversation, open by telling them you'll set one up and why, in ONE natural sentence tied to what they asked:
-   • Investment/stock advice → "Picking specific investments calls for a licensed advisor, so let me set up a callback with one for you."
-   • Inheritance / a death → "I'm sorry for your loss — our specialist team handles inheritance, so I'll arrange a callback with them."
-   • They simply asked for a callback → "Happy to set up a callback for you."
-   Then go straight to the phone number in the same message.
-   ⚠ Once the reason has been explained anywhere earlier in this chat, NEVER explain or mention the advice/compliance reason again. Don't re-introduce why a callback is needed. Just keep arranging it.
+${alreadyExplained
+  ? '✅ You have ALREADY told the client you are arranging a callback earlier in this chat. Do NOT explain it again or repeat the reason — just continue arranging it (the number, then the time).'
+  : '⚠⚠ You have NOT yet told the client you are setting up a callback. Your VERY FIRST sentence this turn MUST briefly explain — in one natural sentence tied to what they just asked — why you are arranging a callback. ONLY AFTER that sentence may you ask about the phone number. It is wrong and confusing to open with "the number I have on file..." or any phone/time question before the explanation.'}
+
+1) EXPLAIN WHY (see the directive above about whether you still owe the client this).
+   When you do explain, it's ONE natural sentence tied to what they asked, then you ask about the number in the same message:
+   • Investment/stock advice → "Picking specific investments calls for a licensed advisor, so let me set up a callback with one for you. What's the best number to reach you?"
+   • Inheritance / a death → "I'm sorry for your loss — our specialist team handles inheritance, so I'll arrange a callback with them. What's the best number for you?"
+   • They simply asked for a callback → "Happy to set up a callback for you. Is [number on file] the best number to reach you?"
+   Once it's been explained, NEVER repeat the reason — just keep arranging the callback.
 
 2) CONFIRM THE NUMBER — adapt like a human, ask at most once.
    • If a number is on file, ask if it's the best one to reach them.
@@ -1939,11 +1942,12 @@ YOUR JOB: arrange a phone callback with an advisor. Move through the four things
    • Once you have a usable number, move on — don't ask about it again.
 
 3) PICK A TIME — guided by the availability above.
-   • Ask when works for them. If the center is closed now, say so briefly and steer them to the next available window — never offer a same-day time that has already passed or that's after closing.
-   • Accept partial answers across turns ("tomorrow", then "9am"). Once you have a day AND a clock time, you're ready to book.
+   • Ask when works for THEM. If the center is closed now, say so briefly and steer them to the next available window — never offer a same-day time that has already passed or that's after closing.
+   • Accept partial answers across turns ("tomorrow", then "9am"). Once THEY have given a day AND a clock time, you're ready to book.
+   • ⚠ NEVER invent, assume, or default a time. The client must state the time themselves. "When are you open?" / "what are your hours?" is a QUESTION, not a time — answer it using the availability above and then ask what time they'd like. Do not treat the opening time (8:00 AM) as their choice.
 
 4) BOOK IT.
-   When you have a usable phone number AND a day + time, fill in scheduleCallback (schema below) and confirm warmly in one sentence: "You're all set — an advisor will call you [day] at [time] at [number]." Don't ask "anything else?" in the same turn.
+   Only when the CLIENT has given you a usable phone number AND a specific day + clock time: fill in scheduleCallback (schema below) and confirm warmly in one sentence: "You're all set — an advisor will call you [day] at [time] at [number]." Write the time in 12-hour form ("2:00 PM", never "14:00") and the phone as (XXX) XXX-XXXX. Don't ask "anything else?" in the same turn.
 
 AFTER IT'S BOOKED — a [CALLBACK_SCHEDULED ...] note will appear in the transcript:
    • If you haven't yet, ask if there's anything else you can help with. (scheduleCallback=null)
@@ -2209,6 +2213,28 @@ export const handler = async (
 
     const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
 
+    // Has the agent already told the client a callback is being arranged?
+    const callbackExplained = transcript.some(m =>
+      m.role === 'AGENT' &&
+      /\b(callback|call you back|call you|advisor will call|set (this|that|it|one) up|schedul\w* (a |the )?call|arrang\w* (a |the )?call)\b/i.test(m.content));
+
+    // Financial-advice requests must route to a callback with a licensed advisor —
+    // and must NOT be swallowed by task identification (e.g. "best stocks to BUY"
+    // must not match the place-purchase task). Short-circuit before any task logic.
+    if (scope === 'get-intent' && ADVICE_RE.test(lastCustomerMsg)) {
+      return jsonResponse(200, {
+        response: "I'm not permitted to provide personalized investment advice — that requires a licensed financial advisor. I can arrange a callback with one of our advisors who can give you tailored guidance. Would that work?",
+        shouldExitAutopilot: true,
+        exitMessage: 'Financial-advice request — route to a callback with a licensed advisor.',
+        suggestedScope: 'callback',
+        closeChat: false,
+        scheduleCallback: null,
+        taskIdentified: null,
+        proposedAction: null,
+        toolsUsed: [],
+      });
+    }
+
     // ── Task-driven get-intent logic ───────────────────────────────────────
     let taskIdentifiedForResponse: string | null = null;
 
@@ -2397,7 +2423,7 @@ export const handler = async (
         systemPrompt = RESEARCHING_PROMPT(profile);
         break;
       case 'callback':
-        systemPrompt = CALLBACK_PROMPT(profile, describeCallbackAvailability(new Date()));
+        systemPrompt = CALLBACK_PROMPT(profile, describeCallbackAvailability(new Date()), callbackExplained);
         break;
       case 'idle-check':
         systemPrompt = IDLE_CHECK_PROMPT(profile);
@@ -2453,11 +2479,29 @@ export const handler = async (
       response = "I'm having a bit of trouble right now — could you try rephrasing your question?";
     }
 
+    // Callback scope, first turn: gpt-4o reliably skips the "why" explanation and
+    // opens with an abrupt "what's your number?". Since the opener is fully
+    // deterministic, the SERVER composes it — one sentence on why, then the number
+    // question — guaranteeing the client always knows why they're being asked.
+    if (scope === 'callback' && !callbackExplained) {
+      const recentCustomer = transcript.filter(m => m.role === 'CUSTOMER').slice(-3).map(m => m.content).join('  ');
+      const lead = ADVICE_RE.test(recentCustomer)
+        ? 'Picking specific investments calls for a licensed advisor, so let me set up a callback with one for you.'
+        : /\b(inherit\w*|passed away|deceased|death|estate)\b/i.test(recentCustomer)
+          ? "I'm so sorry for your loss — our specialist team handles inheritance, so let me arrange a callback with them."
+          : 'Happy to set up a callback with one of our advisors for you.';
+      response = profile.phone
+        ? `${lead} The number I have on file is ${formatPhone(profile.phone)} — is that the best one to reach you?`
+        : `${lead} What's the best number for the advisor to call you?`;
+      scheduleCallback = null;
+      shouldExitAutopilot = false;
+      closeChat = false;
+    }
     // Callback scope: the LLM only describes the time — the SERVER resolves and
     // validates it, so we never trust an LLM-computed timestamp. On a bad/past/
     // out-of-hours time we drop the schedule and ask for a real one, so the agent
     // never claims a callback was booked when it wasn't.
-    if (scope === 'callback' && scheduleCallback) {
+    else if (scope === 'callback' && scheduleCallback) {
       const spec = scheduleCallback as Record<string, unknown>;
       const num = (v: unknown): number | null =>
         typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v)) ? Number(v) : null);

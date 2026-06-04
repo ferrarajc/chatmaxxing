@@ -100,7 +100,7 @@ chatmaxxing/
 - `full-auto` → FULL_AUTO_PROMPT → handles pre-agent bot Q&A, links to self-service pages, exits on escalation/account modification
 - `get-intent` → two-phase task system (see below)
 - `idle-check` → sends check-in message
-- `callback` → signals routing to callback scope
+- `callback` → CALLBACK_PROMPT → arranges a phone callback. **The LLM never computes timestamps** — it emits `{dayReference, hour24, minute}` and the server (`resolveCallbackTime`, TZ-safe via `Intl`/`date-fns-tz`) resolves+validates the ET→UTC instant. The server also injects authoritative availability (`describeCallbackAvailability`) and composes the first-turn "why a callback" opener deterministically (gpt-4o won't lead with it). Financial-advice requests short-circuit to this scope (`ADVICE_RE`) before task identification so "best stocks to **buy**" isn't swallowed by place-purchase.
 
 **get-intent Phase 1 (task identification):**
 1. Keyword match via `matchTaskByIntent()` (zero LLM calls, fastest)

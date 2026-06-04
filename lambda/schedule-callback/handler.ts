@@ -35,7 +35,9 @@ function validateBusinessHours(utcDate: Date): void {
 }
 
 function formatDisplayTime(utcDate: Date): string {
-  return toZonedTime(utcDate, ET_ZONE).toLocaleString('en-US', {
+  // Convert the true UTC instant to ET exactly once. (Do NOT also pass the date
+  // through toZonedTime first — that double-shifts and reports the wrong hour.)
+  return utcDate.toLocaleString('en-US', {
     timeZone: ET_ZONE,
     weekday: 'short',
     month: 'short',
