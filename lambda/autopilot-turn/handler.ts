@@ -11,7 +11,7 @@ import {
   jsonResponse,
 } from '../shared/types';
 import { TASKS, matchTaskByIntent, filterFields } from '../shared/tasks';
-import { toZonedTime } from 'date-fns-tz';
+import { fromZonedTime } from 'date-fns-tz';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { BeneficiaryEntry } from '../shared/beneficiary-defaults';
@@ -20,19 +20,111 @@ type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' |
 
 const ET_ZONE = 'America/New_York';
 
-function nowET(): string {
-  const et = toZonedTime(new Date(), ET_ZONE);
-  return et.toLocaleString('en-US', {
-    timeZone: ET_ZONE,
-    weekday: 'long', month: 'long', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true,
-  });
-}
-
 function formatPhone(raw: string): string {
   const digits = raw.replace(/\D/g, '');
   if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   return raw;
+}
+
+// ── Callback time helpers ──────────────────────────────────────────────────
+// The LLM is NEVER asked to compute timestamps — it only identifies the day
+// reference and the wall-clock hour/minute. The server resolves the correct
+// ET→UTC instant (TZ-safe via Intl, so it behaves identically on any host) and
+// validates business hours. This eliminates the timezone-math errors that were
+// causing every callback to be rejected as "outside business hours".
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const CALLBACK_OPEN_HOUR = 8;       // 8:00 AM ET
+const CALLBACK_CLOSE_HOUR = 19;     // 7:30 PM ET
+const CALLBACK_CLOSE_MINUTE = 30;
+
+// ET calendar/clock parts for an instant, independent of the server's own TZ.
+function etParts(date: Date): { y: number; m: number; d: number; weekday: number; hour: number; minute: number } {
+  const p = new Intl.DateTimeFormat('en-US', {
+    timeZone: ET_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+    weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(date);
+  const get = (t: string) => p.find(x => x.type === t)?.value ?? '';
+  const wk: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  let hour = parseInt(get('hour'), 10);
+  if (hour === 24) hour = 0; // some environments emit 24 at midnight
+  return { y: +get('year'), m: +get('month'), d: +get('day'), weekday: wk[get('weekday')], hour, minute: +get('minute') };
+}
+
+function isCallbackOpen(weekday: number, hour: number, minute: number): boolean {
+  if (weekday === 0 || weekday === 6) return false;
+  const afterClose = hour > CALLBACK_CLOSE_HOUR || (hour === CALLBACK_CLOSE_HOUR && minute >= CALLBACK_CLOSE_MINUTE);
+  return hour >= CALLBACK_OPEN_HOUR && !afterClose;
+}
+
+// Human-readable "now" + an authoritative availability sentence for the prompt.
+function describeCallbackAvailability(now: Date): { nowStr: string; status: string } {
+  const nowStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: ET_ZONE, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  }).format(now) + ' ET';
+  const { weekday, hour, minute } = etParts(now);
+
+  if (isCallbackOpen(weekday, hour, minute)) {
+    return { nowStr, status: 'The call center is OPEN right now, until 7:30 PM ET today. You may offer a callback later today (any time from now until 7:30 PM ET) or on a future weekday.' };
+  }
+  if (weekday >= 1 && weekday <= 5 && hour < CALLBACK_OPEN_HOUR) {
+    return { nowStr, status: `The call center is CLOSED right now; it opens later today (${WEEKDAY_NAMES[weekday]}) at 8:00 AM ET. Offer a time today at or after 8:00 AM ET, or a later weekday. Never offer a time before 8:00 AM ET.` };
+  }
+  // After close on a weekday, or weekend → next business day
+  let probe = (weekday + 1) % 7;
+  while (probe === 0 || probe === 6) probe = (probe + 1) % 7;
+  const dayName = WEEKDAY_NAMES[probe];
+  const reason = (weekday === 0 || weekday === 6) ? 'for the weekend' : 'for the day';
+  return { nowStr, status: `The call center is CLOSED ${reason}. The next available time is ${dayName} at 8:00 AM ET. Offer a time on ${dayName} or a later weekday, between 8:00 AM and 7:30 PM ET. Do NOT offer a callback for today.` };
+}
+
+type CallbackResolveError = 'no-time' | 'past' | 'weekend' | 'hours';
+
+// Resolve the LLM's structured time spec into a validated UTC ISO string.
+function resolveCallbackTime(
+  spec: { dayReference?: string | null; date?: string | null; hour24?: number | null; minute?: number | null },
+  now: Date,
+): { iso: string } | { error: CallbackResolveError } {
+  const hour = spec.hour24;
+  const minute = spec.minute ?? 0;
+  if (typeof hour !== 'number' || hour < 0 || hour > 23 || minute < 0 || minute > 59) return { error: 'no-time' };
+
+  const today = etParts(now);
+  let base = new Date(Date.UTC(today.y, today.m - 1, today.d)); // pure calendar arithmetic
+
+  if (spec.date && /^\d{4}-\d{2}-\d{2}$/.test(spec.date)) {
+    const [yy, mm, dd] = spec.date.split('-').map(Number);
+    base = new Date(Date.UTC(yy, mm - 1, dd));
+  } else {
+    const ref = (spec.dayReference ?? '').trim().toLowerCase();
+    if (ref === 'tomorrow') {
+      base.setUTCDate(base.getUTCDate() + 1);
+    } else if (ref && ref !== 'today') {
+      const idx = WEEKDAY_NAMES.findIndex(n => n.toLowerCase() === ref);
+      if (idx >= 0) base.setUTCDate(base.getUTCDate() + ((idx - today.weekday + 7) % 7));
+    }
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const wall = `${base.getUTCFullYear()}-${pad(base.getUTCMonth() + 1)}-${pad(base.getUTCDate())} ${pad(hour)}:${pad(minute)}:00`;
+  const utc = fromZonedTime(wall, ET_ZONE); // interprets wall-clock AS Eastern
+  if (isNaN(utc.getTime())) return { error: 'no-time' };
+  if (utc.getTime() <= now.getTime()) return { error: 'past' };
+
+  const r = etParts(utc);
+  if (r.weekday === 0 || r.weekday === 6) return { error: 'weekend' };
+  if (!isCallbackOpen(r.weekday, r.hour, r.minute)) return { error: 'hours' };
+  return { iso: utc.toISOString() };
+}
+
+function callbackTimeAskResponse(reason: CallbackResolveError, badPhone: boolean): string {
+  if (badPhone) return 'I want to make sure I reach you at the right number — what phone number should the advisor call?';
+  const lead =
+    reason === 'past' ? 'That time has already passed — ' :
+    reason === 'weekend' ? 'Our callback line is only open on weekdays — ' :
+    reason === 'hours' ? "That's outside our callback hours — " :
+    'To get your callback booked — ';
+  return lead + 'our hours are weekdays, 8:00 AM to 7:30 PM Eastern. What day and time in that window works best for you?';
 }
 
 // ── Scope-specific system prompts ──────────────────────────────────────────
@@ -1821,72 +1913,52 @@ If the client asks to escalate or seems frustrated, set shouldExitAutopilot=true
 
 Return ONLY valid JSON: {"response": "...", "shouldExitAutopilot": false, "suggestedScope": null}`;
 
-const CALLBACK_PROMPT = (profile: ClientProfile, nowETStr: string) =>
-  `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
-Client: ${profile.name} (ID: ${profile.clientId}).
-Client phone on file: ${profile.phone ? formatPhone(profile.phone) : 'not on file'}.
-Current time in ET: ${nowETStr}.
-Callback hours: Monday–Friday, 8:00 AM – 7:30 PM Eastern time.
+const CALLBACK_PROMPT = (profile: ClientProfile, availability: { nowStr: string; status: string }) =>
+  `You are a warm, capable human agent at Bob's Mutual Funds in a live chat with ${profile.name}. You ARE the live agent — never offer to "connect" or "transfer" them; you're already here, helping.
+Phone on file: ${profile.phone ? formatPhone(profile.phone) : 'none on file'}.
 
-Your goal is CALLBACK: schedule a phone callback for this client.
+CURRENT TIME & AVAILABILITY (authoritative — trust this completely; do NOT compute your own dates or second-guess the day/time):
+• It is ${availability.nowStr}.
+• ${availability.status}
+• Callback hours are Monday–Friday, 8:00 AM–7:30 PM ET. Never offer or accept a time outside those hours or in the past.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STEP TRACKING — re-evaluate from the full transcript every turn
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YOUR JOB: arrange a phone callback with an advisor. Move through the four things below naturally, like a real person — one thing at a time, adapting to whatever the client says. Do not recite a script and never repeat a sentence you already said.
 
-A) Has the callback need been EXPLAINED and offered? (Not just that a callback is happening — the reason must appear in the AGENT's prior messages.)
-B) Has the phone number been confirmed? (client said yes to the number on file, OR provided a different number)
-C) Has the callback time been established? (client specified a day AND time — even across two messages — e.g. "9am tomorrow", or "Tomorrow" followed by "9am")
-D) Has scheduleCallback already been returned? (look for a [CALLBACK_SCHEDULED] system message in the transcript)
+1) EXPLAIN WHY — but only once.
+   If you (the agent) have NOT yet explained the callback in this conversation, open by telling them you'll set one up and why, in ONE natural sentence tied to what they asked:
+   • Investment/stock advice → "Picking specific investments calls for a licensed advisor, so let me set up a callback with one for you."
+   • Inheritance / a death → "I'm sorry for your loss — our specialist team handles inheritance, so I'll arrange a callback with them."
+   • They simply asked for a callback → "Happy to set up a callback for you."
+   Then go straight to the phone number in the same message.
+   ⚠ Once the reason has been explained anywhere earlier in this chat, NEVER explain or mention the advice/compliance reason again. Don't re-introduce why a callback is needed. Just keep arranging it.
 
-⚠ DO NOT RE-ASK for information the client has already provided. If the client said "9am tomorrow" in any earlier message, you already have both the day (tomorrow) and the time (9am) — C is done. If the client said "Tomorrow" and later "9am", C is done. Never ask for the time after the client has given it.
+2) CONFIRM THE NUMBER — adapt like a human, ask at most once.
+   • If a number is on file, ask if it's the best one to reach them.
+   • "No, that's my work line / I'm at home / use my cell" → don't repeat the question — acknowledge and ask which number to use.
+   • If they give a number (e.g. "call my cell at 610-277-9289"), USE it. Never read a number they just gave you back as "the number I have on file."
+   • Once you have a usable number, move on — don't ask about it again.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STEPS — execute the lowest-numbered incomplete step
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3) PICK A TIME — guided by the availability above.
+   • Ask when works for them. If the center is closed now, say so briefly and steer them to the next available window — never offer a same-day time that has already passed or that's after closing.
+   • Accept partial answers across turns ("tomorrow", then "9am"). Once you have a day AND a clock time, you're ready to book.
 
-1. If A is not done: Explain WHY a callback is needed, then offer it — do NOT proceed to phone or time yet.
-   Determine the trigger from the transcript (look at recent customer messages):
-   a) Financial advice / investment recommendation ("what stocks should I buy", "which fund is best", "what should I invest in", etc.):
-      Use this exact text: "I can't provide personalized investment advice over chat — that requires a licensed financial advisor. I can arrange a callback from one of our advisors who can give you tailored guidance. Would that work?"
-   b) Inheritance / deceased account holder question:
-      Use: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team who can walk you through every step. I can schedule a callback with a specialist — would that work?"
-   c) Client requested a callback directly:
-      Say you're happy to set one up.
-   IMPORTANT: Even if you think A might already be done, if the immediately preceding customer message was about financial advice or investment recommendations and no explanation appears in the AGENT's prior responses, you MUST provide the explanation in this turn. Never skip the explanation and jump straight to asking for phone or time.
+4) BOOK IT.
+   When you have a usable phone number AND a day + time, fill in scheduleCallback (schema below) and confirm warmly in one sentence: "You're all set — an advisor will call you [day] at [time] at [number]." Don't ask "anything else?" in the same turn.
 
-2. If A done, B not done: Ask about the phone number.
-   "The number I have on file for you is [formatted phone]. Is that the best number to reach you?"
-   - Client confirms yes → B is done, use the on-file number.
-   - Client says no or gives a different number → B is done, use the number they provided.
+AFTER IT'S BOOKED — a [CALLBACK_SCHEDULED ...] note will appear in the transcript:
+   • If you haven't yet, ask if there's anything else you can help with. (scheduleCallback=null)
+   • Client is done / says thanks / goodbye → warm closing, shouldExitAutopilot=true, closeChat=true.
+   • Client raises something new → shouldExitAutopilot=true, closeChat=false, response="".
+   Never offer to schedule again once a [CALLBACK_SCHEDULED] note exists — it's already done.
 
-3. If A and B done, C not done: Ask about time.
-   FIRST check whether the client has already stated a day or time anywhere in the transcript — if they have, extract it and treat C as done; proceed to step 4 immediately.
-   If genuinely no time has been mentioned:
-   - Today is a weekday AND current ET is before 7:00 PM:
-     "Agents are available today until 7:30 PM Eastern, and weekdays 8 AM–7:30 PM otherwise. What time works for you?"
-   - Today is a weekday AND current ET is 7:00–7:30 PM:
-     "We're in our last half hour today. Would you like a callback now, or shall I book one for tomorrow or another weekday?"
-   - Current ET is after 7:30 PM, or it's a weekend:
-     "Our agents are done for today. I can schedule a callback for any weekday between 8 AM and 7:30 PM Eastern — what day and time works best?"
-   ONCE the client responds with a time (even a partial answer like "tomorrow"): accept it, mark C in progress, and if you still need the other part (day or time) ask only for that one missing piece. As soon as you have both day and time, C is done — proceed to step 4. Do NOT re-explain hours after the client has responded.
+ALWAYS ANSWER THEIR QUESTIONS. If they ask something (your hours, what the call is about, etc.), answer it directly using the info above, THEN continue arranging the callback. Never ignore a question and repeat your previous line — that's the surest way to sound like a broken bot.
+Don't open with paraphrasing fluff ("I understand you're looking to...", "It sounds like..."). Start with the substance.
 
-4. If A, B, C are done and D is not done: Confirm and schedule.
-   Verify the requested time falls within callback hours (Mon–Fri 8 AM–7:30 PM ET). If it doesn't, explain and ask for a different time.
-   RULES: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=<filled in>.
-   Response: "Great — I've scheduled your callback for [day] at [time]. You'll receive a call at [number]."
-   IMPORTANT: Display phone numbers in (XXX) XXX-XXXX format in response text. The phoneNumber field in scheduleCallback must be 10 digits only.
-   Do NOT ask "Is there anything else?" in this same turn. Stop and wait.
-
-5. If D is done AND you have already asked "Is there anything else?":
-   - Client says no / thanks / goodbye → warm closing, set shouldExitAutopilot=true and closeChat=true.
-   - Client says yes or raises a new topic → set shouldExitAutopilot=true, closeChat=false, response="".
-
-6. If D is done AND you have NOT yet asked "Is there anything else?" → ask it now.
-   RULES: set shouldExitAutopilot=false, closeChat=false, scheduleCallback=null.
-   Do NOT close the chat here — wait for the client's reply.
-
-RESPONSE OPENINGS: Never begin with "I understand you're looking to...", "I see you're interested in...", "I understand you're asking about...", "I can see you'd like to...", "It sounds like you want to...", or similar paraphrasing openers. Start directly with the explanation, question, or action.
+TIME FIELDS: you only describe the time — you do NOT compute dates or timestamps. In scheduleCallback give the day as the client expressed it and the clock time as plain numbers:
+• dayReference: "today", "tomorrow", or a weekday name like "Monday" (use whichever the client meant).
+• date: only if the client gave an explicit calendar date, as "YYYY-MM-DD"; otherwise null.
+• hour24: the hour in 24-hour form (9am → 9, 2pm → 14).
+• minute: 0–59.
 
 Return ONLY valid JSON:
 {
@@ -1895,15 +1967,16 @@ Return ONLY valid JSON:
   "closeChat": false,
   "suggestedScope": null,
   "scheduleCallback": {
-    "clientId": "${profile.clientId}",
-    "clientName": "${profile.name}",
-    "phoneNumber": "10 digits only e.g. 6102345678",
-    "scheduledTimeISO": "ISO8601 UTC datetime e.g. 2026-04-25T19:00:00.000Z",
-    "intentSummary": "one sentence describing why the client needs a callback"
+    "phoneNumber": "10 digits only, e.g. 6102779289",
+    "dayReference": "today | tomorrow | Monday..Friday",
+    "date": "YYYY-MM-DD or null",
+    "hour24": 9,
+    "minute": 0,
+    "intentSummary": "one sentence on why the client needs a callback"
   } | null
 }
-scheduleCallback must be null unless you have a confirmed phone AND time and D is not yet done.
-closeChat must be true ONLY when the conversation is fully complete and should be ended.`;
+Set scheduleCallback ONLY when you have BOTH a usable phone number AND a day + clock time, and no [CALLBACK_SCHEDULED] note exists yet. Otherwise scheduleCallback=null.
+closeChat must be true ONLY when the conversation is fully complete and should end.`;
 
 const IDLE_CHECK_PROMPT = (profile: ClientProfile) =>
   `You are a professional financial services agent at Bob's Mutual Funds handling a live chat.
@@ -2094,6 +2167,9 @@ function taskExpertModel(taskId: string): string {
 // ── Escalation hard-override ───────────────────────────────────────────────
 const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
+// Financial-advice / investment-recommendation requests — must route to a callback
+// with a licensed advisor, not be answered by autopilot.
+const ADVICE_RE = /\b(what|which|any|recommend|suggest|your)\b[^?.!]{0,50}\b(stock|stocks|fund|funds|invest|investment|investments|portfolio|allocation)\b|\b(should i (buy|sell|invest|put|move)|what should i do with|where should i (invest|put)|investment advice|financial advice|best (stock|stocks|fund|funds|investment|investments)|hot (stock|stocks|tip|tips))\b/i;
 const CALLBACK_INTENT_RE = /\b(callback|call back|schedule.*call|phone call|call me|ring me)\b/i;
 // Matches cancel/reschedule of an *existing* callback — must NOT be redirected to the callback scope
 const CANCEL_RESCHEDULE_CALLBACK_RE = /\b(cancel|reschedule|change|move|update)\b.{0,30}\b(callback|call back)\b/i;
@@ -2321,7 +2397,7 @@ export const handler = async (
         systemPrompt = RESEARCHING_PROMPT(profile);
         break;
       case 'callback':
-        systemPrompt = CALLBACK_PROMPT(profile, nowET());
+        systemPrompt = CALLBACK_PROMPT(profile, describeCallbackAvailability(new Date()));
         break;
       case 'idle-check':
         systemPrompt = IDLE_CHECK_PROMPT(profile);
@@ -2341,7 +2417,7 @@ export const handler = async (
     let shouldExitAutopilot = false;
     let suggestedScope: string | null = null;
     let closeChat = false;
-    let scheduleCallback: Record<string, string> | null = null;
+    let scheduleCallback: Record<string, unknown> | null = null;
     let exitMessage: string | null = null;
     let toolsUsed: string[] = [];
 
@@ -2362,7 +2438,7 @@ export const handler = async (
         exitMessage?: string | null;
         suggestedScope?: string | null;
         closeChat?: boolean;
-        scheduleCallback?: Record<string, string> | null;
+        scheduleCallback?: Record<string, unknown> | null;
       }>(result.text);
 
       response = parsed.response ?? '';
@@ -2377,6 +2453,36 @@ export const handler = async (
       response = "I'm having a bit of trouble right now — could you try rephrasing your question?";
     }
 
+    // Callback scope: the LLM only describes the time — the SERVER resolves and
+    // validates it, so we never trust an LLM-computed timestamp. On a bad/past/
+    // out-of-hours time we drop the schedule and ask for a real one, so the agent
+    // never claims a callback was booked when it wasn't.
+    if (scope === 'callback' && scheduleCallback) {
+      const spec = scheduleCallback as Record<string, unknown>;
+      const num = (v: unknown): number | null =>
+        typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v)) ? Number(v) : null);
+      const phone = String(spec.phoneNumber ?? profile.phone ?? '').replace(/\D/g, '').slice(-10);
+      const resolved = resolveCallbackTime({
+        dayReference: typeof spec.dayReference === 'string' ? spec.dayReference : null,
+        date: typeof spec.date === 'string' ? spec.date : null,
+        hour24: num(spec.hour24),
+        minute: num(spec.minute) ?? 0,
+      }, new Date());
+
+      if ('iso' in resolved && phone.length === 10) {
+        scheduleCallback = {
+          clientId: profile.clientId,
+          clientName: profile.name,
+          phoneNumber: phone,
+          scheduledTimeISO: resolved.iso,
+          intentSummary: String(spec.intentSummary ?? 'Client requested a callback'),
+        };
+      } else {
+        scheduleCallback = null;
+        response = callbackTimeAskResponse('error' in resolved ? resolved.error : 'no-time', phone.length !== 10);
+      }
+    }
+
     // Business-rule hard overrides
     if (ESCALATION_RE.test(lastCustomerMsg)) {
       shouldExitAutopilot = true;
@@ -2386,6 +2492,12 @@ export const handler = async (
       shouldExitAutopilot = true;
       suggestedScope = 'callback';
       exitMessage = 'Trade request detected — please handle in the callback scope.';
+    }
+    // Financial-advice requests must route to a callback with a licensed advisor.
+    if (scope !== 'callback' && scope !== 'customer-bot' && ADVICE_RE.test(lastCustomerMsg)) {
+      shouldExitAutopilot = true;
+      suggestedScope = 'callback';
+      exitMessage = 'Financial-advice request — handle in the callback scope.';
     }
 
     console.log(JSON.stringify({
