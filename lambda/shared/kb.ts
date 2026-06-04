@@ -1060,7 +1060,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-fees',
     label: 'Account & fund fees',
-    pages: [],
+    pages: ['research', 'account'],
     priority: 2,
     questions: [
       {
@@ -1093,7 +1093,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-trading',
     label: 'Buying & selling shares',
-    pages: [],
+    pages: ['portfolio', 'research'],
     priority: 1,
     questions: [
       {
@@ -1126,7 +1126,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-cost-basis',
     label: 'Cost basis & tax lots',
-    pages: [],
+    pages: ['account', 'portfolio'],
     priority: 2,
     questions: [
       {
@@ -1159,7 +1159,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-statements',
     label: 'Statements & records',
-    pages: [],
+    pages: ['account'],
     priority: 2,
     questions: [
       {
@@ -1192,7 +1192,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-drip',
     label: 'Dividend reinvestment',
-    pages: [],
+    pages: ['portfolio'],
     priority: 2,
     questions: [
       {
@@ -1225,7 +1225,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-prospectus',
     label: 'Prospectus & disclosures',
-    pages: [],
+    pages: ['research'],
     priority: 3,
     questions: [
       {
@@ -1258,7 +1258,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-inheritance',
     label: 'Inherited accounts',
-    pages: [],
+    pages: ['account'],
     priority: 2,
     questions: [
       {
@@ -1291,7 +1291,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-transfer-in',
     label: 'Transfer an account in',
-    pages: [],
+    pages: ['home'],
     priority: 2,
     questions: [
       {
@@ -1324,7 +1324,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-withdrawals',
     label: 'Withdrawals & distributions',
-    pages: [],
+    pages: ['portfolio', 'account'],
     priority: 1,
     questions: [
       {
@@ -1357,7 +1357,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-account-types',
     label: 'Choosing an account type',
-    pages: [],
+    pages: ['home'],
     priority: 2,
     questions: [
       {
@@ -1390,7 +1390,7 @@ export const KB: KBTopic[] = [
   {
     id: 't-retirement-planning',
     label: 'Planning for retirement',
-    pages: [],
+    pages: ['home', 'research'],
     priority: 2,
     questions: [
       {
