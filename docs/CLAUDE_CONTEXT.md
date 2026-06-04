@@ -37,8 +37,8 @@ chatmaxxing/
 │   ├── execute-task/      Runs approved agent actions (some real DynamoDB, some mock)
 │   ├── generate-acw/      Post-chat wrap-up code + coaching + summary
 │   ├── next-best-response/ Agent response suggestions + autopilot scope hints
-│   ├── predict-intent/    KB topic prediction from page + conversation
-│   ├── predict-questions/ 3 likely next questions from current conversation
+│   ├── predict-intent/    Chat topic pills for the current page (every page now; see kb.ts EXTRA_PAGE_TOPICS)
+│   ├── predict-questions/ Question pills + pre-written answers for a chosen topic
 │   ├── send-agent-message/ Sends a message from agent to customer via Connect
 │   ├── save-transcript/   Writes chat to Sessions DynamoDB table
 │   ├── get-transcripts/   Reads transcripts for a client
@@ -134,6 +134,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 
 | What you're changing | File(s) |
 |---|---|
+| Chat topic/question pills (any page) | `lambda/shared/kb.ts` → `KB` topics + `EXTRA_PAGE_TOPICS` map; page keys come from `pageKeyFromPath` in `customer-app/.../chat/ChatWidget.tsx` |
 | Bot pre-agent behavior | `lambda/autopilot-turn/handler.ts` → `FULL_AUTO_PROMPT` |
 | Self-service page links | `lambda/autopilot-turn/handler.ts` → `SELF_SERVICE_PAGES` |
 | Cross-cutting LLM rules | `lambda/autopilot-turn/handler.ts` → `FORBIDDEN_TOPICS` (affects all 19 tasks) |

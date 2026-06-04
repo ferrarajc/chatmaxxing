@@ -57,6 +57,7 @@ import { StatementsPage } from './components-v2/pages/help/StatementsPage';
 import { TaxDocumentsHelpPage } from './components-v2/pages/help/TaxDocumentsHelpPage';
 import { TradingPage } from './components-v2/pages/help/TradingPage';
 import { WireTransferPage } from './components-v2/pages/help/WireTransferPage';
+import { WithdrawalsPage } from './components-v2/pages/help/WithdrawalsPage';
 
 const FONTS_HREF = 'https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Inter:wght@400;500;600;700&display=swap';
 
@@ -125,6 +126,7 @@ export default function App() {
               <Route path="/help/tax-documents" element={<TaxDocumentsHelpPage />} />
               <Route path="/help/trading" element={<TradingPage />} />
               <Route path="/help/wire-transfer" element={<WireTransferPage />} />
+              <Route path="/help/withdrawals" element={<WithdrawalsPage />} />
             </Routes>
           </main>
           <ChatWidget />

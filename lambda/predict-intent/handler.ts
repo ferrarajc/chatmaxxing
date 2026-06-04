@@ -6,7 +6,7 @@ import {
   ClientProfile,
   jsonResponse,
 } from '../shared/types';
-import { getEligibleTopics } from '../shared/kb';
+import { getEligibleTopics, getUniversalFallbackTopics } from '../shared/kb';
 
 // ─── Lex V2 response builder helpers ──────────────────────────────────────────
 
@@ -181,11 +181,18 @@ async function handleApiMode(
     const page = currentPage ?? 'home';
     const pageDesc = PAGE_DESCRIPTIONS[page] ?? PAGE_DESCRIPTIONS.home;
 
-    // Filter KB to topics eligible for this page + client's account types
-    const eligible = getEligibleTopics(page, accountTypes).map(t => t.label);
+    // Filter KB to topics eligible for this page + client's account types.
+    // If nothing matches (e.g. a SEP page viewed by a non-SEP client), fall back
+    // to a few universal topics so the page never shows an empty pill set.
+    let eligible = getEligibleTopics(page, accountTypes).map(t => t.label);
+    if (eligible.length === 0) {
+      eligible = getUniversalFallbackTopics().map(t => t.label);
+    }
     const fallback = eligible.slice(0, 4);
 
-    if (eligible.length === 0) {
+    // With 4 or fewer eligible topics there's nothing for the model to rank —
+    // return the curated set directly. This covers most sub-pages (no LLM call).
+    if (eligible.length <= 4) {
       return jsonResponse(200, { topics: fallback, somethingElse: true });
     }
 

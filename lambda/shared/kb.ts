@@ -1052,17 +1052,473 @@ export const KB: KBTopic[] = [
     ],
   },
 
+  // ── Expansion topics (surfaced on sub-pages via EXTRA_PAGE_TOPICS) ─────────
+  // These carry pages: [] on purpose — they appear only on the pages the
+  // EXTRA_PAGE_TOPICS map assigns them to, leaving the four legacy top-level
+  // pages (home/portfolio/research/account) exactly as they were.
+
+  {
+    id: 't-fees',
+    label: 'Account & fund fees',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-fee-001',
+        text: 'Does Bob\'s charge account maintenance fees?',
+        answer: "Bob's Mutual Funds charges no account maintenance fees, no annual fees, and no commissions to buy or sell BobsFunds mutual funds. The only ongoing cost is each fund's expense ratio, which is deducted from the fund's assets automatically. A few specialized services, like outgoing wire transfers, carry a small fee.",
+        link: { text: 'See the full fee schedule', url: '/help/fees' },
+      },
+      {
+        id: 'q-fee-002',
+        text: 'What is an expense ratio and how much do I pay?',
+        answer: "An expense ratio is the annual percentage a fund charges to cover its operating costs, taken from fund assets rather than billed to you directly. BobsFunds index funds run as low as 0.03%, while actively managed funds range up to about 0.25%. On a $10,000 holding, a 0.10% ratio costs roughly $10 per year.",
+        link: { text: 'Compare fund expense ratios', url: '/research' },
+      },
+      {
+        id: 'q-fee-003',
+        text: 'Are there fees to move money in or out?',
+        answer: "ACH transfers to and from your linked bank account are free and typically settle in 1–3 business days. Outgoing domestic wire transfers carry a $25 fee for same-day delivery. There is no fee to sell BobsFunds shares or to bring assets in from another firm.",
+        link: { text: 'Learn about account fees', url: '/help/fees' },
+      },
+      {
+        id: 'q-fee-004',
+        text: 'Is there a fee to close my account?',
+        answer: "No — there is no account closing fee at Bob's Mutual Funds. You can sell your holdings and transfer the proceeds to your bank by ACH at no cost, or move your account to another firm. Keep in mind that selling shares in a taxable account may have tax consequences.",
+        link: { text: 'Review the fee schedule', url: '/help/fees' },
+      },
+    ],
+  },
+
+  {
+    id: 't-trading',
+    label: 'Buying & selling shares',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-trade-001',
+        text: 'How do I buy more shares of a fund?',
+        answer: "Open the fund from the Research page and select 'Buy,' then choose the account to fund the purchase and enter a dollar amount. Mutual fund orders are priced at the fund's net asset value (NAV) at the next market close, 4:00 PM Eastern. Orders placed before the close get that day's price; later orders get the next business day's.",
+        link: { text: 'Browse funds to buy', url: '/research' },
+      },
+      {
+        id: 'q-trade-002',
+        text: 'When does my mutual fund order execute?',
+        answer: "Mutual funds trade once per day at their net asset value, calculated after the market closes at 4:00 PM Eastern. A buy or sell placed before 4:00 PM on a business day receives that day's closing price; orders after the cutoff fill at the next business day's price. You won't see the final price until after the close.",
+        link: { text: 'How trading works', url: '/help/trading' },
+      },
+      {
+        id: 'q-trade-003',
+        text: 'Can I place a trade through this chat?',
+        answer: "For your security, trades aren't processed in chat — but placing one yourself takes about a minute. Open the fund on the Research page and select 'Buy,' or for a sale use the holding's menu on your Portfolio page. If you'd rather have help, I can connect you with a licensed representative.",
+        link: { text: 'Place a trade', url: '/help/place-trade' },
+      },
+      {
+        id: 'q-trade-004',
+        text: 'How do I sell shares and get the cash?',
+        answer: "From your Portfolio page, open the holding you want to sell, choose 'Sell,' and enter a dollar or share amount. The sale executes at that day's closing NAV and proceeds settle in about 1 business day, after which you can transfer them to your bank. In a taxable account, a sale may create a capital gain or loss.",
+        link: { text: 'Learn about trading', url: '/help/trading' },
+      },
+    ],
+  },
+
+  {
+    id: 't-cost-basis',
+    label: 'Cost basis & tax lots',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-cb-001',
+        text: 'What is cost basis and why does it matter?',
+        answer: "Cost basis is what you originally paid for an investment, including reinvested dividends, and it determines your taxable gain or loss when you sell. A higher basis means a smaller taxable gain. Bob's tracks cost basis automatically for shares bought in your taxable accounts.",
+        link: { text: 'Learn about cost basis', url: '/help/cost-basis' },
+      },
+      {
+        id: 'q-cb-002',
+        text: 'Which cost basis method does Bob\'s use?',
+        answer: "Bob's Mutual Funds defaults to the average cost method for mutual funds, which averages the price of all your shares in a fund. You may instead elect specific-lot or FIFO (first-in, first-out) identification before you sell, which can help you manage the tax outcome. You can view or change your method on the Tax Documents page.",
+        link: { text: 'Cost basis details', url: '/help/cost-basis' },
+      },
+      {
+        id: 'q-cb-003',
+        text: 'Does cost basis apply to my IRA?',
+        answer: "Cost basis matters for taxable accounts, where sales are taxed. Inside an IRA you don't owe tax when you buy or sell within the account, so cost basis isn't reported — your taxes are based instead on the distributions you take out. This is one reason IRAs are called tax-advantaged.",
+        link: { text: 'Learn about cost basis', url: '/help/cost-basis' },
+      },
+      {
+        id: 'q-cb-004',
+        text: 'Where do I find my cost basis information?',
+        answer: "Your cost basis and unrealized gains are on the Tax Documents page, and realized gains and losses for taxable accounts are reported each year on Form 1099-B. You can download a detailed gain/loss report there at any time. For shares transferred in from another firm, confirm their basis came over so the record is complete.",
+        link: { text: 'View tax documents', url: '/account/tax-documents' },
+      },
+    ],
+  },
+
+  {
+    id: 't-statements',
+    label: 'Statements & records',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-stmt-001',
+        text: 'Where can I find my account statements?',
+        answer: "Monthly and quarterly statements are available on the Statements page, going back at least 7 years. They're posted within the first few business days of each period, and you'll get an email when a new one is ready. Any statement can be downloaded as a PDF.",
+        link: { text: 'View your statements', url: '/help/statements' },
+      },
+      {
+        id: 'q-stmt-002',
+        text: 'How often are statements generated?',
+        answer: "You'll receive a statement every quarter at minimum, plus a monthly statement for any month with activity such as a trade, contribution, or distribution. A year-end statement summarizes the full year. Tax forms like the 1099 are delivered separately each tax season.",
+        link: { text: 'See the statement schedule', url: '/help/statements' },
+      },
+      {
+        id: 'q-stmt-003',
+        text: 'Can I switch to paperless statements?',
+        answer: "Yes — paperless delivery is the default, and you can confirm or change the preference in your Account communication settings. With paperless, statements and tax documents post online with an email notification and no mailed copy. You can switch back to paper at any time.",
+        link: { text: 'Manage statement delivery', url: '/help/statements' },
+      },
+      {
+        id: 'q-stmt-004',
+        text: 'How do I get a statement for a loan application?',
+        answer: "You can download any monthly, quarterly, or year-end statement as an official PDF from the Statements page to share with a lender. If you need a specially formatted verification-of-assets letter, contact us and we can prepare one. Statements show your balances, holdings, and activity for the period.",
+        link: { text: 'Download a statement', url: '/help/statements' },
+      },
+    ],
+  },
+
+  {
+    id: 't-drip',
+    label: 'Dividend reinvestment',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-drip-001',
+        text: 'What is dividend reinvestment (DRIP)?',
+        answer: "A dividend reinvestment plan (DRIP) automatically uses the dividends and capital gains your funds pay to buy more shares, instead of paying them out as cash. This keeps your money compounding, and it happens with no transaction fee. You can turn it on or off for each holding.",
+        link: { text: 'Manage dividend reinvestment', url: '/help/drip' },
+      },
+      {
+        id: 'q-drip-002',
+        text: 'How do I turn dividend reinvestment on or off?',
+        answer: "On your Portfolio page, open a holding and toggle 'Reinvest dividends' on or off — the setting applies to all future distributions for that fund. With it off, dividends are deposited as cash in your account instead. A change made before a fund's distribution date takes effect for that distribution.",
+        link: { text: 'Set up DRIP', url: '/help/drip' },
+      },
+      {
+        id: 'q-drip-003',
+        text: 'Are reinvested dividends taxable?',
+        answer: "In a taxable account, dividends are taxable in the year they're paid even if you reinvest them — reinvesting doesn't defer the tax. The reinvested amount is added to your cost basis, so you aren't taxed on it again when you sell. Inside an IRA, reinvested dividends aren't taxed as long as they stay in the account.",
+        link: { text: 'Learn about DRIP', url: '/help/drip' },
+      },
+      {
+        id: 'q-drip-004',
+        text: 'Does reinvesting count toward my contribution limit?',
+        answer: "No — reinvested dividends and capital gains are earnings generated inside your account, not new contributions, so they don't count against your annual IRA contribution limit. Only new money you add from outside counts toward the limit. This lets your IRA keep compounding without limit concerns.",
+        link: { text: 'Learn about reinvestment', url: '/help/drip' },
+      },
+    ],
+  },
+
+  {
+    id: 't-prospectus',
+    label: 'Prospectus & disclosures',
+    pages: [],
+    priority: 3,
+    questions: [
+      {
+        id: 'q-pro-001',
+        text: 'What is a fund prospectus?',
+        answer: "A prospectus is the official document describing a fund's objective, strategy, risks, holdings, fees, and historical performance. Reviewing it is the best way to understand exactly what you're investing in before you buy. Every BobsFunds fund's prospectus is available from its fund page.",
+        link: { text: 'Find a fund prospectus', url: '/help/prospectus' },
+      },
+      {
+        id: 'q-pro-002',
+        text: 'Where can I download a fund\'s prospectus?',
+        answer: "Open any fund from the Research page and you'll find a link to download its current prospectus and fact sheet as a PDF. These are updated at least annually and whenever there's a material change. The summary prospectus gives you the key facts in just a few pages.",
+        link: { text: 'Browse funds', url: '/research' },
+      },
+      {
+        id: 'q-pro-003',
+        text: 'What should I look for in a prospectus?',
+        answer: "Focus on the fund's investment objective, its principal risks, the expense ratio, and its long-term performance against a benchmark. The prospectus also covers minimum investments and how distributions are paid. If anything is unclear, those are exactly the points to raise with a financial advisor.",
+        link: { text: 'Read about prospectuses', url: '/help/prospectus' },
+      },
+      {
+        id: 'q-pro-004',
+        text: 'How is a fact sheet different from a prospectus?',
+        answer: "A prospectus is the comprehensive legal document covering a fund's full strategy, risks, and fees, while a fact sheet is a one- or two-page snapshot of performance, top holdings, and key statistics. The fact sheet is great for a quick look; the prospectus is what to read before investing. Both are on each fund's page.",
+        link: { text: 'View fund details', url: '/research' },
+      },
+    ],
+  },
+
+  {
+    id: 't-inheritance',
+    label: 'Inherited accounts',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-inh-001',
+        text: 'What happens to an account when the owner passes away?',
+        answer: "When an account owner passes away, the assets transfer to the named beneficiaries, generally avoiding probate. Our dedicated specialist team guides each beneficiary through claiming their portion, and the steps differ for a spouse versus a non-spouse. We're sorry for any loss — this is handled with care, and isn't something to navigate alone in chat.",
+        link: { text: 'Inherited account guide', url: '/help/inheritance' },
+      },
+      {
+        id: 'q-inh-002',
+        text: 'What are the rules for an inherited IRA?',
+        answer: "Under the SECURE Act, most non-spouse beneficiaries must empty an inherited IRA within 10 years, while a spouse has more options, including treating it as their own. Required distributions and tax treatment depend on your relationship to the owner and their age. A specialist or tax advisor can map out the right approach.",
+        link: { text: 'Learn about inherited IRAs', url: '/help/inheritance' },
+      },
+      {
+        id: 'q-inh-003',
+        text: 'How do I claim an account I\'ve inherited?',
+        answer: "Start by notifying us so a specialist can verify the beneficiary designation and send the required paperwork, typically a death certificate and your identification. The specialist sets up an inherited (beneficiary) account and walks you through the distribution options. It's a guided process — you won't have to figure it out on your own.",
+        link: { text: 'Begin an inheritance claim', url: '/help/inheritance' },
+      },
+      {
+        id: 'q-inh-004',
+        text: 'Will I owe taxes on an inherited account?',
+        answer: "It depends on the account type: distributions from an inherited Traditional IRA are taxed as ordinary income, while qualified withdrawals from an inherited Roth IRA are generally tax-free. Inherited taxable accounts often receive a step-up in cost basis to the date-of-death value. Because the rules are nuanced, we recommend a tax professional.",
+        link: { text: 'Inheritance and taxes', url: '/help/inheritance' },
+      },
+    ],
+  },
+
+  {
+    id: 't-transfer-in',
+    label: 'Transfer an account in',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-tin-001',
+        text: 'How do I transfer an account from another firm?',
+        answer: "You can move an existing brokerage or IRA to Bob's through an ACAT transfer: open the matching account type here, then submit a transfer request with a recent statement from your current firm. Most transfers finish in 5–7 business days, and investments can often move 'in kind' without being sold. Bob's charges no fee to bring assets in.",
+        link: { text: 'Start an account transfer', url: '/help/account-transfer' },
+      },
+      {
+        id: 'q-tin-002',
+        text: 'Will transferring trigger taxes?',
+        answer: "A direct transfer between the same account types — IRA to IRA, or taxable to taxable — is not a taxable event, because you never take possession of the funds. Moving investments 'in kind' also preserves your original cost basis. Selling positions before transferring, by contrast, could create a taxable gain in a non-retirement account.",
+        link: { text: 'Learn about transfers', url: '/help/account-transfer' },
+      },
+      {
+        id: 'q-tin-003',
+        text: 'Can I transfer investments without selling them?',
+        answer: "In most cases yes — an 'in-kind' transfer moves your existing positions to Bob's intact, so you stay invested the whole time. If your current firm holds funds we can't carry, those specific positions may need to be sold, which the transfer paperwork will flag. Cash and compatible holdings move smoothly.",
+        link: { text: 'Transfer details', url: '/help/account-transfer' },
+      },
+      {
+        id: 'q-tin-004',
+        text: 'How long does an account transfer take?',
+        answer: "A standard ACAT transfer usually completes within 5–7 business days once both firms have your request. Transfers involving non-standard assets or paper certificates can take longer. You'll be able to track the status, and your old account stays usable until the transfer finalizes.",
+        link: { text: 'Start a transfer', url: '/help/account-transfer' },
+      },
+    ],
+  },
+
+  {
+    id: 't-withdrawals',
+    label: 'Withdrawals & distributions',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-wd-001',
+        text: 'How do I withdraw money from my account?',
+        answer: "First sell the holdings you need if the cash isn't already available, then transfer the proceeds to your linked bank account. ACH transfers are free and arrive in 1–3 business days; same-day wires are available for a $25 fee. From a retirement account, a withdrawal is a distribution and may have tax implications.",
+        link: { text: 'How to take money out', url: '/help/withdrawals' },
+      },
+      {
+        id: 'q-wd-002',
+        text: 'How long until a withdrawal reaches my bank?',
+        answer: "Once the cash is settled in your account, a free ACH transfer typically reaches your bank in 1–3 business days, while a wire sent before the early-afternoon cutoff arrives the same business day for a $25 fee. If you just sold shares, the proceeds need about 1 business day to settle before they can leave. Timing the sale first avoids surprises.",
+        link: { text: 'Withdrawal timing & options', url: '/help/withdrawals' },
+      },
+      {
+        id: 'q-wd-003',
+        text: 'Are there limits on how much I can withdraw?',
+        answer: "There's no Bob's-imposed cap on withdrawing your own available cash, though funds from a recent sale must settle (about 1 business day) before they can leave. Your linked bank may apply a per-transfer ACH limit, which you can see at setup. Retirement accounts follow distribution rules rather than dollar limits.",
+        link: { text: 'Learn about withdrawals', url: '/help/withdrawals' },
+      },
+      {
+        id: 'q-wd-004',
+        text: 'Will withdrawing from my IRA be taxed?',
+        answer: "A withdrawal from a Traditional IRA is generally taxed as ordinary income, and if you're under 59½ a 10% early-withdrawal penalty may also apply. Qualified Roth IRA withdrawals are tax-free. Because retirement withdrawals can affect your tax bill, it's worth planning the timing with a tax professional.",
+        link: { text: 'IRA distribution basics', url: '/help/withdrawals' },
+      },
+    ],
+  },
+
+  {
+    id: 't-account-types',
+    label: 'Choosing an account type',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-at-001',
+        text: 'What account types does Bob\'s offer?',
+        answer: "Bob's Mutual Funds offers Roth IRAs and Traditional IRAs for retirement, SEP-IRAs for self-employed savers, and individual taxable brokerage accounts for general investing. Each has its own tax treatment and contribution rules. You can open any of them online in a few minutes.",
+        link: { text: 'Open an account', url: '/open-account' },
+      },
+      {
+        id: 'q-at-002',
+        text: 'Should I open a Roth or Traditional IRA?',
+        answer: "Choose a Roth IRA if you expect the same or a higher tax bracket in retirement — you pay tax now and withdraw tax-free later. A Traditional IRA may suit you if you want a deduction today and expect a lower bracket later. Many investors use both over time to diversify their tax exposure.",
+        link: { text: 'Compare IRA options', url: '/resources/roth-ira' },
+      },
+      {
+        id: 'q-at-003',
+        text: 'What is a taxable brokerage account for?',
+        answer: "A taxable (individual) account has no contribution limits and no withdrawal restrictions, making it ideal for goals beyond retirement or for investing above your IRA limits. You pay tax on dividends and on gains when you sell, but you keep full access to your money anytime. It pairs well with a maxed-out IRA.",
+        link: { text: 'Open an account', url: '/open-account' },
+      },
+      {
+        id: 'q-at-004',
+        text: 'Can I open more than one account?',
+        answer: "Yes — you can hold several account types at Bob's, such as a Roth IRA for retirement and a taxable account for other goals, all under one login. Your combined IRA contributions still share the annual limit, but taxable accounts have no cap. Opening an additional account takes just a few minutes.",
+        link: { text: 'Open another account', url: '/open-account' },
+      },
+    ],
+  },
+
+  {
+    id: 't-retirement-planning',
+    label: 'Planning for retirement',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-rp-001',
+        text: 'How much should I be saving for retirement?',
+        answer: "A common guideline is to save about 15% of your pre-tax income each year, including any employer match, though the right number depends on your age, goals, and when you start. The retirement calculator lets you test different contribution levels against a target. The earlier you start, the more compounding does the work for you.",
+        link: { text: 'Try the retirement calculator', url: '/resources/retirement-calculator' },
+      },
+      {
+        id: 'q-rp-002',
+        text: 'How does the retirement calculator work?',
+        answer: "Enter your age, current savings, monthly contribution, and target retirement age, and the calculator projects your balance under a range of growth assumptions. Adjust the inputs to see how saving more or retiring later changes the outcome. It's a planning estimate, not a guarantee, but it's a great way to set a target.",
+        link: { text: 'Open the calculator', url: '/resources/retirement-calculator' },
+      },
+      {
+        id: 'q-rp-003',
+        text: 'Am I on track to retire comfortably?',
+        answer: "A simple benchmark is to have roughly 1x your salary saved by 30, 3x by 40, and 6x by 50, but your real target depends on the lifestyle you're planning for. Run your numbers through the retirement calculator to compare your projection against your goal. If there's a gap, saving more or adjusting your timeline can close it.",
+        link: { text: 'Check your projection', url: '/resources/retirement-calculator' },
+      },
+      {
+        id: 'q-rp-004',
+        text: 'How should my investments shift as I near retirement?',
+        answer: "Many investors gradually move from growth-focused funds toward more bonds and income as retirement nears, to soften the impact of a market drop right before they need the money. How much to shift depends on your risk tolerance and other income sources. A target glide path or a chat with an advisor can help you set the mix.",
+        link: { text: 'Explore bond fund options', url: '/research' },
+      },
+    ],
+  },
+
 ];
 
 export function getKBTopicByLabel(label: string): KBTopic | undefined {
   return KB.find(t => t.label === label);
 }
 
+// Curated topic lists for pages beyond the four legacy top-level pages.
+// Order is priority order (used as the fallback when there are ≤4 topics).
+// Keys are canonical page keys (see pageKeyFromPath in the customer app —
+// dynamic segments like a fund ticker are normalized, e.g. 'research/fund').
+// The four legacy pages (home/portfolio/research/account) are intentionally
+// omitted here so their existing behavior via the `pages` field is unchanged.
+export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
+  // Account sub-pages
+  'account/beneficiaries': ['t-beneficiary', 't-estate', 't-account-access', 't-inheritance'],
+  'account/auto-invest':   ['t-auto-invest', 't-ira-limits', 't-rebalancing'],
+  'account/rmd':           ['t-rmd', 't-rmd-setup', 't-tax-docs'],
+  'account/tax-documents': ['t-tax-docs', 't-cost-basis', 't-statements'],
+  'account/detail':        ['t-balance', 't-transactions', 't-fund-perf', 't-statements'],
+
+  // Research sub-pages
+  'research/fund':         ['t-fund-perf', 't-expense-ratios', 't-historical-returns', 't-prospectus'],
+  'research/fund/buy':     ['t-trading', 't-expense-ratios', 't-auto-invest', 't-fees'],
+
+  // Open an account
+  'open-account':          ['t-account-types', 't-open-account', 't-ira-limits', 't-roth-strategies'],
+
+  // Resources pages
+  'resources/ira-contribution-limits': ['t-ira-limits', 't-roth-strategies', 't-tax-deductions'],
+  'resources/roth-ira':                ['t-roth-strategies', 't-ira-limits', 't-rollover'],
+  'resources/sep-ira':                 ['t-sep-limits', 't-sep-vs-solo', 't-self-employed', 't-account-types'],
+  'resources/sep-ira-vs-solo':         ['t-sep-vs-solo', 't-sep-limits', 't-self-employed', 't-account-types'],
+  'resources/tax-efficient-investing': ['t-tax-efficient', 't-tax-deductions', 't-fixed-income'],
+  'resources/estate-planning':         ['t-estate', 't-beneficiary', 't-inheritance'],
+  'resources/self-employed-retirement':['t-self-employed', 't-sep-limits', 't-sep-vs-solo', 't-retirement-planning'],
+  'resources/tax-deductions':          ['t-tax-deductions', 't-ira-limits', 't-tax-efficient'],
+  'resources/rollover':                ['t-rollover', 't-transfer-in', 't-ira-limits'],
+  'resources/retirement-calculator':   ['t-retirement-planning', 't-rmd', 't-ira-limits'],
+
+  // Library
+  'library':               ['t-compare-funds', 't-index-vs-active', 't-roth-strategies', 't-tax-efficient'],
+  'library/bob-pod':       ['t-compare-funds', 't-index-vs-active', 't-roth-strategies'],
+  'library/guide':         ['t-index-vs-active', 't-tax-efficient', 't-rebalancing'],
+  'library/opinion':       ['t-growth-vs-index', 't-index-vs-active', 't-esg'],
+
+  // Help pages
+  'help/account-access':   ['t-account-access', 't-security', 't-contact'],
+  'help/account-transfer': ['t-transfer-in', 't-rollover', 't-account-types'],
+  'help/beneficiary':      ['t-beneficiary', 't-estate', 't-inheritance'],
+  'help/contact':          ['t-contact', 't-callback', 't-security'],
+  'help/cost-basis':       ['t-cost-basis', 't-tax-docs', 't-statements'],
+  'help/drip':             ['t-drip', 't-auto-invest', 't-fund-perf'],
+  'help/estate-planning':  ['t-estate', 't-beneficiary', 't-inheritance'],
+  'help/fees':             ['t-fees', 't-expense-ratios', 't-trading'],
+  'help/fund-performance': ['t-fund-perf', 't-historical-returns', 't-compare-funds'],
+  'help/inheritance':      ['t-inheritance', 't-beneficiary', 't-estate'],
+  'help/ira-limits':       ['t-ira-limits', 't-roth-strategies', 't-rollover'],
+  'help/open-account':     ['t-account-types', 't-open-account', 't-ira-limits'],
+  'help/ownership-form':   ['t-account-access', 't-inheritance', 't-beneficiary'],
+  'help/place-trade':      ['t-trading', 't-fund-perf', 't-fees'],
+  'help/prospectus':       ['t-prospectus', 't-expense-ratios', 't-fund-perf'],
+  'help/rmd-guide':        ['t-rmd', 't-rmd-setup', 't-tax-docs'],
+  'help/rollover-guide':   ['t-rollover', 't-transfer-in', 't-ira-limits'],
+  'help/sip':              ['t-auto-invest', 't-ira-limits', 't-rebalancing'],
+  'help/statements':       ['t-statements', 't-tax-docs', 't-cost-basis'],
+  'help/tax-documents':    ['t-tax-docs', 't-cost-basis', 't-statements'],
+  'help/trading':          ['t-trading', 't-fees', 't-fund-perf'],
+  'help/withdrawals':      ['t-withdrawals', 't-transfer-in', 't-fees'],
+  'help/wire-transfer':    ['t-withdrawals', 't-transfer-in', 't-fees'],
+};
+
 export function getEligibleTopics(page: string, accountTypes: string[]): KBTopic[] {
-  return KB.filter(t =>
-    t.pages.includes(page) &&
-    (!t.accountTypes || t.accountTypes.some(at => accountTypes.includes(at))),
-  );
+  const gate = (t: KBTopic) => !t.accountTypes || t.accountTypes.some(at => accountTypes.includes(at));
+
+  // Curated topics for sub-pages (preserves priority order).
+  const extraIds = EXTRA_PAGE_TOPICS[page] ?? [];
+  const fromExtra = extraIds
+    .map(id => KB.find(t => t.id === id))
+    .filter((t): t is KBTopic => !!t);
+
+  // Legacy `pages`-field topics (unchanged behavior for the four top-level pages).
+  const fromPages = KB.filter(t => t.pages.includes(page));
+
+  // Merge, curated first, de-duplicated by id, then apply the account-type gate.
+  const seen = new Set<string>();
+  const merged: KBTopic[] = [];
+  for (const t of [...fromExtra, ...fromPages]) {
+    if (!seen.has(t.id)) { seen.add(t.id); merged.push(t); }
+  }
+  return merged.filter(gate);
+}
+
+// Universal, ungated topics used as a last-resort fallback so no page ever
+// shows an empty topic list, regardless of the client's account mix.
+const UNIVERSAL_FALLBACK_IDS = ['t-callback', 't-contact', 't-fees', 't-open-account'];
+export function getUniversalFallbackTopics(): KBTopic[] {
+  return UNIVERSAL_FALLBACK_IDS
+    .map(id => KB.find(t => t.id === id))
+    .filter((t): t is KBTopic => !!t);
 }
 
 export function getEligibleQuestions(topic: KBTopic, accountTypes: string[]): KBQuestion[] {
