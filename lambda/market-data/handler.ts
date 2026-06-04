@@ -35,12 +35,47 @@ interface MarketDataPayload {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const FUND_MAP = [
+  // ── Original lineup ──
   { ticker: 'BF500',  realSymbol: 'VOO',  expenseRatio: 0.03 },
   { ticker: 'BFGR',  realSymbol: 'VUG',  expenseRatio: 0.04 },
   { ticker: 'BFBI',  realSymbol: 'BND',  expenseRatio: 0.03 },
   { ticker: 'BFIN',  realSymbol: 'VXUS', expenseRatio: 0.07 },
   { ticker: 'BFESG', realSymbol: 'ESGV', expenseRatio: 0.09 },
   { ticker: 'BFST',  realSymbol: 'VGSH', expenseRatio: 0.04 },
+  // ── US Equity — broad market & style box ──
+  { ticker: 'BFTM',  realSymbol: 'VTI',  expenseRatio: 0.03 },
+  { ticker: 'BFLCV', realSymbol: 'VTV',  expenseRatio: 0.04 },
+  { ticker: 'BFMC',  realSymbol: 'VO',   expenseRatio: 0.04 },
+  { ticker: 'BFMCV', realSymbol: 'VOE',  expenseRatio: 0.07 },
+  { ticker: 'BFMCG', realSymbol: 'VOT',  expenseRatio: 0.07 },
+  { ticker: 'BFSC',  realSymbol: 'VB',   expenseRatio: 0.05 },
+  { ticker: 'BFSCV', realSymbol: 'VBR',  expenseRatio: 0.07 },
+  { ticker: 'BFSCG', realSymbol: 'VBK',  expenseRatio: 0.07 },
+  { ticker: 'BFDGA', realSymbol: 'VIG',  expenseRatio: 0.05 },
+  { ticker: 'BFHDY', realSymbol: 'VYM',  expenseRatio: 0.06 },
+  // ── Sector Equity — eleven GICS sectors ──
+  { ticker: 'BFTEC', realSymbol: 'VGT',  expenseRatio: 0.09 },
+  { ticker: 'BFHLT', realSymbol: 'VHT',  expenseRatio: 0.09 },
+  { ticker: 'BFFIN', realSymbol: 'VFH',  expenseRatio: 0.09 },
+  { ticker: 'BFDIS', realSymbol: 'VCR',  expenseRatio: 0.09 },
+  { ticker: 'BFSTP', realSymbol: 'VDC',  expenseRatio: 0.09 },
+  { ticker: 'BFIND', realSymbol: 'VIS',  expenseRatio: 0.09 },
+  { ticker: 'BFENE', realSymbol: 'VDE',  expenseRatio: 0.09 },
+  { ticker: 'BFMAT', realSymbol: 'VAW',  expenseRatio: 0.09 },
+  { ticker: 'BFCOM', realSymbol: 'VOX',  expenseRatio: 0.09 },
+  { ticker: 'BFUTL', realSymbol: 'VPU',  expenseRatio: 0.09 },
+  { ticker: 'BFREI', realSymbol: 'VNQ',  expenseRatio: 0.13 },
+  // ── International — developed, emerging, regional ──
+  { ticker: 'BFDEV', realSymbol: 'VEA',  expenseRatio: 0.05 },
+  { ticker: 'BFEMG', realSymbol: 'VWO',  expenseRatio: 0.08 },
+  { ticker: 'BFEUR', realSymbol: 'VGK',  expenseRatio: 0.09 },
+  { ticker: 'BFPAC', realSymbol: 'VPL',  expenseRatio: 0.09 },
+  // ── Fixed Income — Treasury & corporate ladders ──
+  { ticker: 'BFITT', realSymbol: 'VGIT', expenseRatio: 0.04 },
+  { ticker: 'BFLTT', realSymbol: 'VGLT', expenseRatio: 0.04 },
+  { ticker: 'BFSTC', realSymbol: 'VCSH', expenseRatio: 0.04 },
+  { ticker: 'BFITC', realSymbol: 'VCIT', expenseRatio: 0.04 },
+  { ticker: 'BFLTC', realSymbol: 'VCLT', expenseRatio: 0.04 },
 ] as const;
 
 const INDEX_MAP = [
