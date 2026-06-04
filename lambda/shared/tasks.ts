@@ -110,7 +110,7 @@ export const TASKS: Task[] = [
   {
     id: 'add-account-access',
     name: 'Add Authorized Account User',
-    description: 'Grant another person access to the client\'s account — full trading access or view-only.',
+    description: 'Grant another person access to the client\'s account — view-only, limited, or full access.',
     keywords: ['add access', 'authorized user', 'account access', 'give access', 'add someone', 'add person', 'view-only', 'joint', 'shared access', 'grant access'],
     fields: [
       {
@@ -130,9 +130,9 @@ export const TASKS: Task[] = [
       {
         key: 'accessLevel',
         label: 'Access level',
-        question: 'What level of access should they have? Options are: Full trading access (can buy/sell), View-only (can see balances but not trade), or Limited (can manage profile but not trade).',
+        question: 'What level of access should they have? Options are: View-only (can see the account but not transact), Limited access (can trade and move money back to you, but not change ownership, beneficiaries, or open/close accounts), or Full access (complete authority, including withdrawals to outside accounts and closing the account).',
         type: 'enum',
-        options: ['Full trading', 'View-only', 'Limited'],
+        options: ['View-only', 'Limited access', 'Full access'],
         required: true,
       },
     ],
