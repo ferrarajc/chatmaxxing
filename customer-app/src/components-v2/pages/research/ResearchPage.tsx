@@ -86,20 +86,20 @@ const td: React.CSSProperties = {
 
 function FundTableRow({ row }: { row: FundRow }) {
   const { fund } = row;
-  const [hover, setHover] = useState(false);
+  const [nameHover, setNameHover] = useState(false);
   return (
-    <tr
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{ background: hover ? theme.color.surfaceMuted : 'transparent', transition: 'background .12s' }}
-    >
-      <td style={{ ...td, textAlign: 'left' }}>
+    <tr>
+      <td
+        style={{ ...td, textAlign: 'left', cursor: 'pointer', background: nameHover ? theme.color.surfaceMuted : 'transparent', transition: 'background .12s' }}
+        onMouseEnter={() => setNameHover(true)}
+        onMouseLeave={() => setNameHover(false)}
+      >
         <Link
           to={`/research/fund/${fund.ticker}`}
           style={{ textDecoration: 'none', display: 'block' }}
         >
           <span style={{
-            fontWeight: 600, fontSize: 14, color: hover ? theme.color.primary : theme.color.text,
+            fontWeight: 600, fontSize: 14, color: nameHover ? theme.color.primary : theme.color.text,
             fontFamily: theme.font.serif, letterSpacing: '-0.01em',
           }}>
             {fund.name}
@@ -135,7 +135,7 @@ function FundTableRow({ row }: { row: FundRow }) {
             fontSize: 12, fontWeight: 600, color: theme.color.primary,
             border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.sm,
             padding: '5px 12px', textDecoration: 'none', whiteSpace: 'nowrap',
-            background: hover ? theme.color.surface : 'transparent',
+            background: 'transparent',
           }}
         >
           Buy →
