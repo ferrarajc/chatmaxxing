@@ -411,7 +411,13 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       useAgentStore.getState().setAgentConnected(true);
       const config = agent.getConfiguration();
       console.info('[Connect] agent config — name:', config.name, '| username:', config.username);
-      useAgentStore.getState().setAgentName(config.name || agent.getName());
+      const rawName = (config.name || agent.getName() || '').trim();
+      const agentDisplayName = rawName.split(/\s+/).length >= 2
+        ? rawName
+        : (config.username || '').split(/[-_.@]/).filter(Boolean)
+            .map((p: string) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+            .join(' ') || rawName;
+      useAgentStore.getState().setAgentName(agentDisplayName);
       useAgentStore.getState().setAgentUsername(config.username || '');
 
       // Sync on (re-)init
