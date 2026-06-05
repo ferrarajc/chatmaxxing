@@ -10,6 +10,7 @@ interface Props {
   ccpButtonRef?: React.RefObject<HTMLButtonElement | null>;
   uiMode: UiMode;
   onModeChange: (mode: UiMode) => void;
+  onOpenLoginPopup: () => void;
 }
 
 const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
@@ -19,7 +20,7 @@ const UI_MODES: { id: UiMode; label: string; desc: string }[] = [
   { id: 'focusing',    label: 'Focusing',     desc: 'Single-chat deep-support view' },
 ];
 
-export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChange }: Props) {
+export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChange, onOpenLoginPopup }: Props) {
   const { agentStatus, setAgentStatus, dailyBonus, agentConnected, agentName, agentUsername } = useAgentStore();
 
   const initials = (() => {
@@ -190,7 +191,7 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
           </div>
         ) : (
           <button
-            onClick={() => window.open(import.meta.env.VITE_CCP_URL as string, 'ConnectLogin', 'width=430,height=600,left=200,top=100')}
+            onClick={onOpenLoginPopup}
             title="Click to sign in"
             style={{ fontSize: 17, fontWeight: 500, color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >

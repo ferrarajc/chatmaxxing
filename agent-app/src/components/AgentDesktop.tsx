@@ -5,10 +5,17 @@ import { TopBar } from './TopBar';
 
 const CCP_URL = import.meta.env.VITE_CCP_URL as string;
 
+let loginPopupRef: Window | null = null;
+
+export function openLoginPopup() {
+  if (loginPopupRef && !loginPopupRef.closed) {
+    loginPopupRef.focus();
+    return;
+  }
+  loginPopupRef = window.open(CCP_URL, 'ConnectLogin', 'width=430,height=600,left=200,top=100');
+}
+
 function LoginOverlay() {
-  const handleSignIn = () => {
-    window.open(CCP_URL, 'ConnectLogin', 'width=430,height=600,left=200,top=100');
-  };
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9000,
@@ -27,7 +34,7 @@ function LoginOverlay() {
         <p style={{ color: '#64748b', margin: '0 0 28px', fontSize: 14 }}>
           Sign in to Amazon Connect to start taking chats.
         </p>
-        <button onClick={handleSignIn} style={{
+        <button onClick={openLoginPopup} style={{
           width: '100%', padding: '12px 0', borderRadius: 8,
           background: '#1a56db', color: '#fff', border: 'none',
           fontSize: 15, fontWeight: 600, cursor: 'pointer',
@@ -35,7 +42,7 @@ function LoginOverlay() {
           Sign In
         </button>
         <p style={{ marginTop: 16, fontSize: 11, color: '#9ca3af' }}>
-          After signing in, the popup will close and this page will update automatically.
+          The popup will close automatically once you're signed in.
         </p>
       </div>
     </div>
@@ -68,6 +75,13 @@ export function AgentDesktop() {
   useConnectStreams(ccpRef);
 
   useEffect(() => {
+    if (agentConnected) {
+      loginPopupRef?.close();
+      loginPopupRef = null;
+    }
+  }, [agentConnected]);
+
+  useEffect(() => {
     if (!ccpOpen) return;
     const handleMouseDown = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -91,6 +105,7 @@ export function AgentDesktop() {
         ccpButtonRef={ccpButtonRef}
         uiMode={uiMode}
         onModeChange={handleModeChange}
+        onOpenLoginPopup={openLoginPopup}
       />
 
       {/* ── Chatmaxxing mode: existing 4-column grid, completely unchanged ── */}
