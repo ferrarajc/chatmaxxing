@@ -2,6 +2,45 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useConnectStreams } from '../hooks/useConnectStreams';
 import { useAgentStore } from '../store/agentStore';
 import { TopBar } from './TopBar';
+
+const CCP_URL = import.meta.env.VITE_CCP_URL as string;
+
+function LoginOverlay() {
+  const handleSignIn = () => {
+    window.open(CCP_URL, 'ConnectLogin', 'width=430,height=600,left=200,top=100');
+  };
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9000,
+      background: 'rgba(15,45,94,0.85)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 16, padding: '40px 48px',
+        textAlign: 'center', maxWidth: 360,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: '#6b7280', letterSpacing: '.5px', marginBottom: 12 }}>
+          BOB'S MUTUAL FUNDS
+        </div>
+        <h2 style={{ margin: '0 0 8px', fontSize: 22, color: '#0f172a' }}>Agent Desktop</h2>
+        <p style={{ color: '#64748b', margin: '0 0 28px', fontSize: 14 }}>
+          Sign in to Amazon Connect to start taking chats.
+        </p>
+        <button onClick={handleSignIn} style={{
+          width: '100%', padding: '12px 0', borderRadius: 8,
+          background: '#1a56db', color: '#fff', border: 'none',
+          fontSize: 15, fontWeight: 600, cursor: 'pointer',
+        }}>
+          Sign In
+        </button>
+        <p style={{ marginTop: 16, fontSize: 11, color: '#9ca3af' }}>
+          After signing in, the popup will close and this page will update automatically.
+        </p>
+      </div>
+    </div>
+  );
+}
 import { ChatColumn } from './ChatColumn';
 import { FocusingDesktop } from './FocusingDesktop';
 
@@ -22,6 +61,7 @@ export function AgentDesktop() {
   const ccpPanelRef = useRef<HTMLDivElement>(null);
   const ccpButtonRef = useRef<HTMLButtonElement>(null);
   const slots = useAgentStore(s => s.slots);
+  const agentConnected = useAgentStore(s => s.agentConnected);
   const [ccpOpen, setCcpOpen] = useState(false);
   const [uiMode, setUiMode] = useState<UiMode>(getInitialMode);
 
@@ -134,6 +174,8 @@ export function AgentDesktop() {
       }}>
         <div ref={ccpRef} style={{ width: 320, height: 500, background: '#fff' }} />
       </div>
+
+      {!agentConnected && <LoginOverlay />}
     </div>
   );
 }
