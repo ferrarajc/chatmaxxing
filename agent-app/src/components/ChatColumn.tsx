@@ -10,7 +10,6 @@ import { AISupport } from './AISupport';
 import { AfterCallWork } from './AfterCallWork';
 import { CLIENT_PROFILES, DEFAULT_PROFILE } from '../data/clientProfiles';
 
-const AGENT_NAME = 'John Ferrara';
 
 const DEFAULT_AI_HEIGHT = 250;
 const MIN_AI_HEIGHT = 100;
@@ -334,7 +333,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const firstName = slot.clientName.split(' ')[0];
     const close = slot.intentGreeting || 'How can I assist you today?';
     store.patchSlot(slot.contactId, {
-      suggestedText: `Hi ${firstName}, my name is ${AGENT_NAME} with Bob's Mutual Funds. ${close}`,
+      suggestedText: `Hi ${firstName}, my name is ${store.agentName} with Bob's Mutual Funds. ${close}`,
       suggestedScope: 'get-intent',
     });
   }, [connectionToken, slot?.contactId]);
