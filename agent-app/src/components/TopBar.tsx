@@ -189,7 +189,13 @@ export function TopBar({ ccpOpen, onToggleCcp, ccpButtonRef, uiMode, onModeChang
             </button>
           </div>
         ) : (
-          <span style={{ fontSize: 17, fontWeight: 500, color: '#6b7280' }}>Not logged on</span>
+          <button
+            onClick={() => window.open(import.meta.env.VITE_CCP_URL as string, 'ConnectLogin', 'width=430,height=600,left=200,top=100')}
+            title="Click to sign in"
+            style={{ fontSize: 17, fontWeight: 500, color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
+            Not logged on
+          </button>
         )}
 
         {/* DA avatar — click to open/close the Connect CCP panel */}
