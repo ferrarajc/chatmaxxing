@@ -50,7 +50,7 @@ chatmaxxing/
 │   └── reset-beneficiaries/ Dev utility — resets test client beneficiary data
 │   └── shared/
 │       ├── tasks.ts        TASKS array (19 tasks), matchTaskByIntent, filterFields
-│       ├── kb.ts           30 topics, 120 Q&A pairs (knowledge base)
+│       ├── kb.ts           46 topics, 183 Q&A pairs (knowledge base)
 │       ├── types.ts        Shared types + summarizeAccounts, formatTranscript, matchResources
 │       ├── bedrock-client.ts invokeNovaMicro + parseJsonFromBedrock
 │       ├── dynamo-client.ts  DynamoDB DocumentClient
@@ -246,6 +246,7 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 Branch in flight: `heqya/generalize` — dashboard scenario management + transcript viewer
 
 Recent shipped features (last several PRs):
+- Realistic account-opening flow (current branch `feature/bob-pod-episode-3`): `OpenAccountPage.tsx` rewritten as an 8-step wizard (account type → personal info → contact/address → FINRA/SEC disclosures → account-type-specific setup → funding + initial investment → free DCA opt-in → review/agreements/e-signature) with a confirmation timeline; account-type-aware branching (IRA beneficiaries w/ 100% allocation check, SEP business info, taxable joint owner + TOD). "Open an account" pill button added to the Portfolio page header. 4 new open-account KB topics (t-oa-funding, t-oa-dca, t-oa-disclosures, t-oa-sep) + expanded `EXTRA_PAGE_TOPICS['open-account']` to 8 topics. Chat FAB already global (App.tsx renders ChatWidget outside Routes).
 - Prompt quality improvements (PR 42): account type labels, capability claims rule, no-repeat/frustrated-yes rule; also heuristic management UI + editable heuristics.json store
 - On-demand LLM tool calling (PR 41): all three AI systems (customer bot, NBR, autopilot task experts) can fetch client data from DynamoDB via OpenAI function calling; two-phase agentic loop (tool gather → json_object reformat); 7 tools in `lambda/shared/client-tools.ts`; rotating TypingIndicator messages; "Data fetched from your account" annotation; hallucination protection rule in all system prompts; customer-bot cannot imply it can process account changes
 - DB-driven portal (PR 40): all client data in DynamoDB; reset-all-data Lambda; 9 execute-task tasks upgraded to real writes; fetchAll() in clientStore; "↺ Reset all" button in TopNavV2

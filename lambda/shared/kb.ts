@@ -1420,6 +1420,140 @@ export const KB: KBTopic[] = [
     ],
   },
 
+  // ── Open-account flow topics ─────────────────────────────────────────────
+
+  {
+    id: 't-oa-funding',
+    label: 'Funding your account',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oaf-001',
+        text: 'What funding methods can I use to open an account?',
+        answer: "You can fund a new account by ACH bank transfer, wire transfer, or by mailing a check. For IRAs, you can also fund the account with a rollover from another IRA or an employer plan like a 401(k) or 403(b). You choose your funding method during the application — there's no fee to fund by ACH.",
+        link: { text: 'Start your application', url: '/open-account' },
+      },
+      {
+        id: 'q-oaf-002',
+        text: 'How long does an ACH bank transfer take?',
+        answer: "ACH transfers from your linked bank account typically settle in 1–3 business days. Wire transfers usually post the same business day, and mailed checks take 5–7 business days to arrive and clear. Once your funds settle, your initial investment is placed and your balance updates.",
+        link: { text: 'Open an account', url: '/open-account' },
+      },
+      {
+        id: 'q-oaf-003',
+        text: 'Can I roll over a 401(k) into a new IRA?',
+        answer: "Yes — when you open a Traditional or Roth IRA you can fund it by rolling over a 401(k), 403(b), or another IRA. A direct (trustee-to-trustee) rollover moves the money without taxes or penalties and avoids the mandatory 20% withholding that applies to indirect rollovers. We'll email you the transfer paperwork after you apply.",
+        link: { text: 'Learn about rollovers', url: '/resources/rollover' },
+      },
+      {
+        id: 'q-oaf-004',
+        text: 'Is there a minimum initial investment?',
+        answer: "There's no minimum balance to open an account, but most BobsFunds mutual funds have a $1,000 minimum initial investment. You'll choose your first fund and investment amount during the funding step of the application. You can add more funds anytime after the account is open.",
+        link: { text: 'Open an account', url: '/open-account' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-dca',
+    label: 'Automatic investing',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oad-001',
+        text: 'What is dollar cost averaging?',
+        answer: "Dollar cost averaging (DCA) means investing a fixed amount on a regular schedule — say $200 every month — regardless of what the market is doing. Because you buy more shares when prices are low and fewer when prices are high, it smooths out your average cost over time and removes the temptation to time the market. It's a simple, disciplined way to build wealth.",
+        link: { text: 'Set up automatic investing', url: '/open-account' },
+      },
+      {
+        id: 'q-oad-002',
+        text: 'Is the automatic investing service free?',
+        answer: "Yes — Bob's automatic investing service is completely free. You set an amount and a schedule (weekly, biweekly, or monthly), and we invest it for you into the fund you choose. There are no setup fees, transaction fees, or service charges for using it.",
+        link: { text: 'Enroll while opening your account', url: '/open-account' },
+      },
+      {
+        id: 'q-oad-003',
+        text: 'Can I change or cancel my automatic investments?',
+        answer: "Absolutely. You can pause, change the amount, change the fund, or cancel your automatic investing schedule at any time from your account page — there are no fees or penalties. Many investors start small and increase the amount over time as their income grows.",
+        link: { text: 'Manage auto-invest', url: '/account/auto-invest' },
+      },
+      {
+        id: 'q-oad-004',
+        text: 'What happens to my schedule if the market drops?',
+        answer: "Your automatic investments continue on schedule regardless of market conditions — and that's the point. When prices fall, your fixed contribution simply buys more shares, which can work in your favor over the long run. Sticking to the schedule through ups and downs is what makes dollar cost averaging effective.",
+        link: { text: 'Learn more about DCA', url: '/help/sip' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-disclosures',
+    label: 'Application disclosures',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oadi-001',
+        text: 'Why do you need my Social Security Number?',
+        answer: "Federal law requires us to collect your Social Security Number to verify your identity and report account activity to the IRS for tax purposes. Your SSN is encrypted and handled under our Privacy Policy. It's a standard requirement for opening any brokerage or retirement account.",
+        link: { text: 'Read our privacy approach', url: '/help/open-account' },
+      },
+      {
+        id: 'q-oadi-002',
+        text: 'Why am I asked if I work for a financial firm?',
+        answer: "FINRA rules require us to ask whether you or a household member is employed by or associated with a FINRA member firm. If so, your employer may need to receive duplicate statements. Most applicants answer 'No' — it doesn't prevent you from opening an account, it's simply a regulatory disclosure.",
+        link: { text: 'Continue your application', url: '/open-account' },
+      },
+      {
+        id: 'q-oadi-003',
+        text: 'What is a trusted contact person?',
+        answer: "A trusted contact is someone we can reach out to if we're ever unable to contact you and have a concern about your account — for example, possible fraud or financial exploitation. They have no authority over your account and cannot make trades or withdrawals. Naming one is optional but recommended; you can add or change it anytime.",
+        link: { text: 'Add a trusted contact', url: '/open-account' },
+      },
+      {
+        id: 'q-oadi-004',
+        text: 'What does the control person question mean?',
+        answer: "A 'control person' is a director, policy-making officer, or 10%-or-greater shareholder of a publicly traded company. Regulators require us to flag these relationships because they can affect how certain securities are traded. If this doesn't apply to you, just answer 'No' and continue.",
+        link: { text: 'Continue your application', url: '/open-account' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-sep',
+    label: 'SEP-IRA setup',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oas-001',
+        text: 'Who can open a SEP-IRA?',
+        answer: "A SEP-IRA is for self-employed individuals and small business owners — sole proprietors, freelancers, partnerships, and corporations. The plan is funded by the business rather than through personal salary deferrals. If you have eligible employees, a SEP plan must cover them too, at the same contribution rate you use for yourself.",
+        link: { text: 'Open a SEP-IRA', url: '/open-account?accountType=sep-ira' },
+      },
+      {
+        id: 'q-oas-002',
+        text: 'How much can I contribute to a SEP-IRA?',
+        answer: "For 2025 you can contribute up to 25% of compensation, to a maximum of $70,000 — far higher than the $7,000 limit on a Traditional or Roth IRA. Contributions are made by the business and are generally tax-deductible. The exact amount depends on your net self-employment earnings.",
+        link: { text: 'See SEP-IRA details', url: '/resources/sep-ira' },
+      },
+      {
+        id: 'q-oas-003',
+        text: 'Can I open a SEP-IRA if I have employees?',
+        answer: "Yes, but a SEP plan must cover all eligible employees — generally those who are at least 21, have worked for you in 3 of the last 5 years, and earned at least $750 in the year. You must contribute the same percentage of compensation for each eligible employee as you do for yourself. Many solo business owners use a SEP precisely because they have no employees.",
+        link: { text: 'Compare self-employed plans', url: '/resources/self-employed-retirement' },
+      },
+      {
+        id: 'q-oas-004',
+        text: 'How does a SEP-IRA compare to a Solo 401(k)?',
+        answer: "Both offer high contribution limits for the self-employed. A SEP-IRA is simpler to set up and maintain, while a Solo 401(k) allows salary-deferral contributions (and often a Roth option) that can let you save more at lower income levels. A Solo 401(k) only works if you have no employees other than a spouse. Which is better depends on your income and whether you have staff.",
+        link: { text: 'SEP-IRA vs. Solo 401(k)', url: '/resources/sep-ira-vs-solo' },
+      },
+    ],
+  },
+
 ];
 
 export function getKBTopicByLabel(label: string): KBTopic | undefined {
@@ -1445,7 +1579,7 @@ export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
   'research/fund/buy':     ['t-trading', 't-expense-ratios', 't-auto-invest', 't-fees'],
 
   // Open an account
-  'open-account':          ['t-account-types', 't-open-account', 't-ira-limits', 't-roth-strategies'],
+  'open-account':          ['t-account-types', 't-open-account', 't-oa-funding', 't-oa-dca', 't-ira-limits', 't-roth-strategies', 't-oa-disclosures', 't-oa-sep'],
 
   // Resources pages
   'resources/ira-contribution-limits': ['t-ira-limits', 't-roth-strategies', 't-tax-deductions'],

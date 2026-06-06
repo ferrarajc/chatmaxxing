@@ -29,10 +29,27 @@ export function PortfolioPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
-      <h1 style={{
-        margin: '0 0 28px', fontSize: 32, fontWeight: 600, color: theme.color.text,
-        fontFamily: theme.font.serif, letterSpacing: '-0.02em', lineHeight: 1.1,
-      }}>My Portfolio</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, margin: '0 0 28px', flexWrap: 'wrap' }}>
+        <h1 style={{
+          margin: 0, fontSize: 32, fontWeight: 600, color: theme.color.text,
+          fontFamily: theme.font.serif, letterSpacing: '-0.02em', lineHeight: 1.1,
+        }}>My Portfolio</h1>
+        <Link
+          to="/open-account"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7, flexShrink: 0,
+            background: theme.color.primary, color: theme.color.textOnPrimary,
+            borderRadius: theme.radius.pill, padding: '9px 20px',
+            fontSize: 13, fontWeight: 600, textDecoration: 'none',
+            boxShadow: theme.shadow.sm, transition: 'background .15s, box-shadow .15s, transform .15s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = theme.color.primaryHover; (e.currentTarget as HTMLElement).style.boxShadow = theme.shadow.md; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = theme.color.primary; (e.currentTarget as HTMLElement).style.boxShadow = theme.shadow.sm; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
+        >
+          <span style={{ fontSize: 16, lineHeight: 1, fontWeight: 400 }}>+</span>
+          Open an account
+        </Link>
+      </div>
 
       {/* Account cards */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 32, flexWrap: 'wrap' }}>
