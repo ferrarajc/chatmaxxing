@@ -200,17 +200,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       });
   };
 
-  // ── Autopilot: send with human-like delay (chars / 15 = seconds) ───────
-  const autopilotSend = async (text: string, contactId: string, scope: AutopilotScope): Promise<boolean> => {
-    const delaySecs = Math.max(1, Math.floor(text.length / 15));
-    store.patchSlot(contactId, { autopilotPending: text });
-
-    // Show the customer a typing ellipsis for the whole compose delay, starting now.
-    // Re-emit in chunks so long delays don't outlive the customer-side expiry window,
-    // and abort promptly (clearing the customer's ellipsis) if autopilot is cancelled.
+  // ── Autopilot: human-like wait helper ──────────────────────────────────
+  // Waits `ms` while autopilot is composing, in chunks so cancellation is detected
+  // promptly. When showEllipsis is true the customer's typing ellipsis is kept alive
+  // via heartbeats and cleared immediately if autopilot is cancelled. Returns false
+  // if the wait was aborted (scope cancelled or chat ended).
+  const autopilotDelay = async (
+    ms: number, contactId: string, scope: AutopilotScope, showEllipsis: boolean,
+  ): Promise<boolean> => {
     const startToken = store.getSlot(contactId)?.connectionToken;
-    if (startToken) sendCustomerTypingEvent(startToken);
-    let remaining = delaySecs * 1000;
+    let remaining = ms;
     const CHUNK_MS = 8000;
     while (remaining > 0) {
       const wait = Math.min(CHUNK_MS, remaining);
@@ -222,16 +221,42 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         store.patchSlot(contactId, { autopilotPending: null });
         // Cancelled (not ended) → tell the customer to drop the ellipsis immediately.
         const stopToken = cur?.connectionToken ?? startToken;
-        if (cur && cur.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
+        if (showEllipsis && cur && cur.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
         return false;
       }
       // Still composing — keep the customer's ellipsis alive.
-      if (remaining > 0 && cur.connectionToken) sendCustomerTypingEvent(cur.connectionToken);
+      if (showEllipsis && remaining > 0 && cur.connectionToken) sendCustomerTypingEvent(cur.connectionToken);
     }
+    return true;
+  };
+
+  // ── Autopilot: send with human-like delay ──────────────────────────────
+  // Two phases mimic a human agent. (1) Reading delay — before the typing ellipsis
+  // appears, pause for the time it would take to read the client's most recent
+  // message: a minimum of 2000 ms covering the first 200 characters they wrote, plus
+  // 10 ms for every character beyond that. (2) Typing delay — the existing
+  // chars/15-seconds compose delay, during which the ellipsis is shown. The typing
+  // delay only starts once the reading delay has fully elapsed.
+  const autopilotSend = async (text: string, contactId: string, scope: AutopilotScope): Promise<boolean> => {
+    store.patchSlot(contactId, { autopilotPending: text });
+
+    // Phase 1 — reading delay. No ellipsis yet (the agent is "reading", not typing).
+    const slotForRead = store.getSlot(contactId);
+    const lastClientMsg = slotForRead?.messages.slice().reverse().find(m => m.role === 'CUSTOMER');
+    const clientLen = lastClientMsg?.content.length ?? 0;
+    const readingDelayMs = clientLen > 0 ? 2000 + Math.max(0, clientLen - 200) * 10 : 0;
+    if (!(await autopilotDelay(readingDelayMs, contactId, scope, false))) return false;
+
+    // Phase 2 — typing delay. Show the ellipsis now and keep it alive until send.
+    const delaySecs = Math.max(1, Math.floor(text.length / 15));
+    const typingToken = store.getSlot(contactId)?.connectionToken;
+    if (typingToken) sendCustomerTypingEvent(typingToken);
+    if (!(await autopilotDelay(delaySecs * 1000, contactId, scope, true))) return false;
+
     const fresh = store.getSlot(contactId);
     if (!fresh || fresh.autopilotScope !== scope || fresh.status === 'acw') {
       store.patchSlot(contactId, { autopilotPending: null });
-      const stopToken = fresh?.connectionToken ?? startToken;
+      const stopToken = fresh?.connectionToken ?? typingToken;
       if (fresh && fresh.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
       return false;
     }
