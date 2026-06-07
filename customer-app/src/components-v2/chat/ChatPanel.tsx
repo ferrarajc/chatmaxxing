@@ -11,9 +11,10 @@ interface Props {
   onSendMessage: (text: string) => void;
   onEscalateToAgent: () => void;
   onContinueChat: (preferredAgentUsername: string | null) => void;
+  onTyping: () => void;
 }
 
-export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onContinueChat }: Props) {
+export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onContinueChat, onTyping }: Props) {
   const { state, reset } = useChatStore();
   const [showCallbackScheduler, setShowCallbackScheduler] = useState(false);
 
@@ -91,6 +92,7 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onCon
             )}
             <ChatInput
               onSend={onSendMessage}
+              onTyping={onTyping}
               disabled={state === 'GREETING' || state === 'CALLBACK_SCHEDULED'}
             />
           </>

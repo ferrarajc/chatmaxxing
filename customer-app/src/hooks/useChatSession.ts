@@ -25,6 +25,16 @@ const CUSTOMER_ESCALATION_PHRASES = [
 // Simple affirmatives — only checked when the bot has just asked about escalating (escalationPending=true).
 const ESCALATION_AFFIRMATIVES = /^(yes|yeah|yep|yup|sure|ok|okay|please|go ahead|yes please|please do|sounds good|that works|connect me now)\b/i;
 
+// Connect participant "typing" event content type — used to tell the agent we're typing.
+const TYPING_EVENT_CONTENT_TYPE = 'application/vnd.amazonaws.connect.event.typing';
+// Throttle outgoing typing events so a burst of keystrokes sends at most one per interval.
+const TYPING_THROTTLE_MS = 3000;
+// Hide the agent typing ellipsis if no further typing event arrives within this window.
+const AGENT_TYPING_TTL_MS = 60_000;
+// Control message the agent sends to immediately clear the typing ellipsis when autopilot
+// is cancelled mid-compose. Must match the agent app's sentinel exactly. Never rendered.
+const TYPING_STOP_SENTINEL = '__BOBS_TYPING_STOP__';
+
 function isCustomerEscalationRequest(text: string): boolean {
   const lower = text.toLowerCase();
   return CUSTOMER_ESCALATION_PHRASES.some(p => lower.includes(p));
@@ -54,11 +64,12 @@ type ChatJsSession = {
   connect: () => Promise<void>;
   disconnect: () => void;
   onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string } }) => void) => void;
-  onTyping: (cb: () => void) => void;
+  onTyping: (cb: (e: { data: { ParticipantRole?: string } }) => void) => void;
   onConnectionEstablished: (cb: () => void) => void;
   onConnectionBroken: (cb: () => void) => void;
   onEnded: (cb: () => void) => void;
   sendMessage: (m: { message: string; contentType: string }) => Promise<void>;
+  sendEvent: (e: { contentType: string }) => Promise<void>;
 };
 
 function createAndBindSession(
@@ -66,7 +77,15 @@ function createAndBindSession(
   store: ChatStore,
   sessionRef: React.MutableRefObject<ChatJsSession | null>,
   botReplyTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+  agentTypingTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
 ): ChatJsSession {
+  const clearAgentTyping = () => {
+    if (agentTypingTimerRef.current) {
+      clearTimeout(agentTypingTimerRef.current);
+      agentTypingTimerRef.current = null;
+    }
+    store.setAgentTyping(false);
+  };
   window.connect!.ChatSession.setGlobalConfig({
     loggerConfig: { level: 'ERROR' },
     region: import.meta.env.VITE_AWS_REGION ?? 'us-east-1',
@@ -87,7 +106,16 @@ function createAndBindSession(
     // Skip the customer's own messages — sendMessage already adds them optimistically
     if (msg.ParticipantRole === 'CUSTOMER') return;
 
+    // Control signal: agent cancelled an in-progress (autopilot) compose — drop the
+    // typing ellipsis immediately and don't render the sentinel as a chat bubble.
+    if (msg.Content === TYPING_STOP_SENTINEL) {
+      clearAgentTyping();
+      return;
+    }
+
     const role = msg.ParticipantRole === 'AGENT' ? 'AGENT' : 'BOT';
+    // A real message means the agent is done composing — clear the typing ellipsis.
+    if (role === 'AGENT') clearAgentTyping();
     store.addMessage({ role, content: msg.Content });
 
     if (role === 'BOT') {
@@ -108,7 +136,19 @@ function createAndBindSession(
     }
   });
 
-  session.onTyping(() => store.setTyping(true));
+  session.onTyping(({ data }) => {
+    // Only the live agent's typing drives the customer ellipsis; ignore echoes of our own.
+    if (data?.ParticipantRole && data.ParticipantRole !== 'AGENT') return;
+    // Only meaningful once an agent is (being) connected — never during the bot phase.
+    const liveState = useChatStore.getState().state;
+    if (liveState !== 'CONNECTED_TO_AGENT' && liveState !== 'WAITING_FOR_AGENT') return;
+    store.setAgentTyping(true);
+    if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
+    agentTypingTimerRef.current = setTimeout(() => {
+      agentTypingTimerRef.current = null;
+      store.setAgentTyping(false);
+    }, AGENT_TYPING_TTL_MS);
+  });
 
   session.onConnectionEstablished(() => {
     // Only promote to BOT_ACTIVE on initial connect from GREETING
@@ -123,6 +163,7 @@ function createAndBindSession(
   });
 
   session.onEnded(() => {
+    clearAgentTyping();
     // Only surface "Chat ended." when a live agent was connected.
     if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') {
       store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
@@ -138,6 +179,10 @@ export function useChatSession() {
   const currentPageRef = useRef<string>('');
   // Timer: if Connect/Lex doesn't reply in 3 s, call /autopilot-turn directly
   const botReplyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Auto-expiry timer for the agent typing ellipsis (cleared/reset on each typing event)
+  const agentTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Last time we emitted an outgoing typing event (throttling)
+  const lastTypingSentRef = useRef<number>(0);
 
   async function openChat(currentPage: string) {
     currentPageRef.current = currentPage;
@@ -172,7 +217,7 @@ export function useChatSession() {
         currentPage,
       });
 
-      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
+      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef, agentTypingTimerRef);
       sessionRef.current = session;
       await session.connect();
       store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
@@ -219,7 +264,7 @@ export function useChatSession() {
         intentSummary: summary,
       });
 
-      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
+      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef, agentTypingTimerRef);
       sessionRef.current = session;
       await session.connect();
       store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
@@ -264,7 +309,7 @@ export function useChatSession() {
         preferredAgentUsername: preferredAgentUsername ?? '',
       });
 
-      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
+      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef, agentTypingTimerRef);
       sessionRef.current = session;
       await session.connect();
       store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
@@ -364,5 +409,20 @@ export function useChatSession() {
     }
   }
 
-  return { openChat, sendMessage, escalateToAgent, continueChat };
+  // Tell the connected agent we're typing. Throttled so a burst of keystrokes emits at
+  // most one Connect event per interval. Only meaningful once an agent is (being) connected.
+  function notifyTyping() {
+    const session = sessionRef.current;
+    if (!session) return;
+    const state = useChatStore.getState().state;
+    if (state !== 'CONNECTED_TO_AGENT' && state !== 'WAITING_FOR_AGENT') return;
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < TYPING_THROTTLE_MS) return;
+    lastTypingSentRef.current = now;
+    try {
+      session.sendEvent({ contentType: TYPING_EVENT_CONTENT_TYPE })?.catch?.(() => {});
+    } catch { /* ignore — typing is best-effort */ }
+  }
+
+  return { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping };
 }

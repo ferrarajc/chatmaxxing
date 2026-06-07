@@ -26,7 +26,7 @@ export function ChatWidget() {
   const currentPage = pageKeyFromPath(location.pathname);
 
   const chatState = useChatStore(s => s.state);
-  const { openChat, sendMessage, escalateToAgent, continueChat } = useChatSession();
+  const { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping } = useChatSession();
 
   usePredictedTopics(currentPage);
 
@@ -43,6 +43,7 @@ export function ChatWidget() {
           onSendMessage={sendMessage}
           onEscalateToAgent={escalateToAgent}
           onContinueChat={continueChat}
+          onTyping={notifyTyping}
         />
       )}
     </>

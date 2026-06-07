@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) {
-  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, continuation } = useChatStore();
+  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, agentTyping, continuation } = useChatStore();
   const addMessage = useChatStore(s => s.addMessage);
   const setTyping = useChatStore(s => s.setTyping);
   const { activePersona } = useClientStore();
@@ -29,7 +29,7 @@ export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) 
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, agentTyping]);
 
   const handleTopicSelect = (topic: string) => {
     if (topic === 'Something else') {
@@ -122,6 +122,8 @@ export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) 
       ))}
 
       {isTyping && <TypingIndicator isWaiting />}
+      {/* Live agent (or delaying autopilot) is composing — animated ellipsis */}
+      {agentTyping && !isTyping && <TypingIndicator />}
       <div ref={bottomRef} />
     </div>
   );

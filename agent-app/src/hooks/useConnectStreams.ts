@@ -95,6 +95,20 @@ const trackedContactIds = new Set<string>();
 // "continue this chat" history is never prepended twice (StrictMode / reconnects).
 const continuationLoaded = new Set<string>();
 
+// Per-contact auto-expiry timers for the "client is typing" ellipsis. The indicator
+// is hidden if no further typing event arrives within CUSTOMER_TYPING_TTL_MS.
+const customerTypingTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const CUSTOMER_TYPING_TTL_MS = 30_000;
+
+/** Clear the typing ellipsis for a contact and cancel its expiry timer. */
+function clearCustomerTyping(contactId: string): void {
+  const t = customerTypingTimers.get(contactId);
+  if (t) { clearTimeout(t); customerTypingTimers.delete(contactId); }
+  if (useAgentStore.getState().getSlot(contactId)?.customerTyping) {
+    useAgentStore.getState().patchSlot(contactId, { customerTyping: false });
+  }
+}
+
 interface PriorTranscript {
   messages?: Array<{ id?: string; ts?: number; role?: string; content?: string }>;
   startTime?: number;
@@ -415,9 +429,24 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             if (msg?.Type !== 'MESSAGE') return;
             if (msg.ParticipantRole === 'AGENT') return;
             const role = msg.ParticipantRole === 'CUSTOMER' ? 'CUSTOMER' as const : 'BOT' as const;
+            // The client's message arrived — they're done typing.
+            if (role === 'CUSTOMER') clearCustomerTyping(contactId);
             useAgentStore.getState().appendMessage(contactId, { role, content: msg.Content });
             useAgentStore.getState().patchSlot(contactId, { lastCustomerMessageAt: Date.now() });
             log.info('useConnectStreams:onMessage', { contactId, role, preview: msg.Content.slice(0, 40) });
+          });
+
+          // Client typing → show an ellipsis in this column; auto-expire after 30 s of silence.
+          chatSession.onTyping(({ data }: { data?: { ParticipantRole?: string } }) => {
+            if (data?.ParticipantRole && data.ParticipantRole !== 'CUSTOMER') return;
+            if (useAgentStore.getState().getSlot(contactId)?.status !== 'active') return;
+            useAgentStore.getState().patchSlot(contactId, { customerTyping: true });
+            const existing = customerTypingTimers.get(contactId);
+            if (existing) clearTimeout(existing);
+            customerTypingTimers.set(contactId, setTimeout(() => {
+              customerTypingTimers.delete(contactId);
+              useAgentStore.getState().patchSlot(contactId, { customerTyping: false });
+            }, CUSTOMER_TYPING_TTL_MS));
           });
 
           chatSession.onConnectionEstablished(() => {
@@ -445,6 +474,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         // Keep contactRef alive — needed for contact.clear() when agent clicks Close Contact
         // Do NOT delete from contactRefs here
 
+        clearCustomerTyping(contactId);
         agentChatSessions.delete(contactId);
 
         // Bonus: if this was the 4th chat, play sound and tally
@@ -480,6 +510,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         trackedContactIds.delete(contactId);
         agentChatSessions.delete(contactId);
         continuationLoaded.delete(contactId);
+        clearCustomerTyping(contactId);
         const currentStatus = useAgentStore.getState().getSlot(contactId)?.status;
         if (currentStatus === 'acw') {
           // Preserve contactRef so the Close Contact button can still call contact.clear()
