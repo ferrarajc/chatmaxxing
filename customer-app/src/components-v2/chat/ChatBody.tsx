@@ -7,15 +7,19 @@ import { ChatMessage } from './ChatMessage';
 import { TopicButtons } from './TopicButtons';
 import { QuestionButtons } from './QuestionButtons';
 import { TypingIndicator } from './TypingIndicator';
+import { ContinueChatCard } from './ContinueChatCard';
 import { theme } from '../../theme';
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface Props {
   currentPage: string;
   onSendMessage: (text: string) => void;
+  onContinueChat: (preferredAgentUsername: string | null) => void;
 }
 
-export function ChatBody({ currentPage, onSendMessage }: Props) {
-  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping } = useChatStore();
+export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) {
+  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, continuation } = useChatStore();
   const addMessage = useChatStore(s => s.addMessage);
   const setTyping = useChatStore(s => s.setTyping);
   const { activePersona } = useClientStore();
@@ -56,6 +60,14 @@ export function ChatBody({ currentPage, onSendMessage }: Props) {
   const firstName = activePersona.name.split(' ')[0];
   const noMessages = messages.filter(m => m.role !== 'SYSTEM').length === 0;
 
+  // "Continue this chat" card: only when the client had a live-agent chat in the last 7 days
+  // and the conversation hasn't started yet. Purely additive — absent otherwise.
+  const showContinueCard =
+    !!continuation &&
+    Date.now() - continuation.endedAt <= SEVEN_DAYS_MS &&
+    noMessages && !topicsUsed.current && !selectedTopic &&
+    (state === 'GREETING' || state === 'BOT_ACTIVE');
+
   return (
     <div style={{
       flex: 1, overflowY: 'auto', padding: '14px 14px',
@@ -73,6 +85,11 @@ export function ChatBody({ currentPage, onSendMessage }: Props) {
         }}>
           Hi <strong style={{ fontWeight: 600 }}>{firstName}</strong>! I'm your Bob's Mutual Funds assistant. How can I help you today?
         </div>
+      )}
+
+      {/* Continue this chat — shown above the topic pills when eligible */}
+      {showContinueCard && continuation && (
+        <ContinueChatCard continuation={continuation} onContinue={onContinueChat} />
       )}
 
       {/* Level 1: topic pills */}

@@ -35,12 +35,16 @@ export const handler = async (
       await docClient.send(new UpdateCommand({
         TableName: table,
         Key: { clientId },
+        // Clear the "Continue this chat" continuation memory (lastAgentChat) as part of the
+        // reset. The permanent transcript log (bobs-transcripts table) is intentionally NOT
+        // touched here, so chats remain browsable in the Transcript Review tool.
         UpdateExpression:
           'SET #nm = :name, phone = :phone, displayPhone = :dp, ' +
           'email = :email, address = :addr, ' +
           'totalBalance = :tb, accounts = :accs, ' +
           'holdings = :h, transactions = :tx, ' +
-          'beneficiaries = :b, autoInvest = :ai, rmd = :rmd',
+          'beneficiaries = :b, autoInvest = :ai, rmd = :rmd ' +
+          'REMOVE lastAgentChat',
         ExpressionAttributeNames: { '#nm': 'name' },
         ExpressionAttributeValues: {
           ':name':  d.name,
@@ -70,7 +74,7 @@ export const handler = async (
 
   return htmlResponse(status, `
     <h1>${heading}</h1>
-    <p>All 4 demo clients have been restored to their default values (profile, holdings, transactions, beneficiaries, auto-invest, RMD).</p>
+    <p>All 4 demo clients have been restored to their default values (profile, holdings, transactions, beneficiaries, auto-invest, RMD). Recent agent-chat memory was also cleared; saved transcripts remain available in the Transcript Review log.</p>
     <p><strong>Reset at:</strong> ${now} ET</p>
     <ul>${results.join('')}</ul>
   `);

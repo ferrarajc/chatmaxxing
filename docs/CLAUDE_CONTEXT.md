@@ -78,7 +78,8 @@ chatmaxxing/
 | `predict-intent` | Suggest KB topics from page + conversation | Yes — Nova Micro |
 | `predict-questions` | Predict client's next 3 questions | Yes — Nova Micro |
 | `send-agent-message` | Push agent message to client via Connect API | No |
-| `save-transcript` | Write transcript to Sessions table | No |
+| `agent-availability` | Is a given agent (by Connect username) currently on queue / Available? | No |
+| `save-transcript` | Write transcript to Transcripts table; also write `lastAgentChat` continuation memory to Clients table | No |
 | `get-transcripts` | Read transcripts for a client | No |
 | `client-data` | Read/write client profile | No |
 | `client-log` | Log client-side events | No |
@@ -135,6 +136,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | What you're changing | File(s) |
 |---|---|
 | Chat topic/question pills (any page) | `lambda/shared/kb.ts` → `KB` topics + `EXTRA_PAGE_TOPICS` map; page keys come from `pageKeyFromPath` in `customer-app/.../chat/ChatWidget.tsx` |
+| "Continue this chat" card (resume recent agent chat) | `customer-app/.../chat/ContinueChatCard.tsx` + `ChatBody.tsx` (render) + `useChatSession.ts` (`continueChat`, `get-continuation` fetch); `lambda/agent-availability` (queue check); agent-side load in `agent-app/.../useConnectStreams.ts` (`loadContinuationTranscript`) |
 | Bot pre-agent behavior | `lambda/autopilot-turn/handler.ts` → `FULL_AUTO_PROMPT` |
 | Self-service page links | `lambda/autopilot-turn/handler.ts` → `SELF_SERVICE_PAGES` |
 | Cross-cutting LLM rules | `lambda/autopilot-turn/handler.ts` → `FORBIDDEN_TOPICS` (affects all 19 tasks) |
@@ -195,14 +197,20 @@ GitHub Actions deploys customer-app to root of gh-pages, agent-app to `/agent`. 
   beneficiaries: [{accountId, name, relationship, percentage, type}],
   autoInvest: [{id, accountId, accountType, fund, ticker, amount, frequency, dayOfMonth?, nextDate, active, type?}],
   rmd: {eligible, age?, annualRmd?, takenThisYear?, remainingThisYear?, nextDeadline?, distributions?, deliveryMethod?, frequency?, taxWithholding?, ...},
-  recentChatHistory: [{date, topic, summary}]
+  recentChatHistory: [{date, topic, summary}],
+  // Continuation memory for the customer "Continue this chat" card — written by save-transcript
+  // at agent-chat end, REMOVEd by reset-all-data. Distinct from the permanent transcript log.
+  lastAgentChat?: {transcriptId, endedAt, summary, agentUsername, agentName}
 }
 ```
 
-All fields for all 4 demo clients are seeded via `GET /reset-client-data?key=bobs-reset-2025`.
-Factory defaults live in `lambda/shared/client-defaults.ts`.
+All fields for all 4 demo clients are seeded via `GET /reset-client-data?key=bobs-reset-2025`
+(which also clears `lastAgentChat`). Factory defaults live in `lambda/shared/client-defaults.ts`.
 
 Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 30 days) }`
+
+Transcripts Table (`bobs-transcripts`, RETAIN): per-chat record incl. `messages`, `intentSummary`,
+`wrapUpCode`, `acwSummary`, and `agentUsername`/`agentName` (who handled it). GSI `clientId-savedAt-index`.
 
 ---
 
@@ -241,9 +249,21 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ---
 
-## Active Branch / Current State (as of 2026-05-24)
+## Active Branch / Current State (as of 2026-06-07)
 
-Branch in flight: `heqya/generalize` — dashboard scenario management + transcript viewer
+Branch in flight: `feature/continue-this-chat` — "Continue this chat" resume capability.
+- Customer chat shows a card (above the topic pills) when the client had a live-agent chat in the
+  last 7 days: date + one-sentence intent + "Continue this chat". Click → in-card loading
+  annotations → `/agent-availability` checks if the *specific previous agent* is on queue → choose
+  "wait for them" vs "first available" (or auto first-available if unavailable). Purely additive;
+  degrades to the exact prior UI when there's no recent agent chat.
+- Continuation memory = `lastAgentChat` attribute on the Clients table, written by `save-transcript`
+  at chat end, cleared by `reset-all-data` (transcripts log is untouched).
+- On agent accept, the prior transcript loads into the column above a "↩ Continued chat" divider
+  (`loadContinuationTranscript` in `useConnectStreams.ts`).
+- Routing for "wait for that agent" is currently **best-effort + metadata** (preferredAgentUsername
+  on the contact); **true per-agent Connect routing is a documented follow-up** — see the plan file
+  `~/.claude/plans/enchanted-singing-puzzle.md` ("Future work: TRUE per-agent routing").
 
 Recent shipped features (last several PRs):
 - Realistic account-opening flow (current branch `feature/bob-pod-episode-3`): `OpenAccountPage.tsx` rewritten as an 8-step wizard (account type → personal info → contact/address → FINRA/SEC disclosures → account-type-specific setup → funding + initial investment → free DCA opt-in → review/agreements/e-signature) with a confirmation timeline; account-type-aware branching (IRA beneficiaries w/ 100% allocation check, SEP business info, taxable joint owner + TOD). "Open an account" pill button added to the Portfolio page header. 4 new open-account KB topics (t-oa-funding, t-oa-dca, t-oa-disclosures, t-oa-sep) + expanded `EXTRA_PAGE_TOPICS['open-account']` to 8 topics. Chat FAB already global (App.tsx renders ChatWidget outside Routes).

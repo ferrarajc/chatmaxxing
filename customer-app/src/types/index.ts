@@ -34,3 +34,16 @@ export interface KBQuestionResult {
   answer: string;
   link?: ChatMessageLink;
 }
+
+/**
+ * The client's most recent live-agent chat, used to offer "Continue this chat".
+ * Sourced from the `lastAgentChat` attribute on the client record; null when the
+ * client hasn't chatted with an agent recently or after a "Reset all".
+ */
+export interface LastAgentChat {
+  transcriptId: string;
+  endedAt: number;
+  summary: string;
+  agentUsername: string;
+  agentName: string;
+}

@@ -4,7 +4,7 @@ import { useAgentStore } from '../store/agentStore';
 import { ChatMessage } from '../types';
 import { log } from '../api/logger';
 import { playChaChingSound } from '../utils/sounds';
-import { post } from '../api/client';
+import { post, get } from '../api/client';
 
 declare global {
   interface Window {
@@ -90,6 +90,72 @@ export const agentChatSessions = new Map<string, any>();
 // Module-level set prevents React StrictMode's double-mount from registering
 // duplicate contact handlers (which would double-append every incoming message).
 const trackedContactIds = new Set<string>();
+
+// Tracks contacts whose prior transcript has already been loaded, so the
+// "continue this chat" history is never prepended twice (StrictMode / reconnects).
+const continuationLoaded = new Set<string>();
+
+interface PriorTranscript {
+  messages?: Array<{ id?: string; ts?: number; role?: string; content?: string }>;
+  startTime?: number;
+  endTime?: number;
+}
+
+/**
+ * For a "Continue this chat" contact, fetch the prior transcript and prepend it to
+ * the slot, capped by a SYSTEM divider noting that this conversation is being continued.
+ * Live messages (if any already arrived) stay after the divider.
+ */
+async function loadContinuationTranscript(
+  contactId: string,
+  transcriptId: string,
+  preferredAgentUsername: string,
+): Promise<void> {
+  if (continuationLoaded.has(contactId)) return;
+  continuationLoaded.add(contactId);
+  try {
+    const data = await get<{ transcript?: PriorTranscript }>(
+      `/get-transcripts?transcriptId=${encodeURIComponent(transcriptId)}`,
+    );
+    const prior = data.transcript;
+    if (!prior?.messages?.length) return;
+
+    const priorMsgs: ChatMessage[] = prior.messages.map((m, i) => ({
+      id: m.id || `prior-${i}`,
+      role: (['CUSTOMER', 'AGENT', 'BOT', 'SYSTEM'].includes((m.role ?? '').toUpperCase())
+        ? (m.role as string).toUpperCase()
+        : 'BOT') as ChatMessage['role'],
+      content: m.content ?? '',
+      timestamp: m.ts ?? Date.now(),
+    }));
+
+    const when = prior.endTime ?? prior.startTime;
+    const dateStr = when
+      ? new Date(when).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+      : 'a previous session';
+    const myUsername = useAgentStore.getState().agentUsername;
+    const choseYou = preferredAgentUsername &&
+      preferredAgentUsername.toLowerCase() === (myUsername ?? '').toLowerCase();
+    const dividerText = `↩ Continued chat · previous conversation from ${dateStr}` +
+      (choseYou ? ' · client chose to continue with you' : '');
+
+    const divider: ChatMessage = {
+      id: `cont-divider-${contactId}`,
+      role: 'SYSTEM',
+      content: dividerText,
+      timestamp: priorMsgs[priorMsgs.length - 1]?.timestamp ?? Date.now(),
+    };
+
+    const existing = useAgentStore.getState().getSlot(contactId)?.messages ?? [];
+    useAgentStore.getState().patchSlot(contactId, {
+      messages: [...priorMsgs, divider, ...existing],
+    });
+    log.info('useConnectStreams:continuationLoaded', { contactId, transcriptId, count: priorMsgs.length });
+  } catch (e) {
+    continuationLoaded.delete(contactId); // allow a retry on a later event
+    log.warn('useConnectStreams:continuationLoad:failed', e);
+  }
+}
 
 // Prevents initCCP from being called twice (React StrictMode double-invokes effects).
 // initCCP appends a new iframe every call; two iframes corrupt the Streams event bus
@@ -257,6 +323,9 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         const initialMessages = parseHistory(rawHistory);
         const displayLabel = attrs.intentLabel?.value || 'General inquiry';
         const intentGreeting = attrs.intentGreeting?.value || '';
+        const continuedFromTranscriptId = attrs.continuedFromTranscriptId?.value || '';
+        const isContinuation = (attrs.continuation?.value || '') === 'true';
+        const preferredAgentUsername = attrs.preferredAgentUsername?.value || '';
 
         const idx = store.addContact({
           contactId,
@@ -265,6 +334,9 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
           intentSummary: displayLabel,
           intentGreeting,
           status: 'incoming',
+          continuedFromTranscriptId: continuedFromTranscriptId || undefined,
+          isContinuation: isContinuation || undefined,
+          preferredAgentUsername: preferredAgentUsername || undefined,
         }, initialMessages);
 
         if (idx === null) {
@@ -285,6 +357,17 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         if (timer) { clearTimeout(timer); autoAcceptTimers.current.delete(contactId); }
 
         store.patchSlot(contactId, { status: 'active' });
+
+        // "Continue this chat": once the agent accepts, load the prior transcript
+        // into this column above a "continued chat" divider.
+        const acceptedSlot = useAgentStore.getState().getSlot(contactId);
+        if (acceptedSlot?.continuedFromTranscriptId) {
+          loadContinuationTranscript(
+            contactId,
+            acceptedSlot.continuedFromTranscriptId,
+            acceptedSlot.preferredAgentUsername ?? '',
+          );
+        }
 
         // ── Establish agent chat session via chatjs getMediaController() ──────
         try {
@@ -383,6 +466,8 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             intentSummary: slotNow.intentSummary,
             startTime: msgs[0]?.timestamp ?? now,
             endTime: msgs[msgs.length - 1]?.timestamp ?? now,
+            agentUsername: useAgentStore.getState().agentUsername,
+            agentName: useAgentStore.getState().agentName,
             messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
           }).catch(() => {});
         }
@@ -394,6 +479,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
       contact.onDestroy(() => {
         trackedContactIds.delete(contactId);
         agentChatSessions.delete(contactId);
+        continuationLoaded.delete(contactId);
         const currentStatus = useAgentStore.getState().getSlot(contactId)?.status;
         if (currentStatus === 'acw') {
           // Preserve contactRef so the Close Contact button can still call contact.clear()

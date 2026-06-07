@@ -40,6 +40,7 @@ A Bob's Mutual Funds service representative managing up to four simultaneous cli
 - The initial interaction is handled by an AI bot (autopilot) running in "full-auto" mode. The bot can answer general questions, direct clients to self-service pages, and handle simple informational requests end-to-end without agent involvement.
 - If the client's request requires account action or they ask to speak to an agent, the bot offers escalation. The client can choose live chat or schedule a callback.
 - When escalating to live chat, the system generates an intent summary and a suggested agent greeting using a secondary LLM call, pre-populating the agent's workspace with context before the first human word is typed.
+- **Continue a recent agent chat:** if the client spoke with a live agent within the last 7 days, opening the chat shows a card above the topic pills noting the date and a one-sentence summary of that prior conversation, with a **"Continue this chat"** button. Clicking it checks whether the *specific* agent they previously spoke with is currently available and lets the client wait for that agent or take the first available one; either way, when an agent accepts, the previous transcript is loaded into their workspace marked as a continued conversation. This is purely additive — the card is absent (and the experience identical to before) when there's no recent agent chat, and the demo "Reset all" clears this memory while leaving the saved transcripts intact.
 - Clickable in-app navigation links are supported within chat messages, allowing the bot to direct clients to specific pages on the portal (e.g., `/account/beneficiaries`) without leaving the chat.
 - Confirmation messages from completed agent actions are rendered as a distinct green confirmation card (rather than a plain chat bubble) with a structured header, reference number, and past-tense description.
 
@@ -159,8 +160,9 @@ When the client or agent opts for a callback instead of live chat:
 
 ### 7. Transcript Storage and Review
 
-- `save-transcript` Lambda: called at chat end, writes the full message history to a `Sessions` DynamoDB table with client ID, contact ID, timestamp, and a 30-day TTL
-- `get-transcripts` Lambda: retrieves transcripts for a given client, used in the transcript review interface
+- `save-transcript` Lambda: called at chat end, writes the full message history to the `Transcripts` DynamoDB table (client ID, contact ID, timestamps, wrap-up code, ACW summary, and the **agent who handled the chat**). It also records the client's most recent agent chat as continuation memory on the client record, powering the "Continue this chat" capability. The permanent transcript log is retained independently and is not affected by the demo "Reset all".
+- `agent-availability` Lambda: reports whether a given agent (by Connect username) is currently logged in and Available — used when a client chooses to continue with the specific agent they previously spoke to.
+- `get-transcripts` Lambda: retrieves transcripts for a given client (or a single transcript by ID), used in the transcript review interface and to reload a prior conversation when a chat is continued
 - A transcript viewer UI exists (separate from the main agent app) for post-hoc conversation review and quality analysis
 
 ---
