@@ -285,9 +285,9 @@ export const KB: KBTopic[] = [
     questions: [
       {
         id: 'q-open-001',
-        text: 'What types of accounts can I open?',
-        answer: "Bob's Mutual Funds offers Roth IRAs, Traditional IRAs, SEP-IRAs (for self-employed individuals), and individual taxable brokerage accounts. Joint taxable accounts are also available. You can open multiple account types to optimize your tax situation. If you're unsure which is right for you, schedule a callback with an advisor.",
-        link: { text: 'Open a new account', url: '/open-account' },
+        text: 'What do I need to have ready before applying?',
+        answer: "To complete the application you'll need your Social Security Number, a government-issued photo ID such as a driver's license or passport, and your bank routing and account numbers if you're funding by ACH. For a rollover, have your current institution's name and account number on hand. The application takes 10–15 minutes and guides you through each step.",
+        link: { text: 'Start your application', url: '/open-account' },
       },
       {
         id: 'q-open-002',
@@ -1481,9 +1481,9 @@ export const KB: KBTopic[] = [
       },
       {
         id: 'q-oad-004',
-        text: 'What happens to my schedule if the market drops?',
-        answer: "Your automatic investments continue on schedule regardless of market conditions — and that's the point. When prices fall, your fixed contribution simply buys more shares, which can work in your favor over the long run. Sticking to the schedule through ups and downs is what makes dollar cost averaging effective.",
-        link: { text: 'Learn more about DCA', url: '/help/sip' },
+        text: 'How much should I start investing automatically?',
+        answer: "There's no single right amount — it depends on your budget and goals. Many investors start with whatever they can comfortably spare each month, then increase it as their income grows. Even $50–$100 invested automatically and consistently can compound into something significant over the years. Start with what's sustainable rather than stretching; you can raise the amount any time from your account page.",
+        link: { text: 'Set up automatic investing', url: '/open-account' },
       },
     ],
   },
@@ -1547,9 +1547,75 @@ export const KB: KBTopic[] = [
       },
       {
         id: 'q-oas-004',
-        text: 'How does a SEP-IRA compare to a Solo 401(k)?',
-        answer: "Both offer high contribution limits for the self-employed. A SEP-IRA is simpler to set up and maintain, while a Solo 401(k) allows salary-deferral contributions (and often a Roth option) that can let you save more at lower income levels. A Solo 401(k) only works if you have no employees other than a spouse. Which is better depends on your income and whether you have staff.",
-        link: { text: 'SEP-IRA vs. Solo 401(k)', url: '/resources/sep-ira-vs-solo' },
+        text: 'What business information do I need to apply?',
+        answer: "For a SEP-IRA you'll need your Employer Identification Number (EIN), your business type (sole proprietor, LLC, S-Corp, etc.), the year the business was established, and the approximate number of eligible employees. If you're a sole proprietor with no employees, you may use your SSN in place of an EIN, though a free EIN is easy to obtain from the IRS at irs.gov. The SEP Adoption Agreement is included in the application — no separate paperwork is required.",
+        link: { text: 'Open a SEP-IRA', url: '/open-account?accountType=sep-ira' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-first-investment',
+    label: 'Choosing your first fund',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oafi-001',
+        text: 'How do I choose my first fund to invest in?',
+        answer: "For most new investors a broad index fund like BobsFunds 500 Index (BF500) is a natural starting point — it tracks 500 large U.S. companies, has an expense ratio of just 0.03%, and gives you instant diversification. If you're more conservative, BobsFunds Bond Income or Short-Term Treasury reduce volatility. If you're values-focused, BobsFunds ESG Leaders invests in companies with strong environmental and governance scores. There's no wrong first choice — you can add more funds after your account opens.",
+        link: { text: 'Browse the BobsFunds lineup', url: '/research' },
+      },
+      {
+        id: 'q-oafi-002',
+        text: 'What is an expense ratio and why does it matter?',
+        answer: "An expense ratio is the annual percentage of your investment a fund charges for operating costs — management, administration, and overhead. A 0.03% ratio means you pay 30 cents per year on every $1,000 invested; it's deducted automatically from fund returns so you never write a check. Lower is generally better, especially for long-term holders, because even a small difference in fees compounds into a large gap over decades.",
+        link: { text: 'Compare expense ratios', url: '/research' },
+      },
+      {
+        id: 'q-oafi-003',
+        text: 'Can I split my initial investment across multiple funds?',
+        answer: "During the application you choose one fund for your initial contribution. Once your account is open — typically 1–3 business days — you can make additional purchases in any fund that meets its $1,000 minimum. If you'd like to split ongoing automatic contributions across multiple funds, you can set up separate DCA schedules for each from your account page.",
+        link: { text: 'Research funds', url: '/research' },
+      },
+      {
+        id: 'q-oafi-004',
+        text: "What's the minimum initial investment per fund?",
+        answer: "Most BobsFunds mutual funds have a $1,000 minimum initial investment. There is no minimum account balance — you can open an account with any dollar amount, as long as your first fund purchase meets that $1,000 threshold. Subsequent purchases in a fund you already own can be as small as $1.",
+        link: { text: 'Browse all funds', url: '/research' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-after-apply',
+    label: 'After you apply',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oaa-001',
+        text: 'What happens after I submit my application?',
+        answer: "Right after you submit, you'll receive a confirmation email with your application reference number. We then verify your identity using the information you provided — this typically takes 1 business day. Once verified, a second email with your account number arrives and your initial investment is placed. The full process is usually complete within 1–3 business days.",
+        link: { text: 'Account opening FAQ', url: '/help/open-account' },
+      },
+      {
+        id: 'q-oaa-002',
+        text: 'When can I start investing after I apply?',
+        answer: "Investing isn't available until your account is officially open, usually 1–3 business days after you submit. However, if you enrolled in automatic investing during the application, that schedule activates as soon as the account opens. Once it's open, you can log in and purchase any fund that meets its initial minimum.",
+        link: { text: 'View fund options', url: '/research' },
+      },
+      {
+        id: 'q-oaa-003',
+        text: 'Will I get a confirmation that my application was received?',
+        answer: "Yes — you'll receive two emails. The first arrives within minutes of submitting and confirms your application was received, along with a reference number you can use if you need to follow up. The second arrives once your identity is verified and your account is open, and includes your account number and next-step instructions.",
+        link: { text: 'Contact us', url: '/help/contact' },
+      },
+      {
+        id: 'q-oaa-004',
+        text: 'What if I made an error on my application?',
+        answer: "If you catch a mistake after submitting, contact us by phone or chat as soon as possible. Minor corrections — address, email, contact phone — can typically be updated quickly. Changes to your legal name or Social Security Number require additional identity verification. The sooner you reach out, the easier the correction before the account fully opens.",
+        link: { text: 'Contact us', url: '/help/contact' },
       },
     ],
   },
@@ -1579,7 +1645,7 @@ export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
   'research/fund/buy':     ['t-trading', 't-expense-ratios', 't-auto-invest', 't-fees'],
 
   // Open an account
-  'open-account':          ['t-account-types', 't-open-account', 't-oa-funding', 't-oa-dca', 't-ira-limits', 't-roth-strategies', 't-oa-disclosures', 't-oa-sep'],
+  'open-account':          ['t-account-types', 't-open-account', 't-oa-funding', 't-oa-dca', 't-oa-disclosures', 't-oa-first-investment', 't-oa-after-apply', 't-oa-sep'],
 
   // Resources pages
   'resources/ira-contribution-limits': ['t-ira-limits', 't-roth-strategies', 't-tax-deductions'],

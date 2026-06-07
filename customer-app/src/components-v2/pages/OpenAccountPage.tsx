@@ -66,6 +66,28 @@ const hintText: React.CSSProperties = {
 
 const req = (...vals: any[]) => vals.every(v => v !== undefined && v !== null && String(v).trim() !== '');
 
+function applyMask(value: string, mask: 'ssn' | 'phone' | 'ein'): string {
+  const digits = value.replace(/\D/g, '');
+  if (mask === 'ssn') {
+    const d = digits.slice(0, 9);
+    if (d.length <= 3) return d;
+    if (d.length <= 5) return `${d.slice(0, 3)}-${d.slice(3)}`;
+    return `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}`;
+  }
+  if (mask === 'ein') {
+    const d = digits.slice(0, 9);
+    return d.length <= 2 ? d : `${d.slice(0, 2)}-${d.slice(2)}`;
+  }
+  // phone: (XXX) XXX-XXXX
+  const d = digits.slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+const maskPlaceholder = { ssn: 'XXX-XX-XXXX', phone: '(XXX) XXX-XXXX', ein: 'XX-XXXXXXX' };
+const maskMaxLen    = { ssn: 11, phone: 14, ein: 10 };
+
 // ── Option helpers ──────────────────────────────────────────────────────────
 
 type Opt = string | { value: string; label: string };
@@ -87,6 +109,7 @@ function TextField(props: {
   label: string; value: string; onChange: (v: string) => void;
   type?: string; placeholder?: string; required?: boolean; hint?: string;
   full?: boolean; prefix?: string; maxLength?: number; inputMode?: any;
+  mask?: 'ssn' | 'phone' | 'ein';
 }) {
   const [focus, setFocus] = useState(false);
   const ctrl: React.CSSProperties = {
@@ -105,12 +128,12 @@ function TextField(props: {
           <span style={{ position: 'absolute', left: 11, top: 'calc(50% + 3px)', transform: 'translateY(-50%)', fontSize: 14, color: theme.color.textMuted, pointerEvents: 'none' }}>{props.prefix}</span>
         )}
         <input
-          type={props.type || 'text'}
+          type={props.mask ? 'text' : (props.type || 'text')}
           value={props.value}
-          placeholder={props.placeholder}
-          maxLength={props.maxLength}
-          inputMode={props.inputMode}
-          onChange={e => props.onChange(e.target.value)}
+          placeholder={props.mask ? maskPlaceholder[props.mask] : props.placeholder}
+          maxLength={props.mask ? maskMaxLen[props.mask] : props.maxLength}
+          inputMode={props.mask ? 'numeric' : props.inputMode}
+          onChange={e => props.onChange(props.mask ? applyMask(e.target.value, props.mask) : e.target.value)}
           onFocus={() => setFocus(true)}
           onBlur={() => setFocus(false)}
           style={ctrl}
@@ -136,7 +159,7 @@ function SelectField(props: {
     backgroundPosition: 'right 12px center',
     paddingRight: 30,
     cursor: 'pointer',
-    color: props.value ? theme.color.text : theme.color.textSubtle,
+    color: theme.color.text,
     borderColor: focus ? theme.color.primary : theme.color.borderStrong,
     boxShadow: focus ? `0 0 0 3px ${theme.color.primarySoft}` : 'none',
     transition: 'border-color .12s, box-shadow .12s',
@@ -561,7 +584,7 @@ export function OpenAccountPage() {
               <TextField label="Middle initial" value={form.mi} onChange={set('mi')} maxLength={1} />
               <SelectField label="Suffix" value={form.suffix} onChange={set('suffix')} options={SUFFIXES} />
               <TextField label="Date of birth" value={form.dob} onChange={set('dob')} type="date" required />
-              <TextField label="Social Security Number" value={form.ssn} onChange={set('ssn')} placeholder="XXX-XX-XXXX" required hint="Required by federal law to open an account." />
+              <TextField label="Social Security Number" value={form.ssn} onChange={set('ssn')} mask="ssn" required hint="Required by federal law to open an account." />
             </div>
             <SubHeading>Citizenship</SubHeading>
             <div style={{ ...grid2, marginBottom: 16 }}>
@@ -602,8 +625,8 @@ export function OpenAccountPage() {
             <SubHeading>Contact</SubHeading>
             <div style={{ ...grid2, marginBottom: 16 }}>
               <TextField label="Email address" value={form.email} onChange={set('email')} type="email" required full />
-              <TextField label="Mobile phone" value={form.mobilePhone} onChange={set('mobilePhone')} type="tel" required />
-              <TextField label="Home / alternate phone" value={form.altPhone} onChange={set('altPhone')} type="tel" />
+              <TextField label="Mobile phone" value={form.mobilePhone} onChange={set('mobilePhone')} mask="phone" required />
+              <TextField label="Home / alternate phone" value={form.altPhone} onChange={set('altPhone')} mask="phone" />
             </div>
             <SubHeading>Mailing address</SubHeading>
             <div style={grid2}>
@@ -680,7 +703,7 @@ export function OpenAccountPage() {
             <div style={grid2}>
               <TextField label="Full name" value={form.trustedName} onChange={set('trustedName')} />
               <SelectField label="Relationship" value={form.trustedRelationship} onChange={set('trustedRelationship')} options={RELATIONSHIPS} />
-              <TextField label="Phone" value={form.trustedPhone} onChange={set('trustedPhone')} type="tel" />
+              <TextField label="Phone" value={form.trustedPhone} onChange={set('trustedPhone')} mask="phone" />
               <TextField label="Email" value={form.trustedEmail} onChange={set('trustedEmail')} type="email" />
             </div>
           </div>
@@ -735,7 +758,7 @@ export function OpenAccountPage() {
               <div style={card}>
                 <div style={grid2}>
                   <TextField label="Business / employer name" value={form.businessName} onChange={set('businessName')} required full />
-                  <TextField label="Employer Identification Number (EIN)" value={form.ein} onChange={set('ein')} placeholder="XX-XXXXXXX" required />
+                  <TextField label="Employer Identification Number (EIN)" value={form.ein} onChange={set('ein')} mask="ein" required />
                   <SelectField label="Business type" value={form.businessType} onChange={set('businessType')} options={BUSINESS_TYPES} required />
                   <TextField label="Year business established" value={form.businessYear} onChange={set('businessYear')} placeholder="YYYY" maxLength={4} inputMode="numeric" />
                   <TextField label="Number of eligible employees" value={form.businessEmployees} onChange={set('businessEmployees')} inputMode="numeric" />
@@ -761,7 +784,7 @@ export function OpenAccountPage() {
                       <TextField label="First name" value={form.jointFname} onChange={set('jointFname')} required />
                       <TextField label="Last name" value={form.jointLname} onChange={set('jointLname')} required />
                       <TextField label="Date of birth" value={form.jointDob} onChange={set('jointDob')} type="date" required />
-                      <TextField label="Social Security Number" value={form.jointSsn} onChange={set('jointSsn')} placeholder="XXX-XX-XXXX" required />
+                      <TextField label="Social Security Number" value={form.jointSsn} onChange={set('jointSsn')} mask="ssn" required />
                     </div>
                     <div style={{ marginTop: 12 }}>
                       <InfoCallout>Joint accounts are opened as Joint Tenants with Right of Survivorship (JTWROS) — if one owner passes away, the survivor retains full ownership.</InfoCallout>
@@ -1105,7 +1128,7 @@ function BeneficiaryRow(props: {
         <TextField label="Full name" value={b.name} onChange={v => onChange(b.id, 'name', v)} required />
         <SelectField label="Relationship" value={b.relationship} onChange={v => onChange(b.id, 'relationship', v)} options={RELATIONSHIPS} required />
         <TextField label="Date of birth" value={b.dob} onChange={v => onChange(b.id, 'dob', v)} type="date" />
-        <TextField label="SSN (optional)" value={b.ssn} onChange={v => onChange(b.id, 'ssn', v)} placeholder="XXX-XX-XXXX" />
+        <TextField label="SSN (optional)" value={b.ssn} onChange={v => onChange(b.id, 'ssn', v)} mask="ssn" />
         <TextField label="Allocation %" value={b.allocation} onChange={v => onChange(b.id, 'allocation', v)} placeholder="100" inputMode="numeric" required />
       </div>
     </div>
