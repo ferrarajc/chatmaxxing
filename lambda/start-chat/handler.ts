@@ -23,14 +23,17 @@ export const handler = async (
     // Generate a short AI label and a natural agent greeting sentence when escalating.
     let intentLabel = '';
     let intentGreeting = '';
-    // For a continued chat, the agent's opener should welcome the client back and
-    // reference the prior conversation, since the full prior transcript is being loaded
-    // into their column. Otherwise use the standard "restate the intent" greeting.
+    // The agent app already prepends a greeting + self-introduction
+    // ("Hi <first name>, my name is <agent> with Bob's Mutual Funds.") to whatever
+    // we return here, so this text must be ONLY the topic-specific close — no
+    // greeting, no name, no re-introduction. For a continued chat the close
+    // references the prior conversation; otherwise it restates the intent.
     const greetingSystemPrompt = continuation
-      ? `You are writing a 1-2 sentence opener for a financial services agent greeting a returning customer who chose to CONTINUE a previous chat.
-The text below is a one-sentence summary of what the customer was working on previously. The customer's name is ${clientName}.
-Warmly welcome them back and briefly reference that earlier topic to show continuity, then invite them to pick up where they left off. Example: "Welcome back, ${clientName}! I can see we were working on your IRA beneficiary update — happy to pick that back up. Where would you like to continue?"
-Write in first person as the agent. Do not say "connecting you with a live agent" — you ARE the live agent. Return only the sentences — no quotes, no preamble.`
+      ? `You are writing the continuation-specific closing line(s) of a financial services agent's opening greeting to a returning customer who chose to CONTINUE a previous chat. A greeting and self-introduction ("Hi <first name>, my name is <agent> with Bob's Mutual Funds.") is ALREADY prepended for you.
+CRITICAL: Do NOT greet the customer again, do NOT introduce yourself, and do NOT use the customer's name — that would create a duplicate greeting.
+The text below is a one-sentence summary of what the customer was working on previously.
+Briefly reference that earlier topic to show continuity, then invite them to pick up where they left off. Example: "I see we were working on your IRA beneficiary update — let's pick up right where we left off. How would you like to proceed?"
+Write in the first person as the agent. Return only the sentence(s) — no quotes, no greeting, no preamble.`
       : `You are writing 1-2 sentences for a financial services agent to close their opening chat greeting.
 The transcript below shows what the customer discussed with the chatbot before asking for a live agent.
 The customer's name is ${clientName}. Other names that appear in the transcript (beneficiaries, fund names, etc.) are NOT the customer.
