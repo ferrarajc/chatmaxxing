@@ -149,6 +149,7 @@ function GuideCard({ article, index }: { article: Article; index: number }) {
         borderRadius: theme.radius.lg,
         padding: '18px 20px',
         display: 'flex', gap: 16, alignItems: 'flex-start',
+        height: '100%', boxSizing: 'border-box',
         transition: 'box-shadow 0.15s, transform 0.15s',
       }}
         onMouseEnter={e => {
@@ -200,7 +201,9 @@ export function LibraryPage() {
 
       {/* ── Masthead ── */}
       <div style={{
-        background: theme.color.primary,
+        backgroundImage: `url('/chatmaxxing/images/Bookstacks.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         borderTop: `5px solid ${theme.color.accent}`,
         padding: '52px 48px 48px',
       }}>
@@ -223,7 +226,7 @@ export function LibraryPage() {
             margin: 0, fontSize: 17, color: 'rgba(251,249,244,0.68)',
             maxWidth: 560, lineHeight: 1.6, fontWeight: 400,
           }}>
-            Guides for every stage of your investing journey. Opinion and perspective from our founder. Reference for every question along the way.
+            Guides for every stage of your investing journey.<br />Opinion and perspective from our founder.<br />Reference for every question along the way.
           </p>
         </div>
       </div>
