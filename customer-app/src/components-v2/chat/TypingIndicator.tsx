@@ -10,7 +10,13 @@ const WAITING_MESSAGES = [
   'One moment...',
 ];
 
-export function TypingIndicator({ isWaiting = false }: { isWaiting?: boolean }) {
+interface Props {
+  isWaiting?: boolean;
+  /** When set, the avatar shows the connected agent's initials (accent color) instead of Bob's "B". */
+  agentLabel?: string | null;
+}
+
+export function TypingIndicator({ isWaiting = false, agentLabel = null }: Props) {
   const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
@@ -19,14 +25,17 @@ export function TypingIndicator({ isWaiting = false }: { isWaiting?: boolean }) 
     return () => clearInterval(t);
   }, [isWaiting]);
 
+  const isAgent = !!agentLabel;
+
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
       <div style={{
-        width: 28, height: 28, borderRadius: '50%', background: theme.color.primary,
+        width: 28, height: 28, borderRadius: '50%',
+        background: isAgent ? theme.color.accent : theme.color.primary,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 12, color: theme.color.textOnPrimary, fontWeight: 600,
         letterSpacing: '0.04em',
-      }}>B</div>
+      }}>{isAgent ? agentLabel : 'B'}</div>
       <div style={{
         background: theme.color.botBubble, borderRadius: '14px 14px 14px 4px',
         padding: '11px 14px', display: 'flex', gap: 4, alignItems: 'center',

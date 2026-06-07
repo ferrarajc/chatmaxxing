@@ -63,8 +63,8 @@ interface StartChatResponse {
 type ChatJsSession = {
   connect: () => Promise<void>;
   disconnect: () => void;
-  onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string } }) => void) => void;
-  onTyping: (cb: (e: { data: { ParticipantRole?: string } }) => void) => void;
+  onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string; DisplayName?: string } }) => void) => void;
+  onTyping: (cb: (e: { data: { ParticipantRole?: string; DisplayName?: string } }) => void) => void;
   onConnectionEstablished: (cb: () => void) => void;
   onConnectionBroken: (cb: () => void) => void;
   onEnded: (cb: () => void) => void;
@@ -115,7 +115,11 @@ function createAndBindSession(
 
     const role = msg.ParticipantRole === 'AGENT' ? 'AGENT' : 'BOT';
     // A real message means the agent is done composing — clear the typing ellipsis.
-    if (role === 'AGENT') clearAgentTyping();
+    if (role === 'AGENT') {
+      clearAgentTyping();
+      // Capture the connected agent's name so the chat shows their initials (e.g. "JF").
+      if (msg.DisplayName) store.setAgentName(msg.DisplayName);
+    }
     store.addMessage({ role, content: msg.Content });
 
     if (role === 'BOT') {
@@ -142,6 +146,8 @@ function createAndBindSession(
     // Only meaningful once an agent is (being) connected — never during the bot phase.
     const liveState = useChatStore.getState().state;
     if (liveState !== 'CONNECTED_TO_AGENT' && liveState !== 'WAITING_FOR_AGENT') return;
+    // Capture the agent's name from the typing event so the ellipsis shows their initials.
+    if (data?.DisplayName) store.setAgentName(data.DisplayName);
     store.setAgentTyping(true);
     if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
     agentTypingTimerRef.current = setTimeout(() => {

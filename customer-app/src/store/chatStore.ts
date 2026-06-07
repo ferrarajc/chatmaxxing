@@ -19,6 +19,8 @@ export interface ChatStore {
   isTyping: boolean;
   /** True while a live agent is composing a reply (or autopilot is delaying a send). Drives the ellipsis indicator. */
   agentTyping: boolean;
+  /** Connected human agent's display name (from Connect), once a live agent is handling the chat; null while pre-agent/bot. */
+  agentName: string | null;
   escalationWaitTime: number | null;
   escalationPending: boolean;
   callbackConfirmation: CallbackConfirmation | null;
@@ -34,6 +36,7 @@ export interface ChatStore {
   setLevelTwoQuestions: (questions: KBQuestionResult[] | null) => void;
   setTyping: (v: boolean) => void;
   setAgentTyping: (v: boolean) => void;
+  setAgentName: (v: string) => void;
   setEscalationWaitTime: (v: number | null) => void;
   setEscalationPending: (v: boolean) => void;
   setCallbackConfirmation: (v: CallbackConfirmation) => void;
@@ -53,6 +56,7 @@ const initial = {
   levelTwoQuestions: null,
   isTyping: false,
   agentTyping: false,
+  agentName: null,
   escalationWaitTime: null,
   escalationPending: false,
   callbackConfirmation: null,
@@ -81,6 +85,7 @@ export const useChatStore = create<ChatStore>(set => ({
   setLevelTwoQuestions: (levelTwoQuestions) => set({ levelTwoQuestions }),
   setTyping: (isTyping) => set({ isTyping }),
   setAgentTyping: (agentTyping) => set({ agentTyping }),
+  setAgentName: (agentName) => set({ agentName }),
   setEscalationWaitTime: (escalationWaitTime) => set({ escalationWaitTime }),
   setEscalationPending: (escalationPending) => set({ escalationPending }),
   setCallbackConfirmation: (callbackConfirmation) => set({ callbackConfirmation }),

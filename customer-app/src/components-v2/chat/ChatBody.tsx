@@ -8,6 +8,7 @@ import { TopicButtons } from './TopicButtons';
 import { QuestionButtons } from './QuestionButtons';
 import { TypingIndicator } from './TypingIndicator';
 import { ContinueChatCard } from './ContinueChatCard';
+import { initialsFromName } from '../../utils/initials';
 import { theme } from '../../theme';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -19,7 +20,7 @@ interface Props {
 }
 
 export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) {
-  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, agentTyping, continuation } = useChatStore();
+  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, agentTyping, agentName, continuation } = useChatStore();
   const addMessage = useChatStore(s => s.addMessage);
   const setTyping = useChatStore(s => s.setTyping);
   const { activePersona } = useClientStore();
@@ -122,8 +123,8 @@ export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) 
       ))}
 
       {isTyping && <TypingIndicator isWaiting />}
-      {/* Live agent (or delaying autopilot) is composing — animated ellipsis */}
-      {agentTyping && !isTyping && <TypingIndicator />}
+      {/* Live agent (or delaying autopilot) is composing — animated ellipsis with the agent's initials */}
+      {agentTyping && !isTyping && <TypingIndicator agentLabel={initialsFromName(agentName) ?? 'A'} />}
       <div ref={bottomRef} />
     </div>
   );
