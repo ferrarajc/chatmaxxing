@@ -3,6 +3,7 @@ import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
+import { invokeNovaMicro } from '../shared/bedrock-client';
 
 export interface TranscriptMessage {
   id: string;
@@ -27,13 +28,41 @@ export interface SaveTranscriptRequest {
   messages: TranscriptMessage[];
 }
 
-/** Build the one-sentence intent summary shown on the "Continue this chat" card. */
-function buildContinuationSummary(body: SaveTranscriptRequest): string {
-  const fromIntent = (body.intentSummary ?? '').replace(/\*\*/g, '').trim();
-  if (fromIntent) return fromIntent.slice(0, 200);
-  const fromAcw = (body.acwSummary ?? '').trim();
-  if (fromAcw) return fromAcw.slice(0, 200);
-  return 'your recent inquiry';
+const RECAP_FALLBACK = 'you connected with our team about your account';
+
+/**
+ * Generate the retrospective recap shown on the "Continue this chat" card.
+ * A single second-person, past-tense clause completing "In your last chat, ___",
+ * summarizing what actually happened (from the transcript) — not just the opening ask.
+ */
+async function generateRetrospectiveSummary(body: SaveTranscriptRequest): Promise<string> {
+  const convo = (body.messages ?? [])
+    .filter(m => m.role === 'CUSTOMER' || m.role === 'AGENT' || m.role === 'BOT')
+    .map(m => `${m.role}: ${m.content}`)
+    .join('\n')
+    .slice(0, 6000);
+  if (!convo.trim()) return RECAP_FALLBACK;
+
+  try {
+    const raw = await invokeNovaMicro(
+      convo,
+      `You are writing a one-line retrospective recap of ${body.clientName ?? 'a customer'}'s most recent support chat, shown to them when they return.
+The transcript is formatted as "ROLE: message" lines (CUSTOMER = the client, AGENT = the human representative, BOT = the assistant).
+Write a SINGLE clause in the SECOND PERSON ("you"), PAST TENSE, that completes the sentence: "In your last chat, ___".
+- Summarize what actually happened or was accomplished across the chat — not just the opening request.
+- Begin the clause with "you" (lowercase). Be specific and natural. One complete thought, max 25 words.
+- Do NOT add a trailing period. Do NOT use quotation marks. Return only the clause.
+Example: you granted your wife limited access to trade on your account`,
+      80,
+      { fn: 'save-transcript', contactId: body.transcriptId, scope: 'continuation-recap' },
+    );
+    let cleaned = raw.trim().replace(/^["']|["']$/g, '').replace(/\.+$/, '').trim();
+    if (cleaned) cleaned = cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+    return cleaned || RECAP_FALLBACK;
+  } catch (e) {
+    console.warn('save-transcript: retrospective summary generation failed', e);
+    return RECAP_FALLBACK;
+  }
 }
 
 export const handler = async (
@@ -76,6 +105,7 @@ export const handler = async (
     // table (NOT the transcripts table) so the demo "Reset all" can clear the
     // continuation memory while leaving the permanent transcript log untouched.
     try {
+      const summary = await generateRetrospectiveSummary(body);
       await docClient.send(new UpdateCommand({
         TableName: process.env.CLIENTS_TABLE!,
         Key: { clientId },
@@ -84,7 +114,7 @@ export const handler = async (
           ':lac': {
             transcriptId,
             endedAt: endTime,
-            summary: buildContinuationSummary(body),
+            summary,
             agentUsername: body.agentUsername ?? '',
             agentName: body.agentName ?? '',
           },

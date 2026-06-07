@@ -24,16 +24,16 @@ export function ContinueChatCard({ continuation, onContinue }: Props) {
   const mounted = useRef(true);
   React.useEffect(() => () => { mounted.current = false; }, []);
 
-  const agentFull = continuation.agentName?.trim();
+  const agentFull = continuation.agentName?.trim() ?? '';
   const agentFirst = agentFull ? agentFull.split(/\s+/)[0] : '';
-  const agentLabel = agentFirst || 'your previous agent';
+  const waitLabel = agentFirst || 'them';
 
   async function handleContinue() {
     setPhase('checking');
     setSteps(['Pulling up your previous conversation…']);
     await sleep(650);
     if (!mounted.current) return;
-    setSteps(s => [...s, `Checking whether ${agentLabel} is available…`]);
+    setSteps(s => [...s, `Checking whether ${agentFirst || 'your previous agent'} is online…`]);
 
     let available = false;
     try {
@@ -52,7 +52,7 @@ export function ContinueChatCard({ continuation, onContinue }: Props) {
       setPhase('choose');
     } else {
       setPhase('connecting');
-      setSteps(s => [...s, `${agentLabel} isn't available right now — connecting you with the first available agent…`]);
+      setSteps(s => [...s, `${agentFull || 'Your previous agent'} isn't online right now — connecting you with the first available agent…`]);
       await sleep(1100);
       if (!mounted.current) return;
       onContinue(null);
@@ -73,7 +73,7 @@ export function ContinueChatCard({ continuation, onContinue }: Props) {
 
   return (
     <div style={{
-      background: theme.color.surfaceWell, borderRadius: theme.radius.lg,
+      background: '#FFFFE6', borderRadius: theme.radius.lg,
       border: `1px solid ${theme.color.border}`, borderLeft: `3px solid ${theme.color.accent}`,
       padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10,
     }}>
@@ -88,10 +88,9 @@ export function ContinueChatCard({ continuation, onContinue }: Props) {
         }}>Pick up where you left off</span>
       </div>
 
-      {/* Summary line */}
+      {/* Summary line — retrospective, second person, past tense */}
       <div style={{ fontSize: 13, lineHeight: 1.5, color: theme.color.textMuted }}>
-        Your last chat on <strong style={{ color: theme.color.text, fontWeight: 600 }}>{fmtDate(continuation.endedAt)}</strong>
-        {' '}was about {continuation.summary}.
+        In your last chat on <strong style={{ color: theme.color.text, fontWeight: 600 }}>{fmtDate(continuation.endedAt)}</strong>, {continuation.summary}.
       </div>
 
       {/* Idle — the call to action */}
@@ -122,15 +121,17 @@ export function ContinueChatCard({ continuation, onContinue }: Props) {
         </div>
       )}
 
-      {/* Choose — previous agent is available */}
+      {/* Choose — previous agent is online */}
       {phase === 'choose' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 13, lineHeight: 1.5, color: theme.color.text }}>
-            Good news — <strong style={{ fontWeight: 600 }}>{agentLabel}</strong> is available. Would you like to wait for them, or connect with the first available agent?
+            Good news — the agent who worked with you last time
+            {agentFull ? <>, <strong style={{ fontWeight: 600 }}>{agentFull}</strong>,</> : ' '}
+            {' '}is online. Would you prefer to wait for them, or connect with the first available agent?
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             <button onClick={() => onContinue(continuation.agentUsername)} style={pillFilled}>
-              Wait for {agentLabel}
+              Wait for {waitLabel}
             </button>
             <button onClick={() => onContinue(null)} style={pillOutline}>
               First available agent
