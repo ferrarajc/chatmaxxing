@@ -47,7 +47,7 @@ export function PortfolioPage() {
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = theme.color.primary; (e.currentTarget as HTMLElement).style.boxShadow = theme.shadow.sm; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
         >
           <span style={{ fontSize: 16, lineHeight: 1, fontWeight: 400 }}>+</span>
-          Open an account
+          Add an account
         </Link>
       </div>
 
