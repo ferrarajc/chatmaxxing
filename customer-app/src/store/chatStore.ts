@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ChatState, ChatMessage, CallbackConfirmation, KBQuestionResult } from '../types';
+import { ChatState, ChatMessage, CallbackConfirmation, KBQuestionResult, LastAgentChat } from '../types';
 import { nanoid } from './nanoid';
 
 // Tiny nanoid replacement (no external dep)
@@ -20,6 +20,8 @@ export interface ChatStore {
   escalationWaitTime: number | null;
   escalationPending: boolean;
   callbackConfirmation: CallbackConfirmation | null;
+  /** The client's most recent agent chat, for the "Continue this chat" card; null = none/not loaded. */
+  continuation: LastAgentChat | null;
 
   // Actions
   transitionTo: (s: ChatState) => void;
@@ -32,6 +34,7 @@ export interface ChatStore {
   setEscalationWaitTime: (v: number | null) => void;
   setEscalationPending: (v: boolean) => void;
   setCallbackConfirmation: (v: CallbackConfirmation) => void;
+  setContinuation: (v: LastAgentChat | null) => void;
   reset: () => void;
 }
 
@@ -49,6 +52,7 @@ const initial = {
   escalationWaitTime: null,
   escalationPending: false,
   callbackConfirmation: null,
+  continuation: null,
 };
 
 export const useChatStore = create<ChatStore>(set => ({
@@ -75,5 +79,6 @@ export const useChatStore = create<ChatStore>(set => ({
   setEscalationWaitTime: (escalationWaitTime) => set({ escalationWaitTime }),
   setEscalationPending: (escalationPending) => set({ escalationPending }),
   setCallbackConfirmation: (callbackConfirmation) => set({ callbackConfirmation }),
+  setContinuation: (continuation) => set({ continuation }),
   reset: () => set(initial),
 }));

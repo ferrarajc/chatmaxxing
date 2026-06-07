@@ -10,9 +10,10 @@ interface Props {
   currentPage: string;
   onSendMessage: (text: string) => void;
   onEscalateToAgent: () => void;
+  onContinueChat: (preferredAgentUsername: string | null) => void;
 }
 
-export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent }: Props) {
+export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onContinueChat }: Props) {
   const { state, reset } = useChatStore();
   const [showCallbackScheduler, setShowCallbackScheduler] = useState(false);
 
@@ -72,7 +73,7 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent }: Pro
           />
         ) : (
           <>
-            <ChatBody currentPage={currentPage} onSendMessage={onSendMessage} />
+            <ChatBody currentPage={currentPage} onSendMessage={onSendMessage} onContinueChat={onContinueChat} />
             {state === 'ESCALATION_OFFERED' && (
               <EscalationPanel
                 onConnectByChat={onEscalateToAgent}

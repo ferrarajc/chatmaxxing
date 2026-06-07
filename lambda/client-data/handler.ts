@@ -5,6 +5,7 @@ import { jsonResponse } from '../shared/types';
 
 type Action =
   | 'get-all'
+  | 'get-continuation'
   | 'get-beneficiaries' | 'put-beneficiaries'
   | 'get-auto-invest'   | 'put-auto-invest'
   | 'get-rmd'           | 'put-rmd'
@@ -54,6 +55,18 @@ export const handler = async (
           rmd:               item.rmd               ?? { eligible: false },
           recentChatHistory: item.recentChatHistory ?? [],
         });
+      }
+
+      // ── Continuation memory (most recent agent chat) ──────────────────────
+      // Powers the "Continue this chat" card in the customer chat widget. Returns
+      // null when there is no recent agent chat (or after a "Reset all").
+      case 'get-continuation': {
+        const result = await docClient.send(new GetCommand({
+          TableName: table,
+          Key: { clientId },
+          ProjectionExpression: 'lastAgentChat',
+        }));
+        return jsonResponse(200, { lastAgentChat: result.Item?.lastAgentChat ?? null });
       }
 
       // ── Profile fields (name, phone, email, address) ──────────────────────

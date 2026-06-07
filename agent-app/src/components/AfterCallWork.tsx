@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ContactSlot } from '../types';
 import { WRAP_UP_CODES } from '../data/wrapUpCodes';
 import { post } from '../api/client';
+import { useAgentStore } from '../store/agentStore';
 
 interface Props { slot: ContactSlot; }
 
@@ -22,6 +23,7 @@ export function AfterCallWork({ slot }: Props) {
     // Save transcript before the slot is cleared — includes final acwData
     const msgs = slot.messages;
     const now = Date.now();
+    const { agentUsername, agentName } = useAgentStore.getState();
     post('/save-transcript', {
       transcriptId: slot.contactId,
       clientId: slot.clientId,
@@ -31,6 +33,8 @@ export function AfterCallWork({ slot }: Props) {
       endTime: msgs[msgs.length - 1]?.timestamp ?? now,
       wrapUpCode: selectedCode || acw?.wrapUpCode || null,
       acwSummary: summaryText || acw?.summary || null,
+      agentUsername,
+      agentName,
       messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
     }).catch(() => {});
 

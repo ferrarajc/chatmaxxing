@@ -21,6 +21,7 @@ function saveTranscript(slot: ContactSlot, acwData?: ACWData | null) {
   const msgs = slot.messages;
   const acw = acwData ?? slot.acwData;
   const now = Date.now();
+  const { agentUsername, agentName } = useAgentStore.getState();
   post('/save-transcript', {
     transcriptId: slot.contactId,
     clientId: slot.clientId,
@@ -30,6 +31,8 @@ function saveTranscript(slot: ContactSlot, acwData?: ACWData | null) {
     endTime: msgs[msgs.length - 1]?.timestamp ?? now,
     wrapUpCode: acw?.wrapUpCode ?? null,
     acwSummary: acw?.summary ?? null,
+    agentUsername,
+    agentName,
     messages: msgs.map(m => ({ id: m.id, ts: m.timestamp, role: m.role, content: m.content })),
   }).catch(() => {});
 }

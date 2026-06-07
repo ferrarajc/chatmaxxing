@@ -263,6 +263,26 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // ── agent-availability (is the previous agent on queue?) ───────
+    const agentAvailabilityFn = new NodejsFunction(this, 'AgentAvailabilityFn', {
+      functionName: 'bobs-agent-availability',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'agent-availability/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: {
+        ...baseEnv,
+        CONNECT_INSTANCE_ID: process.env.CONNECT_INSTANCE_ID ?? '467c849e-e16e-404a-b9f8-ebb623f84c8b',
+      },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    agentAvailabilityFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['connect:*'],
+      resources: ['*'],
+    }));
+
     // ── execute-task (agent proposed-action execution) ─────────────
     const executeTaskFn = new NodejsFunction(this, 'ExecuteTaskFn', {
       functionName: 'bobs-execute-task',
@@ -334,6 +354,8 @@ export class LambdaStack extends cdk.Stack {
     });
     transcriptsTable.grantWriteData(saveTranscriptFn);
     chatSessionsTable.grantWriteData(saveTranscriptFn);
+    // Writes lastAgentChat (continuation memory) onto the client record at chat end.
+    clientsTable.grantWriteData(saveTranscriptFn);
 
     // ── get-transcripts ────────────────────────────────────────────
     const getTranscriptsFn = new NodejsFunction(this, 'GetTranscriptsFn', {
@@ -378,6 +400,7 @@ export class LambdaStack extends cdk.Stack {
       ['/autopilot-turn', autopilotTurnFn],
       ['/generate-acw', generateAcwFn],
       ['/agent-connection', agentConnectionFn],
+      ['/agent-availability', agentAvailabilityFn],
       ['/send-agent-message', sendAgentMessageFn],
       ['/client-log', clientLogFn],
       ['/client-data', clientDataFn],

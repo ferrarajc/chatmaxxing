@@ -11,7 +11,10 @@ export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
   try {
-    const { clientId, clientName, currentPage, escalate, intentSummary } = JSON.parse(event.body ?? '{}');
+    const {
+      clientId, clientName, currentPage, escalate, intentSummary,
+      continuation, continuedFromTranscriptId, preferredAgentUsername,
+    } = JSON.parse(event.body ?? '{}');
 
     if (!clientId || !clientName) {
       return jsonResponse(400, { error: 'clientId and clientName are required' });
@@ -20,6 +23,27 @@ export const handler = async (
     // Generate a short AI label and a natural agent greeting sentence when escalating.
     let intentLabel = '';
     let intentGreeting = '';
+    // For a continued chat, the agent's opener should welcome the client back and
+    // reference the prior conversation, since the full prior transcript is being loaded
+    // into their column. Otherwise use the standard "restate the intent" greeting.
+    const greetingSystemPrompt = continuation
+      ? `You are writing a 1-2 sentence opener for a financial services agent greeting a returning customer who chose to CONTINUE a previous chat.
+The text below is a one-sentence summary of what the customer was working on previously. The customer's name is ${clientName}.
+Warmly welcome them back and briefly reference that earlier topic to show continuity, then invite them to pick up where they left off. Example: "Welcome back, ${clientName}! I can see we were working on your IRA beneficiary update — happy to pick that back up. Where would you like to continue?"
+Write in first person as the agent. Do not say "connecting you with a live agent" — you ARE the live agent. Return only the sentences — no quotes, no preamble.`
+      : `You are writing 1-2 sentences for a financial services agent to close their opening chat greeting.
+The transcript below shows what the customer discussed with the chatbot before asking for a live agent.
+The customer's name is ${clientName}. Other names that appear in the transcript (beneficiaries, fund names, etc.) are NOT the customer.
+The transcript is formatted as "ROLE: message | ROLE: message | ...".
+
+If the customer's need is clearly and fully explained: briefly restate it in your own words to confirm understanding, then ask if you have it right. Example: "It sounds like you're trying to figure out how much you need to withdraw from your IRA this year and whether taxes will be withheld automatically — is that right?"
+
+If the topic is mentioned but the customer hasn't fully explained what they need: acknowledge the topic and ask a focused follow-up to understand their specific situation. Example: "I can see you have some questions about RMDs — could you tell me a bit more about what you're trying to figure out?"
+
+If there is NO clear intent signal in the transcript: return exactly: How can I assist you today?
+
+Write in first person as the agent. Do not include any reference to "connecting with a live agent" or "speaking with a representative" — the agent reading this greeting IS already live with the customer. Return only the sentences — no quotes, no preamble.`;
+
     if (escalate && intentSummary) {
       try {
         const [labelRaw, greetingRaw] = await Promise.all([
@@ -38,18 +62,7 @@ Return only the plain text sentence with those markers — no quotes, no JSON, n
           ),
           invokeNovaMicro(
             intentSummary,
-            `You are writing 1-2 sentences for a financial services agent to close their opening chat greeting.
-The transcript below shows what the customer discussed with the chatbot before asking for a live agent.
-The customer's name is ${clientName}. Other names that appear in the transcript (beneficiaries, fund names, etc.) are NOT the customer.
-The transcript is formatted as "ROLE: message | ROLE: message | ...".
-
-If the customer's need is clearly and fully explained: briefly restate it in your own words to confirm understanding, then ask if you have it right. Example: "It sounds like you're trying to figure out how much you need to withdraw from your IRA this year and whether taxes will be withheld automatically — is that right?"
-
-If the topic is mentioned but the customer hasn't fully explained what they need: acknowledge the topic and ask a focused follow-up to understand their specific situation. Example: "I can see you have some questions about RMDs — could you tell me a bit more about what you're trying to figure out?"
-
-If there is NO clear intent signal in the transcript: return exactly: How can I assist you today?
-
-Write in first person as the agent. Do not include any reference to "connecting with a live agent" or "speaking with a representative" — the agent reading this greeting IS already live with the customer. Return only the sentences — no quotes, no preamble.`,
+            greetingSystemPrompt,
             120,
           ),
         ]);
@@ -77,6 +90,11 @@ Write in first person as the agent. Do not include any reference to "connecting 
           intentSummary: intentSummary ?? '',
           intentLabel,
           intentGreeting,
+          // Continuation metadata — present only when the client clicked "Continue this chat".
+          // The agent app reads these to load the prior transcript into the column.
+          continuation: continuation ? 'true' : '',
+          continuedFromTranscriptId: continuedFromTranscriptId ?? '',
+          preferredAgentUsername: preferredAgentUsername ?? '',
         },
         ChatDurationInMinutes: 60,
         SupportedMessagingContentTypes: ['text/plain', 'text/markdown'],

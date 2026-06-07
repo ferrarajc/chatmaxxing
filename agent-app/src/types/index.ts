@@ -57,6 +57,12 @@ export interface ContactSlot {
   acwData: ACWData | null;
   /** Populated when get-intent scope collects all required fields; cleared after submit/reject */
   proposedAction: ProposedActionData | null;
+  /** transcriptId of the prior chat when this contact is a "continue this chat" resume; loaded on accept */
+  continuedFromTranscriptId?: string;
+  /** True when this contact was started via the customer "Continue this chat" card */
+  isContinuation?: boolean;
+  /** Connect username of the agent the client asked to wait for, if any */
+  preferredAgentUsername?: string;
 }
 
 export type AgentStatus = 'Available' | 'Away' | 'Offline';

@@ -3,6 +3,7 @@ import 'amazon-connect-chatjs';
 import { useChatStore, ChatStore } from '../store/chatStore';
 import { useClientStore } from '../store/clientStore';
 import { post } from '../api/client';
+import { LastAgentChat } from '../types';
 
 // Phrases the CUSTOMER says that clearly signal they want to escalate.
 // Checked client-side for 99% reliability — bypasses Lex classification.
@@ -145,6 +146,16 @@ export function useChatSession() {
     store.transitionTo('GREETING');
     const { activePersona } = useClientStore.getState();
 
+    // Load the client's most recent agent chat so the chat layer can offer
+    // "Continue this chat". Purely additive — failure just means no card shown.
+    store.setContinuation(null);
+    post<{ lastAgentChat: LastAgentChat | null }>('/client-data', {
+      action: 'get-continuation',
+      clientId: activePersona.clientId,
+    })
+      .then(res => store.setContinuation(res.lastAgentChat ?? null))
+      .catch(() => { /* no card on failure */ });
+
     // Pre-warm the fallback Lambda in the background so the first message
     // doesn't cold-start it. Fired before /start-chat so it has maximum lead time.
     post('/autopilot-turn', {
@@ -216,6 +227,51 @@ export function useChatSession() {
       console.error('Escalation failed', err);
       store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
       store.transitionTo('ESCALATION_OFFERED');
+    }
+  }
+
+  // Resume a recent agent chat. Triggered from the "Continue this chat" card in the
+  // greeting state (so, unlike escalateToAgent, there is no ESCALATION_OFFERED guard).
+  // `preferredAgentUsername` is the agent the client asked to wait for, or null for
+  // "first available". The previous transcript is loaded agent-side via the
+  // continuedFromTranscriptId attribute set on the new Connect contact.
+  async function continueChat(preferredAgentUsername: string | null) {
+    const continuation = useChatStore.getState().continuation;
+    if (!continuation) return;
+
+    if (botReplyTimerRef.current) {
+      clearTimeout(botReplyTimerRef.current);
+      botReplyTimerRef.current = null;
+    }
+
+    store.addMessage({ role: 'SYSTEM', content: 'Connecting you to a live agent…' });
+    store.transitionTo('WAITING_FOR_AGENT');
+
+    try { sessionRef.current?.disconnect(); } catch { /* ignore */ }
+    sessionRef.current = null;
+
+    const { activePersona } = useClientStore.getState();
+
+    try {
+      const data = await post<StartChatResponse>('/start-chat', {
+        clientId: activePersona.clientId,
+        clientName: activePersona.name,
+        currentPage: 'escalation',
+        escalate: true,
+        intentSummary: continuation.summary,
+        continuation: true,
+        continuedFromTranscriptId: continuation.transcriptId,
+        preferredAgentUsername: preferredAgentUsername ?? '',
+      });
+
+      const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef);
+      sessionRef.current = session;
+      await session.connect();
+      store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
+    } catch (err) {
+      console.error('Continue chat failed', err);
+      store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
+      store.transitionTo('BOT_ACTIVE');
     }
   }
 
@@ -308,5 +364,5 @@ export function useChatSession() {
     }
   }
 
-  return { openChat, sendMessage, escalateToAgent };
+  return { openChat, sendMessage, escalateToAgent, continueChat };
 }
