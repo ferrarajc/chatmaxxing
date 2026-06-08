@@ -261,6 +261,12 @@ setup-sep|setup-taxable|funding|dca|review|confirmation`); `ChatWidget` prefers 
 `pageKeyFromPath`. Added 14 ungated `t-oa-*` topics (56 Q&A) mapped to those keys, plus
 two new help pages (`/help/account-application`, `/help/privacy`). Repointed in-flow
 answer links off `/open-account` (same-route navigate = no-op = "link did nothing").
+Follow-up (`feature/open-account-back-forward`): the wizard's `step` (and terminal
+`done` flag) are now driven by URL query params (`?step=N` / `?done=1`) via
+`useSearchParams` instead of `useState`, so the browser Back/Forward buttons step through
+the wizard and it survives refresh. All form state stays in component state (a query-param
+change doesn't unmount the page), and `goTo`/`handleSubmit` push merged params. Single-file
+change in `OpenAccountPage.tsx`; the per-step pills above are unaffected.
 
 Previously in flight: `feature/continue-this-chat` — "Continue this chat" resume capability.
 - Customer chat shows a card (above the topic pills) when the client had a live-agent chat in the
