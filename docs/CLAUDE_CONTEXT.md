@@ -50,7 +50,7 @@ chatmaxxing/
 │   └── reset-beneficiaries/ Dev utility — resets test client beneficiary data
 │   └── shared/
 │       ├── tasks.ts        TASKS array (19 tasks), matchTaskByIntent, filterFields
-│       ├── kb.ts           46 topics, 183 Q&A pairs (knowledge base)
+│       ├── kb.ts           62 topics, 247 Q&A pairs (knowledge base)
 │       ├── types.ts        Shared types + summarizeAccounts, formatTranscript, matchResources
 │       ├── bedrock-client.ts invokeNovaMicro + parseJsonFromBedrock
 │       ├── dynamo-client.ts  DynamoDB DocumentClient
@@ -135,7 +135,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 
 | What you're changing | File(s) |
 |---|---|
-| Chat topic/question pills (any page) | `lambda/shared/kb.ts` → `KB` topics + `EXTRA_PAGE_TOPICS` map; page keys come from `pageKeyFromPath` in `customer-app/.../chat/ChatWidget.tsx` |
+| Chat topic/question pills (any page) | `lambda/shared/kb.ts` → `KB` topics + `EXTRA_PAGE_TOPICS` map; page keys come from `pageKeyFromPath` in `customer-app/.../chat/ChatWidget.tsx`. A page can publish a finer key via `pageContextStore` (e.g. the Open an Account wizard publishes `open-account/<step>` / `open-account/setup-{ira,sep,taxable}` per step+branch so pills track the exact screen); ChatWidget prefers it over `pageKeyFromPath`. Open-account in-flow topics are **ungated** (relevant type = the one being opened, not the client's holdings) and never link back to `/open-account`. |
 | "Continue this chat" card (resume recent agent chat) | `customer-app/.../chat/ContinueChatCard.tsx` + `ChatBody.tsx` (render) + `useChatSession.ts` (`continueChat`, `get-continuation` fetch); `lambda/agent-availability` (queue check); agent-side load in `agent-app/.../useConnectStreams.ts` (`loadContinuationTranscript`) |
 | Bot pre-agent behavior | `lambda/autopilot-turn/handler.ts` → `FULL_AUTO_PROMPT` |
 | Self-service page links | `lambda/autopilot-turn/handler.ts` → `SELF_SERVICE_PAGES` |
@@ -252,7 +252,17 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ## Active Branch / Current State (as of 2026-06-07)
 
-Branch in flight: `feature/continue-this-chat` — "Continue this chat" resume capability.
+Branch in flight: `feature/open-account-step-pills` — per-step chat relevance in the
+Open an Account wizard. The 8-step wizard lives on one route (`/open-account`) with
+`step` in React state, so the chat saw one page for all steps/branches and showed
+generic pills. Fix: a `pageContextStore` lets the wizard publish a finer page key per
+step + account-type branch (`open-account/type|personal|contact|disclosures|setup-ira|
+setup-sep|setup-taxable|funding|dca|review|confirmation`); `ChatWidget` prefers it over
+`pageKeyFromPath`. Added 14 ungated `t-oa-*` topics (56 Q&A) mapped to those keys, plus
+two new help pages (`/help/account-application`, `/help/privacy`). Repointed in-flow
+answer links off `/open-account` (same-route navigate = no-op = "link did nothing").
+
+Previously in flight: `feature/continue-this-chat` — "Continue this chat" resume capability.
 - Customer chat shows a card (above the topic pills) when the client had a live-agent chat in the
   last 7 days: date + one-sentence intent + "Continue this chat". Click → in-card loading
   annotations → `/agent-availability` checks if the *specific previous agent* is on queue → choose

@@ -1432,13 +1432,13 @@ export const KB: KBTopic[] = [
         id: 'q-oaf-001',
         text: 'What funding methods can I use to open an account?',
         answer: "You can fund a new account by ACH bank transfer, wire transfer, or by mailing a check. For IRAs, you can also fund the account with a rollover from another IRA or an employer plan like a 401(k) or 403(b). You choose your funding method during the application — there's no fee to fund by ACH.",
-        link: { text: 'Start your application', url: '/open-account' },
+        link: { text: 'What you need to apply', url: '/help/open-account' },
       },
       {
         id: 'q-oaf-002',
         text: 'How long does an ACH bank transfer take?',
         answer: "ACH transfers from your linked bank account typically settle in 1–3 business days. Wire transfers usually post the same business day, and mailed checks take 5–7 business days to arrive and clear. Once your funds settle, your initial investment is placed and your balance updates.",
-        link: { text: 'Open an account', url: '/open-account' },
+        link: { text: 'How your application works', url: '/help/account-application' },
       },
       {
         id: 'q-oaf-003',
@@ -1450,7 +1450,7 @@ export const KB: KBTopic[] = [
         id: 'q-oaf-004',
         text: 'Is there a minimum initial investment?',
         answer: "There's no minimum balance to open an account, but most BobsFunds mutual funds have a $1,000 minimum initial investment. You'll choose your first fund and investment amount during the funding step of the application. You can add more funds anytime after the account is open.",
-        link: { text: 'Open an account', url: '/open-account' },
+        link: { text: 'Browse the fund lineup', url: '/research' },
       },
     ],
   },
@@ -1465,13 +1465,13 @@ export const KB: KBTopic[] = [
         id: 'q-oad-001',
         text: 'What is dollar cost averaging?',
         answer: "Dollar cost averaging (DCA) means investing a fixed amount on a regular schedule — say $200 every month — regardless of what the market is doing. Because you buy more shares when prices are low and fewer when prices are high, it smooths out your average cost over time and removes the temptation to time the market. It's a simple, disciplined way to build wealth.",
-        link: { text: 'Set up automatic investing', url: '/open-account' },
+        link: { text: 'About systematic investing', url: '/help/sip' },
       },
       {
         id: 'q-oad-002',
         text: 'Is the automatic investing service free?',
         answer: "Yes — Bob's automatic investing service is completely free. You set an amount and a schedule (weekly, biweekly, or monthly), and we invest it for you into the fund you choose. There are no setup fees, transaction fees, or service charges for using it.",
-        link: { text: 'Enroll while opening your account', url: '/open-account' },
+        link: { text: 'About systematic investing', url: '/help/sip' },
       },
       {
         id: 'q-oad-003',
@@ -1483,7 +1483,7 @@ export const KB: KBTopic[] = [
         id: 'q-oad-004',
         text: 'How much should I start investing automatically?',
         answer: "There's no single right amount — it depends on your budget and goals. Many investors start with whatever they can comfortably spare each month, then increase it as their income grows. Even $50–$100 invested automatically and consistently can compound into something significant over the years. Start with what's sustainable rather than stretching; you can raise the amount any time from your account page.",
-        link: { text: 'Set up automatic investing', url: '/open-account' },
+        link: { text: 'Manage auto-invest', url: '/account/auto-invest' },
       },
     ],
   },
@@ -1498,25 +1498,25 @@ export const KB: KBTopic[] = [
         id: 'q-oadi-001',
         text: 'Why do you need my Social Security Number?',
         answer: "Federal law requires us to collect your Social Security Number to verify your identity and report account activity to the IRS for tax purposes. Your SSN is encrypted and handled under our Privacy Policy. It's a standard requirement for opening any brokerage or retirement account.",
-        link: { text: 'Read our privacy approach', url: '/help/open-account' },
+        link: { text: 'Privacy & data security', url: '/help/privacy' },
       },
       {
         id: 'q-oadi-002',
         text: 'Why am I asked if I work for a financial firm?',
         answer: "FINRA rules require us to ask whether you or a household member is employed by or associated with a FINRA member firm. If so, your employer may need to receive duplicate statements. Most applicants answer 'No' — it doesn't prevent you from opening an account, it's simply a regulatory disclosure.",
-        link: { text: 'Continue your application', url: '/open-account' },
+        link: { text: 'How your application works', url: '/help/account-application' },
       },
       {
         id: 'q-oadi-003',
         text: 'What is a trusted contact person?',
         answer: "A trusted contact is someone we can reach out to if we're ever unable to contact you and have a concern about your account — for example, possible fraud or financial exploitation. They have no authority over your account and cannot make trades or withdrawals. Naming one is optional but recommended; you can add or change it anytime.",
-        link: { text: 'Add a trusted contact', url: '/open-account' },
+        link: { text: 'How your application works', url: '/help/account-application' },
       },
       {
         id: 'q-oadi-004',
         text: 'What does the control person question mean?',
         answer: "A 'control person' is a director, policy-making officer, or 10%-or-greater shareholder of a publicly traded company. Regulators require us to flag these relationships because they can affect how certain securities are traded. If this doesn't apply to you, just answer 'No' and continue.",
-        link: { text: 'Continue your application', url: '/open-account' },
+        link: { text: 'How your application works', url: '/help/account-application' },
       },
     ],
   },
@@ -1531,7 +1531,7 @@ export const KB: KBTopic[] = [
         id: 'q-oas-001',
         text: 'Who can open a SEP-IRA?',
         answer: "A SEP-IRA is for self-employed individuals and small business owners — sole proprietors, freelancers, partnerships, and corporations. The plan is funded by the business rather than through personal salary deferrals. If you have eligible employees, a SEP plan must cover them too, at the same contribution rate you use for yourself.",
-        link: { text: 'Open a SEP-IRA', url: '/open-account?accountType=sep-ira' },
+        link: { text: 'SEP-IRA contribution guide', url: '/resources/sep-ira' },
       },
       {
         id: 'q-oas-002',
@@ -1549,7 +1549,7 @@ export const KB: KBTopic[] = [
         id: 'q-oas-004',
         text: 'What business information do I need to apply?',
         answer: "For a SEP-IRA you'll need your Employer Identification Number (EIN), your business type (sole proprietor, LLC, S-Corp, etc.), the year the business was established, and the approximate number of eligible employees. If you're a sole proprietor with no employees, you may use your SSN in place of an EIN, though a free EIN is easy to obtain from the IRS at irs.gov. The SEP Adoption Agreement is included in the application — no separate paperwork is required.",
-        link: { text: 'Open a SEP-IRA', url: '/open-account?accountType=sep-ira' },
+        link: { text: 'Self-employed retirement options', url: '/resources/self-employed-retirement' },
       },
     ],
   },
@@ -1620,6 +1620,475 @@ export const KB: KBTopic[] = [
     ],
   },
 
+  // ── Open-account per-step topics ─────────────────────────────────────────
+  // These are surfaced step-by-step inside the application wizard via the
+  // 'open-account/<step>' keys in EXTRA_PAGE_TOPICS. They are intentionally
+  // ungated (the relevant account type is the one being OPENED, which the page
+  // encodes in its context key — not the client's existing holdings) and their
+  // links never point back to /open-account (the user is already there).
+
+  {
+    id: 't-oa-account-choice',
+    label: 'Choosing your account type',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oac-001',
+        text: 'What account types can I open here?',
+        answer: "Bob's Mutual Funds offers Roth IRAs and Traditional IRAs for retirement, SEP-IRAs for self-employed savers, and individual or joint taxable accounts for general investing. Each has its own tax treatment and rules. You can hold more than one type under a single login.",
+        link: { text: 'Compare account types', url: '/help/open-account' },
+      },
+      {
+        id: 'q-oac-002',
+        text: 'Should I choose a Roth or Traditional IRA?',
+        answer: "Pick a Roth IRA if you expect the same or a higher tax bracket in retirement — you pay tax now and withdraw tax-free later. A Traditional IRA suits you if you want a deduction today and expect a lower bracket later. Many investors fund both over time to diversify their tax exposure.",
+        link: { text: 'Compare IRA options', url: '/resources/roth-ira' },
+      },
+      {
+        id: 'q-oac-003',
+        text: "Which account is best if I'm self-employed?",
+        answer: "A SEP-IRA is the most popular choice for self-employed people and small business owners, allowing contributions up to 25% of compensation (max $70,000 in 2025) — far above the regular IRA limit. It's funded by your business and is simple to administer. You can still also fund a personal Roth or Traditional IRA.",
+        link: { text: 'Self-employed retirement options', url: '/resources/self-employed-retirement' },
+      },
+      {
+        id: 'q-oac-004',
+        text: 'Can I open more than one account?',
+        answer: "Yes — you can hold several account types at Bob's, such as a Roth IRA for retirement and a taxable account for other goals, all under one login. Your combined IRA contributions still share the annual limit, but taxable accounts have no cap. You can open additional accounts any time.",
+        link: { text: 'Account types overview', url: '/help/open-account' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-eligibility',
+    label: 'Who can open an account',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oae-001',
+        text: 'Is there an age or residency requirement?',
+        answer: "You must be at least 18 (the age of majority in your state) and have a valid Social Security Number or ITIN. Both U.S. citizens and lawful U.S. residents with a U.S. address can open an account. To invest on behalf of a minor, an adult opens and manages a custodial account.",
+        link: { text: 'Account opening basics', url: '/help/open-account' },
+      },
+      {
+        id: 'q-oae-002',
+        text: 'Can I open an account if I live abroad?',
+        answer: "Accounts require a valid U.S. residential address and a U.S. tax ID (SSN or ITIN), so we generally cannot open accounts for residents of other countries. If you're a U.S. citizen temporarily abroad, contact us to discuss your options. A non-U.S. mailing address alone will not satisfy the requirement.",
+        link: { text: 'Contact us', url: '/help/contact' },
+      },
+      {
+        id: 'q-oae-003',
+        text: 'Are there income limits to open a Roth IRA?',
+        answer: "Anyone with earned income can open a Roth IRA, but how much you can contribute phases out at higher incomes — in 2025, above $161,000 for single filers and $240,000 for joint filers. A Traditional IRA has no income limit to contribute, though deductibility may be limited. If you're over the Roth limit, consider a Traditional IRA instead.",
+        link: { text: 'Roth IRA guide', url: '/resources/roth-ira' },
+      },
+      {
+        id: 'q-oae-004',
+        text: 'Do I have to fund the account right away?',
+        answer: "You choose a funding method during the application, but the money doesn't have to move immediately — ACH transfers and rollovers can take a few business days to settle. There's no minimum balance to open, though most funds have a $1,000 minimum initial investment. You can open the account now and add funds shortly after.",
+        link: { text: 'What you need to apply', url: '/help/open-account' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-personal-info',
+    label: 'Information we collect',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oapi-001',
+        text: 'Why do you need my Social Security Number?',
+        answer: "Federal law requires us to collect your SSN to verify your identity and report account activity to the IRS. It's encrypted in transit and at rest and handled under our Privacy Policy. Providing it is a standard requirement for opening any brokerage or retirement account.",
+        link: { text: 'Privacy & data security', url: '/help/privacy' },
+      },
+      {
+        id: 'q-oapi-002',
+        text: 'Why ask about my employment and income?',
+        answer: "FINRA's suitability and 'know your customer' rules require us to understand your financial situation so the account and investments are appropriate for you. Your income, net worth, and employment also help us meet anti-money-laundering requirements. This information is kept confidential and used only for compliance and service.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oapi-003',
+        text: 'Is the information I enter secure?',
+        answer: "Yes — your data is encrypted in transit and at rest, access is tightly restricted, and we never sell your personal information. We use it to open and service your account and to meet legal and regulatory obligations. You can review the details in our Privacy Policy.",
+        link: { text: 'Privacy & data security', url: '/help/privacy' },
+      },
+      {
+        id: 'q-oapi-004',
+        text: "What if I'm not currently employed?",
+        answer: "That's fine — you can select Retired, Student, Homemaker, or Unemployed for your employment status, and we'll consider any other income sources instead. Many account holders are retired or living on investment income. You only need earned income if you intend to make new IRA contributions.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-suitability',
+    label: 'Objective & risk profile',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oasu-001',
+        text: "What does 'investment objective' mean?",
+        answer: "Your investment objective describes what you want the account to do — from capital preservation (protecting principal) to income, growth, or speculation. It helps us flag if a chosen fund seems inconsistent with your stated goals. You can change it later as your needs evolve.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oasu-002',
+        text: 'How should I choose my risk tolerance?',
+        answer: "Risk tolerance reflects how much short-term ups and downs you can comfortably accept in pursuit of higher long-term returns. Conservative favors stability, Aggressive accepts larger swings for growth potential, and Moderate sits in between. Consider your time horizon — longer horizons can generally tolerate more risk.",
+        link: { text: 'Planning for retirement', url: '/resources/retirement-calculator' },
+      },
+      {
+        id: 'q-oasu-003',
+        text: 'Does my risk answer limit what I can buy?',
+        answer: "No — it doesn't block any fund, but it lets us alert you if a purchase looks inconsistent with the tolerance you stated. The goal is to help you invest deliberately, not to restrict you. You can update your risk profile any time after the account opens.",
+        link: { text: 'Browse the fund lineup', url: '/research' },
+      },
+      {
+        id: 'q-oasu-004',
+        text: 'Can I change my objective and risk later?',
+        answer: "Yes — your investment objective and risk tolerance aren't locked in. You can revisit them on your account profile after opening as your goals, income, or time horizon change. Many investors shift toward more conservative settings as they approach retirement.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-privacy',
+    label: 'Privacy & data security',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oapr-001',
+        text: 'How is my Social Security Number protected?',
+        answer: "Your SSN is encrypted both in transit and at rest, and access is limited to the systems and personnel that need it to open and service your account. We never display your full SSN back to you and never sell it. It's used for identity verification and required IRS reporting only.",
+        link: { text: 'Privacy & data security', url: '/help/privacy' },
+      },
+      {
+        id: 'q-oapr-002',
+        text: 'Do you sell my personal information?',
+        answer: "No — Bob's Mutual Funds does not sell your personal information. We share data only as needed to operate your account — for example, with regulators or service providers under strict agreements — and as described in our Privacy Policy. You control your marketing preferences.",
+        link: { text: 'Read our privacy practices', url: '/help/privacy' },
+      },
+      {
+        id: 'q-oapr-003',
+        text: 'Who can see the information I enter?',
+        answer: "Only authorized Bob's personnel and systems involved in opening and servicing your account can access your information, and access is logged. Your data is not visible to other customers and is never posted publicly. Regulators may review records as required by law.",
+        link: { text: 'Privacy & data security', url: '/help/privacy' },
+      },
+      {
+        id: 'q-oapr-004',
+        text: 'How do you verify my identity?',
+        answer: "We use the information you provide — name, date of birth, address, and SSN — to confirm your identity through secure verification services, as required by the federal Customer Identification Program. Occasionally we may ask for a copy of a government-issued ID. This protects you against fraud and identity theft.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-contact-info',
+    label: 'Contact & mailing address',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oaci-001',
+        text: 'Why do you need my email and phone?',
+        answer: "Your email is where we send account confirmations, statements, tax-form alerts, and security notifications, so use one you check regularly. Your mobile number is used for verification codes and, if you ever request one, a callback. You can update either anytime after opening.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oaci-002',
+        text: 'Can my mailing address differ from my home?',
+        answer: "Yes — if your mailing address differs from your permanent residence, uncheck the 'same as mailing' box and enter both. We use your permanent residence to satisfy identity rules and your mailing address for correspondence. A P.O. box is fine for mail but not as your permanent residence.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oaci-003',
+        text: 'Will you verify my phone number?',
+        answer: "We may send a one-time code to your mobile number to confirm it's yours, especially if you enable two-factor authentication later. Keeping a current number on file helps us reach you for security alerts and any callback you request. You can change it on your profile after opening.",
+        link: { text: 'Contact us', url: '/help/contact' },
+      },
+      {
+        id: 'q-oaci-004',
+        text: 'What if my contact details change later?',
+        answer: "You can update your email, phone, and address any time from your account settings after opening. For security, address changes may require identity verification and trigger a confirmation to both your old and new contact details. Keeping this current ensures you receive statements and tax forms on time.",
+        link: { text: 'Contact information help', url: '/help/contact' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-communications',
+    label: 'Statements & notifications',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oacm-001',
+        text: 'How will I receive statements and tax forms?',
+        answer: "By default you'll get paperless delivery: we post statements, trade confirmations, and tax forms to your online account and email you when each is ready. Paperless is typically several days faster than mail and reduces the risk of lost documents. You can switch to paper anytime in your preferences.",
+        link: { text: 'About statements', url: '/help/statements' },
+      },
+      {
+        id: 'q-oacm-002',
+        text: 'Can I choose paper statements instead?',
+        answer: "Yes — although paperless is the default, you can elect paper delivery for statements and tax documents in your communication preferences after opening. Paper documents arrive by mail and take longer than the online versions. You can switch back to paperless whenever you like.",
+        link: { text: 'About statements', url: '/help/statements' },
+      },
+      {
+        id: 'q-oacm-003',
+        text: 'Will I be notified about account activity?',
+        answer: "Yes — you'll receive email notifications for confirmations, completed transfers, new statements and tax forms, and any security-related changes. You can fine-tune which alerts you receive in your preferences after opening. Critical security notices are always sent.",
+        link: { text: 'About statements', url: '/help/statements' },
+      },
+      {
+        id: 'q-oacm-004',
+        text: 'What tax forms will I receive?',
+        answer: "Depending on your account and activity, you may receive Form 1099-DIV, 1099-B, or 1099-R, plus Form 5498 showing IRA contributions. Retirement accounts generally produce a 1099-R only when you take distributions. All forms are posted online and emailed to you when ready each tax season.",
+        link: { text: 'Tax documents help', url: '/help/tax-documents' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-trusted-contact',
+    label: 'Trusted contact person',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oatc-001',
+        text: 'What is a trusted contact person?',
+        answer: "A trusted contact is someone we can reach out to if we're unable to contact you and have a concern about your account — for example, possible fraud or financial exploitation. They have no authority over your account and cannot trade, withdraw, or see your balances. Naming one is optional but recommended.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oatc-002',
+        text: 'Is naming a trusted contact required?',
+        answer: "No — FINRA requires us to ask, but you may leave it blank and still open your account. A trusted contact simply gives us a safe point of contact if we ever can't reach you about a concern. You can add or change one at any time after opening.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oatc-003',
+        text: 'Can my trusted contact change my account?',
+        answer: "No — a trusted contact has zero authority over your account. They cannot place trades, move money, change your information, or view your holdings. We may only contact them to confirm your wellbeing or current contact details if we have a concern and can't reach you.",
+        link: { text: 'Authorized account access', url: '/help/account-access' },
+      },
+      {
+        id: 'q-oatc-004',
+        text: 'Who should I choose as a trusted contact?',
+        answer: "Pick someone you trust who is likely to know how to reach you — often a spouse, adult child, close relative, or friend. They should be reachable and aware you've named them. You can name someone different from your beneficiaries, and you can update the choice anytime.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-beneficiaries',
+    label: 'Naming your beneficiaries',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oabn-001',
+        text: 'Primary vs. contingent — what\'s the difference?',
+        answer: "Primary beneficiaries are first in line to inherit the account. Contingent beneficiaries inherit only if no primary beneficiary survives you. You can name several of each, and your primary allocations must total 100%.",
+        link: { text: 'Beneficiary guide', url: '/help/beneficiary' },
+      },
+      {
+        id: 'q-oabn-002',
+        text: 'Do allocations have to total 100%?',
+        answer: "Yes — if you name more than one primary beneficiary, their percentages must add up to exactly 100%. The same applies to your contingent beneficiaries as a group. The application shows a running total and flags it until your allocations balance.",
+        link: { text: 'Beneficiary guide', url: '/help/beneficiary' },
+      },
+      {
+        id: 'q-oabn-003',
+        text: 'Can I name a minor or a trust?',
+        answer: "You can, but with care. A minor usually cannot receive assets directly, so a custodian or trust is named to manage the inheritance until they come of age. Naming a trust has tax and legal implications, so we recommend consulting an estate attorney.",
+        link: { text: 'Estate planning basics', url: '/resources/estate-planning' },
+      },
+      {
+        id: 'q-oabn-004',
+        text: 'Can I change beneficiaries after opening?',
+        answer: "Yes — you can update beneficiaries any time after the account opens, and you should review them after major life events like marriage, divorce, or a birth. Beneficiary designations override your will for this account, so keeping them current is important.",
+        link: { text: 'Beneficiary guide', url: '/help/beneficiary' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-ira-rules',
+    label: 'Your IRA rules & limits',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oair-001',
+        text: 'How much can I contribute this year?',
+        answer: "For 2025 you can contribute up to $7,000 across your IRAs, or $8,000 if you're 50 or older. The limit is shared between Traditional and Roth IRAs combined. Rollovers from another retirement plan don't count toward this annual limit.",
+        link: { text: 'IRA contribution limits', url: '/resources/ira-contribution-limits' },
+      },
+      {
+        id: 'q-oair-002',
+        text: 'When is the contribution deadline?',
+        answer: "You can make IRA contributions for a tax year up until that year's federal tax filing deadline, typically April 15 of the following year. Contributions made between January and April can be designated for either year. Rollovers have their own timing rules.",
+        link: { text: 'IRA contribution limits', url: '/resources/ira-contribution-limits' },
+      },
+      {
+        id: 'q-oair-003',
+        text: 'Is a Roth or Traditional IRA better for me?',
+        answer: "Choose a Roth IRA if you expect to be in the same or a higher tax bracket in retirement — you pay tax now and withdraw tax-free later. A Traditional IRA may suit you if you want a deduction today and expect a lower bracket later. Many investors use both over time.",
+        link: { text: 'Compare IRA options', url: '/resources/roth-ira' },
+      },
+      {
+        id: 'q-oair-004',
+        text: 'When can I withdraw from my IRA?',
+        answer: "Qualified retirement withdrawals generally begin at age 59½; earlier withdrawals of earnings may incur a 10% penalty plus taxes, with some exceptions. Roth contributions (not earnings) can be withdrawn anytime tax- and penalty-free. Traditional IRAs also have required minimum distributions starting at age 73.",
+        link: { text: 'Roth IRA guide', url: '/resources/roth-ira' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-sep-contributions',
+    label: 'SEP contributions & taxes',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oasc-001',
+        text: 'How much can my business contribute?',
+        answer: "For 2025 a SEP-IRA accepts up to 25% of compensation, to a maximum of $70,000 — far above the regular IRA limit. Contributions are made by the business, not from personal salary deferrals. Your exact limit depends on your net self-employment earnings.",
+        link: { text: 'SEP-IRA contribution guide', url: '/resources/sep-ira' },
+      },
+      {
+        id: 'q-oasc-002',
+        text: 'Are SEP-IRA contributions tax-deductible?',
+        answer: "Yes — SEP-IRA contributions are generally deductible as a business expense, reducing your taxable income for the year. For a sole proprietor, the deduction is taken on your personal return. Consult your tax advisor for the precise amount based on your business structure.",
+        link: { text: 'Tax deduction strategies', url: '/resources/tax-deductions' },
+      },
+      {
+        id: 'q-oasc-003',
+        text: "What's the SEP-IRA contribution deadline?",
+        answer: "You can fund a SEP-IRA for a tax year up until your business's tax filing deadline, including extensions — often as late as October 15 of the following year. This gives self-employed savers extra flexibility for tax planning. The account itself should be established by that deadline.",
+        link: { text: 'SEP-IRA details', url: '/resources/sep-ira' },
+      },
+      {
+        id: 'q-oasc-004',
+        text: 'Do I need an EIN to open a SEP-IRA?',
+        answer: "If you're a sole proprietor with no employees, you can often use your SSN, though an EIN is recommended and free to obtain from the IRS at irs.gov. Businesses with employees need an EIN. The SEP Adoption Agreement is included in this application — no separate filing is required.",
+        link: { text: 'Self-employed retirement options', url: '/resources/self-employed-retirement' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-ownership',
+    label: 'Joint ownership & TOD',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oaow-001',
+        text: 'What is joint tenancy with survivorship?',
+        answer: "A joint account with Right of Survivorship (JTWROS) is owned equally by two people; if one owner passes away, the survivor automatically retains full ownership without probate. Both owners can view and transact in the account. It's a common choice for spouses and partners.",
+        link: { text: 'Account ownership forms', url: '/help/ownership-form' },
+      },
+      {
+        id: 'q-oaow-002',
+        text: 'What is a transfer-on-death (TOD) designation?',
+        answer: "A Transfer-on-Death designation lets your taxable account pass directly to a named beneficiary when you die, bypassing probate. It applies only after death and gives the beneficiary no access or control while you're alive. You can add, change, or remove it at any time.",
+        link: { text: 'Account ownership forms', url: '/help/ownership-form' },
+      },
+      {
+        id: 'q-oaow-003',
+        text: 'Can I add a joint owner after opening?',
+        answer: "Adding or removing a joint owner after an account is open generally requires re-titling the account and paperwork signed by all parties, since it changes legal ownership. It's simplest to set ownership correctly during the application. Contact us if your situation changes later.",
+        link: { text: 'Contact us', url: '/help/contact' },
+      },
+      {
+        id: 'q-oaow-004',
+        text: 'Is a TOD the same as an IRA beneficiary?',
+        answer: "They're similar in spirit — both pass assets outside of probate — but a TOD is used on taxable accounts, while IRAs use beneficiary designations with their own tax rules. Both override your will for that account. Keeping either current after life events is important.",
+        link: { text: 'Estate planning basics', url: '/resources/estate-planning' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-taxable-rules',
+    label: 'Taxable account basics',
+    pages: [],
+    priority: 2,
+    questions: [
+      {
+        id: 'q-oatr-001',
+        text: 'Are there contribution limits on a taxable account?',
+        answer: "No — individual and joint taxable accounts have no annual contribution limits and no withdrawal restrictions. You can invest as much as you like and access your money anytime. That flexibility makes them ideal for goals beyond retirement or for investing above your IRA limits.",
+        link: { text: 'Choosing an account type', url: '/help/open-account' },
+      },
+      {
+        id: 'q-oatr-002',
+        text: 'How is a taxable account taxed?',
+        answer: "You pay tax each year on dividends and on any capital gains distributions your funds pay out, even if reinvested. When you sell at a profit you owe capital gains tax; selling at a loss can offset gains. There's no tax deferral, but also no early-withdrawal penalties.",
+        link: { text: 'Tax-efficient investing', url: '/resources/tax-efficient-investing' },
+      },
+      {
+        id: 'q-oatr-003',
+        text: 'Can I withdraw anytime from a taxable account?',
+        answer: "Yes — unlike retirement accounts, a taxable account has no age restrictions or early-withdrawal penalties. You can sell holdings and transfer the proceeds to your bank whenever you like, typically settling in a few business days. Just remember a sale at a gain may create a taxable event.",
+        link: { text: 'Withdrawals & distributions', url: '/help/withdrawals' },
+      },
+      {
+        id: 'q-oatr-004',
+        text: 'Should I open a taxable account or an IRA?',
+        answer: "If you're saving for retirement and want tax advantages, an IRA usually comes first; a taxable account is great for goals before retirement or for investing beyond IRA limits. Many investors hold both. You can open additional accounts later under the same login.",
+        link: { text: 'Compare account types', url: '/help/open-account' },
+      },
+    ],
+  },
+
+  {
+    id: 't-oa-agreements',
+    label: 'Agreements & e-signature',
+    pages: [],
+    priority: 1,
+    questions: [
+      {
+        id: 'q-oag-001',
+        text: 'What am I agreeing to when I sign?',
+        answer: "You're accepting the Customer Agreement that governs your account, the electronic delivery consent, a W-9 tax certification, and the Privacy Policy — plus the IRA or SEP agreement if applicable. These cover the terms, fees, and rules for your account. Links to each document appear beside the checkboxes.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oag-002',
+        text: 'Is an electronic signature legally binding?',
+        answer: "Yes — typing your full legal name as your e-signature carries the same legal effect as signing on paper, under the federal E-SIGN Act. It records your agreement to the application and disclosures with a date and time stamp. You'll receive a copy for your records.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+      {
+        id: 'q-oag-003',
+        text: 'What is the W-9 certification for?',
+        answer: "The W-9 certification confirms, under penalty of perjury, that your taxpayer ID is correct, that you're not subject to backup withholding, and that you're a U.S. person. It's standard for any U.S. brokerage or retirement account and lets us report to the IRS correctly. Most applicants certify without issue.",
+        link: { text: 'Privacy & data security', url: '/help/privacy' },
+      },
+      {
+        id: 'q-oag-004',
+        text: 'Can I review the agreements before signing?',
+        answer: "Yes — each agreement is linked next to its checkbox so you can read it before agreeing. Take your time; nothing is submitted until you sign and click Submit. You'll also receive copies of everything after the account opens.",
+        link: { text: 'How your application works', url: '/help/account-application' },
+      },
+    ],
+  },
+
 ];
 
 export function getKBTopicByLabel(label: string): KBTopic | undefined {
@@ -1644,8 +2113,21 @@ export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
   'research/fund':         ['t-fund-perf', 't-expense-ratios', 't-historical-returns', 't-prospectus'],
   'research/fund/buy':     ['t-trading', 't-expense-ratios', 't-auto-invest', 't-fees'],
 
-  // Open an account
-  'open-account':          ['t-account-types', 't-open-account', 't-oa-funding', 't-oa-dca', 't-oa-disclosures', 't-oa-first-investment', 't-oa-after-apply', 't-oa-sep'],
+  // Open an account — the wizard publishes a per-step/per-branch key (see
+  // OpenAccountPage + pageContextStore) so pills track the exact screen. The
+  // bare 'open-account' key is a safe fallback if no step context is published.
+  'open-account':              ['t-oa-account-choice', 't-oa-eligibility', 't-oa-funding', 't-oa-after-apply'],
+  'open-account/type':         ['t-oa-account-choice', 't-oa-eligibility'],
+  'open-account/personal':     ['t-oa-personal-info', 't-oa-suitability', 't-oa-privacy'],
+  'open-account/contact':      ['t-oa-contact-info', 't-oa-communications', 't-oa-privacy'],
+  'open-account/disclosures':  ['t-oa-disclosures', 't-oa-trusted-contact', 't-oa-privacy'],
+  'open-account/setup-ira':    ['t-oa-beneficiaries', 't-oa-ira-rules'],
+  'open-account/setup-sep':    ['t-oa-sep', 't-oa-sep-contributions'],
+  'open-account/setup-taxable':['t-oa-ownership', 't-oa-taxable-rules'],
+  'open-account/funding':      ['t-oa-funding', 't-oa-first-investment', 't-rollover'],
+  'open-account/dca':          ['t-oa-dca', 't-oa-first-investment'],
+  'open-account/review':       ['t-oa-agreements', 't-oa-after-apply'],
+  'open-account/confirmation': ['t-oa-after-apply', 't-oa-first-investment'],
 
   // Resources pages
   'resources/ira-contribution-limits': ['t-ira-limits', 't-roth-strategies', 't-tax-deductions'],
@@ -1666,8 +2148,9 @@ export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
   'library/opinion':       ['t-growth-vs-index', 't-index-vs-active', 't-esg'],
 
   // Help pages
-  'help/account-access':   ['t-account-access', 't-security', 't-contact'],
-  'help/account-transfer': ['t-transfer-in', 't-rollover', 't-account-types'],
+  'help/account-access':      ['t-account-access', 't-security', 't-contact'],
+  'help/account-application': ['t-oa-after-apply', 't-oa-disclosures', 't-oa-agreements'],
+  'help/account-transfer':    ['t-transfer-in', 't-rollover', 't-account-types'],
   'help/beneficiary':      ['t-beneficiary', 't-estate', 't-inheritance'],
   'help/contact':          ['t-contact', 't-callback', 't-security'],
   'help/cost-basis':       ['t-cost-basis', 't-tax-docs', 't-statements'],
@@ -1680,6 +2163,7 @@ export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
   'help/open-account':     ['t-account-types', 't-open-account', 't-ira-limits'],
   'help/ownership-form':   ['t-account-access', 't-inheritance', 't-beneficiary'],
   'help/place-trade':      ['t-trading', 't-fund-perf', 't-fees'],
+  'help/privacy':          ['t-oa-privacy', 't-security', 't-oa-disclosures'],
   'help/prospectus':       ['t-prospectus', 't-expense-ratios', 't-fund-perf'],
   'help/rmd-guide':        ['t-rmd', 't-rmd-setup', 't-tax-docs'],
   'help/rollover-guide':   ['t-rollover', 't-transfer-in', 't-ira-limits'],

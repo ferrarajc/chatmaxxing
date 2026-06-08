@@ -140,9 +140,9 @@ Every execution returns a `referenceNumber` (format: `REF-XXXXXX`) for traceabil
 
 ### 5. Knowledge Base and Predictive Questions
 
-**Knowledge Base (`lambda/shared/kb.ts`):** 30 financial topics with 120 pre-written Q&A pairs covering IRA rules, RMDs, rollovers, tax topics, fund information, account types, and more.
+**Knowledge Base (`lambda/shared/kb.ts`):** 62 financial topics with 247 pre-written Q&A pairs covering IRA rules, RMDs, rollovers, tax topics, fund information, account types, and more. Topics are mapped to the page (and, where a flow has steps, the exact step) so the pills stay tightly relevant. The Open an Account wizard is fully step-aware: each of its 8 steps — and the IRA / SEP / taxable branches of the setup step — surfaces its own topics (e.g. beneficiary designation on the IRA setup step, business/EIN questions on the SEP step, funding-method questions on the funding step).
 
-**Predict Intent (`predict-intent`):** Given the client's current page and recent messages, suggests which KB topics are most likely to be relevant. Powers the topic button row in the agent's AI support panel.
+**Predict Intent (`predict-intent`):** Given the client's current page (or published sub-page/step context) and recent messages, suggests which KB topics are most likely to be relevant. Powers both the customer chat's topic pills and the topic button row in the agent's AI support panel.
 
 **Predict Questions (`predict-questions`):** Given the current conversation, suggests the 3 most likely questions the client might ask next. Each suggested question can be injected into the agent's chat input with one click.
 

@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useChatStore } from '../../store/chatStore';
+import { usePageContextStore } from '../../store/pageContextStore';
 import { useChatSession } from '../../hooks/useChatSession';
 import { usePredictedTopics } from '../../hooks/usePredictedTopics';
 import { ChatBubbleFAB } from './ChatBubbleFAB';
@@ -23,7 +24,10 @@ export function pageKeyFromPath(pathname: string): string {
 
 export function ChatWidget() {
   const location = useLocation();
-  const currentPage = pageKeyFromPath(location.pathname);
+  // A page (e.g. the Open an Account wizard) may publish a finer-grained key than
+  // the URL implies; prefer it so pills track the exact step/branch on screen.
+  const pageContext = usePageContextStore(s => s.pageContext);
+  const currentPage = pageContext ?? pageKeyFromPath(location.pathname);
 
   const chatState = useChatStore(s => s.state);
   const { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping } = useChatSession();

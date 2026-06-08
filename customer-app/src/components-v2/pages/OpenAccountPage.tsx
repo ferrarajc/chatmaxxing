@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { usePageContextStore } from '../../store/pageContextStore';
 import { theme } from '../../theme';
 
 /* ============================================================================
@@ -380,6 +381,32 @@ export function OpenAccountPage() {
   const isSEP = selected === 'sep-ira';
   const isRoth = selected === 'roth-ira';
   const accountName = ACCOUNT_TYPES.find(t => t.id === selected)?.name ?? '';
+
+  // ── Publish a chat page-context key for the current step + branch ──────────
+  // The wizard lives on a single route (/open-account), so the chat widget can't
+  // tell steps apart from the URL. We publish a finer-grained key here so the
+  // topic/question pills stay tightly relevant to what's on screen right now.
+  const setPageContext = usePageContextStore(s => s.setPageContext);
+  useEffect(() => {
+    const key = submitted
+      ? 'open-account/confirmation'
+      : ({
+          1: 'open-account/type',
+          2: 'open-account/personal',
+          3: 'open-account/contact',
+          4: 'open-account/disclosures',
+          5: isSEP ? 'open-account/setup-sep'
+            : isTaxable ? 'open-account/setup-taxable'
+            : 'open-account/setup-ira',
+          6: 'open-account/funding',
+          7: 'open-account/dca',
+          8: 'open-account/review',
+        } as Record<number, string>)[step] ?? 'open-account';
+    setPageContext(key);
+  }, [step, submitted, isSEP, isTaxable, setPageContext]);
+
+  // Clear the override when leaving the wizard so the widget falls back to the route.
+  useEffect(() => () => setPageContext(null), [setPageContext]);
 
   // Beneficiary helpers
   const updBenef = (id: string, key: keyof Beneficiary, val: string) =>

@@ -36,7 +36,9 @@ import { LibraryPage } from './components-v2/pages/library/LibraryPage';
 import { ArticlePage } from './components-v2/pages/library/ArticlePage';
 import { BobPodPage } from './components-v2/pages/library/BobPodPage';
 import { AccountAccessPage } from './components-v2/pages/help/AccountAccessPage';
+import { AccountApplicationPage } from './components-v2/pages/help/AccountApplicationPage';
 import { AccountTransferPage } from './components-v2/pages/help/AccountTransferPage';
+import { PrivacyPage } from './components-v2/pages/help/PrivacyPage';
 import { BeneficiaryPage } from './components-v2/pages/help/BeneficiaryPage';
 import { ContactPage } from './components-v2/pages/help/ContactPage';
 import { CostBasisPage } from './components-v2/pages/help/CostBasisPage';
@@ -105,6 +107,7 @@ export default function App() {
               <Route path="/library/guide/:slug" element={<ArticlePage category="guide" />} />
               <Route path="/library/opinion/:slug" element={<ArticlePage category="opinion" />} />
               <Route path="/help/account-access" element={<AccountAccessPage />} />
+              <Route path="/help/account-application" element={<AccountApplicationPage />} />
               <Route path="/help/account-transfer" element={<AccountTransferPage />} />
               <Route path="/help/beneficiary" element={<BeneficiaryPage />} />
               <Route path="/help/contact" element={<ContactPage />} />
@@ -118,6 +121,7 @@ export default function App() {
               <Route path="/help/open-account" element={<OpenAccountHelpPage />} />
               <Route path="/help/ownership-form" element={<OwnershipFormPage />} />
               <Route path="/help/place-trade" element={<PlaceTradePage />} />
+              <Route path="/help/privacy" element={<PrivacyPage />} />
               <Route path="/help/prospectus" element={<ProspectusPage />} />
               <Route path="/help/rmd-guide" element={<RmdGuidePage />} />
               <Route path="/help/rollover-guide" element={<RolloverGuidePage />} />
