@@ -34,6 +34,9 @@ const AGENT_TYPING_TTL_MS = 60_000;
 // Control message the agent sends to immediately clear the typing ellipsis when autopilot
 // is cancelled mid-compose. Must match the agent app's sentinel exactly. Never rendered.
 const TYPING_STOP_SENTINEL = '__BOBS_TYPING_STOP__';
+// Control message prefix carrying the connected agent's full name (first + last), so the
+// chat can show correct initials. Connect's chat DisplayName is only the first name.
+const AGENT_NAME_SENTINEL = '__BOBS_AGENT_NAME__';
 
 function isCustomerEscalationRequest(text: string): boolean {
   const lower = text.toLowerCase();
@@ -113,12 +116,21 @@ function createAndBindSession(
       return;
     }
 
+    // Control signal: the connected agent's full name (first + last) for correct initials.
+    if (msg.Content?.startsWith(AGENT_NAME_SENTINEL)) {
+      const name = msg.Content.slice(AGENT_NAME_SENTINEL.length).trim();
+      if (name) store.setAgentName(name);
+      return;
+    }
+
     const role = msg.ParticipantRole === 'AGENT' ? 'AGENT' : 'BOT';
     // A real message means the agent is done composing — clear the typing ellipsis.
     if (role === 'AGENT') {
       clearAgentTyping();
-      // Capture the connected agent's name so the chat shows their initials (e.g. "JF").
-      if (msg.DisplayName) store.setAgentName(msg.DisplayName);
+      // Fallback name capture: only trust DisplayName when it's a full name (has a
+      // space). Connect sends just the first name, which would yield wrong initials —
+      // the authoritative full name arrives via the AGENT_NAME_SENTINEL control message.
+      if (msg.DisplayName && msg.DisplayName.trim().includes(' ')) store.setAgentName(msg.DisplayName);
     }
     store.addMessage({ role, content: msg.Content });
 
@@ -146,8 +158,9 @@ function createAndBindSession(
     // Only meaningful once an agent is (being) connected — never during the bot phase.
     const liveState = useChatStore.getState().state;
     if (liveState !== 'CONNECTED_TO_AGENT' && liveState !== 'WAITING_FOR_AGENT') return;
-    // Capture the agent's name from the typing event so the ellipsis shows their initials.
-    if (data?.DisplayName) store.setAgentName(data.DisplayName);
+    // Fallback name capture from the typing event — only when it's a full name (has a
+    // space); the authoritative full name arrives via the AGENT_NAME_SENTINEL message.
+    if (data?.DisplayName && data.DisplayName.trim().includes(' ')) store.setAgentName(data.DisplayName);
     store.setAgentTyping(true);
     if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
     agentTypingTimerRef.current = setTimeout(() => {
