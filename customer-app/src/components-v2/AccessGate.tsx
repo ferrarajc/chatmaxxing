@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { theme } from '../theme';
+import { post } from '../api/client';
 
 const STORAGE_KEY = 'bobs_access';
 const EXPECTED = import.meta.env.VITE_DEMO_CODE ?? '';
@@ -23,6 +24,13 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
     if (input.trim().toUpperCase() === EXPECTED.toUpperCase()) {
       localStorage.setItem(STORAGE_KEY, '1');
       setGranted(true);
+      // Page the site owner (via Pager Doodie) that someone entered the access
+      // code, so they can hop in as a live agent. Fire-and-forget; PROD-only so
+      // local dev never pages. The gate's own `bobs_access` persistence means
+      // this only runs on a fresh/cleared browser, not on normal revisits.
+      if (import.meta.env.PROD) {
+        post('/client-log', { context: 'access-code-entered' }).catch(() => {});
+      }
     } else {
       setShake(true);
       setInput('');
