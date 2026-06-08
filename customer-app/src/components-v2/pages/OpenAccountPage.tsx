@@ -333,7 +333,7 @@ const newBenef = (tier: 'primary' | 'contingent', allocation = ''): Beneficiary 
 // ── Main component ──────────────────────────────────────────────────────────
 
 export function OpenAccountPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const preselectedType = searchParams.get('accountType');
 
   const defaultStart = useMemo(() => {
@@ -345,8 +345,14 @@ export function OpenAccountPage() {
   const [selected, setSelected] = useState<string | null>(
     ACCOUNT_TYPES.find(t => t.id === preselectedType) ? preselectedType : null,
   );
-  const [step, setStep] = useState(1);
-  const [submitted, setSubmitted] = useState(false);
+  // Step + the terminal "submitted" state live in the URL (?step / ?done) so the browser
+  // Back/Forward buttons move between steps and the flow survives refresh. All form state
+  // stays in React state below and is preserved across step changes (the page never
+  // unmounts when only a query param changes).
+  const rawStep = Math.min(8, Math.max(1, parseInt(searchParams.get('step') ?? '1', 10) || 1));
+  // Until an account type is chosen, render step 1 — later steps' content depends on it.
+  const step = selected ? rawStep : 1;
+  const submitted = searchParams.get('done') === '1';
   const [appRef, setAppRef] = useState('');
 
   const [benefs, setBenefs] = useState<Beneficiary[]>([newBenef('primary', '100')]);
@@ -407,6 +413,26 @@ export function OpenAccountPage() {
 
   // Clear the override when leaving the wizard so the widget falls back to the route.
   useEffect(() => () => setPageContext(null), [setPageContext]);
+
+  // Scroll to top when the step (or the confirmation) changes. Browser Back/Forward change
+  // the URL directly without calling goTo, so goTo's own scroll wouldn't cover those.
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [step, submitted]);
+
+  // Make sure a reference number exists if the confirmation URL (?done=1) is reached via
+  // refresh or Forward, when the in-memory one was never generated.
+  useEffect(() => {
+    if (submitted && !appRef) setAppRef('BMF-' + Math.floor(10000000 + Math.random() * 90000000));
+  }, [submitted, appRef]);
+
+  // A deep-link to a later step with no account type chosen can't be honored — normalize
+  // the URL back to step 1 (replace, so it doesn't add a history entry).
+  useEffect(() => {
+    if (!selected && (parseInt(searchParams.get('step') ?? '1', 10) || 1) > 1) {
+      const params = new URLSearchParams(searchParams);
+      params.delete('step');
+      setSearchParams(params, { replace: true });
+    }
+  }, [selected, searchParams, setSearchParams]);
 
   // Beneficiary helpers
   const updBenef = (id: string, key: keyof Beneficiary, val: string) =>
@@ -476,15 +502,20 @@ export function OpenAccountPage() {
     && (isIRA ? form.agIra : true) && (isSEP ? form.agSep : true);
   const canSubmit = agreementsOk && req(form.signature);
 
-  const goTo = (n: number) => { setStep(n); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const goTo = (n: number) => {
+    const params = new URLSearchParams(searchParams);   // preserve accountType, etc.
+    params.set('step', String(Math.min(8, Math.max(1, n))));
+    setSearchParams(params);                            // pushes a history entry → Back/Forward step
+  };
   const next = () => { if (validStep(step)) goTo(step + 1); };
   const back = () => goTo(Math.max(1, step - 1));
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    setAppRef('BMF-' + Math.floor(10000000 + Math.random() * 90000000));
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!appRef) setAppRef('BMF-' + Math.floor(10000000 + Math.random() * 90000000));
+    const params = new URLSearchParams(searchParams);
+    params.set('done', '1');                            // pushes a confirmation entry → Back returns to review
+    setSearchParams(params);
   };
 
   // ── Confirmation screen ───────────────────────────────────────────────────
