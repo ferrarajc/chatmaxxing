@@ -100,6 +100,12 @@ const continuationLoaded = new Set<string>();
 const customerTypingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const CUSTOMER_TYPING_TTL_MS = 30_000;
 
+// Control message prefix used to hand the customer our full agent name (first + last).
+// The Connect chat DisplayName only carries the agent's first name, so the customer
+// can't derive correct initials from it; we send the full name explicitly. Intercepted
+// and never rendered on the customer side. Must match the customer app's sentinel.
+const AGENT_NAME_SENTINEL = '__BOBS_AGENT_NAME__';
+
 /** Clear the typing ellipsis for a contact and cancel its expiry timer. */
 function clearCustomerTyping(contactId: string): void {
   const t = customerTypingTimers.get(contactId);
@@ -418,6 +424,14 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             });
             if (connectionToken) {
               store.patchSlot(contactId, { connectionToken });
+              // Send our full name (first + last) so the customer chat shows correct
+              // initials — Connect's chat DisplayName is only the agent's first name.
+              const fullName = useAgentStore.getState().agentName?.trim();
+              if (fullName) {
+                post('/send-agent-message', {
+                  connectionToken, message: `${AGENT_NAME_SENTINEL}${fullName}`,
+                }).catch(() => {});
+              }
             } else {
               log.warn('useConnectStreams:noConnectionToken', { contactId, detailKeys: Object.keys(details) });
             }
