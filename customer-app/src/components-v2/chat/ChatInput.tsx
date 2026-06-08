@@ -3,10 +3,11 @@ import { theme } from '../../theme';
 
 interface Props {
   onSend: (text: string) => void;
+  onTyping?: () => void;
   disabled?: boolean;
 }
 
-export function ChatInput({ onSend, disabled }: Props) {
+export function ChatInput({ onSend, onTyping, disabled }: Props) {
   const [text, setText] = useState('');
 
   const submit = () => {
@@ -33,7 +34,7 @@ export function ChatInput({ onSend, disabled }: Props) {
     }}>
       <textarea
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={e => { setText(e.target.value); if (e.target.value.trim()) onTyping?.(); }}
         onKeyDown={onKey}
         disabled={disabled}
         placeholder="Type a message…"

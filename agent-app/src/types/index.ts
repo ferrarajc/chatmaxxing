@@ -63,6 +63,8 @@ export interface ContactSlot {
   isContinuation?: boolean;
   /** Connect username of the agent the client asked to wait for, if any */
   preferredAgentUsername?: string;
+  /** True while the client is actively typing; drives the ellipsis indicator in this column. */
+  customerTyping?: boolean;
 }
 
 export type AgentStatus = 'Available' | 'Away' | 'Offline';

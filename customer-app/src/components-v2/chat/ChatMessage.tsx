@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChatMessage as Msg } from '../../types';
+import { useChatStore } from '../../store/chatStore';
+import { initialsFromName } from '../../utils/initials';
 import { theme } from '../../theme';
 
 interface Props { message: Msg; }
@@ -106,6 +108,7 @@ function renderWithLinks(content: string, navigate: (path: string) => void): Rea
 
 export function ChatMessage({ message }: Props) {
   const navigate = useNavigate();
+  const agentName = useChatStore(s => s.agentName);
   const isCustomer = message.role === 'CUSTOMER';
   const isSystem = message.role === 'SYSTEM';
 
@@ -138,7 +141,7 @@ export function ChatMessage({ message }: Props) {
           fontSize: 12, color: theme.color.textOnPrimary, flexShrink: 0,
           fontWeight: 600, letterSpacing: '0.04em',
         }}>
-          {isAgent ? 'A' : 'B'}
+          {isAgent ? (initialsFromName(agentName) ?? 'A') : 'B'}
         </div>
       )}
       <div style={{

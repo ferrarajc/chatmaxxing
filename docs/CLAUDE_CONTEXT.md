@@ -77,7 +77,7 @@ chatmaxxing/
 | `next-best-response` | Suggest agent reply + autopilot scope | Yes — Nova Micro |
 | `predict-intent` | Suggest KB topics from page + conversation | Yes — Nova Micro |
 | `predict-questions` | Predict client's next 3 questions | Yes — Nova Micro |
-| `send-agent-message` | Push agent message to client via Connect API | No |
+| `send-agent-message` | Push agent message OR a typing event (`event:'typing'`) to client via Connect API | No |
 | `agent-availability` | Is a given agent (by Connect username) currently on queue / Available? | No |
 | `save-transcript` | Write transcript to Transcripts table; also write `lastAgentChat` continuation memory to Clients table | No |
 | `get-transcripts` | Read transcripts for a client | No |
@@ -145,6 +145,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Adding a new task | `lambda/shared/tasks.ts` (add task) + `handler.ts` (add prompt + switch case) + `execute-task/handler.ts` (add execution) |
 | Task execution logic | `lambda/execute-task/handler.ts` |
 | Agent chat rendering | `agent-app/src/components/ChatColumn.tsx` |
+| Typing indicators (both directions) | Customer→agent: `useChatSession.ts` (`notifyTyping`, `onTyping`) + `ChatInput.tsx`; agent shows it in `useConnectStreams.ts` (`chatSession.onTyping` → `slot.customerTyping`) + `ChatColumn.tsx` (`TypingDots`, 30s expiry). Agent→customer: `ChatColumn.tsx` (manual keystrokes + autopilot `autopilotSend` → `/send-agent-message` `event:'typing'`); customer shows it via `agentTyping` (60s expiry) in `ChatBody.tsx`. Autopilot cancel sends the `__BOBS_TYPING_STOP__` sentinel to clear it promptly. `autopilotSend` runs two phases via `autopilotDelay`: a **reading delay** (ellipsis hidden; `2000ms + 10ms×(clientMsgLen−200)`, min 2000ms, based on the client's most recent message) then the existing **typing delay** (`chars/15`s, ellipsis shown). Chat avatar: bot turns show **"B"** (navy); once a live agent is connected, agent bubbles + the typing ellipsis show the **agent's initials** (accent color), captured from the Connect message/typing `DisplayName` into `chatStore.agentName` (`initialsFromName` in `utils/initials.ts`). |
 | Proposed Action card | `agent-app/src/components/ProposedActionCard.tsx` |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |

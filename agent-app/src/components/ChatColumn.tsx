@@ -46,6 +46,21 @@ interface Props {
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
+// Throttle outgoing typing events so a burst of keystrokes emits at most one per interval.
+const TYPING_THROTTLE_MS = 3000;
+// Control message that tells the customer to immediately drop the typing ellipsis when
+// autopilot is cancelled mid-compose. Must match the customer app's sentinel exactly.
+const TYPING_STOP_SENTINEL = '__BOBS_TYPING_STOP__';
+
+// Tell the customer the agent is typing (drives the ellipsis in the client chat layer).
+function sendCustomerTypingEvent(connectionToken: string): void {
+  post<{ ok: boolean }>('/send-agent-message', { connectionToken, event: 'typing' }).catch(() => {});
+}
+// Immediately clear the customer's typing ellipsis (used when autopilot is cancelled).
+function sendCustomerTypingStop(connectionToken: string): void {
+  post<{ ok: boolean }>('/send-agent-message', { connectionToken, message: TYPING_STOP_SENTINEL }).catch(() => {});
+}
+
 interface AutopilotTurnResult {
   response: string;
   shouldExitAutopilot: boolean;
@@ -82,6 +97,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevMsgCount = useRef(0);
+  // Last time we emitted a typing event to the customer (throttling manual keystrokes)
+  const lastTypingSentRef = useRef(0);
 
   const [aiHeight, setAiHeight] = useState(() => {
     try {
@@ -137,6 +154,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
   }, [slot?.messages.length]);
 
+  // Keep the client typing ellipsis in view when it appears.
+  useEffect(() => {
+    if (slot?.customerTyping) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [slot?.customerTyping]);
+
   // ── sendText: append locally + POST to Connect ─────────────────────────
   const sendText = (text: string) => {
     if (!slot) return;
@@ -178,15 +200,64 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       });
   };
 
-  // ── Autopilot: send with human-like delay (chars / 15 = seconds) ───────
+  // ── Autopilot: human-like wait helper ──────────────────────────────────
+  // Waits `ms` while autopilot is composing, in chunks so cancellation is detected
+  // promptly. When showEllipsis is true the customer's typing ellipsis is kept alive
+  // via heartbeats and cleared immediately if autopilot is cancelled. Returns false
+  // if the wait was aborted (scope cancelled or chat ended).
+  const autopilotDelay = async (
+    ms: number, contactId: string, scope: AutopilotScope, showEllipsis: boolean,
+  ): Promise<boolean> => {
+    const startToken = store.getSlot(contactId)?.connectionToken;
+    let remaining = ms;
+    const CHUNK_MS = 8000;
+    while (remaining > 0) {
+      const wait = Math.min(CHUNK_MS, remaining);
+      await sleep(wait);
+      remaining -= wait;
+      const cur = store.getSlot(contactId);
+      // Abort if scope was cancelled while waiting, or if the chat already ended
+      if (!cur || cur.autopilotScope !== scope || cur.status === 'acw') {
+        store.patchSlot(contactId, { autopilotPending: null });
+        // Cancelled (not ended) → tell the customer to drop the ellipsis immediately.
+        const stopToken = cur?.connectionToken ?? startToken;
+        if (showEllipsis && cur && cur.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
+        return false;
+      }
+      // Still composing — keep the customer's ellipsis alive.
+      if (showEllipsis && remaining > 0 && cur.connectionToken) sendCustomerTypingEvent(cur.connectionToken);
+    }
+    return true;
+  };
+
+  // ── Autopilot: send with human-like delay ──────────────────────────────
+  // Two phases mimic a human agent. (1) Reading delay — before the typing ellipsis
+  // appears, pause for the time it would take to read the client's most recent
+  // message: a minimum of 2000 ms covering the first 200 characters they wrote, plus
+  // 10 ms for every character beyond that. (2) Typing delay — the existing
+  // chars/15-seconds compose delay, during which the ellipsis is shown. The typing
+  // delay only starts once the reading delay has fully elapsed.
   const autopilotSend = async (text: string, contactId: string, scope: AutopilotScope): Promise<boolean> => {
-    const delaySecs = Math.max(1, Math.floor(text.length / 15));
     store.patchSlot(contactId, { autopilotPending: text });
-    await sleep(delaySecs * 1000);
-    // Abort if scope was cancelled while waiting, or if the chat already ended
+
+    // Phase 1 — reading delay. No ellipsis yet (the agent is "reading", not typing).
+    const slotForRead = store.getSlot(contactId);
+    const lastClientMsg = slotForRead?.messages.slice().reverse().find(m => m.role === 'CUSTOMER');
+    const clientLen = lastClientMsg?.content.length ?? 0;
+    const readingDelayMs = clientLen > 0 ? 2000 + Math.max(0, clientLen - 200) * 10 : 0;
+    if (!(await autopilotDelay(readingDelayMs, contactId, scope, false))) return false;
+
+    // Phase 2 — typing delay. Show the ellipsis now and keep it alive until send.
+    const delaySecs = Math.max(1, Math.floor(text.length / 15));
+    const typingToken = store.getSlot(contactId)?.connectionToken;
+    if (typingToken) sendCustomerTypingEvent(typingToken);
+    if (!(await autopilotDelay(delaySecs * 1000, contactId, scope, true))) return false;
+
     const fresh = store.getSlot(contactId);
     if (!fresh || fresh.autopilotScope !== scope || fresh.status === 'acw') {
       store.patchSlot(contactId, { autopilotPending: null });
+      const stopToken = fresh?.connectionToken ?? typingToken;
+      if (fresh && fresh.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
       return false;
     }
     // Read fresh connectionToken at send time
@@ -219,6 +290,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   // ── Autopilot: exit with flash ─────────────────────────────────────────
   const exitAutopilot = (contactId: string, message?: string | null) => {
     clearAutopilotTimers();
+    // If a reply was staged (customer is seeing a typing ellipsis), drop it immediately.
+    const exiting = store.getSlot(contactId);
+    if (exiting?.autopilotPending && exiting.connectionToken && exiting.status !== 'acw') {
+      sendCustomerTypingStop(exiting.connectionToken);
+    }
     store.patchSlot(contactId, {
       autopilotScope: null,
       autopilotFlash: true,
@@ -531,6 +607,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
   }, [pendingInserts, slot?.contactId, slot?.suggestedText]);
 
+  // Emit a throttled typing event so the customer sees the agent composing.
+  const handleInputTyping = (value: string) => {
+    setInputText(value);
+    if (!value.trim() || !slot?.connectionToken) return;
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < TYPING_THROTTLE_MS) return;
+    lastTypingSentRef.current = now;
+    sendCustomerTypingEvent(slot.connectionToken);
+  };
+
   // ── Handlers ───────────────────────────────────────────────────────────
   const handleSend = () => {
     if (!inputText.trim() || !slot) return;
@@ -659,6 +745,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0,
           }}>
             {slot.messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)}
+            {slot.customerTyping && <TypingDots />}
             <div ref={chatEndRef} />
           </div>
 
@@ -667,7 +754,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             <div style={{ display: 'flex', gap: 6 }}>
               <textarea
                 value={inputText}
-                onChange={e => setInputText(e.target.value)}
+                onChange={e => handleInputTyping(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 onClick={e => e.stopPropagation()} // prevent column click-to-exit on textarea focus
                 placeholder="Type a reply…"
@@ -737,6 +824,27 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           <AfterCallWork slot={slot} />
         </>
       )}
+    </div>
+  );
+}
+
+// Animated ellipsis shown left-aligned (inbound) while the client is typing.
+function TypingDots() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+      <div style={{
+        background: '#f3f4f6', borderRadius: 10, padding: '8px 12px',
+        display: 'flex', gap: 4, alignItems: 'center',
+      }}>
+        {[0, 1, 2].map(i => (
+          <span key={i} style={{
+            width: 6, height: 6, borderRadius: '50%', background: '#9ca3af',
+            display: 'inline-block',
+            animation: `bobs-typing-bounce 1.2s ${i * 0.2}s infinite`,
+          }} />
+        ))}
+      </div>
+      <style>{`@keyframes bobs-typing-bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }`}</style>
     </div>
   );
 }
