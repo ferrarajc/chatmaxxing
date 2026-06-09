@@ -242,7 +242,15 @@ export class LambdaStack extends cdk.Stack {
       entry: path.join(lambdaDir, 'client-log/handler.ts'),
       timeout: cdk.Duration.seconds(10),
       memorySize: 128,
-      environment: baseEnv,
+      environment: {
+        ...baseEnv,
+        // Pager Doodie push on customer-site access-code entry. Resolved from SSM
+        // at deploy time (same pattern as bobs-openai-api-key). To set the values:
+        //   aws ssm put-parameter --name "bobs-pagerdoodie-api-base" --value <url> --type String --overwrite
+        //   aws ssm put-parameter --name "bobs-pagerdoodie-api-key"  --value <key> --type String --overwrite
+        PAGERDOODIE_API_BASE: ssm.StringParameter.valueForStringParameter(this, 'bobs-pagerdoodie-api-base'),
+        PAGERDOODIE_API_KEY: ssm.StringParameter.valueForStringParameter(this, 'bobs-pagerdoodie-api-key'),
+      },
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
 
