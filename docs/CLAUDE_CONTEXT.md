@@ -82,7 +82,7 @@ chatmaxxing/
 | `save-transcript` | Write transcript to Transcripts table; also write `lastAgentChat` continuation memory to Clients table | No |
 | `get-transcripts` | Read transcripts for a client | No |
 | `client-data` | Read/write client profile | No |
-| `client-log` | Log client-side events | No |
+| `client-log` | Log client-side events; on `context:'access-code-entered'` also sends an `urgent` Pager Doodie push (customer-site signin alert) | No |
 | `agent-connection` | Manage agent Connect tokens | No |
 | `schedule-callback` | Create EventBridge callback event | No |
 | `execute-callback` | Fire on scheduled callback time | No |
@@ -164,6 +164,7 @@ cd cdk
 npx cdk deploy BobsLambdaStack --require-approval never
 ```
 `OPENAI_API_KEY` is in AWS SSM (`bobs-openai-api-key`) — CloudFormation resolves it at deploy time, no shell variable needed.
+The `client-log` Lambda likewise reads `bobs-pagerdoodie-api-base` + `bobs-pagerdoodie-api-key` from SSM (same deploy-time resolution) so it can page the owner (via Pager Doodie) when someone enters the customer-site access code. The customer `AccessGate` fires a PROD-only fire-and-forget `POST /client-log {context:'access-code-entered'}` on a correct code; the gate's existing `bobs_access` localStorage flag means it only fires on a fresh/cleared browser.
 Typecheck first: `cd cdk; npx tsc --noEmit`
 
 **Frontend (customer-app or agent-app — manual):**
