@@ -700,21 +700,36 @@ export function FundProfilePage() {
           <div style={card}>
             <CardTitle>Fund Documents</CardTitle>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {['Prospectus', 'Summary Prospectus', 'Annual Report', 'Semi-Annual Report', 'Statement of Additional Information'].map(doc => (
-                <div key={doc} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '10px 14px', borderRadius: theme.radius.md,
-                  border: `1px solid ${theme.color.border}`, background: theme.color.surfaceMuted,
-                }}>
+              {([
+                ['Prospectus',                       'prospectus'],
+                ['Summary Prospectus',               'summary-prospectus'],
+                ['Annual Report',                    'annual-report'],
+                ['Semi-Annual Report',               'semi-annual-report'],
+                ['Statement of Additional Information', 'sai'],
+              ] as [string, string][]).map(([label, slug]) => (
+                <a
+                  key={slug}
+                  href={`/chatmaxxing/fund-docs/${fundDef.ticker.toLowerCase()}/${slug}.pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 14px', borderRadius: theme.radius.md,
+                    border: `1px solid ${theme.color.border}`, background: theme.color.surfaceMuted,
+                    textDecoration: 'none', cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = theme.color.border; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = theme.color.surfaceMuted; }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.color.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.color.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                     </svg>
-                    <span style={{ fontSize: 13, color: theme.color.text }}>{doc}</span>
+                    <span style={{ fontSize: 13, color: theme.color.text }}>{label}</span>
                   </div>
-                  <span style={{ fontSize: 10, color: theme.color.textSubtle, fontWeight: 600, letterSpacing: '0.04em' }}>PDF</span>
-                </div>
+                  <span style={{ fontSize: 10, color: theme.color.accent, fontWeight: 600, letterSpacing: '0.04em' }}>PDF ↗</span>
+                </a>
               ))}
             </div>
           </div>
