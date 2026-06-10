@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import 'amazon-connect-chatjs';
 import { useChatStore, ChatStore } from '../store/chatStore';
 import { useClientStore } from '../store/clientStore';
@@ -64,8 +64,10 @@ interface StartChatResponse {
 }
 
 type ChatJsSession = {
-  connect: () => Promise<void>;
+  connect: () => Promise<{ connectSuccess?: boolean } | void>;
   disconnect: () => void;
+  getTranscript: (args: { scanDirection: string; sortOrder: string; maxResults: number }) =>
+    Promise<{ data?: { Transcript?: Array<{ Type: string; ParticipantRole: string; Content?: string }> } }>;
   onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string; DisplayName?: string } }) => void) => void;
   onTyping: (cb: (e: { data: { ParticipantRole?: string; DisplayName?: string } }) => void) => void;
   onConnectionEstablished: (cb: () => void) => void;
@@ -182,7 +184,12 @@ function createAndBindSession(
   });
 
   session.onEnded(() => {
+    // Ignore stale sessions — escalateToAgent/continueChat disconnect the bot
+    // session and replace it; that disconnect must not mark the NEW chat ended.
+    // (During the swap sessionRef is briefly null — still not this session's turn.)
+    if (sessionRef.current !== session) return;
     clearAgentTyping();
+    store.setChatEnded(true);
     // Only surface "Chat ended." when a live agent was connected.
     if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') {
       store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
@@ -191,6 +198,28 @@ function createAndBindSession(
 
   return session;
 }
+
+// Pull agent messages that arrived while the tab was away (the page was unloaded,
+// so the websocket missed them) and append any we don't already have. Customer and
+// bot messages are already in the persisted store; only agent turns can be missing.
+async function mergeMissedMessages(session: ChatJsSession, store: ChatStore) {
+  try {
+    const res = await session.getTranscript({ scanDirection: 'BACKWARD', sortOrder: 'ASCENDING', maxResults: 100 });
+    const items = res?.data?.Transcript ?? [];
+    for (const item of items) {
+      if (item.Type !== 'MESSAGE' || item.ParticipantRole !== 'AGENT') continue;
+      const content = item.Content ?? '';
+      if (!content || content === TYPING_STOP_SENTINEL || content.startsWith(AGENT_NAME_SENTINEL)) continue;
+      if (useChatStore.getState().messages.some(m => m.role === 'AGENT' && m.content === content)) continue;
+      store.addMessage({ role: 'AGENT', content });
+      store.transitionTo('CONNECTED_TO_AGENT');
+    }
+  } catch { /* best-effort — live messages still flow via onMessage */ }
+}
+
+// One reconnect attempt per page load (module scope so StrictMode double-mount
+// in dev doesn't open two websockets for the same participant).
+let reconnectAttempted = false;
 
 export function useChatSession() {
   const store = useChatStore();
@@ -202,6 +231,55 @@ export function useChatSession() {
   const agentTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Last time we emitted an outgoing typing event (throttling)
   const lastTypingSentRef = useRef<number>(0);
+
+  // Rehydration: the store persists to sessionStorage, so a chat survives a reload
+  // or navigating off-site and back in the same tab. Re-attach a chatjs session to
+  // the stored participant token; if Connect refuses (chat over / token expired),
+  // keep the transcript visible and mark the chat ended.
+  useEffect(() => {
+    if (reconnectAttempted) return;
+    reconnectAttempted = true;
+    const s = useChatStore.getState();
+    if (s.state === 'CLOSED' || s.chatSession) return;
+    if (s.chatEnded) return; // transcript-only; nothing to reconnect
+    if (!s.participantToken || !s.contactId || !s.participantId) {
+      // Persisted mid-handshake (e.g. closed during GREETING) — nothing to resume.
+      s.reset();
+      return;
+    }
+    const data: StartChatResponse = {
+      participantToken: s.participantToken,
+      contactId: s.contactId,
+      participantId: s.participantId,
+    };
+    (async () => {
+      try {
+        const session = createAndBindSession(data, store, sessionRef, botReplyTimerRef, agentTypingTimerRef);
+        sessionRef.current = session;
+        const res = await session.connect();
+        if (res && res.connectSuccess === false) throw new Error('reconnect refused');
+        store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
+        await mergeMissedMessages(session, store);
+      } catch {
+        sessionRef.current = null;
+        store.setChatEnded(true);
+        store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // End the chat for real: disconnect the Connect participant (so the agent side
+  // sees the customer leave) and clear all chat state, including the persisted copy.
+  function endChat() {
+    if (botReplyTimerRef.current) {
+      clearTimeout(botReplyTimerRef.current);
+      botReplyTimerRef.current = null;
+    }
+    try { sessionRef.current?.disconnect(); } catch { /* already gone */ }
+    sessionRef.current = null;
+    store.reset();
+  }
 
   async function openChat(currentPage: string) {
     currentPageRef.current = currentPage;
@@ -287,6 +365,7 @@ export function useChatSession() {
       sessionRef.current = session;
       await session.connect();
       store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
+      store.setChatEnded(false); // fresh Connect contact — any prior ended state is moot
     } catch (err) {
       console.error('Escalation failed', err);
       store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
@@ -332,6 +411,7 @@ export function useChatSession() {
       sessionRef.current = session;
       await session.connect();
       store.setChatSession(session, data.contactId, data.participantToken, data.participantId);
+      store.setChatEnded(false); // fresh Connect contact — any prior ended state is moot
     } catch (err) {
       console.error('Continue chat failed', err);
       store.addMessage({ role: 'SYSTEM', content: 'Unable to reach an agent right now. Please try again.' });
@@ -443,5 +523,5 @@ export function useChatSession() {
     } catch { /* ignore — typing is best-effort */ }
   }
 
-  return { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping };
+  return { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping, endChat };
 }

@@ -30,7 +30,10 @@ export function ChatWidget() {
   const currentPage = pageContext ?? pageKeyFromPath(location.pathname);
 
   const chatState = useChatStore(s => s.state);
-  const { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping } = useChatSession();
+  const minimized = useChatStore(s => s.minimized);
+  const unreadCount = useChatStore(s => s.unreadCount);
+  const setMinimized = useChatStore(s => s.setMinimized);
+  const { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping, endChat } = useChatSession();
 
   usePredictedTopics(currentPage);
 
@@ -41,13 +44,18 @@ export function ChatWidget() {
   return (
     <>
       {chatState === 'CLOSED' && <ChatBubbleFAB onClick={handleOpen} />}
-      {chatState !== 'CLOSED' && (
+      {chatState !== 'CLOSED' && minimized && (
+        // Minimized: the session stays fully alive, only the panel is hidden.
+        <ChatBubbleFAB onClick={() => setMinimized(false)} badge={unreadCount} />
+      )}
+      {chatState !== 'CLOSED' && !minimized && (
         <ChatPanel
           currentPage={currentPage}
           onSendMessage={sendMessage}
           onEscalateToAgent={escalateToAgent}
           onContinueChat={continueChat}
           onTyping={notifyTyping}
+          onEndChat={endChat}
         />
       )}
     </>
