@@ -188,10 +188,14 @@ function createAndBindSession(
     // session and replace it; that disconnect must not mark the NEW chat ended.
     // (During the swap sessionRef is briefly null — still not this session's turn.)
     if (sessionRef.current !== session) return;
+    // Bot-phase contacts end on their own seconds after connect (start-chat uses
+    // the bot-disconnect flow; the bot keeps answering via the fallback Lambda),
+    // so ENDED only means "chat over" once a live agent is in the picture.
+    const liveState = useChatStore.getState().state;
+    if (liveState !== 'CONNECTED_TO_AGENT' && liveState !== 'WAITING_FOR_AGENT') return;
     clearAgentTyping();
     store.setChatEnded(true);
-    // Only surface "Chat ended." when a live agent was connected.
-    if (useChatStore.getState().state === 'CONNECTED_TO_AGENT') {
+    if (liveState === 'CONNECTED_TO_AGENT') {
       store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
     }
   });
@@ -262,8 +266,13 @@ export function useChatSession() {
         await mergeMissedMessages(session, store);
       } catch {
         sessionRef.current = null;
-        store.setChatEnded(true);
-        store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
+        // Bot-phase contacts are expected to be unreconnectable (the bot-disconnect
+        // flow already ended them); the bot carries on via the fallback Lambda with
+        // no session. Only a live-agent chat that can't resume is really over.
+        if (s.state === 'CONNECTED_TO_AGENT' || s.state === 'WAITING_FOR_AGENT') {
+          store.setChatEnded(true);
+          store.addMessage({ role: 'SYSTEM', content: 'Chat ended.' });
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -9,9 +9,7 @@ const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
 interface TranscriptMeta {
   transcriptId: string;
-  intentSummary?: string;
   summary?: string;
-  acwSummary?: string;
   agentName?: string | null;
   startTime?: number;
   endTime?: number;
@@ -43,18 +41,13 @@ function stripLinkMarkup(content: string): string {
   return content.replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, '$1');
 }
 
-// Best available description of a past chat. `summary` (AI recap, a lowercase
-// "you …" clause) exists on transcripts saved after the summary column shipped;
-// older rows fall back to the agent's ACW summary, then the intent label
-// (stripping its **bold** markers).
+// Card description: the AI recap `summary` (a lowercase second-person "you …"
+// clause, the same one the "Pick up where you left off" card uses). Chats
+// without it (saved before the summary column shipped) are filtered out of the
+// list entirely, so this only ever renders the real recap.
 function cardSummary(t: TranscriptMeta): string {
-  if (t.summary) {
-    const s = t.summary.trim();
-    return s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.');
-  }
-  if (t.acwSummary) return t.acwSummary;
-  if (t.intentSummary) return t.intentSummary.replace(/\*\*/g, '');
-  return 'Chat with our support team.';
+  const s = (t.summary ?? '').trim();
+  return s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.');
 }
 
 export function ChatHistoryList({ onSelect }: { onSelect: (transcriptId: string) => void }) {
@@ -68,7 +61,9 @@ export function ChatHistoryList({ onSelect }: { onSelect: (transcriptId: string)
       .then(res => {
         if (cancelled) return;
         const cutoff = Date.now() - NINETY_DAYS_MS;
-        setItems(res.transcripts.filter(t => (t.savedAt ?? t.endTime ?? 0) >= cutoff));
+        setItems(res.transcripts.filter(t =>
+          (t.savedAt ?? t.endTime ?? 0) >= cutoff && !!t.summary?.trim(),
+        ));
       })
       .catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };

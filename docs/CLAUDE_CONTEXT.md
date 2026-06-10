@@ -146,7 +146,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Task execution logic | `lambda/execute-task/handler.ts` |
 | Agent chat rendering | `agent-app/src/components/ChatColumn.tsx` |
 | Typing indicators (both directions) | Customer→agent: `useChatSession.ts` (`notifyTyping`, `onTyping`) + `ChatInput.tsx`; agent shows it in `useConnectStreams.ts` (`chatSession.onTyping` → `slot.customerTyping`) + `ChatColumn.tsx` (`TypingDots`, 30s expiry). Agent→customer: `ChatColumn.tsx` (manual keystrokes + autopilot `autopilotSend` → `/send-agent-message` `event:'typing'`); customer shows it via `agentTyping` (60s expiry) in `ChatBody.tsx`. Autopilot cancel sends the `__BOBS_TYPING_STOP__` sentinel to clear it promptly. `autopilotSend` runs two phases via `autopilotDelay`: a **reading delay** (ellipsis hidden; `2000ms + 10ms×(clientMsgLen−200)`, min 2000ms, based on the client's most recent message) then the existing **typing delay** (`chars/15`s, ellipsis shown). Chat avatar: bot turns show **"B"** (navy); once a live agent is connected, agent bubbles + the typing ellipsis show the **agent's initials** (accent color) via `chatStore.agentName` (`initialsFromName` in `utils/initials.ts`). The agent sends its **full name** (first + last) on connect as a `__BOBS_AGENT_NAME__` control message (`useConnectStreams.ts`, intercepted/not rendered) because Connect's chat `DisplayName` is only the agent's first name; a multi-word `DisplayName` is a fallback. |
-| Customer chat history (hamburger ☰ in chat header) | `ChatPanel.tsx` (view state chat/history/transcript; ☰ replaced the "B" logo, ← goes back), `ChatHistoryView.tsx` (90-day card list via `GET /get-transcripts?clientId=` + read-only transcript via `?transcriptId=` + Download), `lambda/save-transcript` (stores `summary` on the row), `lambda/get-transcripts` (list projection incl. `summary, acwSummary, agentName`) |
+| Customer chat history (hamburger ☰ in chat header) | `ChatPanel.tsx` (view state chat/history/transcript; ☰ replaced the "B" logo, ← goes back), `ChatHistoryView.tsx` (90-day card list via `GET /get-transcripts?clientId=` + read-only transcript via `?transcriptId=` + Download; **only rows with the second-person `summary` recap are listed** — no fallback), `lambda/save-transcript` (stores `summary` on the row), `lambda/get-transcripts` (list projection incl. `summary, acwSummary, agentName`) |
 | Chat end-of-life (minimize/close/persist; customer-left detection) | Customer: `ChatPanel.tsx` (minimize btn + close-confirm dialog), `chatStore.ts` (sessionStorage `persist`, `minimized`/`unreadCount`/`chatEnded`), `useChatSession.ts` (reconnect-on-load + `endChat()` real disconnect + stale-session guard on `onEnded`), `ChatBody.tsx` + `utils/transcriptDownload.ts` (Download transcript on chat end). Agent: `useConnectStreams.ts` (`participant.left` EVENT in `chatSession.onMessage` → `slot.customerDisconnected`; chatjs routes unmapped event types to onMessage), `ChatColumn.tsx` + `FocusingDesktop.tsx` ("Client closed the chat." notice + End chat → `bobs:endChat` → ACW; composer disabled) |
 | Proposed Action card | `agent-app/src/components/ProposedActionCard.tsx` |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
@@ -257,7 +257,8 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 Just shipped (PRs #69–#73, all merged + deployed — Lambdas via CDK, frontends via Actions):
 - **Chat end-of-life batch** (see the two "Chat …" rows in Key Files above for file map):
-  minimize button + unread-badge FAB; close-confirmation dialog (Minimize focused / End chat;
+  minimize button + docked minimized header bar with unread badge (`ChatMinimizedBar.tsx`);
+  close-confirmation dialog (Minimize focused / End chat;
   tire-kickers and ended chats close silently); closing now genuinely disconnects the Connect
   participant; chatStore persists to sessionStorage (reload/off-site-nav resume, missed agent
   messages backfilled via getTranscript; tab close = chat over). Agent side detects the
@@ -266,8 +267,13 @@ Just shipped (PRs #69–#73, all merged + deployed — Lambdas via CDK, frontend
   **Download transcript** (.txt) button when a live chat ends.
 - **Customer chat history**: hamburger ☰ (replaced the header "B" logo) → 90-day list of past
   live-agent chats (bold date/time, (mm:ss) duration, recap line) → read-only transcript +
-  Download. `save-transcript` now stores the AI recap `summary` on the transcript row (older
-  rows fall back to acwSummary → intentSummary in the UI).
+  Download. `save-transcript` now stores the AI recap `summary` on the transcript row; the
+  history list shows ONLY rows that have it (older rows are hidden, not fallback-summarized).
+- **Bot-phase ended-event fix (2026-06-10)**: non-escalated `/start-chat` contacts use the
+  bot-disconnect flow, so Connect fires chatjs `onEnded` seconds after connect while the bot
+  keeps answering via the fallback Lambda. `useChatSession.ts` therefore treats `onEnded` (and
+  a failed rehydration reconnect) as "chat over" only in `CONNECTED_TO_AGENT`/`WAITING_FOR_AGENT`
+  — otherwise the input would lock up moments after every chat open.
 - **Retirement calculator fix**: NumberInput no longer min-clamps per keystroke (select-all +
   retype works); digits-only with `maxDigits` cap; ages are unclamped by design.
 - Manual-test note: the agent-side "Client closed the chat." flow still wants one live

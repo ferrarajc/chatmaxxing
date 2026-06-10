@@ -58,12 +58,22 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onCon
         {view === 'chat' ? (
           <button
             onClick={() => setView('history')}
-            style={{ ...headerButtonStyle, fontSize: 19, marginLeft: -4 }}
+            style={{ ...headerButtonStyle, marginLeft: -4, display: 'flex', alignItems: 'center' }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
             aria-label="Chat history"
             title="Previous chats"
-          >☰</button>
+          >
+            <svg
+              width="21" height="21" viewBox="0 0 21 21" fill="none"
+              stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <line x1="2.5" y1="4.5" x2="18.5" y2="4.5" />
+              <line x1="2.5" y1="10.5" x2="18.5" y2="10.5" />
+              <line x1="2.5" y1="16.5" x2="18.5" y2="16.5" />
+            </svg>
+          </button>
         ) : (
           <button
             onClick={() => setView(view === 'transcript' ? 'history' : 'chat')}
@@ -77,9 +87,9 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onCon
         <div style={{ flex: 1 }}>
           <div style={{
             fontWeight: 600, fontSize: 15, fontFamily: theme.font.serif,
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.01em', lineHeight: 1.2,
           }}>{view === 'chat' ? "Bob's Mutual Funds" : 'Chat history'}</div>
-          <div style={{ fontSize: 12, opacity: 0.78, marginTop: 1 }}>
+          <div style={{ fontSize: 12, opacity: 0.78, lineHeight: 1.3, marginTop: 2 }}>
             {view === 'history' ? 'Your chats from the last 3 months'
               : view === 'transcript' ? 'Conversation transcript'
               : state === 'CONNECTED_TO_AGENT' ? '🟢 Agent connected'
@@ -89,7 +99,7 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onCon
         </div>
         <button
           onClick={() => setMinimized(true)}
-          style={headerButtonStyle}
+          style={{ ...headerButtonStyle, alignSelf: 'flex-start', marginTop: -6 }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
           aria-label="Minimize chat"
@@ -97,10 +107,11 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onCon
         >–</button>
         <button
           onClick={handleClose}
-          style={headerButtonStyle}
+          style={{ ...headerButtonStyle, alignSelf: 'flex-start', marginTop: -6 }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
           aria-label="Close chat"
+          title="End this chat session"
         >×</button>
       </div>
 
