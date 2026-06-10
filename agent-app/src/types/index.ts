@@ -65,6 +65,9 @@ export interface ContactSlot {
   preferredAgentUsername?: string;
   /** True while the client is actively typing; drives the ellipsis indicator in this column. */
   customerTyping?: boolean;
+  /** True when the customer disconnected from the chat (participant.left) while the
+   *  contact is still active — the agent must explicitly End chat to move to ACW. */
+  customerDisconnected?: boolean;
 }
 
 export type AgentStatus = 'Available' | 'Away' | 'Offline';

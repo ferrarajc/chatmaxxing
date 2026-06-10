@@ -757,20 +757,22 @@ export function ChatColumn({ slotIndex, slot }: Props) {
                 onChange={e => handleInputTyping(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 onClick={e => e.stopPropagation()} // prevent column click-to-exit on textarea focus
-                placeholder="Type a reply…"
+                placeholder={slot.customerDisconnected ? 'Client closed the chat' : 'Type a reply…'}
+                disabled={slot.customerDisconnected}
                 rows={2}
                 style={{
                   flex: 1, resize: 'none', border: '1.5px solid #d1d5db', borderRadius: 8,
                   padding: '6px 10px', fontSize: 16, outline: 'none', fontFamily: 'inherit',
+                  opacity: slot.customerDisconnected ? 0.5 : 1,
                 }}
               />
               <button
                 onClick={e => { e.stopPropagation(); handleSend(); }}
-                disabled={!inputText.trim()}
+                disabled={!inputText.trim() || slot.customerDisconnected}
                 style={{
                   width: 34, borderRadius: 8, border: 'none',
-                  background: inputText.trim() ? '#1a56db' : '#e5e7eb',
-                  color: '#fff', cursor: inputText.trim() ? 'pointer' : 'default', fontSize: 20,
+                  background: inputText.trim() && !slot.customerDisconnected ? '#1a56db' : '#e5e7eb',
+                  color: '#fff', cursor: inputText.trim() && !slot.customerDisconnected ? 'pointer' : 'default', fontSize: 20,
                 }}
               >➤</button>
             </div>
@@ -788,13 +790,37 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             <div style={{ width: 32, height: 3, borderRadius: 2, background: '#cbd5e1' }} />
           </div>
 
-          {/* AI support panel — height per-column, resizable via drag handle above */}
+          {/* AI support panel — height per-column, resizable via drag handle above.
+              When the customer has left, AI support is moot: show an explicit notice
+              so the agent knows why, with End chat as the path to after-chat work. */}
           <div style={{ height: aiHeight, borderTop: '1px solid #e5e7eb', flexShrink: 0, overflow: 'hidden' }}>
-            <AISupport
-              slot={slot}
-              onSendResource={text => sendText(text)}
-              onActivateAutopilot={handleActivateAutopilot}
-            />
+            {slot.customerDisconnected ? (
+              <div style={{
+                height: '100%', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 12,
+                background: '#fffbeb', padding: 16,
+              }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#92400e', textAlign: 'center' }}>
+                  Client closed the chat.
+                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); handleEndChat(); }}
+                  style={{
+                    padding: '8px 22px', borderRadius: 8, border: 'none',
+                    background: '#1a56db', color: '#fff', fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  End chat
+                </button>
+              </div>
+            ) : (
+              <AISupport
+                slot={slot}
+                onSendResource={text => sendText(text)}
+                onActivateAutopilot={handleActivateAutopilot}
+              />
+            )}
           </div>
         </>
       )}

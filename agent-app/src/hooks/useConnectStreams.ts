@@ -439,7 +439,30 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
             log.warn('useConnectStreams:getChatDetails:failed', e);
           }
 
-          chatSession.onMessage(({ data: msg }: { data: { Type: string; ParticipantRole: string; Content: string } }) => {
+          chatSession.onMessage(({ data: msg }: { data: { Type: string; ParticipantRole: string; Content: string; ContentType?: string } }) => {
+            // Customer left the chat (closed it / ended their side). chatjs has no
+            // dedicated callback for participant.left — unmapped event content types
+            // fall through to onMessage. The contact itself stays active until the
+            // agent explicitly ends it, so surface the disconnect in the column.
+            if (
+              msg?.Type === 'EVENT' &&
+              msg.ContentType === 'application/vnd.amazonaws.connect.event.participant.left' &&
+              msg.ParticipantRole === 'CUSTOMER'
+            ) {
+              clearCustomerTyping(contactId);
+              if (useAgentStore.getState().getSlot(contactId)?.status === 'active') {
+                useAgentStore.getState().patchSlot(contactId, {
+                  customerDisconnected: true,
+                  customerTyping: false,
+                  // Nobody is listening anymore — stop autopilot and pending sends.
+                  autopilotScope: null,
+                  autopilotPending: null,
+                  suggestedScope: null,
+                });
+              }
+              log.info('useConnectStreams:customerLeft', { contactId });
+              return;
+            }
             if (msg?.Type !== 'MESSAGE') return;
             if (msg.ParticipantRole === 'AGENT') return;
             const role = msg.ParticipantRole === 'CUSTOMER' ? 'CUSTOMER' as const : 'BOT' as const;
