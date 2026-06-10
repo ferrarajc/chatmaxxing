@@ -107,10 +107,23 @@ interface NumberInputProps {
   step: number;
   prefix?: string;
   narrow?: boolean;
+  maxDigits?: number;
   onChange: (v: number) => void;
 }
 
-function NumberInput({ label, value, min, step, prefix, narrow, onChange }: NumberInputProps) {
+function NumberInput({ label, value, min, step, prefix, narrow, maxDigits, onChange }: NumberInputProps) {
+  // Raw text while the field is focused; null = not editing, display the committed value.
+  // Sanitizing to digits here (instead of clamping to min on every keystroke) lets the
+  // user replace a selected value naturally — "1" mid-typing must not snap to min.
+  const [text, setText] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let digits = e.target.value.replace(/\D/g, '');
+    if (maxDigits) digits = digits.slice(0, maxDigits);
+    setText(digits);
+    if (digits !== '') onChange(parseInt(digits, 10));
+  };
+
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ fontSize: 16, fontWeight: 600, color: theme.color.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
@@ -128,11 +141,12 @@ function NumberInput({ label, value, min, step, prefix, narrow, onChange }: Numb
         )}
         <input
           type="number"
-          value={value}
+          value={text ?? value}
           min={min}
           step={step}
-          onChange={e => onChange(Math.max(min, parseFloat(e.target.value) || 0))}
+          onChange={handleChange}
           onFocus={e => e.target.select()}
+          onBlur={() => setText(null)}
           style={{
             width: narrow ? 112 : prefix ? 200 : 225, padding: '9px 13px',
             border: `1px solid ${theme.color.border}`,
@@ -235,12 +249,12 @@ export function RetirementCalculatorPage() {
           </h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-            <NumberInput label="Current Age"    value={currentAge}    min={18}             step={1} narrow onChange={setCurrentAge} />
-            <NumberInput label="Retirement Age" value={retirementAge} min={currentAge + 1} step={1} narrow onChange={setRetirementAge} />
+            <NumberInput label="Current Age"    value={currentAge}    min={0} step={1} narrow maxDigits={2} onChange={setCurrentAge} />
+            <NumberInput label="Retirement Age" value={retirementAge} min={0} step={1} narrow maxDigits={2} onChange={setRetirementAge} />
           </div>
 
-          <NumberInput label="Annual Salary"              value={salary}         min={0} step={1000} prefix="$" onChange={setSalary} />
-          <NumberInput label="Current Retirement Savings" value={currentSavings} min={0} step={1000} prefix="$" onChange={setCurrentSavings} />
+          <NumberInput label="Annual Salary"              value={salary}         min={0} step={1000} prefix="$" maxDigits={9} onChange={setSalary} />
+          <NumberInput label="Current Retirement Savings" value={currentSavings} min={0} step={1000} prefix="$" maxDigits={9} onChange={setCurrentSavings} />
 
           <SliderInput
             label="Annual Savings Rate (% of salary)"
