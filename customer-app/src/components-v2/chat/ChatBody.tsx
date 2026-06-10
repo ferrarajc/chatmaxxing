@@ -9,6 +9,7 @@ import { QuestionButtons } from './QuestionButtons';
 import { TypingIndicator } from './TypingIndicator';
 import { ContinueChatCard } from './ContinueChatCard';
 import { initialsFromName } from '../../utils/initials';
+import { downloadTranscript } from '../../utils/transcriptDownload';
 import { theme } from '../../theme';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -20,7 +21,7 @@ interface Props {
 }
 
 export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) {
-  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, agentTyping, agentName, continuation } = useChatStore();
+  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, agentTyping, agentName, continuation, chatEnded } = useChatStore();
   const addMessage = useChatStore(s => s.addMessage);
   const setTyping = useChatStore(s => s.setTyping);
   const { activePersona } = useClientStore();
@@ -125,6 +126,23 @@ export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) 
       {isTyping && <TypingIndicator isWaiting />}
       {/* Live agent (or delaying autopilot) is composing — animated ellipsis with the agent's initials */}
       {agentTyping && !isTyping && <TypingIndicator agentLabel={initialsFromName(agentName) ?? 'A'} />}
+
+      {/* Live chat over — offer the transcript as a file */}
+      {chatEnded && state === 'CONNECTED_TO_AGENT' && (
+        <div style={{ textAlign: 'center', padding: '2px 0 6px' }}>
+          <button
+            onClick={() => downloadTranscript(messages, { clientName: activePersona.name, agentName })}
+            style={{
+              padding: '7px 16px', borderRadius: theme.radius.md,
+              background: theme.color.surface, color: theme.color.primary,
+              border: `1px solid ${theme.color.border}`, fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', fontFamily: theme.font.sans,
+            }}
+          >
+            ⬇ Download transcript
+          </button>
+        </div>
+      )}
       <div ref={bottomRef} />
     </div>
   );

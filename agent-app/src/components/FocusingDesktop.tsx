@@ -284,22 +284,24 @@ export function FocusingDesktop() {
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
                   }}
-                  placeholder="Type a reply…"
+                  placeholder={selectedSlot.customerDisconnected ? 'Client closed the chat' : 'Type a reply…'}
+                  disabled={selectedSlot.customerDisconnected}
                   rows={2}
                   style={{
                     flex: 1, resize: 'none', border: `1.5px solid ${C.divider}`,
                     borderRadius: 10, padding: '8px 12px', fontSize: 13,
                     outline: 'none', fontFamily: 'inherit', background: '#fff',
                     color: '#111',
+                    opacity: selectedSlot.customerDisconnected ? 0.5 : 1,
                   }}
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!inputText.trim()}
+                  disabled={!inputText.trim() || selectedSlot.customerDisconnected}
                   style={{
                     width: 40, borderRadius: 10, border: 'none',
-                    background: inputText.trim() ? C.cardSelected : C.divider,
-                    color: '#fff', cursor: inputText.trim() ? 'pointer' : 'default',
+                    background: inputText.trim() && !selectedSlot.customerDisconnected ? C.cardSelected : C.divider,
+                    color: '#fff', cursor: inputText.trim() && !selectedSlot.customerDisconnected ? 'pointer' : 'default',
                     fontSize: 16, flexShrink: 0,
                   }}
                 >➤</button>
@@ -376,7 +378,30 @@ export function FocusingDesktop() {
           </div>
         )}
 
-        {selectedSlot && (
+        {/* Customer left — AI support is moot; tell the agent why and offer End chat */}
+        {selectedSlot && selectedSlot.customerDisconnected && selectedSlot.status === 'active' && (
+          <div style={{
+            margin: '12px 16px', padding: '18px 16px', borderRadius: 10,
+            background: '#fffbeb', border: '1px solid #fde68a',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e', textAlign: 'center' }}>
+              Client closed the chat.
+            </div>
+            <button
+              onClick={handleEndChat}
+              style={{
+                padding: '7px 20px', borderRadius: 8, border: 'none',
+                background: C.cardSelected, color: '#fff', fontSize: 12, fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              End chat
+            </button>
+          </div>
+        )}
+
+        {selectedSlot && !(selectedSlot.customerDisconnected && selectedSlot.status === 'active') && (
           <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Autopilot section */}
