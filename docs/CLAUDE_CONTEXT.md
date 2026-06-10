@@ -253,9 +253,27 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ---
 
-## Active Branch / Current State (as of 2026-06-07)
+## Active Branch / Current State (as of 2026-06-09)
 
-Branch in flight: `feature/open-account-step-pills` — per-step chat relevance in the
+Just shipped (PRs #69–#73, all merged + deployed — Lambdas via CDK, frontends via Actions):
+- **Chat end-of-life batch** (see the two "Chat …" rows in Key Files above for file map):
+  minimize button + unread-badge FAB; close-confirmation dialog (Minimize focused / End chat;
+  tire-kickers and ended chats close silently); closing now genuinely disconnects the Connect
+  participant; chatStore persists to sessionStorage (reload/off-site-nav resume, missed agent
+  messages backfilled via getTranscript; tab close = chat over). Agent side detects the
+  customer's `participant.left` event (chatjs routes unmapped event types to `onMessage`) →
+  "Client closed the chat." notice + End chat button in all 4 UI modes. Customer gets a
+  **Download transcript** (.txt) button when a live chat ends.
+- **Customer chat history**: hamburger ☰ (replaced the header "B" logo) → 90-day list of past
+  live-agent chats (bold date/time, (mm:ss) duration, recap line) → read-only transcript +
+  Download. `save-transcript` now stores the AI recap `summary` on the transcript row (older
+  rows fall back to acwSummary → intentSummary in the UI).
+- **Retirement calculator fix**: NumberInput no longer min-clamps per keystroke (select-all +
+  retype works); digits-only with `maxDigits` cap; ages are unclamped by design.
+- Manual-test note: the agent-side "Client closed the chat." flow still wants one live
+  CCP test (customer ends chat while an agent is connected) — automation can't log into CCP.
+
+Previous batch: `feature/open-account-step-pills` — per-step chat relevance in the
 Open an Account wizard. The 8-step wizard lives on one route (`/open-account`) with
 `step` in React state, so the chat saw one page for all steps/branches and showed
 generic pills. Fix: a `pageContextStore` lets the wizard publish a finer page key per
