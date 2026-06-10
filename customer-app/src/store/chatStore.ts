@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { ChatState, ChatMessage, CallbackConfirmation, KBQuestionResult, LastAgentChat } from '../types';
 import { nanoid } from './nanoid';
 
@@ -26,6 +27,12 @@ export interface ChatStore {
   callbackConfirmation: CallbackConfirmation | null;
   /** The client's most recent agent chat, for the "Continue this chat" card; null = none/not loaded. */
   continuation: LastAgentChat | null;
+  /** Panel hidden but the chat session stays fully alive; restored from the FAB. */
+  minimized: boolean;
+  /** Non-customer messages received while minimized; shown as a badge on the FAB. */
+  unreadCount: number;
+  /** The Connect chat is over (agent or customer ended it); closing the panel needs no confirmation. */
+  chatEnded: boolean;
 
   // Actions
   transitionTo: (s: ChatState) => void;
@@ -41,6 +48,8 @@ export interface ChatStore {
   setEscalationPending: (v: boolean) => void;
   setCallbackConfirmation: (v: CallbackConfirmation) => void;
   setContinuation: (v: LastAgentChat | null) => void;
+  setMinimized: (v: boolean) => void;
+  setChatEnded: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -61,34 +70,65 @@ const initial = {
   escalationPending: false,
   callbackConfirmation: null,
   continuation: null,
+  minimized: false,
+  unreadCount: 0,
+  chatEnded: false,
 };
 
-export const useChatStore = create<ChatStore>(set => ({
-  ...initial,
+export const useChatStore = create<ChatStore>()(
+  persist(
+    set => ({
+      ...initial,
 
-  transitionTo: (state) => set({ state }),
+      transitionTo: (state) => set({ state }),
 
-  setChatSession: (chatSession, contactId, participantToken, participantId) =>
-    set({ chatSession, contactId, participantToken, participantId }),
+      setChatSession: (chatSession, contactId, participantToken, participantId) =>
+        set({ chatSession, contactId, participantToken, participantId }),
 
-  addMessage: (msg) =>
-    set(s => ({
-      messages: [
-        ...s.messages,
-        { ...msg, id: nanoid(), timestamp: Date.now() },
-      ],
-      isTyping: false,
-    })),
+      addMessage: (msg) =>
+        set(s => ({
+          messages: [
+            ...s.messages,
+            { ...msg, id: nanoid(), timestamp: Date.now() },
+          ],
+          isTyping: false,
+          unreadCount: s.minimized && msg.role !== 'CUSTOMER' ? s.unreadCount + 1 : s.unreadCount,
+        })),
 
-  setTopics: (predictedTopics) => set({ predictedTopics }),
-  setSelectedTopic: (selectedTopic) => set({ selectedTopic }),
-  setLevelTwoQuestions: (levelTwoQuestions) => set({ levelTwoQuestions }),
-  setTyping: (isTyping) => set({ isTyping }),
-  setAgentTyping: (agentTyping) => set({ agentTyping }),
-  setAgentName: (agentName) => set({ agentName }),
-  setEscalationWaitTime: (escalationWaitTime) => set({ escalationWaitTime }),
-  setEscalationPending: (escalationPending) => set({ escalationPending }),
-  setCallbackConfirmation: (callbackConfirmation) => set({ callbackConfirmation }),
-  setContinuation: (continuation) => set({ continuation }),
-  reset: () => set(initial),
-}));
+      setTopics: (predictedTopics) => set({ predictedTopics }),
+      setSelectedTopic: (selectedTopic) => set({ selectedTopic }),
+      setLevelTwoQuestions: (levelTwoQuestions) => set({ levelTwoQuestions }),
+      setTyping: (isTyping) => set({ isTyping }),
+      setAgentTyping: (agentTyping) => set({ agentTyping }),
+      setAgentName: (agentName) => set({ agentName }),
+      setEscalationWaitTime: (escalationWaitTime) => set({ escalationWaitTime }),
+      setEscalationPending: (escalationPending) => set({ escalationPending }),
+      setCallbackConfirmation: (callbackConfirmation) => set({ callbackConfirmation }),
+      setContinuation: (continuation) => set({ continuation }),
+      setMinimized: (minimized) => set(minimized ? { minimized } : { minimized, unreadCount: 0 }),
+      setChatEnded: (chatEnded) => set({ chatEnded }),
+      reset: () => set(initial),
+    }),
+    {
+      name: 'bobs-chat',
+      // sessionStorage: the chat survives navigating away and back in the same tab
+      // (and reloads), but a closed tab/browser ends it — matching the desired
+      // end-of-chat semantics without a beforeunload disconnect.
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: s => ({
+        state: s.state,
+        contactId: s.contactId,
+        participantToken: s.participantToken,
+        participantId: s.participantId,
+        messages: s.messages,
+        agentName: s.agentName,
+        escalationWaitTime: s.escalationWaitTime,
+        escalationPending: s.escalationPending,
+        callbackConfirmation: s.callbackConfirmation,
+        minimized: s.minimized,
+        unreadCount: s.unreadCount,
+        chatEnded: s.chatEnded,
+      }),
+    },
+  ),
+);
