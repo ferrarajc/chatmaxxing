@@ -5,6 +5,7 @@ import { usePageContextStore } from '../../store/pageContextStore';
 import { useChatSession } from '../../hooks/useChatSession';
 import { usePredictedTopics } from '../../hooks/usePredictedTopics';
 import { ChatBubbleFAB } from './ChatBubbleFAB';
+import { ChatMinimizedBar } from './ChatMinimizedBar';
 import { ChatPanel } from './ChatPanel';
 
 // Normalize a route path into a stable page key used for chat topic selection.
@@ -46,7 +47,7 @@ export function ChatWidget() {
       {chatState === 'CLOSED' && <ChatBubbleFAB onClick={handleOpen} />}
       {chatState !== 'CLOSED' && minimized && (
         // Minimized: the session stays fully alive, only the panel is hidden.
-        <ChatBubbleFAB onClick={() => setMinimized(false)} badge={unreadCount} />
+        <ChatMinimizedBar onClick={() => setMinimized(false)} unread={unreadCount} />
       )}
       {chatState !== 'CLOSED' && !minimized && (
         <ChatPanel
