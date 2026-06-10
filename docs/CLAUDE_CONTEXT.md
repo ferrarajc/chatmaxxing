@@ -263,7 +263,10 @@ Just shipped (PRs #69–#73, all merged + deployed — Lambdas via CDK, frontend
   participant; chatStore persists to sessionStorage (reload/off-site-nav resume, missed agent
   messages backfilled via getTranscript; tab close = chat over). Agent side detects the
   customer's `participant.left` event (chatjs routes unmapped event types to `onMessage`) →
-  "Client closed the chat." notice + End chat button in all 4 UI modes. Customer gets a
+  "Client closed the chat." notice + End chat button in all 4 UI modes. Connect ends the whole
+  contact when the customer disconnects, so `contact.onEnded` holds the slot at 'active' when
+  `customerDisconnected` is set (instead of jumping to ACW); the agent's End chat click makes
+  the ACW transition. Customer gets a
   **Download transcript** (.txt) button when a live chat ends.
 - **Customer chat history**: hamburger ☰ (replaced the header "B" logo) → 90-day list of past
   live-agent chats (bold date/time, (mm:ss) duration, recap line) → read-only transcript +

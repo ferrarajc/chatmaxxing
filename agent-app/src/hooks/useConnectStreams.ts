@@ -292,6 +292,16 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     const handleEndChat = (e: Event) => {
       const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
       const contact = contactRefs.current.get(contactId);
+      // Customer already left: the contact has (almost certainly) ended and
+      // contact.onEnded deliberately held the slot at 'active' for the notice —
+      // destroying the connection again won't re-fire onEnded, so transition
+      // to ACW directly. The destroy is best-effort for the rare case Connect
+      // still considers the agent connected.
+      if (useAgentStore.getState().getSlot(contactId)?.customerDisconnected) {
+        try { contact?.getAgentConnection().destroy({}); } catch { /* already gone */ }
+        store.patchSlot(contactId, { status: 'acw' });
+        return;
+      }
       if (contact) {
         try {
           contact.getAgentConnection().destroy({});
@@ -539,7 +549,13 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
           }).catch(() => {});
         }
 
-        // Transition to ACW — do NOT auto-clear
+        // Customer-initiated end (participant.left already seen): hold the slot
+        // at 'active' so the "Client closed the chat." notice stays visible —
+        // jumping straight to ACW feels abrupt/unexplained. The agent's explicit
+        // End chat click (handleEndChat) makes the ACW transition instead.
+        if (slotNow?.customerDisconnected) return;
+
+        // Agent-initiated end: transition to ACW — do NOT auto-clear
         store.patchSlot(contactId, { status: 'acw' });
       });
 
@@ -548,10 +564,13 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
         agentChatSessions.delete(contactId);
         continuationLoaded.delete(contactId);
         clearCustomerTyping(contactId);
-        const currentStatus = useAgentStore.getState().getSlot(contactId)?.status;
-        if (currentStatus === 'acw') {
+        const destroyedSlot = useAgentStore.getState().getSlot(contactId);
+        const currentStatus = destroyedSlot?.status;
+        if (currentStatus === 'acw' || (currentStatus === 'active' && destroyedSlot?.customerDisconnected)) {
           // Preserve contactRef so the Close Contact button can still call contact.clear()
           // to signal Connect the agent is done with ACW. Ref is cleaned up by handleCloseContact.
+          // (Also preserved while holding the "Client closed the chat." notice — the
+          // agent still needs to reach ACW from there.)
         } else {
           contactRefs.current.delete(contactId);
           store.clearSlot(contactId);
