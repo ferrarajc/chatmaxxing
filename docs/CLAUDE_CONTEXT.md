@@ -273,7 +273,10 @@ Just shipped (PRs #69–#73, all merged + deployed — Lambdas via CDK, frontend
   bot-disconnect flow, so Connect fires chatjs `onEnded` seconds after connect while the bot
   keeps answering via the fallback Lambda. `useChatSession.ts` therefore treats `onEnded` (and
   a failed rehydration reconnect) as "chat over" only in `CONNECTED_TO_AGENT`/`WAITING_FOR_AGENT`
-  — otherwise the input would lock up moments after every chat open.
+  — otherwise the input would lock up moments after every chat open. Related gotcha: customer
+  chatjs sessions end via `disconnectParticipant()` — there is NO `disconnect()` method (calling
+  it throws, and a try/catch silently ate that for weeks, so "End chat" never actually ended the
+  Connect session until 2026-06-10).
 - **Retirement calculator fix**: NumberInput no longer min-clamps per keystroke (select-all +
   retype works); digits-only with `maxDigits` cap; ages are unclamped by design.
 - Manual-test note: the agent-side "Client closed the chat." flow still wants one live

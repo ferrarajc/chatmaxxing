@@ -65,7 +65,9 @@ interface StartChatResponse {
 
 type ChatJsSession = {
   connect: () => Promise<{ connectSuccess?: boolean } | void>;
-  disconnect: () => void;
+  /** Ends the CUSTOMER participant server-side (chatjs has no `disconnect()`).
+   *  Rejects when the connection is already gone — always swallow. */
+  disconnectParticipant: () => Promise<unknown>;
   getTranscript: (args: { scanDirection: string; sortOrder: string; maxResults: number }) =>
     Promise<{ data?: { Transcript?: Array<{ Type: string; ParticipantRole: string; Content?: string }> } }>;
   onMessage: (cb: (e: { data: { ParticipantRole: string; Content: string; Type: string; DisplayName?: string } }) => void) => void;
@@ -285,7 +287,7 @@ export function useChatSession() {
       clearTimeout(botReplyTimerRef.current);
       botReplyTimerRef.current = null;
     }
-    try { sessionRef.current?.disconnect(); } catch { /* already gone */ }
+    try { sessionRef.current?.disconnectParticipant()?.catch?.(() => {}); } catch { /* already gone */ }
     sessionRef.current = null;
     store.reset();
   }
@@ -347,7 +349,7 @@ export function useChatSession() {
     store.addMessage({ role: 'SYSTEM', content: 'Connecting you to a live agent…' });
     store.transitionTo('WAITING_FOR_AGENT');
 
-    try { sessionRef.current?.disconnect(); } catch { /* ignore */ }
+    try { sessionRef.current?.disconnectParticipant()?.catch?.(() => {}); } catch { /* ignore */ }
     sessionRef.current = null;
 
     // Build summary from full transcript (not just last 6) for accurate intent capture.
@@ -399,7 +401,7 @@ export function useChatSession() {
     store.addMessage({ role: 'SYSTEM', content: 'Connecting you to a live agent…' });
     store.transitionTo('WAITING_FOR_AGENT');
 
-    try { sessionRef.current?.disconnect(); } catch { /* ignore */ }
+    try { sessionRef.current?.disconnectParticipant()?.catch?.(() => {}); } catch { /* ignore */ }
     sessionRef.current = null;
 
     const { activePersona } = useClientStore.getState();
