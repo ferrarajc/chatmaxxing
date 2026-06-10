@@ -80,6 +80,10 @@ export const handler = async (
     const now = Date.now();
     const endTime = body.endTime ?? (messages[messages.length - 1]?.ts ?? now);
 
+    // Generated before the Put so it's stored on the transcript row too — the
+    // customer chat-history list shows it on each past-chat card.
+    const summary = await generateRetrospectiveSummary(body);
+
     await docClient.send(new PutCommand({
       TableName: table,
       Item: {
@@ -87,6 +91,7 @@ export const handler = async (
         clientId,
         clientName: clientName ?? 'Unknown',
         intentSummary: body.intentSummary ?? '',
+        summary,
         startTime: body.startTime ?? (messages[0]?.ts ?? now),
         endTime,
         durationMs: endTime - (body.startTime ?? now),
@@ -105,7 +110,6 @@ export const handler = async (
     // table (NOT the transcripts table) so the demo "Reset all" can clear the
     // continuation memory while leaving the permanent transcript log untouched.
     try {
-      const summary = await generateRetrospectiveSummary(body);
       await docClient.send(new UpdateCommand({
         TableName: process.env.CLIENTS_TABLE!,
         Key: { clientId },
