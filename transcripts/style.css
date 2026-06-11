@@ -360,3 +360,33 @@ body {
   line-height: 1.6;
   white-space: pre-wrap;
 }
+
+
+/* ── Copy conversation ID button ─────────────────────────────────────────── */
+.meta-value--id {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copy-id-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.copy-id-btn:hover {
+  color: var(--color-text);
+  background: #e2e8f0;
+}
+
+.copy-id-btn--copied {
+  color: #16a34a;
+}

@@ -20,11 +20,18 @@ const transcriptAcw  = document.getElementById('transcript-acw');
 const acwWrapUp      = document.getElementById('acw-wrap-up');
 const acwSummary     = document.getElementById('acw-summary');
 
+const copyIdBtn   = document.getElementById('copy-id-btn');
+
 /* ── State ───────────────────────────────────────────────────────────────── */
 let allTranscripts = [];
+let currentId = null;
 
 /* ── Boot ────────────────────────────────────────────────────────────────── */
 loadList();
+// Deep link: /transcripts/?id=<conversationId> opens that conversation directly
+// (used by hyperlinks in the transcript-review-notes spreadsheet).
+const initialId = new URLSearchParams(location.search).get('id');
+if (initialId) openDetail(initialId, false);
 refreshBtn.addEventListener('click', () => { searchInput.value = ''; loadList(); });
 
 /* ── List loading ────────────────────────────────────────────────────────── */
@@ -78,7 +85,9 @@ searchInput.addEventListener('input', () => {
 });
 
 /* ── Detail view ─────────────────────────────────────────────────────────── */
-async function openDetail(transcriptId) {
+async function openDetail(transcriptId, pushUrl = true) {
+  currentId = transcriptId;
+  if (pushUrl) history.pushState({ id: transcriptId }, '', `?id=${encodeURIComponent(transcriptId)}`);
   showView('detail');
   transcriptBody.innerHTML = '<div style="color:#64748b;font-size:13px;padding:8px 0">Loading…</div>';
   transcriptAcw.hidden = true;
@@ -151,8 +160,34 @@ function speakerLabel(m) {
   return 'System';
 }
 
+/* ── Copy conversation ID ────────────────────────────────────────────────── */
+copyIdBtn.addEventListener('click', async () => {
+  if (!currentId) return;
+  try {
+    await navigator.clipboard.writeText(currentId);
+    copyIdBtn.classList.add('copy-id-btn--copied');
+    copyIdBtn.title = 'Copied!';
+    setTimeout(() => {
+      copyIdBtn.classList.remove('copy-id-btn--copied');
+      copyIdBtn.title = 'Copy conversation ID';
+    }, 1200);
+  } catch (err) {
+    console.error('clipboard write failed', err);
+  }
+});
+
 /* ── Navigation ──────────────────────────────────────────────────────────── */
-backBtn.addEventListener('click', () => showView('list'));
+backBtn.addEventListener('click', () => {
+  history.pushState({}, '', location.pathname);
+  showView('list');
+});
+
+// Browser back/forward moves between the list and a deep-linked conversation.
+window.addEventListener('popstate', () => {
+  const id = new URLSearchParams(location.search).get('id');
+  if (id) openDetail(id, false);
+  else showView('list');
+});
 
 function showView(which) {
   viewList.hidden   = which !== 'list';
