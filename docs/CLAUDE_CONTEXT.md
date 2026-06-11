@@ -253,9 +253,9 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ---
 
-## Active Branch / Current State (as of 2026-06-09)
+## Active Branch / Current State (as of 2026-06-10)
 
-Just shipped (PRs #69–#73, all merged + deployed — Lambdas via CDK, frontends via Actions):
+Just shipped (PRs #69–#78, all merged + deployed — Lambdas via CDK, frontends via Actions):
 - **Chat end-of-life batch** (see the two "Chat …" rows in Key Files above for file map):
   minimize button + docked minimized header bar with unread badge (`ChatMinimizedBar.tsx`);
   close-confirmation dialog (Minimize focused / End chat;
@@ -282,8 +282,21 @@ Just shipped (PRs #69–#73, all merged + deployed — Lambdas via CDK, frontend
   Connect session until 2026-06-10).
 - **Retirement calculator fix**: NumberInput no longer min-clamps per keystroke (select-all +
   retype works); digits-only with `maxDigits` cap; ages are unclamped by design.
-- Manual-test note: the agent-side "Client closed the chat." flow still wants one live
-  CCP test (customer ends chat while an agent is connected) — automation can't log into CCP.
+- **Summary backfill (2026-06-10, one-off)**: all 164 transcript rows in the 90-day window got
+  the second-person recap `summary` generated retroactively (same prompt as `save-transcript`,
+  conditional write), so the summary-only history filter shows real data.
+- **Transcript review UI** (`https://ferrarajc.github.io/chatmaxxing/transcripts/`): source
+  lives ONLY on the `gh-pages` branch under `transcripts/` (no main-branch source — edit
+  `.gh-pages-deploy/transcripts/` and push gh-pages to deploy). 2026-06-10: gained `?id=`
+  deep-linking (pushState/popstate) and a copy-conversation-ID button.
+- **Rough-edge log**: `docs/transcript-review-notes.xlsx` classifies transcript problems
+  (conversation IDs hyperlink into the review UI via `?id=`). Heqya is shelved per the user
+  (2026-06-10, "making things worse") — log rough edges there instead of running the loop.
+- Known logged-not-fixed issue: continued chats save TWO transcript rows (the pre-continuation
+  segment and the full continued conversation) — duplicates in history/review lists.
+- Manual-test note: the agent-side "Client closed the chat." flow still wants one live CCP
+  test (customer ends chat while an agent is connected; should hold at the notice until the
+  agent clicks End chat) — automation can't log into CCP.
 
 Previous batch: `feature/open-account-step-pills` — per-step chat relevance in the
 Open an Account wizard. The 8-step wizard lives on one route (`/open-account`) with
