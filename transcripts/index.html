@@ -8,30 +8,41 @@
 </head>
 <body>
 
-<div class="shell">
-
-  <header class="site-header">
-    <h1 class="site-header__title">Transcript Review</h1>
+<header class="site-header">
+  <div class="site-header__inner">
+    <div class="site-header__brand">
+      <p class="site-header__eyebrow">Bob&rsquo;s Mutual Funds</p>
+      <h1 class="site-header__title">Transcript Review</h1>
+    </div>
     <nav class="site-header__nav">
       <a href="index.html" class="nav-link nav-link--active">All conversations</a>
     </nav>
-  </header>
+  </div>
+</header>
+
+<div class="shell">
 
   <!-- List view -->
   <main class="view view--list" id="view-list">
     <div class="toolbar">
-      <input class="toolbar__search" type="search" placeholder="Filter by client name or intent…" id="search-input" />
-      <button class="toolbar__refresh" id="refresh-btn" title="Reload transcript list">↻ Refresh</button>
+      <input class="toolbar__search" type="search"
+             placeholder="Filter by client, intent, agent, summary, or conversation ID…"
+             id="search-input" />
+      <select class="toolbar__select" id="wrapup-filter" title="Filter by wrap-up code">
+        <option value="">All wrap-ups</option>
+      </select>
+      <button class="toolbar__refresh" id="refresh-btn" title="Reload transcript list">&#8635; Refresh</button>
+      <span class="toolbar__count" id="list-count"></span>
     </div>
     <table class="transcript-list" id="transcript-list">
       <thead>
         <tr>
-          <th class="col-date">Date &amp; time</th>
-          <th class="col-client">Client</th>
+          <th class="col-date th-sort" data-sort="startTime">Date &amp; time</th>
+          <th class="col-client th-sort" data-sort="clientName">Client</th>
           <th class="col-intent">Intent</th>
           <th class="col-wrap-up">Wrap-up code</th>
-          <th class="col-duration">Duration</th>
-          <th class="col-msgs">Messages</th>
+          <th class="col-duration th-sort" data-sort="durationMs">Duration</th>
+          <th class="col-msgs th-sort" data-sort="messageCount">Messages</th>
         </tr>
       </thead>
       <tbody id="list-body">
@@ -44,7 +55,7 @@
 
   <!-- Detail view -->
   <main class="view view--detail" id="view-detail" hidden>
-    <button class="back-btn" id="back-btn">← All conversations</button>
+    <button class="back-btn" id="back-btn">&larr; All conversations</button>
 
     <header class="transcript-header" id="detail-header">
       <div class="transcript-header__left">
@@ -61,9 +72,22 @@
             d="M10.5 3.5v-1A1.5 1.5 0 0 0 9 1H2.5A1.5 1.5 0 0 0 1 2.5V9a1.5 1.5 0 0 0 1.5 1.5h1"/></svg></button></dd>
         <dt>Date</dt><dd class="meta-value" id="detail-date"></dd>
         <dt>Duration</dt><dd class="meta-value" id="detail-duration"></dd>
+        <dt>Agent</dt><dd class="meta-value" id="detail-agent"></dd>
         <dt>Wrap-up</dt><dd class="meta-value meta-value--wrap-up" id="detail-wrap-up"></dd>
       </dl>
     </header>
+
+    <div class="convo-bar">
+      <span class="convo-bar__legend">
+        <span class="legend-chip legend-chip--customer">Client</span>
+        <span class="legend-chip legend-chip--agent">Agent</span>
+        <span class="legend-chip legend-chip--bot">Virtual assistant</span>
+      </span>
+      <label class="convo-bar__toggle" for="toggle-system">
+        <input type="checkbox" id="toggle-system" checked />
+        Show system events
+      </label>
+    </div>
 
     <section class="transcript-body" id="transcript-body">
       <!-- Events injected by JS -->
