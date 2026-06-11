@@ -69,6 +69,7 @@ A Bob's Mutual Funds service representative managing up to four simultaneous cli
 - **Chat thread:** Full conversation history, real-time messages, and AI-generated confirmation cards
 - **AI support panel:** Next-best-response suggestions, predicted topic buttons, recommended KB articles, and autopilot controls
 - **Proposed Action card:** When the autopilot has collected all fields for a task, a structured card appears showing every collected value. The agent can edit any field before submitting. On approval, the action executes and a confirmation is sent to the client.
+- **Evidence highlighting:** While the Proposed Action card is showing, the transcript highlights the exact span where each collected value was established — the client's own statement, or the agent recap the client confirmed (not later echoes). Each card field has a locate button (⌖) that scrolls the transcript to its span and flashes it; a field whose value can't be traced to the transcript shows a "not located in transcript" hint so the agent knows to scrutinize it. Spans are found by a dedicated post-hoc LLM call and validated server-side against the actual message text; if the lookup fails, the card simply renders without highlights.
 
 **Incoming contact management:**
 - New contacts arrive as an alert card with a countdown timer

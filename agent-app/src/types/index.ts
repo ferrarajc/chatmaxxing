@@ -57,6 +57,9 @@ export interface ContactSlot {
   acwData: ACWData | null;
   /** Populated when get-intent scope collects all required fields; cleared after submit/reject */
   proposedAction: ProposedActionData | null;
+  /** Transcript spans backing the current proposedAction's field values (locate-evidence
+   *  call); null/undefined while loading or unavailable — UI then shows no highlights. */
+  proposedActionEvidence?: EvidenceSpan[] | null;
   /** transcriptId of the prior chat when this contact is a "continue this chat" resume; loaded on accept */
   continuedFromTranscriptId?: string;
   /** True when this contact was started via the customer "Continue this chat" card */
@@ -83,4 +86,13 @@ export interface ProposedActionData {
   taskName: string;
   summary: string;
   fields: ProposedActionField[];
+}
+
+/** One transcript span that backs a proposedAction field value. Offsets index
+ *  the content of the message with the given id. */
+export interface EvidenceSpan {
+  fieldKey: string;
+  messageId: string;
+  start: number;
+  end: number;
 }

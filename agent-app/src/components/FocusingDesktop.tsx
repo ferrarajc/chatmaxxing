@@ -6,6 +6,7 @@ import { log } from '../api/logger';
 import { CLIENT_PROFILES, DEFAULT_PROFILE, ClientProfile } from '../data/clientProfiles';
 import { ProposedActionCard } from './ProposedActionCard';
 import { AfterCallWork } from './AfterCallWork';
+import { renderHighlighted } from '../utils/evidenceHighlight';
 import { AutopilotMenu } from './AutopilotMenu';
 import { ResponseTimer } from './ResponseTimer';
 import { IntentLabel, stripIntentMarkers } from './IntentLabel';
@@ -70,6 +71,10 @@ export function FocusingDesktop() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  // Message id currently flashing after an evidence jump (cleared after ~1.5 s)
+  const [flashMessageId, setFlashMessageId] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autopilotBtnRef = useRef<HTMLButtonElement>(null);
   const [autopilotMenuOpen, setAutopilotMenuOpen] = useState(false);
 
@@ -102,6 +107,40 @@ export function FocusingDesktop() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [msgCount]);
+
+  // Evidence jump (locate button on the Proposed Action card) — scroll this
+  // conversation to the message holding a field's evidence span and flash it.
+  useEffect(() => {
+    const cid = selectedSlot?.contactId;
+    if (!cid) return;
+    const onJump = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { contactId?: string; messageId?: string } | undefined;
+      if (!detail || detail.contactId !== cid || !detail.messageId) return;
+      chatContainerRef.current?.querySelector(`[data-mid="${CSS.escape(detail.messageId)}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setFlashMessageId(detail.messageId);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = setTimeout(() => setFlashMessageId(null), 1500);
+    };
+    window.addEventListener('bobs:evidenceJump', onJump);
+    return () => {
+      window.removeEventListener('bobs:evidenceJump', onJump);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, [selectedSlot?.contactId]);
+
+  // Evidence spans grouped by message id — highlighted only while the Proposed
+  // Action card is visible (same condition as the card render below).
+  let evidenceByMsg: Map<string, { start: number; end: number }[]> | null = null;
+  if (selectedSlot && selectedSlot.proposedAction && !selectedSlot.autopilotScope
+      && selectedSlot.proposedActionEvidence?.length) {
+    evidenceByMsg = new Map();
+    for (const ev of selectedSlot.proposedActionEvidence) {
+      const list = evidenceByMsg.get(ev.messageId) ?? [];
+      list.push({ start: ev.start, end: ev.end });
+      evidenceByMsg.set(ev.messageId, list);
+    }
+  }
 
   // Handle send
   const handleSend = () => {
@@ -260,13 +299,18 @@ export function FocusingDesktop() {
             </div>
 
             {/* Chat history */}
-            <div style={{
+            <div ref={chatContainerRef} style={{
               flex: 1, overflowY: 'auto',
               padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8,
               minHeight: 0,
             }}>
               {selectedSlot.messages.map(msg => (
-                <FocusMessageBubble key={msg.id} msg={msg} />
+                <FocusMessageBubble
+                  key={msg.id}
+                  msg={msg}
+                  highlights={evidenceByMsg?.get(msg.id)}
+                  flash={flashMessageId === msg.id}
+                />
               ))}
               <div ref={chatEndRef} />
             </div>
@@ -670,7 +714,11 @@ function ContactCard({ slot, selected, onClick, onAccept, onSkip }: ContactCardP
   );
 }
 
-function FocusMessageBubble({ msg }: { msg: ChatMessage }) {
+function FocusMessageBubble({ msg, highlights, flash }: {
+  msg: ChatMessage;
+  highlights?: { start: number; end: number }[];
+  flash?: boolean;
+}) {
   const isAgent  = msg.role === 'AGENT';
   const isSystem = msg.role === 'SYSTEM';
 
@@ -689,10 +737,12 @@ function FocusMessageBubble({ msg }: { msg: ChatMessage }) {
 
   return (
     <div style={{ display: 'flex', justifyContent: isAgent ? 'flex-end' : 'flex-start' }}>
-      <div style={{
+      <div data-mid={msg.id} style={{
         maxWidth: '76%', background: bubbleBg, borderRadius: 14,
         padding: '8px 14px', fontSize: 13, lineHeight: 1.55,
         color: bubbleText, whiteSpace: 'pre-wrap',
+        boxShadow: flash ? '0 0 0 3px rgba(245,158,11,.55)' : 'none',
+        transition: 'box-shadow .3s',
       }}>
         {!isAgent && (
           <div style={{
@@ -702,7 +752,7 @@ function FocusMessageBubble({ msg }: { msg: ChatMessage }) {
             {msg.role === 'BOT' ? '🤖 Bot' : 'Client'}
           </div>
         )}
-        {msg.content}
+        {highlights?.length ? renderHighlighted(msg.content, highlights) : msg.content}
       </div>
     </div>
   );

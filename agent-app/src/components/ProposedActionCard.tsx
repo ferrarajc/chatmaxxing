@@ -28,6 +28,18 @@ export function ProposedActionCard({ slot }: Props) {
     setEditValue(field.value);
   };
 
+  // Transcript evidence for each field value (locate-evidence call). While the
+  // array is null/undefined (still loading or unavailable) the card renders
+  // exactly as before — no locate buttons, no "not located" hints.
+  const evidence = slot.proposedActionEvidence;
+  const evidenceFor = (key: string) => evidence?.find(e => e.fieldKey === key);
+
+  const jumpToEvidence = (messageId: string) => {
+    window.dispatchEvent(new CustomEvent('bobs:evidenceJump', {
+      detail: { contactId: slot.contactId, messageId },
+    }));
+  };
+
   const saveEdit = () => {
     setEditedFields(prev =>
       prev.map(f => f.key === editingKey ? { ...f, value: editValue } : f),
@@ -71,7 +83,7 @@ export function ProposedActionCard({ slot }: Props) {
         }
         // Clear card after short delay so agent sees the success message
         setTimeout(() => {
-          store.patchSlot(slot.contactId, { proposedAction: null });
+          store.patchSlot(slot.contactId, { proposedAction: null, proposedActionEvidence: null });
         }, 4000);
       }
     } catch {
@@ -82,7 +94,7 @@ export function ProposedActionCard({ slot }: Props) {
   };
 
   const handleReject = () => {
-    store.patchSlot(slot.contactId, { proposedAction: null });
+    store.patchSlot(slot.contactId, { proposedAction: null, proposedActionEvidence: null });
   };
 
   if (result) {
@@ -148,53 +160,74 @@ export function ProposedActionCard({ slot }: Props) {
 
       {/* Fields */}
       <div style={{ padding: '4px 0' }}>
-        {editedFields.map(field => (
-          <div key={field.key} style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '4px 10px',
-            borderBottom: '1px solid #f3f4f6',
-            gap: 6,
-          }}>
-            <div style={{ fontSize: 13, color: '#6b7280', width: 180, flexShrink: 0, fontWeight: 600 }}>
-              {field.label}
-            </div>
-            {editingKey === field.key ? (
-              <div style={{ flex: 1, display: 'flex', gap: 4 }}>
-                <input
-                  autoFocus
-                  value={editValue}
-                  onChange={e => setEditValue(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingKey(null); }}
-                  style={{
-                    flex: 1, fontSize: 14, padding: '2px 6px',
-                    border: '1px solid #1a56db', borderRadius: 4, outline: 'none',
-                  }}
-                />
-                <button
-                  onClick={saveEdit}
-                  style={{
-                    fontSize: 13, padding: '2px 6px', borderRadius: 4, border: 'none',
-                    background: '#1a56db', color: '#fff', cursor: 'pointer',
-                  }}
-                >✓</button>
+        {editedFields.map(field => {
+          const span = evidenceFor(field.key);
+          return (
+            <div key={field.key} style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '4px 10px',
+              borderBottom: '1px solid #f3f4f6',
+              gap: 6,
+            }}>
+              <div style={{ fontSize: 13, color: '#6b7280', width: 180, flexShrink: 0, fontWeight: 600 }}>
+                {field.label}
               </div>
-            ) : (
-              <>
-                <div style={{ flex: 1, fontSize: 14, color: '#111' }}>{field.value || '—'}</div>
-                <button
-                  onClick={() => startEdit(field)}
-                  title="Edit"
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    fontSize: 14, color: '#9ca3af', padding: '1px 3px',
-                    flexShrink: 0,
-                  }}
-                >✏️</button>
-              </>
-            )}
-          </div>
-        ))}
+              {editingKey === field.key ? (
+                <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+                  <input
+                    autoFocus
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingKey(null); }}
+                    style={{
+                      flex: 1, fontSize: 14, padding: '2px 6px',
+                      border: '1px solid #1a56db', borderRadius: 4, outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={saveEdit}
+                    style={{
+                      fontSize: 13, padding: '2px 6px', borderRadius: 4, border: 'none',
+                      background: '#1a56db', color: '#fff', cursor: 'pointer',
+                    }}
+                  >✓</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ flex: 1, fontSize: 14, color: '#111' }}>
+                    {field.value || '—'}
+                    {evidence != null && !span && (
+                      <div style={{ fontSize: 11, color: '#9ca3af', fontStyle: 'italic' }}>
+                        not located in transcript
+                      </div>
+                    )}
+                  </div>
+                  {span && (
+                    <button
+                      onClick={e => { e.stopPropagation(); jumpToEvidence(span.messageId); }}
+                      title="Show where this was said in the transcript"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontSize: 15, color: '#b45309', padding: '1px 3px',
+                        flexShrink: 0, lineHeight: 1,
+                      }}
+                    >⌖</button>
+                  )}
+                  <button
+                    onClick={() => startEdit(field)}
+                    title="Edit"
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontSize: 14, color: '#9ca3af', padding: '1px 3px',
+                      flexShrink: 0,
+                    }}
+                  >✏️</button>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Actions */}

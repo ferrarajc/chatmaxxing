@@ -16,7 +16,7 @@ import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { BeneficiaryEntry } from '../shared/beneficiary-defaults';
 
-type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' | 'full-auto' | 'customer-bot';
+type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' | 'full-auto' | 'customer-bot' | 'locate-evidence';
 
 const ET_ZONE = 'America/New_York';
 
@@ -2168,6 +2168,99 @@ function taskExpertModel(taskId: string): string {
   return TASK_MODEL_OVERRIDES[taskId] ?? DEFAULT_TASK_EXPERT_MODEL;
 }
 
+// ── Evidence locator (scope: 'locate-evidence') ────────────────────────────
+// Post-hoc call made by the agent app after a task expert returns a
+// proposedAction: for each collected field, find the one transcript span the
+// agent should check to validate the value. Fully isolated from the chat flow —
+// any failure returns { evidence: [] } and the UI simply shows no highlights.
+// gpt-4o for the same reason as the task experts: picking the *authoritative*
+// mention (vs. post-confirmation echoes and early speculation) is exactly the
+// kind of conversational-rule task gpt-4o-mini gets wrong.
+const LOCATE_EVIDENCE_MODEL = process.env.OPENAI_MODEL_LOCATE_EVIDENCE ?? 'gpt-4o';
+
+const LOCATE_EVIDENCE_PROMPT = `You locate evidence in a contact-center chat transcript.
+You are given (1) a transcript with numbered messages and (2) a list of fields an agent collected from the customer (key, label, value).
+For each field, find the ONE message span where that value was authoritatively established:
+- Prefer the message where the CUSTOMER stated the value themselves (their latest statement if they corrected themselves).
+- If the customer never stated the value directly, choose the AGENT (or BOT) message stating the value that the customer then explicitly confirmed (e.g. the recap they answered "Yes" to).
+- NEVER choose mentions that come after the value was already confirmed (final summaries, "Confirmation" receipts), early mentions made before the customer settled on the value, or SYSTEM lines.
+Return JSON only: {"evidence":[{"fieldKey":"<field key>","messageIndex":<number>,"quote":"<verbatim substring>"}]}
+Rules for "quote": copy it EXACTLY, character for character, from the chosen message; keep it as short as possible — just the words that express the field value as they appear in that message. One entry per field; omit a field entirely if no message establishes its value.`;
+
+interface LocateEvidenceField { key: string; label?: string; value: string }
+
+/** Exact-then-case-insensitive substring search; offsets always index the original content. */
+function findSpan(content: string, needle: string): { start: number; end: number } | null {
+  const trimmed = needle.trim();
+  if (!trimmed) return null;
+  let start = content.indexOf(trimmed);
+  if (start === -1) start = content.toLowerCase().indexOf(trimmed.toLowerCase());
+  if (start === -1) return null;
+  return { start, end: start + trimmed.length };
+}
+
+async function locateEvidence(
+  transcript: ChatMessage[],
+  proposedAction?: { taskId?: string; fields?: LocateEvidenceField[] } | null,
+) {
+  try {
+    const fields = (proposedAction?.fields ?? []).filter(
+      (f): f is LocateEvidenceField =>
+        !!f && typeof f.key === 'string' && typeof f.value === 'string' && f.value.length > 0,
+    );
+    if (fields.length === 0) return jsonResponse(200, { evidence: [] });
+
+    const indexed = transcript.map((m, i) => `[${i}] ${m.role}: ${m.content}`).join('\n');
+    const fieldList = fields
+      .map(f => `- key: ${f.key} | label: ${f.label ?? f.key} | value: ${f.value}`)
+      .join('\n');
+
+    const raw = await invokeNovaMicro(
+      `TRANSCRIPT:\n${indexed}\n\nFIELDS TO LOCATE:\n${fieldList}`,
+      LOCATE_EVIDENCE_PROMPT,
+      700,
+      { fn: 'autopilot-turn', contactId: transcript[0]?.content?.slice(0, 8), scope: 'locate-evidence' },
+      true,
+      LOCATE_EVIDENCE_MODEL,
+    );
+    const parsed = parseJsonFromBedrock<{
+      evidence?: Array<{ fieldKey?: unknown; messageIndex?: unknown; quote?: unknown }>;
+    }>(raw);
+
+    const fieldKeys = new Set(fields.map(f => f.key));
+    const valueByKey = new Map(fields.map(f => [f.key, f.value]));
+    const seen = new Set<string>();
+    const evidence: Array<{ fieldKey: string; messageId: string; start: number; end: number }> = [];
+
+    for (const item of parsed.evidence ?? []) {
+      const fieldKey = item?.fieldKey;
+      const idx = item?.messageIndex;
+      if (typeof fieldKey !== 'string' || !fieldKeys.has(fieldKey) || seen.has(fieldKey)) continue;
+      if (typeof idx !== 'number' || !Number.isInteger(idx) || idx < 0 || idx >= transcript.length) continue;
+      const msg = transcript[idx];
+      if (msg.role === 'SYSTEM' || typeof msg.id !== 'string' || msg.id.length === 0) continue;
+
+      // A span is only ever emitted from text actually present in the message:
+      // the model's quote first, the raw field value as a fallback.
+      const span = findSpan(msg.content, typeof item.quote === 'string' ? item.quote : '')
+        ?? findSpan(msg.content, valueByKey.get(fieldKey) ?? '');
+      if (!span) continue;
+
+      seen.add(fieldKey);
+      evidence.push({ fieldKey, messageId: msg.id, start: span.start, end: span.end });
+    }
+
+    console.log(JSON.stringify({
+      event: 'locate_evidence', fn: 'autopilot-turn',
+      fieldsRequested: fields.length, spansLocated: evidence.length,
+    }));
+    return jsonResponse(200, { evidence });
+  } catch (e) {
+    console.warn('locate-evidence failed', e);
+    return jsonResponse(200, { evidence: [] });
+  }
+}
+
 // ── Escalation hard-override ───────────────────────────────────────────────
 const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
@@ -2190,16 +2283,25 @@ export const handler = async (
       scope = 'full-auto',
       currentIntent,
       currentPage,
+      proposedAction,
     }: {
       transcript: ChatMessage[];
       clientProfile: ClientProfile;
       scope?: AutopilotScope;
       currentIntent?: string;
       currentPage?: string;
+      proposedAction?: { taskId?: string; fields?: LocateEvidenceField[] } | null;
     } = JSON.parse(event.body ?? '{}');
 
     if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
       return jsonResponse(400, { error: 'transcript is required and must be a non-empty array' });
+    }
+
+    // Evidence locator — self-contained additive scope used by the agent UI to
+    // highlight the transcript spans backing a proposedAction. Returns before
+    // any chat-turn logic; never affects the conversational scopes.
+    if (scope === 'locate-evidence') {
+      return locateEvidence(transcript, proposedAction);
     }
 
     const profile: ClientProfile = clientProfile ?? {
