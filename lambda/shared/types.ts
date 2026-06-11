@@ -73,6 +73,8 @@ export interface HistoryEntry {
 }
 
 export interface ChatMessage {
+  /** Client-side message id (sent by the agent app); used to key evidence spans */
+  id?: string;
   role: 'CUSTOMER' | 'AGENT' | 'BOT' | 'SYSTEM';
   content: string;
   timestamp: number;

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ContactSlot, ChatMessage, AutopilotScope, ACWData } from '../types';
+import { ContactSlot, ChatMessage, AutopilotScope, ACWData, EvidenceSpan } from '../types';
 import { useAgentStore } from '../store/agentStore';
+import { renderHighlighted } from '../utils/evidenceHighlight';
 import { post } from '../api/client';
 import { log } from '../api/logger';
 import { IntentLabel } from './IntentLabel';
@@ -96,6 +97,10 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const store = useAgentStore();
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  // Message id currently flashing after an evidence jump (cleared after ~1.5 s)
+  const [flashMessageId, setFlashMessageId] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevMsgCount = useRef(0);
   // Last time we emitted a typing event to the customer (throttling manual keystrokes)
   const lastTypingSentRef = useRef(0);
@@ -158,6 +163,32 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   useEffect(() => {
     if (slot?.customerTyping) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [slot?.customerTyping]);
+
+  // ── Effect: evidence jump (locate button on the Proposed Action card) ──
+  // Scrolls this column's transcript to the message holding a field's evidence
+  // span and flashes it. The lookup is scoped to this column's container because
+  // message ids like `pre-0` repeat across columns; the clientWidth guard skips
+  // the hidden 0×0 ChatColumns that focusing mode keeps mounted for effects.
+  useEffect(() => {
+    const cid = slot?.contactId;
+    if (!cid) return;
+    const onJump = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { contactId?: string; messageId?: string } | undefined;
+      if (!detail || detail.contactId !== cid || !detail.messageId) return;
+      const container = chatContainerRef.current;
+      if (!container || container.clientWidth === 0) return;
+      container.querySelector(`[data-mid="${CSS.escape(detail.messageId)}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setFlashMessageId(detail.messageId);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = setTimeout(() => setFlashMessageId(null), 1500);
+    };
+    window.addEventListener('bobs:evidenceJump', onJump);
+    return () => {
+      window.removeEventListener('bobs:evidenceJump', onJump);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, [slot?.contactId]);
 
   // ── sendText: append locally + POST to Connect ─────────────────────────
   const sendText = (text: string) => {
@@ -332,6 +363,17 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       return;
     }
 
+    // Kick off the evidence locator in parallel with the human-like send delay —
+    // by the time the proposedAction card renders, the spans are usually ready.
+    // Failures resolve to null: the card simply renders without highlights.
+    const evidencePromise = result.proposedAction
+      ? post<{ evidence: EvidenceSpan[] }>('/autopilot-turn', {
+          scope: 'locate-evidence',
+          transcript: currentSlot.messages,
+          proposedAction: result.proposedAction,
+        }).catch(() => null)
+      : null;
+
     // Update suggested scope if Lambda returned one
     if (result.suggestedScope !== undefined) {
       store.patchSlot(contactId, { suggestedScope: result.suggestedScope as AutopilotScope | null });
@@ -383,12 +425,20 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       clearAutopilotTimers();
       store.patchSlot(contactId, {
         proposedAction: result.proposedAction,
+        proposedActionEvidence: null,
         autopilotScope: null,
         autopilotFlash: true,
         autopilotPending: null,
         autopilotExitMessage: result.exitMessage ?? 'All fields collected — proposed action is ready for review.',
       });
       setTimeout(() => store.patchSlot(contactId, { autopilotFlash: false }), 100);
+      // Attached only after the proposedAction is stored; if the card was
+      // already rejected or replaced when the locator resolves, skip the patch.
+      evidencePromise?.then(r => {
+        if (!r?.evidence?.length) return;
+        if (store.getSlot(contactId)?.proposedAction !== result.proposedAction) return;
+        store.patchSlot(contactId, { proposedActionEvidence: r.evidence });
+      });
       return;
     }
 
@@ -652,6 +702,18 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const isAutopilot = slot !== null && slot.autopilotScope !== null;
   const isFlashing = slot?.autopilotFlash === true;
 
+  // Evidence spans grouped by message id — highlighted only while the Proposed
+  // Action card is visible (same condition AISupport uses to show the card).
+  let evidenceByMsg: Map<string, { start: number; end: number }[]> | null = null;
+  if (slot && slot.proposedAction && !slot.autopilotScope && slot.proposedActionEvidence?.length) {
+    evidenceByMsg = new Map();
+    for (const ev of slot.proposedActionEvidence) {
+      const list = evidenceByMsg.get(ev.messageId) ?? [];
+      list.push({ start: ev.start, end: ev.end });
+      evidenceByMsg.set(ev.messageId, list);
+    }
+  }
+
   const borderColor = isFlashing ? '#eab308' : isAutopilot ? '#22c55e' : '#e2e8f0';
   const borderWidth = isAutopilot || isFlashing ? '4px' : '2px';
   const overlayColor = isFlashing ? 'rgba(234,179,8,0.15)' : isAutopilot ? 'rgba(34,197,94,0.12)' : 'transparent';
@@ -740,11 +802,18 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           </div>
 
           {/* Chat history — scrollable */}
-          <div style={{
+          <div ref={chatContainerRef} style={{
             flex: 1, overflowY: 'auto', padding: '10px 12px',
             display: 'flex', flexDirection: 'column', gap: 6, minHeight: 0,
           }}>
-            {slot.messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)}
+            {slot.messages.map(msg => (
+              <MessageBubble
+                key={msg.id}
+                msg={msg}
+                highlights={evidenceByMsg?.get(msg.id)}
+                flash={flashMessageId === msg.id}
+              />
+            ))}
             {slot.customerTyping && <TypingDots />}
             <div ref={chatEndRef} />
           </div>
@@ -875,7 +944,11 @@ function TypingDots() {
   );
 }
 
-function MessageBubble({ msg }: { msg: ChatMessage }) {
+function MessageBubble({ msg, highlights, flash }: {
+  msg: ChatMessage;
+  highlights?: { start: number; end: number }[];
+  flash?: boolean;
+}) {
   const isAgent = msg.role === 'AGENT';
   const isSystem = msg.role === 'SYSTEM';
 
@@ -891,17 +964,19 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 
   return (
     <div style={{ display: 'flex', justifyContent: isAgent ? 'flex-end' : 'flex-start' }}>
-      <div style={{
+      <div data-mid={msg.id} style={{
         maxWidth: '82%', background: colors[msg.role] ?? '#f3f4f6',
         borderRadius: 10, padding: '6px 10px', fontSize: 15, lineHeight: 1.5,
         color: '#111', whiteSpace: 'pre-wrap',
+        boxShadow: flash ? '0 0 0 3px rgba(245,158,11,.55)' : 'none',
+        transition: 'box-shadow .3s',
       }}>
         {!isAgent && (
           <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 2, fontWeight: 600 }}>
             {msg.role === 'BOT' ? '🤖 Bot' : 'Client'}
           </div>
         )}
-        {msg.content}
+        {highlights?.length ? renderHighlighted(msg.content, highlights) : msg.content}
       </div>
     </div>
   );

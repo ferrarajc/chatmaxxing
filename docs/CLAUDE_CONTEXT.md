@@ -101,6 +101,7 @@ chatmaxxing/
 - `full-auto` → FULL_AUTO_PROMPT → handles pre-agent bot Q&A, links to self-service pages, exits on escalation/account modification
 - `get-intent` → two-phase task system (see below)
 - `idle-check` → sends check-in message
+- `locate-evidence` → NOT a chat turn. Post-hoc utility scope called by the agent app after a task expert returns a `proposedAction`: given `{transcript, proposedAction}`, one gpt-4o call (`LOCATE_EVIDENCE_MODEL`, env `OPENAI_MODEL_LOCATE_EVIDENCE`) picks the authoritative transcript span per field (client statement, else the client-confirmed agent recap — never post-confirmation echoes); the server validates every quote against the actual message text and returns `{evidence: [{fieldKey, messageId, start, end}]}`. Early-returns before all chat-turn logic; any failure → `{evidence: []}` (UI shows no highlights). Drives the Proposed Action evidence highlighting in the agent UI.
 - `callback` → CALLBACK_PROMPT → arranges a phone callback. **The LLM never computes timestamps** — it emits `{dayReference, hour24, minute}` and the server (`resolveCallbackTime`, TZ-safe via `Intl`/`date-fns-tz`) resolves+validates the ET→UTC instant. The server also injects authoritative availability (`describeCallbackAvailability`) and composes the first-turn "why a callback" opener deterministically (gpt-4o won't lead with it). Financial-advice requests short-circuit to this scope (`ADVICE_RE`) before task identification so "best stocks to **buy**" isn't swallowed by place-purchase.
 
 **get-intent Phase 1 (task identification):**
@@ -149,6 +150,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Customer chat history (hamburger ☰ in chat header) | `ChatPanel.tsx` (view state chat/history/transcript; ☰ replaced the "B" logo, ← goes back), `ChatHistoryView.tsx` (90-day card list via `GET /get-transcripts?clientId=` + read-only transcript via `?transcriptId=` + Download; **only rows with the second-person `summary` recap are listed** — no fallback), `lambda/save-transcript` (stores `summary` on the row), `lambda/get-transcripts` (list projection incl. `summary, acwSummary, agentName`) |
 | Chat end-of-life (minimize/close/persist; customer-left detection) | Customer: `ChatPanel.tsx` (minimize btn + close-confirm dialog), `chatStore.ts` (sessionStorage `persist`, `minimized`/`unreadCount`/`chatEnded`), `useChatSession.ts` (reconnect-on-load + `endChat()` real disconnect + stale-session guard on `onEnded`), `ChatBody.tsx` + `utils/transcriptDownload.ts` (Download transcript on chat end). Agent: `useConnectStreams.ts` (`participant.left` EVENT in `chatSession.onMessage` → `slot.customerDisconnected`; chatjs routes unmapped event types to onMessage), `ChatColumn.tsx` + `FocusingDesktop.tsx` ("Client closed the chat." notice + End chat → `bobs:endChat` → ACW; composer disabled) |
 | Proposed Action card | `agent-app/src/components/ProposedActionCard.tsx` |
+| Proposed-action evidence highlighting | Lambda: `locate-evidence` scope in `autopilot-turn/handler.ts` (`locateEvidence`, `LOCATE_EVIDENCE_PROMPT`). Frontend: `ChatColumn.tsx` (`evidencePromise` in `runAutopilotTurn`, `bobs:evidenceJump` listener, `MessageBubble` highlights) + same render half in `FocusingDesktop.tsx` (`FocusMessageBubble`) + ⌖ buttons in `ProposedActionCard.tsx` + `utils/evidenceHighlight.tsx` (span renderer) + `EvidenceSpan`/`proposedActionEvidence` in `types/index.ts`. Highlights/⌖ only render while the card is visible; evidence is keyed by message `id` and cleared on submit/reject. |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |
 | Research fund lineup (36 funds) | `customer-app/src/data/funds.ts` (static profiles + `group` field) **and** `lambda/market-data/handler.ts` → `FUND_MAP` (ticker→Vanguard realSymbol for live Yahoo quotes). Keep the two in sync. The Research index page (`components-v2/pages/research/ResearchPage.tsx`) is a search/filter/sortable screener grouped by `group`. |
@@ -253,7 +255,26 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ---
 
-## Active Branch / Current State (as of 2026-06-10)
+## Active Branch / Current State (as of 2026-06-11)
+
+In flight: `feature/evidence-highlighting` — Proposed-action evidence highlighting in the
+agent UI. When a task expert returns a `proposedAction`, the agent app fires a parallel
+`locate-evidence` request (new additive scope on `autopilot-turn`; runs during the
+autopilot send delay) and stores validated spans on `slot.proposedActionEvidence`.
+While the card is visible the transcript highlights each field's authoritative span
+(client statement, else the client-confirmed agent recap — never post-confirmation
+echoes), each card field gets a ⌖ scroll-to-span button (CustomEvent
+`bobs:evidenceJump`, container-scoped lookup because `pre-*`/`prior-*` message ids
+repeat across columns; hidden focusing-mode ChatColumns bail on `clientWidth === 0`),
+and unlocatable fields show a "not located in transcript" hint. Verified locally by
+bundling the handler (esbuild + lib-dynamodb stub) and replaying conversation
+`439f6348-…`: all three spans land exactly as specified, post-confirmation echoes are
+skipped, degenerate payloads → `{evidence: []}`. **Deploy order: Lambda (CDK) BEFORE
+merging the frontend** — old-Lambda + new-frontend would route `locate-evidence` into
+the FULL_AUTO default branch (harmless to the UI but a wasted tool-running LLM call).
+Known pre-existing bug observed, untouched: ProposedActionCard's `editedFields` state
+doesn't reset when FocusingDesktop switches between two contacts that both have cards
+(fix would be `key={slot.contactId}`; separate PR).
 
 Just shipped (PRs #69–#78, all merged + deployed — Lambdas via CDK, frontends via Actions):
 - **Chat end-of-life batch** (see the two "Chat …" rows in Key Files above for file map):

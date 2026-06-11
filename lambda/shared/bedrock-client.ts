@@ -21,6 +21,7 @@ export async function invokeNovaMicro(
   maxTokens = 300,
   ctx?: LlmCallContext,
   jsonMode = false,
+  model = OPENAI_MODEL,
 ): Promise<string> {
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set');
 
@@ -33,7 +34,7 @@ export async function invokeNovaMicro(
       Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: OPENAI_MODEL,
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -74,7 +75,7 @@ export async function invokeNovaMicro(
     fn: ctx?.fn ?? 'unknown',
     contactId: ctx?.contactId,
     scope: ctx?.scope,
-    model: OPENAI_MODEL,
+    model,
     promptTokens: data.usage?.prompt_tokens,
     completionTokens: data.usage?.completion_tokens,
     totalTokens: data.usage?.total_tokens,
