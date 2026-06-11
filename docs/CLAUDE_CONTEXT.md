@@ -257,24 +257,22 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ## Active Branch / Current State (as of 2026-06-11)
 
-In flight: `feature/evidence-highlighting` — Proposed-action evidence highlighting in the
-agent UI. When a task expert returns a `proposedAction`, the agent app fires a parallel
-`locate-evidence` request (new additive scope on `autopilot-turn`; runs during the
-autopilot send delay) and stores validated spans on `slot.proposedActionEvidence`.
-While the card is visible the transcript highlights each field's authoritative span
-(client statement, else the client-confirmed agent recap — never post-confirmation
-echoes), each card field gets a ⌖ scroll-to-span button (CustomEvent
-`bobs:evidenceJump`, container-scoped lookup because `pre-*`/`prior-*` message ids
-repeat across columns; hidden focusing-mode ChatColumns bail on `clientWidth === 0`),
-and unlocatable fields show a "not located in transcript" hint. Verified locally by
-bundling the handler (esbuild + lib-dynamodb stub) and replaying conversation
-`439f6348-…`: all three spans land exactly as specified, post-confirmation echoes are
-skipped, degenerate payloads → `{evidence: []}`. **Deploy order: Lambda (CDK) BEFORE
-merging the frontend** — old-Lambda + new-frontend would route `locate-evidence` into
-the FULL_AUTO default branch (harmless to the UI but a wasted tool-running LLM call).
-Known pre-existing bug observed, untouched: ProposedActionCard's `editedFields` state
-doesn't reset when FocusingDesktop switches between two contacts that both have cards
-(fix would be `key={slot.contactId}`; separate PR).
+Just shipped (PR #80, merged + deployed 2026-06-11 — Lambda via CDK, agent-app via
+Actions): **Proposed-action evidence highlighting** in the agent UI. When a task expert
+returns a `proposedAction`, the agent app fires a parallel `locate-evidence` request
+(additive scope on `autopilot-turn`; runs during the autopilot send delay) and stores
+validated spans on `slot.proposedActionEvidence`. While the card is visible the
+transcript highlights each field's authoritative span (client statement, else the
+client-confirmed agent recap — never post-confirmation echoes), each card field gets a
+⌖ scroll-to-span button (CustomEvent `bobs:evidenceJump`, container-scoped lookup
+because `pre-*`/`prior-*` message ids repeat across columns; hidden focusing-mode
+ChatColumns bail on `clientWidth === 0`), and unlocatable fields show a "not located in
+transcript" hint. Verified on the live API by replaying conversation `439f6348-…`: all
+three spans land exactly as specified, post-confirmation echoes are skipped, degenerate
+payloads → `{evidence: []}`. Still pending: one manual UI pass in a live chat (grid +
+focusing modes). Known pre-existing bug observed, untouched: ProposedActionCard's
+`editedFields` state doesn't reset when FocusingDesktop switches between two contacts
+that both have cards (fix would be `key={slot.contactId}`; separate PR).
 
 Just shipped (PRs #69–#78, all merged + deployed — Lambdas via CDK, frontends via Actions):
 - **Chat end-of-life batch** (see the two "Chat …" rows in Key Files above for file map):
