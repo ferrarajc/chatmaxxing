@@ -379,6 +379,20 @@ export class LambdaStack extends cdk.Stack {
     });
     transcriptsTable.grantReadData(getTranscriptsFn);
 
+    // ── pin-transcript ─────────────────────────────────────────────
+    const pinTranscriptFn = new NodejsFunction(this, 'PinTranscriptFn', {
+      functionName: 'bobs-pin-transcript',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'pin-transcript/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    transcriptsTable.grantReadWriteData(pinTranscriptFn);
+
     // ── HTTP API Gateway ───────────────────────────────────────────
     const api = new apigwv2.HttpApi(this, 'BobsApi', {
       apiName: 'bobs-api',
@@ -414,6 +428,7 @@ export class LambdaStack extends cdk.Stack {
       ['/client-data', clientDataFn],
       ['/execute-task', executeTaskFn],
       ['/save-transcript', saveTranscriptFn],
+      ['/pin-transcript', pinTranscriptFn],
     ];
     for (const [path, fn] of routes) {
       api.addRoutes({

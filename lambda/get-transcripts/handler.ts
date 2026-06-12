@@ -28,7 +28,7 @@ export const handler = async (
         KeyConditionExpression: 'clientId = :cid',
         ExpressionAttributeValues: { ':cid': params.clientId },
         ScanIndexForward: false,  // newest first
-        ProjectionExpression: 'transcriptId, clientId, clientName, intentSummary, summary, acwSummary, agentName, startTime, endTime, durationMs, wrapUpCode, messageCount, savedAt',
+        ProjectionExpression: 'transcriptId, clientId, clientName, intentSummary, summary, acwSummary, agentName, startTime, endTime, durationMs, wrapUpCode, messageCount, savedAt, pinned',
       }));
       return jsonResponse(200, { transcripts: result.Items ?? [] });
     }
@@ -36,7 +36,7 @@ export const handler = async (
     // List all — scan, newest first, metadata only (no messages)
     const result = await docClient.send(new ScanCommand({
       TableName: table,
-      ProjectionExpression: 'transcriptId, clientId, clientName, intentSummary, summary, acwSummary, agentName, startTime, endTime, durationMs, wrapUpCode, messageCount, savedAt',
+      ProjectionExpression: 'transcriptId, clientId, clientName, intentSummary, summary, acwSummary, agentName, startTime, endTime, durationMs, wrapUpCode, messageCount, savedAt, pinned',
     }));
     const sorted = (result.Items ?? []).sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0));
     return jsonResponse(200, { transcripts: sorted });

@@ -147,7 +147,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Task execution logic | `lambda/execute-task/handler.ts` |
 | Agent chat rendering | `agent-app/src/components/ChatColumn.tsx` |
 | Typing indicators (both directions) | Customer→agent: `useChatSession.ts` (`notifyTyping`, `onTyping`) + `ChatInput.tsx`; agent shows it in `useConnectStreams.ts` (`chatSession.onTyping` → `slot.customerTyping`) + `ChatColumn.tsx` (`TypingDots`, 30s expiry). Agent→customer: `ChatColumn.tsx` (manual keystrokes + autopilot `autopilotSend` → `/send-agent-message` `event:'typing'`); customer shows it via `agentTyping` (60s expiry) in `ChatBody.tsx`. Autopilot cancel sends the `__BOBS_TYPING_STOP__` sentinel to clear it promptly. `autopilotSend` runs two phases via `autopilotDelay`: a **reading delay** (ellipsis hidden; `2000ms + 10ms×(clientMsgLen−200)`, min 2000ms, based on the client's most recent message) then the existing **typing delay** (`chars/15`s, ellipsis shown). Chat avatar: bot turns show **"B"** (navy); once a live agent is connected, agent bubbles + the typing ellipsis show the **agent's initials** (accent color) via `chatStore.agentName` (`initialsFromName` in `utils/initials.ts`). The agent sends its **full name** (first + last) on connect as a `__BOBS_AGENT_NAME__` control message (`useConnectStreams.ts`, intercepted/not rendered) because Connect's chat `DisplayName` is only the agent's first name; a multi-word `DisplayName` is a fallback. |
-| Customer chat history (hamburger ☰ in chat header) | `ChatPanel.tsx` (view state chat/history/transcript; ☰ replaced the "B" logo, ← goes back), `ChatHistoryView.tsx` (90-day card list via `GET /get-transcripts?clientId=` + read-only transcript via `?transcriptId=` + Download; **only rows with the second-person `summary` recap are listed** — no fallback), `lambda/save-transcript` (stores `summary` on the row), `lambda/get-transcripts` (list projection incl. `summary, acwSummary, agentName`) |
+| Customer chat history (hamburger ☰ in chat header) | `ChatPanel.tsx` (view state chat/history/transcript; ☰ replaced the "B" logo, ← goes back), `ChatHistoryView.tsx` (90-day card list via `GET /get-transcripts?clientId=` + read-only transcript via `?transcriptId=` + Download; **only rows with the second-person `summary` recap are listed** — no fallback; **pin/unpin button** on each card → `POST /pin-transcript`; pinned cards sorted first + `primarySoft` bg section), `lambda/save-transcript` (stores `summary` on the row), `lambda/get-transcripts` (list projection incl. `summary, acwSummary, agentName, pinned`), `lambda/pin-transcript` (sets `pinned` on transcript row) |
 | Chat end-of-life (minimize/close/persist; customer-left detection) | Customer: `ChatPanel.tsx` (minimize btn + close-confirm dialog), `chatStore.ts` (sessionStorage `persist`, `minimized`/`unreadCount`/`chatEnded`), `useChatSession.ts` (reconnect-on-load + `endChat()` real disconnect + stale-session guard on `onEnded`), `ChatBody.tsx` + `utils/transcriptDownload.ts` (Download transcript on chat end). Agent: `useConnectStreams.ts` (`participant.left` EVENT in `chatSession.onMessage` → `slot.customerDisconnected`; chatjs routes unmapped event types to onMessage), `ChatColumn.tsx` + `FocusingDesktop.tsx` ("Client closed the chat." notice + End chat → `bobs:endChat` → ACW; composer disabled) |
 | Proposed Action card | `agent-app/src/components/ProposedActionCard.tsx` |
 | Proposed-action evidence highlighting | Lambda: `locate-evidence` scope in `autopilot-turn/handler.ts` (`locateEvidence`, `LOCATE_EVIDENCE_PROMPT`). Frontend: `ChatColumn.tsx` (`evidencePromise` in `runAutopilotTurn`, `bobs:evidenceJump` listener, `MessageBubble` highlights) + same render half in `FocusingDesktop.tsx` (`FocusMessageBubble`) + ⌖ buttons in `ProposedActionCard.tsx` + `utils/evidenceHighlight.tsx` (span renderer) + `EvidenceSpan`/`proposedActionEvidence` in `types/index.ts`. Highlights/⌖ only render while the card is visible; evidence is keyed by message `id` and cleared on submit/reject. |
@@ -256,6 +256,18 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 ---
 
 ## Active Branch / Current State (as of 2026-06-11)
+
+In flight (`feature/chat-history-pin-unpin`, PR open): **Chat history pin/unpin**.
+Customers can pin chats in the hamburger ☰ history list for easy future reference.
+- New Lambda `pin-transcript` (POST `{transcriptId, pinned}`) writes `pinned: boolean`
+  to the `bobs-transcripts` table. Added to CDK + POST routes.
+- `get-transcripts` projection updated to include `pinned` in both clientId query +
+  scan paths.
+- `ChatHistoryView.tsx`: pin button (SVG pushpin, filled accent when pinned) on each
+  card, optimistic toggle with revert-on-error, pinned cards sorted first. Pinned section
+  rendered in a `primarySoft` (#E8ECF3) background that extends flush to a 1px divider
+  (`theme.color.border`); unpinned section sits on the normal `bg`. Scroll-to-top on pin
+  (smooth, via `scrollRef`). Lambda deployed via CDK; customer-app deployed to gh-pages.
 
 Just shipped (PR #80, merged + deployed 2026-06-11 — Lambda via CDK, agent-app via
 Actions): **Proposed-action evidence highlighting** in the agent UI. When a task expert

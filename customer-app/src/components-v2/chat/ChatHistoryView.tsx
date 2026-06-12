@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { get } from '../../api/client';
+import React, { useEffect, useRef, useState } from 'react';
+import { get, post } from '../../api/client';
 import { useClientStore } from '../../store/clientStore';
 import { ChatMessage } from '../../types';
 import { downloadTranscript } from '../../utils/transcriptDownload';
@@ -15,6 +15,7 @@ interface TranscriptMeta {
   endTime?: number;
   durationMs?: number;
   savedAt?: number;
+  pinned?: boolean;
 }
 
 interface TranscriptFull extends TranscriptMeta {
@@ -50,10 +51,34 @@ function cardSummary(t: TranscriptMeta): string {
   return s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.');
 }
 
+function PinIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      {filled ? (
+        <path
+          d="M9.5 1.5L14.5 6.5L11.5 9.5L11 13L8 10L4 14L3 13L7 9L4 6L7.5 5.5L9.5 1.5Z"
+          fill={theme.color.accent}
+          stroke={theme.color.accent}
+          strokeWidth="1"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d="M9.5 1.5L14.5 6.5L11.5 9.5L11 13L8 10L4 14L3 13L7 9L4 6L7.5 5.5L9.5 1.5Z"
+          stroke={theme.color.textMuted}
+          strokeWidth="1.3"
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
+  );
+}
+
 export function ChatHistoryList({ onSelect }: { onSelect: (transcriptId: string) => void }) {
   const { activePersona } = useClientStore();
   const [items, setItems] = useState<TranscriptMeta[] | null>(null);
   const [error, setError] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,16 +86,38 @@ export function ChatHistoryList({ onSelect }: { onSelect: (transcriptId: string)
       .then(res => {
         if (cancelled) return;
         const cutoff = Date.now() - NINETY_DAYS_MS;
-        setItems(res.transcripts.filter(t =>
+        const filtered = res.transcripts.filter(t =>
           (t.savedAt ?? t.endTime ?? 0) >= cutoff && !!t.summary?.trim(),
-        ));
+        );
+        // Pinned chats first; within each group preserve API order (newest first)
+        filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+        setItems(filtered);
       })
       .catch(() => { if (!cancelled) setError(true); });
     return () => { cancelled = true; };
   }, [activePersona.clientId]);
 
+  function handlePin(transcriptId: string, newPinned: boolean) {
+    if (newPinned) scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    setItems(prev => {
+      if (!prev) return prev;
+      const updated = prev.map(t => t.transcriptId === transcriptId ? { ...t, pinned: newPinned } : t);
+      updated.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+      return updated;
+    });
+    post('/pin-transcript', { transcriptId, pinned: newPinned }).catch(() => {
+      // revert on failure
+      setItems(prev => {
+        if (!prev) return prev;
+        const reverted = prev.map(t => t.transcriptId === transcriptId ? { ...t, pinned: !newPinned } : t);
+        reverted.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+        return reverted;
+      });
+    });
+  }
+
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 14, background: theme.color.bg }}>
+    <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: 14, background: theme.color.bg }}>
       {items === null && !error && (
         <div style={{ textAlign: 'center', color: theme.color.textSubtle, fontSize: 13, padding: '24px 0' }}>
           Loading your chat history…
@@ -86,29 +133,64 @@ export function ChatHistoryList({ onSelect }: { onSelect: (transcriptId: string)
           No live-agent chats in the last 3 months.
         </div>
       )}
-      {items?.map(t => (
-        <button
-          key={t.transcriptId}
-          onClick={() => onSelect(t.transcriptId)}
-          style={{
-            display: 'block', width: '100%', textAlign: 'left',
-            background: theme.color.surface, border: `1px solid ${theme.color.border}`,
-            borderRadius: theme.radius.lg, padding: '12px 14px', marginBottom: 10,
-            cursor: 'pointer', fontFamily: theme.font.sans,
-            transition: 'border-color .15s, box-shadow .15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = theme.color.primary)}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = theme.color.border)}
-        >
-          <div style={{ fontSize: 13, color: theme.color.text }}>
-            <strong style={{ fontWeight: 700 }}>{fmtDateTime(t.startTime ?? t.savedAt ?? 0)}</strong>
-            <span style={{ fontWeight: 400, color: theme.color.textMuted }}> ({fmtDuration(t.durationMs ?? 0)})</span>
+      {items && (() => {
+        const pinned = items.filter(t => t.pinned);
+        const unpinned = items.filter(t => !t.pinned);
+        const renderCard = (t: TranscriptMeta) => (
+          <div key={t.transcriptId} style={{ position: 'relative', marginBottom: 10 }}>
+            <button
+              onClick={() => onSelect(t.transcriptId)}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                background: theme.color.surface, border: `1px solid ${theme.color.border}`,
+                borderRadius: theme.radius.lg, padding: '12px 38px 12px 14px', marginBottom: 0,
+                cursor: 'pointer', fontFamily: theme.font.sans,
+                transition: 'border-color .15s, box-shadow .15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = theme.color.primary)}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = theme.color.border)}
+            >
+              <div style={{ fontSize: 13, color: theme.color.text }}>
+                <strong style={{ fontWeight: 700 }}>{fmtDateTime(t.startTime ?? t.savedAt ?? 0)}</strong>
+                <span style={{ fontWeight: 400, color: theme.color.textMuted }}> ({fmtDuration(t.durationMs ?? 0)})</span>
+              </div>
+              <div style={{ fontSize: 13, color: theme.color.textMuted, lineHeight: 1.5, marginTop: 4 }}>
+                {cardSummary(t)}
+              </div>
+            </button>
+            <button
+              onClick={() => handlePin(t.transcriptId, !t.pinned)}
+              title={t.pinned ? 'Unpin chat' : 'Pin chat'}
+              style={{
+                position: 'absolute', top: 8, right: 8,
+                width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'none', border: 'none', cursor: 'pointer', borderRadius: theme.radius.sm,
+                opacity: t.pinned ? 1 : 0.45, transition: 'opacity .15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = t.pinned ? '1' : '0.45')}
+            >
+              <PinIcon filled={!!t.pinned} />
+            </button>
           </div>
-          <div style={{ fontSize: 13, color: theme.color.textMuted, lineHeight: 1.5, marginTop: 4 }}>
-            {cardSummary(t)}
-          </div>
-        </button>
-      ))}
+        );
+        return <>
+          {pinned.length > 0 && (
+            <div style={{
+              margin: '-14px -14px 0',
+              padding: '14px 14px 0',
+              background: theme.color.primarySoft,
+            }}>
+              {pinned.map(renderCard)}
+              {unpinned.length > 0 && (
+                <div style={{ margin: '0 -14px', borderBottom: `1px solid ${theme.color.border}` }} />
+              )}
+            </div>
+          )}
+          {pinned.length > 0 && unpinned.length > 0 && <div style={{ height: 10 }} />}
+          {unpinned.map(renderCard)}
+        </>;
+      })()}
     </div>
   );
 }
