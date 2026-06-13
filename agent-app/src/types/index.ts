@@ -71,6 +71,11 @@ export interface ContactSlot {
   /** True when the customer disconnected from the chat (participant.left) while the
    *  contact is still active — the agent must explicitly End chat to move to ACW. */
   customerDisconnected?: boolean;
+  /** True for a Type 3 (client-submitted) proposed action that has been sent to the
+   *  customer and is awaiting their submission. While true the card shows a waiting
+   *  note instead of the action buttons; cleared when the client submits/declines or
+   *  the agent cancels. */
+  awaitingClientApproval?: boolean;
 }
 
 export type AgentStatus = 'Available' | 'Away' | 'Offline';
@@ -86,6 +91,10 @@ export interface ProposedActionData {
   taskName: string;
   summary: string;
   fields: ProposedActionField[];
+  /** Who may submit this action. 'agent' (default) = standard Submit Action flow;
+   *  'client' = Type 3, the agent sends it to the customer to submit themselves;
+   *  'licensed-agent' reserved (currently behaves like 'agent'). */
+  submissionType?: 'agent' | 'licensed-agent' | 'client';
 }
 
 /** One transcript span that backs a proposedAction field value. Offsets index

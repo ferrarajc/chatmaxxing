@@ -81,6 +81,7 @@ interface AutopilotTurnResult {
     taskName: string;
     summary: string;
     fields: Array<{ key: string; label: string; value: string }>;
+    submissionType?: 'agent' | 'licensed-agent' | 'client';
   } | null;
 }
 

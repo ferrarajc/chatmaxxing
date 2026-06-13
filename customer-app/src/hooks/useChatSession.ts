@@ -37,6 +37,18 @@ const TYPING_STOP_SENTINEL = '__BOBS_TYPING_STOP__';
 // Control message prefix carrying the connected agent's full name (first + last), so the
 // chat can show correct initials. Connect's chat DisplayName is only the first name.
 const AGENT_NAME_SENTINEL = '__BOBS_AGENT_NAME__';
+// ── Type 3 (client-submitted) proposed-action control messages ──────────────
+// Agent → customer: carries the proposed-action form (JSON) for the customer to submit.
+const APPROVAL_FORM_SENTINEL = '__BOBS_APPROVAL_FORM__';
+// Agent → customer: drop a pending approval card (agent cancelled / ended chat).
+const APPROVAL_CANCEL_SENTINEL = '__BOBS_APPROVAL_CANCEL__';
+// Customer → agent: the customer submitted the form (+ JSON {fields}) / declined.
+// Must match the agent app's sentinels exactly.
+const CLIENT_APPROVED_SENTINEL = '__BOBS_CLIENT_APPROVED__';
+const CLIENT_DECLINED_SENTINEL = '__BOBS_CLIENT_DECLINED__';
+// Re-enable the customer's Submit button if no confirmation arrives within this window
+// (covers the rare agent-tab-closed / failed-relay case).
+const APPROVAL_SUBMIT_TIMEOUT_MS = 12_000;
 
 function isCustomerEscalationRequest(text: string): boolean {
   const lower = text.toLowerCase();
@@ -127,7 +139,25 @@ function createAndBindSession(
       return;
     }
 
+    // Control signal: a Type 3 proposed action to review/submit (never rendered as a bubble).
+    if (msg.Content?.startsWith(APPROVAL_FORM_SENTINEL)) {
+      try {
+        store.setApprovalForm(JSON.parse(msg.Content.slice(APPROVAL_FORM_SENTINEL.length)));
+      } catch { /* malformed — ignore rather than render raw JSON */ }
+      return;
+    }
+    // Control signal: drop a pending approval card (agent cancelled / ended chat).
+    if (msg.Content === APPROVAL_CANCEL_SENTINEL) {
+      store.setApprovalForm(null);
+      return;
+    }
+
     const role = msg.ParticipantRole === 'AGENT' ? 'AGENT' : 'BOT';
+    // The confirmation for a just-submitted approval arrives as a normal agent message —
+    // that's our cue to clear the (Submitting…) approval card.
+    if (role === 'AGENT' && useChatStore.getState().approvalSubmitting) {
+      store.setApprovalForm(null);
+    }
     // A real message means the agent is done composing — clear the typing ellipsis.
     if (role === 'AGENT') {
       clearAgentTyping();
@@ -215,7 +245,10 @@ async function mergeMissedMessages(session: ChatJsSession, store: ChatStore) {
     for (const item of items) {
       if (item.Type !== 'MESSAGE' || item.ParticipantRole !== 'AGENT') continue;
       const content = item.Content ?? '';
-      if (!content || content === TYPING_STOP_SENTINEL || content.startsWith(AGENT_NAME_SENTINEL)) continue;
+      if (
+        !content || content === TYPING_STOP_SENTINEL || content.startsWith(AGENT_NAME_SENTINEL) ||
+        content.startsWith(APPROVAL_FORM_SENTINEL) || content === APPROVAL_CANCEL_SENTINEL
+      ) continue;
       if (useChatStore.getState().messages.some(m => m.role === 'AGENT' && m.content === content)) continue;
       store.addMessage({ role: 'AGENT', content });
       store.transitionTo('CONNECTED_TO_AGENT');
@@ -534,5 +567,32 @@ export function useChatSession() {
     } catch { /* ignore — typing is best-effort */ }
   }
 
-  return { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping, endChat };
+  // Submit a Type 3 proposed action the agent sent for the customer to approve. Sends a
+  // control message back to the agent (who runs the actual task + posts the confirmation),
+  // WITHOUT optimistically adding a customer bubble. The card stays visible in a
+  // "Submitting…" state until the confirmation arrives (cleared in onMessage).
+  function submitApproval(fields: { key: string; value: string }[]) {
+    const session = sessionRef.current;
+    if (!session) return;
+    store.setApprovalSubmitting(true);
+    const payload = JSON.stringify({ fields: fields.map(f => ({ key: f.key, value: f.value })) });
+    try {
+      session.sendMessage({ message: CLIENT_APPROVED_SENTINEL + payload, contentType: 'text/plain' })?.catch?.(() => {});
+    } catch { /* best-effort — confirmation/timeout backstops this */ }
+    setTimeout(() => {
+      if (useChatStore.getState().approvalSubmitting) store.setApprovalSubmitting(false);
+    }, APPROVAL_SUBMIT_TIMEOUT_MS);
+  }
+
+  // Decline a Type 3 proposed action — clears the card and tells the agent (card returns to them).
+  function declineApproval() {
+    const session = sessionRef.current;
+    store.setApprovalForm(null);
+    if (!session) return;
+    try {
+      session.sendMessage({ message: CLIENT_DECLINED_SENTINEL, contentType: 'text/plain' })?.catch?.(() => {});
+    } catch { /* best-effort */ }
+  }
+
+  return { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping, endChat, submitApproval, declineApproval };
 }

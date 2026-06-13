@@ -20,6 +20,18 @@ type AutopilotScope = 'get-intent' | 'researching' | 'callback' | 'idle-check' |
 
 const ET_ZONE = 'America/New_York';
 
+// Stamp the authoritative submissionType onto a proposed action so the agent UI knows
+// who may submit it (Type 1 = 'agent', Type 3 = 'client'). Looked up from TASKS by
+// taskId — never trusted from the LLM, which isn't asked to emit it. Absent ⇒ 'agent'.
+function withSubmissionType(
+  proposedAction: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!proposedAction) return proposedAction;
+  const taskId = typeof proposedAction.taskId === 'string' ? proposedAction.taskId : undefined;
+  const submissionType = TASKS.find(t => t.id === taskId)?.submissionType ?? 'agent';
+  return { ...proposedAction, submissionType };
+}
+
 function formatPhone(raw: string): string {
   const digits = raw.replace(/\D/g, '');
   if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
@@ -2439,7 +2451,7 @@ export const handler = async (
           closeChat: false,
           scheduleCallback: null,
           taskIdentified: null,
-          proposedAction: taskProposedAction,
+          proposedAction: withSubmissionType(taskProposedAction),
           toolsUsed: taskToolsUsed,
         });
       } else {
@@ -2506,7 +2518,7 @@ export const handler = async (
             closeChat: false,
             scheduleCallback: null,
             taskIdentified: resolvedTask.id,
-            proposedAction: p1ProposedAction,
+            proposedAction: withSubmissionType(p1ProposedAction),
             toolsUsed: p1ToolsUsed,
           });
         }

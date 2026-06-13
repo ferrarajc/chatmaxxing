@@ -35,6 +35,19 @@ export interface KBQuestionResult {
   link?: ChatMessageLink;
 }
 
+/** A Type 3 proposed action an agent has sent for the customer to review and submit
+ *  themselves. Rendered as the "Your approval is required" card in the chat. */
+export interface ApprovalFormField {
+  key: string;
+  label: string;
+  value: string;
+}
+export interface ApprovalForm {
+  taskName: string;
+  summary: string;
+  fields: ApprovalFormField[];
+}
+
 /**
  * The client's most recent live-agent chat, used to offer "Continue this chat".
  * Sourced from the `lastAgentChat` attribute on the client record; null when the

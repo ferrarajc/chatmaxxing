@@ -5,6 +5,7 @@ import { ChatMessage } from '../types';
 import { log } from '../api/logger';
 import { playChaChingSound } from '../utils/sounds';
 import { post, get } from '../api/client';
+import { submitProposedAction } from '../utils/submitProposedAction';
 
 declare global {
   interface Window {
@@ -105,6 +106,53 @@ const CUSTOMER_TYPING_TTL_MS = 30_000;
 // can't derive correct initials from it; we send the full name explicitly. Intercepted
 // and never rendered on the customer side. Must match the customer app's sentinel.
 const AGENT_NAME_SENTINEL = '__BOBS_AGENT_NAME__';
+
+// ── Type 3 (client-submitted) proposed-action control messages ──────────────
+// The client's chat sends these back to us; we intercept by content prefix and
+// never render them as bubbles. Must match the customer app's sentinels exactly.
+const CLIENT_APPROVED_SENTINEL = '__BOBS_CLIENT_APPROVED__'; // client submitted the form (+ JSON {fields})
+const CLIENT_DECLINED_SENTINEL = '__BOBS_CLIENT_DECLINED__'; // client declined; card returns to the agent
+// We send this one TO the client to drop a pending approval card (agent cancelled / ended chat).
+const APPROVAL_CANCEL_SENTINEL = '__BOBS_APPROVAL_CANCEL__';
+
+/**
+ * Relay a client's approval of a Type 3 proposed action: run the exact same submit
+ * path as the agent's "Submit Action" (so the confirmation is identical to Type 1).
+ * Idempotent — only the first approval for an awaiting action executes.
+ */
+async function handleClientApproved(contactId: string, payloadRaw: string): Promise<void> {
+  const store = useAgentStore.getState();
+  const slot = store.getSlot(contactId);
+  // Stale or duplicate (already submitted / cancelled / nothing pending) → ignore.
+  if (!slot?.proposedAction || !slot.awaitingClientApproval) return;
+  const action = slot.proposedAction;
+  // Close the gate BEFORE awaiting so a redelivered message can't double-execute.
+  store.patchSlot(contactId, { awaitingClientApproval: false });
+
+  // Use the client's final (possibly edited) field values; fall back to the action's.
+  const fieldsMap: Record<string, string> = {};
+  try {
+    const parsed = JSON.parse(payloadRaw) as { fields?: Array<{ key: string; value: string }> };
+    for (const f of parsed.fields ?? []) fieldsMap[f.key] = f.value;
+  } catch { /* fall back below */ }
+  if (Object.keys(fieldsMap).length === 0) {
+    for (const f of action.fields) fieldsMap[f.key] = f.value;
+  }
+
+  try {
+    const res = await submitProposedAction(slot, action, fieldsMap);
+    if (res.success) {
+      store.patchSlot(contactId, { proposedAction: null, proposedActionEvidence: null });
+    } else {
+      // execute-task returned a structured failure — return the card to the agent.
+      store.patchSlot(contactId, { awaitingClientApproval: false });
+      store.appendMessage(contactId, { role: 'SYSTEM', content: `⚠ Client submission failed: ${res.message}` });
+    }
+  } catch {
+    store.patchSlot(contactId, { awaitingClientApproval: false });
+    store.appendMessage(contactId, { role: 'SYSTEM', content: '⚠ Client submission failed — ask them to resubmit.' });
+  }
+}
 
 /** Clear the typing ellipsis for a contact and cancel its expiry timer. */
 function clearCustomerTyping(contactId: string): void {
@@ -292,6 +340,13 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
     const handleEndChat = (e: Event) => {
       const { contactId } = (e as CustomEvent<{ contactId: string }>).detail;
       const contact = contactRefs.current.get(contactId);
+      // If a Type 3 action is still out with the client, tell their chat to drop the card.
+      const endingSlot = useAgentStore.getState().getSlot(contactId);
+      if (endingSlot?.awaitingClientApproval && endingSlot.connectionToken) {
+        post('/send-agent-message', {
+          connectionToken: endingSlot.connectionToken, message: APPROVAL_CANCEL_SENTINEL,
+        }).catch(() => {});
+      }
       // Customer already left: the contact has (almost certainly) ended and
       // contact.onEnded deliberately held the slot at 'active' for the notice —
       // destroying the connection again won't re-fire onEnded, so transition
@@ -460,7 +515,8 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
               msg.ParticipantRole === 'CUSTOMER'
             ) {
               clearCustomerTyping(contactId);
-              if (useAgentStore.getState().getSlot(contactId)?.status === 'active') {
+              const leftSlot = useAgentStore.getState().getSlot(contactId);
+              if (leftSlot?.status === 'active') {
                 useAgentStore.getState().patchSlot(contactId, {
                   customerDisconnected: true,
                   customerTyping: false,
@@ -468,12 +524,35 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
                   autopilotScope: null,
                   autopilotPending: null,
                   suggestedScope: null,
+                  // A Type 3 action sent to the client can no longer be submitted.
+                  ...(leftSlot.awaitingClientApproval ? { awaitingClientApproval: false } : {}),
                 });
+                if (leftSlot.awaitingClientApproval) {
+                  useAgentStore.getState().appendMessage(contactId, {
+                    role: 'SYSTEM', content: 'Client left before submitting the proposed action.',
+                  });
+                }
               }
               log.info('useConnectStreams:customerLeft', { contactId });
               return;
             }
             if (msg?.Type !== 'MESSAGE') return;
+            // Type 3 control messages from the client — handle, never render as a bubble.
+            if (msg.ParticipantRole === 'CUSTOMER' && typeof msg.Content === 'string') {
+              if (msg.Content.startsWith(CLIENT_APPROVED_SENTINEL)) {
+                handleClientApproved(contactId, msg.Content.slice(CLIENT_APPROVED_SENTINEL.length));
+                return;
+              }
+              if (msg.Content === CLIENT_DECLINED_SENTINEL) {
+                if (useAgentStore.getState().getSlot(contactId)?.awaitingClientApproval) {
+                  useAgentStore.getState().patchSlot(contactId, { awaitingClientApproval: false });
+                  useAgentStore.getState().appendMessage(contactId, {
+                    role: 'SYSTEM', content: 'Client declined the proposed action.',
+                  });
+                }
+                return;
+              }
+            }
             if (msg.ParticipantRole === 'AGENT') return;
             const role = msg.ParticipantRole === 'CUSTOMER' ? 'CUSTOMER' as const : 'BOT' as const;
             // The client's message arrived — they're done typing.

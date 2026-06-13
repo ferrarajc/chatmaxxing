@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { ChatState, ChatMessage, CallbackConfirmation, KBQuestionResult, LastAgentChat } from '../types';
+import { ChatState, ChatMessage, CallbackConfirmation, KBQuestionResult, LastAgentChat, ApprovalForm } from '../types';
 import { nanoid } from './nanoid';
 
 // Tiny nanoid replacement (no external dep)
@@ -33,6 +33,10 @@ export interface ChatStore {
   unreadCount: number;
   /** The Connect chat is over (agent or customer ended it); closing the panel needs no confirmation. */
   chatEnded: boolean;
+  /** A Type 3 proposed action sent by the agent for the customer to submit; null = none pending. */
+  approvalForm: ApprovalForm | null;
+  /** True while the customer's approval submission is in flight (button shows "Submitting…"). */
+  approvalSubmitting: boolean;
 
   // Actions
   transitionTo: (s: ChatState) => void;
@@ -50,6 +54,8 @@ export interface ChatStore {
   setContinuation: (v: LastAgentChat | null) => void;
   setMinimized: (v: boolean) => void;
   setChatEnded: (v: boolean) => void;
+  setApprovalForm: (v: ApprovalForm | null) => void;
+  setApprovalSubmitting: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -73,6 +79,8 @@ const initial = {
   minimized: false,
   unreadCount: 0,
   chatEnded: false,
+  approvalForm: null,
+  approvalSubmitting: false,
 };
 
 export const useChatStore = create<ChatStore>()(
@@ -107,6 +115,8 @@ export const useChatStore = create<ChatStore>()(
       setContinuation: (continuation) => set({ continuation }),
       setMinimized: (minimized) => set(minimized ? { minimized } : { minimized, unreadCount: 0 }),
       setChatEnded: (chatEnded) => set({ chatEnded }),
+      setApprovalForm: (approvalForm) => set({ approvalForm, approvalSubmitting: false }),
+      setApprovalSubmitting: (approvalSubmitting) => set({ approvalSubmitting }),
       reset: () => set(initial),
     }),
     {
@@ -128,6 +138,7 @@ export const useChatStore = create<ChatStore>()(
         minimized: s.minimized,
         unreadCount: s.unreadCount,
         chatEnded: s.chatEnded,
+        approvalForm: s.approvalForm,
       }),
     },
   ),
