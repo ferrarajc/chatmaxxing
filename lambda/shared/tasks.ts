@@ -21,6 +21,16 @@ export interface Task {
   eligibleAccountTypes?: string[];
   fields: TaskField[];
   executionType: 'real' | 'mock';
+  /**
+   * Who is permitted to submit this task's proposed action:
+   *  - 'agent' (default when absent): any agent may submit it on the client's
+   *    behalf — the standard "Submit Action" flow.
+   *  - 'licensed-agent': only a licensed agent may submit (reserved; not yet
+   *    enforced — currently behaves like 'agent').
+   *  - 'client': only the customer may submit it themselves. The agent's card
+   *    button becomes "Send to client"; the client approves it in their own chat.
+   */
+  submissionType?: 'agent' | 'licensed-agent' | 'client';
 }
 
 export const TASKS: Task[] = [
@@ -137,6 +147,9 @@ export const TASKS: Task[] = [
       },
     ],
     executionType: 'mock',
+    // Type 3: granting account access can only be authorized by the customer
+    // themselves — the agent collects the details and sends it to the client to submit.
+    submissionType: 'client',
   },
 
   {

@@ -34,7 +34,7 @@ export function ChatWidget() {
   const minimized = useChatStore(s => s.minimized);
   const unreadCount = useChatStore(s => s.unreadCount);
   const setMinimized = useChatStore(s => s.setMinimized);
-  const { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping, endChat } = useChatSession();
+  const { openChat, sendMessage, escalateToAgent, continueChat, notifyTyping, endChat, submitApproval, declineApproval } = useChatSession();
 
   usePredictedTopics(currentPage);
 
@@ -57,6 +57,8 @@ export function ChatWidget() {
           onContinueChat={continueChat}
           onTyping={notifyTyping}
           onEndChat={endChat}
+          onSubmitApproval={submitApproval}
+          onDeclineApproval={declineApproval}
         />
       )}
     </>

@@ -8,6 +8,7 @@ import { TopicButtons } from './TopicButtons';
 import { QuestionButtons } from './QuestionButtons';
 import { TypingIndicator } from './TypingIndicator';
 import { ContinueChatCard } from './ContinueChatCard';
+import { ApprovalFormCard } from './ApprovalFormCard';
 import { initialsFromName } from '../../utils/initials';
 import { downloadTranscript } from '../../utils/transcriptDownload';
 import { theme } from '../../theme';
@@ -18,10 +19,12 @@ interface Props {
   currentPage: string;
   onSendMessage: (text: string) => void;
   onContinueChat: (preferredAgentUsername: string | null) => void;
+  onSubmitApproval: (fields: { key: string; value: string }[]) => void;
+  onDeclineApproval: () => void;
 }
 
-export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) {
-  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, agentTyping, agentName, continuation, chatEnded } = useChatStore();
+export function ChatBody({ currentPage, onSendMessage, onContinueChat, onSubmitApproval, onDeclineApproval }: Props) {
+  const { state, messages, predictedTopics, selectedTopic, levelTwoQuestions, isTyping, agentTyping, agentName, continuation, chatEnded, approvalForm } = useChatStore();
   const addMessage = useChatStore(s => s.addMessage);
   const setTyping = useChatStore(s => s.setTyping);
   const { activePersona } = useClientStore();
@@ -31,7 +34,7 @@ export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) 
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping, agentTyping]);
+  }, [messages, isTyping, agentTyping, approvalForm]);
 
   const handleTopicSelect = (topic: string) => {
     if (topic === 'Something else') {
@@ -122,6 +125,15 @@ export function ChatBody({ currentPage, onSendMessage, onContinueChat }: Props) 
       {messages.map(msg => (
         <ChatMessage key={msg.id} message={msg} />
       ))}
+
+      {/* Type 3 approval form — appears where the next chat bubble would go */}
+      {approvalForm && !chatEnded && (
+        <ApprovalFormCard
+          form={approvalForm}
+          onSubmit={onSubmitApproval}
+          onDecline={onDeclineApproval}
+        />
+      )}
 
       {isTyping && <TypingIndicator isWaiting />}
       {/* Live agent (or delaying autopilot) is composing — animated ellipsis with the agent's initials */}

@@ -149,7 +149,9 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Typing indicators (both directions) | Customer→agent: `useChatSession.ts` (`notifyTyping`, `onTyping`) + `ChatInput.tsx`; agent shows it in `useConnectStreams.ts` (`chatSession.onTyping` → `slot.customerTyping`) + `ChatColumn.tsx` (`TypingDots`, 30s expiry). Agent→customer: `ChatColumn.tsx` (manual keystrokes + autopilot `autopilotSend` → `/send-agent-message` `event:'typing'`); customer shows it via `agentTyping` (60s expiry) in `ChatBody.tsx`. Autopilot cancel sends the `__BOBS_TYPING_STOP__` sentinel to clear it promptly. `autopilotSend` runs two phases via `autopilotDelay`: a **reading delay** (ellipsis hidden; `2000ms + 10ms×(clientMsgLen−200)`, min 2000ms, based on the client's most recent message) then the existing **typing delay** (`chars/15`s, ellipsis shown). Chat avatar: bot turns show **"B"** (navy); once a live agent is connected, agent bubbles + the typing ellipsis show the **agent's initials** (accent color) via `chatStore.agentName` (`initialsFromName` in `utils/initials.ts`). The agent sends its **full name** (first + last) on connect as a `__BOBS_AGENT_NAME__` control message (`useConnectStreams.ts`, intercepted/not rendered) because Connect's chat `DisplayName` is only the agent's first name; a multi-word `DisplayName` is a fallback. |
 | Customer chat history (hamburger ☰ in chat header) | `ChatPanel.tsx` (view state chat/history/transcript; ☰ replaced the "B" logo, ← goes back), `ChatHistoryView.tsx` (90-day card list via `GET /get-transcripts?clientId=` + read-only transcript via `?transcriptId=` + Download; **only rows with the second-person `summary` recap are listed** — no fallback; **pin/unpin button** on each card → `POST /pin-transcript`; pinned cards sorted first + `primarySoft` bg section), `lambda/save-transcript` (stores `summary` on the row), `lambda/get-transcripts` (list projection incl. `summary, acwSummary, agentName, pinned`), `lambda/pin-transcript` (sets `pinned` on transcript row) |
 | Chat end-of-life (minimize/close/persist; customer-left detection) | Customer: `ChatPanel.tsx` (minimize btn + close-confirm dialog), `chatStore.ts` (sessionStorage `persist`, `minimized`/`unreadCount`/`chatEnded`), `useChatSession.ts` (reconnect-on-load + `endChat()` real disconnect + stale-session guard on `onEnded`), `ChatBody.tsx` + `utils/transcriptDownload.ts` (Download transcript on chat end). Agent: `useConnectStreams.ts` (`participant.left` EVENT in `chatSession.onMessage` → `slot.customerDisconnected`; chatjs routes unmapped event types to onMessage), `ChatColumn.tsx` + `FocusingDesktop.tsx` ("Client closed the chat." notice + End chat → `bobs:endChat` → ACW; composer disabled) |
-| Proposed Action card | `agent-app/src/components/ProposedActionCard.tsx` |
+| Proposed Action card | `agent-app/src/components/ProposedActionCard.tsx` (Type 1 = "Submit Action"; Type 3 = "Send to client" → waiting note). Submit body shared via `agent-app/src/utils/submitProposedAction.ts` (reused by the Type 3 relay in `useConnectStreams.ts`). |
+| Task submission type (who may submit) | `lambda/shared/tasks.ts` → `Task.submissionType` (`'agent'` default / `'licensed-agent'` reserved / `'client'` = Type 3). Stamped onto `proposedAction` in `autopilot-turn/handler.ts` (`withSubmissionType`, both return sites). `add-account-access` is the only `'client'` task. |
+| Type 3 client approval flow | Agent `ProposedActionCard` "Send to client" → `__BOBS_APPROVAL_FORM__` control msg → customer `useChatSession.ts` renders `ApprovalFormCard.tsx` (via `chatStore.approvalForm`, threaded through ChatWidget/ChatPanel/ChatBody) → customer Submit sends `__BOBS_CLIENT_APPROVED__` back → agent `useConnectStreams.ts` runs the shared submit (confirmation identical to Type 1). Sentinels: `__BOBS_APPROVAL_FORM__`/`__BOBS_APPROVAL_CANCEL__` (agent→customer), `__BOBS_CLIENT_APPROVED__`/`__BOBS_CLIENT_DECLINED__` (customer→agent). |
 | Proposed-action evidence highlighting | Lambda: `locate-evidence` scope in `autopilot-turn/handler.ts` (`locateEvidence`, `LOCATE_EVIDENCE_PROMPT`). Frontend: `ChatColumn.tsx` (`evidencePromise` in `runAutopilotTurn`, `bobs:evidenceJump` listener, `MessageBubble` highlights) + same render half in `FocusingDesktop.tsx` (`FocusMessageBubble`) + ⌖ buttons in `ProposedActionCard.tsx` + `utils/evidenceHighlight.tsx` (span renderer) + `EvidenceSpan`/`proposedActionEvidence` in `types/index.ts`. Highlights/⌖ only render while the card is visible; evidence is keyed by message `id` and cleared on submit/reject. |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |
@@ -256,6 +258,21 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 ---
 
 ## Active Branch / Current State (as of 2026-06-11)
+
+In flight (uncommitted): **Type 3 (client-submitted) tasks — `add-account-access`**. Tasks now carry
+a `submissionType` (`'agent'` default / `'licensed-agent'` reserved / `'client'`). For a Type 3 task
+the agent's Proposed Action card button reads **"Send to client"**: clicking it sends the form to the
+customer's chat (`__BOBS_APPROVAL_FORM__`) and shows a "Waiting for client to submit…" note (+ Cancel)
+in the AI area. The customer sees a **"Your approval is required"** card (`ApprovalFormCard.tsx`,
+editable fields, no evidence ⌖, **Submit action** + **Decline**). On Submit the customer sends
+`__BOBS_CLIENT_APPROVED__` back; the agent app runs the **exact same submit path as Type 1**
+(`submitProposedAction` util → `execute-task` → confirmation appended + `send-agent-message`), so the
+confirmation is byte-identical and arrives via the normal Connect agent-message path. Decline returns
+the card to the agent; agent Cancel / chat-end / client-left all clean up the pending state.
+Idempotency guard on the relay (`awaitingClientApproval` flips false before the await). Only
+`add-account-access` is Type 3; all other tasks are unchanged Type 1. **Needs**: Lambda deploy
+(`autopilot-turn` + shared) + both frontends; live CCP round-trip verification (see plan
+`~/.claude/plans/we-re-going-to-work-majestic-toucan.md`).
 
 In flight (`feature/chat-history-pin-unpin`, PR open): **Chat history pin/unpin**.
 Customers can pin chats in the hamburger ☰ history list for easy future reference.

@@ -16,9 +16,11 @@ interface Props {
   onContinueChat: (preferredAgentUsername: string | null) => void;
   onTyping: () => void;
   onEndChat: () => void;
+  onSubmitApproval: (fields: { key: string; value: string }[]) => void;
+  onDeclineApproval: () => void;
 }
 
-export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onContinueChat, onTyping, onEndChat }: Props) {
+export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onContinueChat, onTyping, onEndChat, onSubmitApproval, onDeclineApproval }: Props) {
   const { state, messages, chatEnded, setMinimized } = useChatStore();
   const [showCallbackScheduler, setShowCallbackScheduler] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -128,7 +130,13 @@ export function ChatPanel({ currentPage, onSendMessage, onEscalateToAgent, onCon
           />
         ) : (
           <>
-            <ChatBody currentPage={currentPage} onSendMessage={onSendMessage} onContinueChat={onContinueChat} />
+            <ChatBody
+              currentPage={currentPage}
+              onSendMessage={onSendMessage}
+              onContinueChat={onContinueChat}
+              onSubmitApproval={onSubmitApproval}
+              onDeclineApproval={onDeclineApproval}
+            />
             {state === 'ESCALATION_OFFERED' && (
               <EscalationPanel
                 onConnectByChat={onEscalateToAgent}
