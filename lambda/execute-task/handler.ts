@@ -1,8 +1,9 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
 import { FUND_PRICES } from '../shared/client-defaults';
+import { buildTransactionRow, TxnType } from '../shared/transaction-history';
 
 interface ExecuteTaskRequest {
   taskId: string;
@@ -37,43 +38,67 @@ function matchFund(nameOrTicker: string): { name: string; ticker: string; price:
 
 type AccountEntry  = { type: string; balance: number; id: string; change: number };
 type HoldingEntry  = { name: string; ticker: string; accountId: string; shares: number; price: number; change: number; value: number; drip?: boolean };
-type TxEntry       = { date: string; description: string; amount: number; account: string };
 
 async function readClient(table: string, clientId: string): Promise<{
   accounts: AccountEntry[];
   holdings: HoldingEntry[];
-  transactions: TxEntry[];
   totalBalance: number;
 }> {
   const r = await docClient.send(new GetCommand({
     TableName: table,
     Key: { clientId },
-    ProjectionExpression: 'accounts, holdings, transactions, totalBalance',
+    ProjectionExpression: 'accounts, holdings, totalBalance',
   }));
   return {
     accounts:     (r.Item?.accounts     ?? []) as AccountEntry[],
     holdings:     (r.Item?.holdings     ?? []) as HoldingEntry[],
-    transactions: (r.Item?.transactions ?? []) as TxEntry[],
     totalBalance: (r.Item?.totalBalance ?? 0)  as number,
   };
 }
 
 async function writeFinancials(
   table: string, clientId: string,
-  accounts: AccountEntry[], holdings: HoldingEntry[], transactions: TxEntry[], totalBalance: number,
+  accounts: AccountEntry[], holdings: HoldingEntry[], totalBalance: number,
 ) {
   await docClient.send(new UpdateCommand({
     TableName: table,
     Key: { clientId },
-    UpdateExpression:
-      'SET accounts = :accs, holdings = :h, transactions = :tx, totalBalance = :tb',
+    UpdateExpression: 'SET accounts = :accs, holdings = :h, totalBalance = :tb',
     ExpressionAttributeValues: {
       ':accs': accounts,
       ':h':    holdings,
-      ':tx':   transactions,
       ':tb':   totalBalance,
     },
   }));
+}
+
+// Transactions now live as one item per row in the bobs-transactions table (not an
+// array on the client item). A freshly placed order is Pending (awaiting tonight's
+// NAV). Live rows use the real current date so they sort above the frozen demo history.
+const TXNS_TABLE = (): string => process.env.TRANSACTIONS_TABLE ?? 'bobs-transactions';
+
+function liveSeq(): number {
+  const now = new Date();
+  return now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
+}
+
+async function appendTransactionRows(
+  clientId: string,
+  inputs: Array<{ description: string; amount: number; account: string; accountId: string; type: TxnType }>,
+): Promise<void> {
+  const base = liveSeq();
+  await Promise.all(inputs.map((input, i) =>
+    docClient.send(new PutCommand({
+      TableName: TXNS_TABLE(),
+      Item: buildTransactionRow({
+        clientId,
+        seq: base + i,
+        date: today(),
+        status: 'Pending',
+        ...input,
+      }),
+    })),
+  ));
 }
 
 export const handler = async (
@@ -315,7 +340,7 @@ export const handler = async (
       // ── Purchase (real write) ─────────────────────────────────────────────
 
       case 'place-purchase': {
-        const { accounts, holdings, transactions, totalBalance } = await readClient(table, clientId);
+        const { accounts, holdings } = await readClient(table, clientId);
         const accountId = fields.accountId ?? accounts[0]?.id ?? '';
         const amount    = parseFloat(fields.amount ?? '0');
         const fundInfo  = matchFund(fields.fund ?? '');
@@ -352,15 +377,14 @@ export const handler = async (
         );
         const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
 
-        // Append transaction
-        transactions.unshift({
-          date: today(),
+        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await appendTransactionRows(clientId, [{
           description: `Purchase - ${fundInfo.name}`,
           amount: -amount,
           account: accountType,
-        });
-
-        await writeFinancials(table, clientId, updatedAccounts, holdings, transactions, Math.round(newTotal));
+          accountId,
+          type: 'purchase',
+        }]);
         return jsonResponse(200, {
           success: true,
           message: `Purchase order placed: $${fields.amount} into ${fundInfo.name}. Order executed at NAV.`,
@@ -371,7 +395,7 @@ export const handler = async (
       // ── Sale (real write) ─────────────────────────────────────────────────
 
       case 'place-sale': {
-        const { accounts, holdings, transactions } = await readClient(table, clientId);
+        const { accounts, holdings } = await readClient(table, clientId);
         const accountId = fields.accountId ?? accounts[0]?.id ?? '';
         const amount    = parseFloat(fields.amount ?? '0');
         const fundInfo  = matchFund(fields.fund ?? '');
@@ -404,14 +428,14 @@ export const handler = async (
         );
         const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
 
-        transactions.unshift({
-          date: today(),
+        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await appendTransactionRows(clientId, [{
           description: `Sale - ${fundInfo.name}`,
           amount: +amount,
           account: accountType,
-        });
-
-        await writeFinancials(table, clientId, updatedAccounts, holdings, transactions, Math.round(newTotal));
+          accountId,
+          type: 'sale',
+        }]);
         return jsonResponse(200, {
           success: true,
           message: `Sale order placed: $${fields.amount} of ${fundInfo.name}. Order executed at NAV.`,
@@ -422,7 +446,7 @@ export const handler = async (
       // ── Exchange (real write) ─────────────────────────────────────────────
 
       case 'exchange-funds': {
-        const { accounts, holdings, transactions } = await readClient(table, clientId);
+        const { accounts, holdings } = await readClient(table, clientId);
         const accountId  = fields.accountId ?? accounts[0]?.id ?? '';
         const amount     = parseFloat(fields.amount ?? '0');
         const fromFund   = matchFund(fields.fromFund ?? '');
@@ -464,15 +488,15 @@ export const handler = async (
           });
         }
 
-        transactions.unshift({
-          date: today(),
+        await writeFinancials(table, clientId, accounts, holdings,
+          accounts.reduce((s, a) => s + a.balance, 0));
+        await appendTransactionRows(clientId, [{
           description: `Exchange - ${fromFund.name} → ${toFund.name}`,
           amount: 0,
           account: accountType,
-        });
-
-        await writeFinancials(table, clientId, accounts, holdings, transactions,
-          accounts.reduce((s, a) => s + a.balance, 0));
+          accountId,
+          type: 'exchange',
+        }]);
         return jsonResponse(200, {
           success: true,
           message: `Exchange completed: $${fields.amount} from ${fromFund.name} to ${toFund.name}.`,
@@ -511,7 +535,7 @@ export const handler = async (
       // ── Withdrawal (real write) ───────────────────────────────────────────
 
       case 'request-withdrawal': {
-        const { accounts, holdings, transactions } = await readClient(table, clientId);
+        const { accounts, holdings } = await readClient(table, clientId);
         const accountId   = fields.accountId ?? accounts[0]?.id ?? '';
         const amount      = parseFloat(fields.amount ?? '0');
         const account     = accounts.find(a => a.id === accountId);
@@ -522,14 +546,14 @@ export const handler = async (
         );
         const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
 
-        transactions.unshift({
-          date: today(),
+        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await appendTransactionRows(clientId, [{
           description: `Distribution - ${fields.deliveryMethod ?? 'ACH'}`,
           amount: +amount,
           account: accountType,
-        });
-
-        await writeFinancials(table, clientId, updatedAccounts, holdings, transactions, Math.round(newTotal));
+          accountId,
+          type: 'withdrawal',
+        }]);
         return jsonResponse(200, {
           success: true,
           message: `Distribution of $${fields.amount} requested. Funds will arrive via ${fields.deliveryMethod} within 3–5 business days.`,
@@ -578,7 +602,7 @@ export const handler = async (
       // ── Open account (real write) ─────────────────────────────────────────
 
       case 'open-account': {
-        const { accounts, holdings, transactions } = await readClient(table, clientId);
+        const { accounts, holdings } = await readClient(table, clientId);
         const accountType   = fields.accountType ?? 'Taxable Account';
         const initialAmount = parseFloat(fields.initialAmount ?? '0');
         const newId         = 'acc-' + Math.random().toString(36).slice(2, 7);
@@ -592,16 +616,16 @@ export const handler = async (
         const updatedAccounts = [...accounts, newAccount];
         const newTotal        = updatedAccounts.reduce((s, a) => s + a.balance, 0);
 
+        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
         if (initialAmount > 0) {
-          transactions.unshift({
-            date: today(),
+          await appendTransactionRows(clientId, [{
             description: `Initial funding - ${accountType}`,
             amount: -initialAmount,
             account: accountType,
-          });
+            accountId: newId,
+            type: 'deposit',
+          }]);
         }
-
-        await writeFinancials(table, clientId, updatedAccounts, holdings, transactions, Math.round(newTotal));
         return jsonResponse(200, {
           success: true,
           message: `${accountType} opened successfully (ID: ${newId}). Confirmation email will arrive within 1 business day.`,
@@ -612,7 +636,7 @@ export const handler = async (
       // ── Roth conversion (real write) ──────────────────────────────────────
 
       case 'roth-conversion': {
-        const { accounts, holdings, transactions } = await readClient(table, clientId);
+        const { accounts, holdings } = await readClient(table, clientId);
         const fromAccountId = fields.fromAccountId ?? '';
         const amount        = parseFloat(fields.amount ?? '0');
         const fromAccount   = accounts.find(a => a.id === fromAccountId);
@@ -633,20 +657,23 @@ export const handler = async (
         });
         const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
 
-        transactions.unshift({
-          date: today(),
-          description: `Roth Conversion - from ${fromAccount.type}`,
-          amount: +amount,
-          account: 'Roth IRA',
-        });
-        transactions.unshift({
-          date: today(),
-          description: `Roth Conversion - from ${fromAccount.type}`,
-          amount: -amount,
-          account: fromAccount.type,
-        });
-
-        await writeFinancials(table, clientId, updatedAccounts, holdings, transactions, Math.round(newTotal));
+        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await appendTransactionRows(clientId, [
+          {
+            description: `Roth Conversion - from ${fromAccount.type}`,
+            amount: -amount,
+            account: fromAccount.type,
+            accountId: fromAccount.id,
+            type: 'exchange',
+          },
+          {
+            description: `Roth Conversion - from ${fromAccount.type}`,
+            amount: +amount,
+            account: 'Roth IRA',
+            accountId: rothAccount?.id ?? fromAccount.id,
+            type: 'exchange',
+          },
+        ]);
         return jsonResponse(200, {
           success: true,
           message: `Roth conversion of $${fields.amount} from ${fromAccount.type} submitted for tax year ${fields.taxYear}.`,

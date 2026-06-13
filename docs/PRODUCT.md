@@ -218,6 +218,19 @@ Keyed by `clientId`. Stores:
 - `rmd`: RMD delivery and withholding preferences
 - `intents`: recent chat intent history (for personalization)
 
+### DynamoDB — Transactions Table
+Keyed by `clientId` + a date-ordered sort key (one item per transaction), with a per-account
+secondary index. Holds each client's full transaction history back to account inception (seeded
+decades deep for all four demo personas), so the portal can page and filter large histories
+quickly instead of loading everything at once. Every transaction carries a **status** —
+*Scheduled, Pending, Settling, Completed,* or *Canceled* — reflecting the real mutual-fund order
+lifecycle (daily NAV pricing, next-business-day settlement). The client portal surfaces this on
+every transaction table (the Portfolio and account "Recent Transactions" lists plus a dedicated
+**Transaction History** page with filtering, search, sorting, and pagination); each status label
+has a subtle dotted underline and, on click, explains what the status means and what happens next.
+The chatbot and agent autopilot read the same data (including status) so they can answer "where's
+my trade?" accurately.
+
 ### DynamoDB — Sessions Table
 Keyed by `contactId`. Stores:
 - clientId, timestamp, status
@@ -232,12 +245,13 @@ Keyed by `contactId`. Stores:
 
 **BobsLambdaStack:** API Gateway + all 16 Lambda functions, EventBridge scheduler role, all environment variable wiring.
 
-Deploy command:
+Deploy command (guarded — typechecks, diffs, and refuses to delete/replace live resources):
 ```powershell
-$env:OPENAI_API_KEY = "sk-..."   # required — omitting breaks autopilot silently
 cd cdk
-npx cdk deploy BobsLambdaStack --require-approval never
+npm run deploy:lambda
 ```
+`OPENAI_API_KEY` is read from AWS SSM at deploy time (no shell variable needed). Raw `cdk deploy` is
+avoided because it will silently delete any resource missing from the branch being deployed.
 
 Frontend deployment: automatic via GitHub Actions on push to main (separate workflows for customer-app and agent-app). Manual deployment: build locally, copy dist to `.gh-pages-deploy` worktree, push to gh-pages branch.
 
@@ -274,4 +288,4 @@ Frontend deployment: automatic via GitHub Actions on push to main (separate work
 - **Financial advice is hard-blocked.** The bot and all task experts will refuse to provide personalized investment recommendations and will route to a callback with a financial advisor.
 - **Most tasks are mock executions.** Five tasks write to real data (beneficiaries, auto-invest x3, RMD settings). All others return confirmation messages without database writes. This is intentional for the demonstration environment.
 - **The client app requires a demo access code** (`VITE_DEMO_CODE`) to gate access.
-- **OpenAI key required at deploy time.** If `OPENAI_API_KEY` is not set in the shell before `cdk deploy`, the autopilot Lambda deploys without it and AI responses fail silently.
+- **OpenAI key is sourced from SSM at deploy time** (`bobs-openai-api-key`), resolved by CloudFormation — no shell variable required.

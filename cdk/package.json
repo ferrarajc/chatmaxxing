@@ -5,7 +5,9 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "deploy": "node scripts/safe-deploy.mjs",
+    "deploy:lambda": "node scripts/safe-deploy.mjs BobsDataStack BobsLambdaStack --require-approval never"
   },
   "devDependencies": {
     "@types/node": "22.x",

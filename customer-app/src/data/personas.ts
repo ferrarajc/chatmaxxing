@@ -63,7 +63,7 @@ export interface Persona {
   accounts: { type: string; balance: number; id: string; change: number }[];
   totalBalance: number;
   holdings: { name: string; ticker: string; accountId: string; shares: number; price: number; change: number; value: number }[];
-  transactions: { date: string; description: string; amount: number; account: string }[];
+  transactions: { date: string; description: string; amount: number; account: string; status?: string; accountId?: string }[];
   beneficiaries: Beneficiary[];
   autoInvest: AutoInvestSchedule[];
   rmd: RmdData;

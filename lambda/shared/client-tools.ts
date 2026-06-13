@@ -1,4 +1,4 @@
-import { GetCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from './dynamo-client';
 
 export interface OpenAITool {
@@ -40,7 +40,7 @@ export const ALL_CLIENT_TOOLS: OpenAITool[] = [
     type: 'function',
     function: {
       name: 'get_transactions',
-      description: "Fetch the client's recent transaction history (last 20 transactions): date, description, amount, and account.",
+      description: "Fetch the client's recent transaction history (last 20 transactions): date, description, amount, account, and status (Scheduled/Pending/Settling/Completed/Canceled).",
       parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
     },
   },
@@ -81,6 +81,7 @@ export const ALL_CLIENT_TOOLS: OpenAITool[] = [
 export const NBR_CLIENT_TOOLS = ALL_CLIENT_TOOLS;
 
 const TABLE = () => process.env.CLIENTS_TABLE ?? 'bobs-clients';
+const TXNS_TABLE = () => process.env.TRANSACTIONS_TABLE ?? 'bobs-transactions';
 const MAX_RESULT_CHARS = 2000;
 
 function cap(s: string): string {
@@ -160,13 +161,19 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
     }
 
     case 'get_transactions': {
-      const item = await fetchField(clientId, 'transactions');
-      const txns = (item.transactions as Array<{ date: string; description: string; amount: number; account: string }> | undefined) ?? [];
+      // Newest-first Query on the bobs-transactions table (PK clientId, SK txnSort).
+      const result = await docClient.send(new QueryCommand({
+        TableName: TXNS_TABLE(),
+        KeyConditionExpression: 'clientId = :c',
+        ExpressionAttributeValues: { ':c': clientId },
+        ScanIndexForward: false,
+        Limit: 20,
+      }));
+      const txns = (result.Items as Array<{ date: string; description: string; amount: number; account: string; status: string }> | undefined) ?? [];
       if (!txns.length) return 'No transactions on file.';
-      const recent = txns.slice(-20);
-      const lines = recent.map(t => {
+      const lines = txns.map(t => {
         const sign = t.amount >= 0 ? '+' : '';
-        return `${t.date} | ${sign}$${fmt(Math.abs(t.amount))} | ${t.description} | ${t.account}`;
+        return `${t.date} | ${sign}$${fmt(Math.abs(t.amount))} | ${t.description} | ${t.account} | ${t.status}`;
       });
       return cap(lines.join('\n'));
     }

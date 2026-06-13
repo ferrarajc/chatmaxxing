@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useClientStore } from '../../../store/clientStore';
+import { useRecentTransactions } from '../../../hooks/useRecentTransactions';
+import { StatusCell } from '../../common/StatusCell';
 import { theme } from '../../../theme';
 
 const COLORS = [
@@ -26,6 +28,10 @@ const headingStyle: React.CSSProperties = {
 export function PortfolioPage() {
   const { activePersona } = useClientStore();
   const allocationData = activePersona.accounts.map(a => ({ name: a.type, value: a.balance }));
+  const { rows: recentTxns } = useRecentTransactions(activePersona.clientId, {
+    limit: 8,
+    fallback: activePersona.transactions,
+  });
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
@@ -128,21 +134,27 @@ export function PortfolioPage() {
 
       {/* Transactions */}
       <div style={cardStyle}>
-        <h2 style={headingStyle}>Recent Transactions</h2>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+          <h2 style={headingStyle}>Recent Transactions</h2>
+          <Link to="/transactions" style={{ fontSize: 13, color: theme.color.primary, textDecoration: 'none', fontWeight: 600, flexShrink: 0 }}>
+            View all transactions →
+          </Link>
+        </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${theme.color.borderStrong}` }}>
-              {['Date', 'Description', 'Account', 'Amount'].map(h => (
+              {['Date', 'Description', 'Account', 'Status', 'Amount'].map(h => (
                 <th key={h} style={{ textAlign: h === 'Amount' ? 'right' : 'left', padding: '10px 0', color: theme.color.textMuted, fontWeight: 600, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {activePersona.transactions.map((t, i) => (
-              <tr key={i} style={{ borderBottom: `1px solid ${theme.color.border}` }}>
-                <td style={{ padding: '12px 0', color: theme.color.textMuted }}>{t.date}</td>
+            {recentTxns.map((t, i) => (
+              <tr key={t.txnId ?? i} style={{ borderBottom: `1px solid ${theme.color.border}` }}>
+                <td style={{ padding: '12px 0', color: theme.color.textMuted, whiteSpace: 'nowrap', paddingRight: 16 }}>{t.date}</td>
                 <td style={{ color: theme.color.text }}>{t.description}</td>
                 <td style={{ color: theme.color.textMuted }}>{t.account}</td>
+                <td><StatusCell status={t.status} /></td>
                 <td style={{ textAlign: 'right', fontWeight: 600, color: t.amount > 0 ? theme.color.success : theme.color.danger }}>
                   {t.amount > 0 ? '+' : ''}${Math.abs(t.amount).toFixed(2)}
                 </td>
