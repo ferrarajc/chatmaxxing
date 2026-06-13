@@ -165,14 +165,21 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 
 ## Deployment
 
-**Lambda (immediate):**
+**Lambda (immediate) — use the GUARDED command, never raw `cdk deploy`:**
 ```powershell
 cd cdk
-npx cdk deploy BobsLambdaStack --require-approval never
+npm run deploy:lambda          # DataStack + LambdaStack (typecheck + cdk diff + destroy-guard + deploy)
+# specific stacks/flags:  npm run deploy -- <Stack> [<Stack>...] --require-approval never
 ```
+`cdk/scripts/safe-deploy.mjs` typechecks, runs `cdk diff`, and **ABORTS if the deploy would remove or
+replace a live resource** (Lambda/route/integration/permission/table/GSI) unless `ALLOW_DESTROY=1` is set.
+This exists because deploying a branch that is missing a live resource makes CloudFormation DELETE it —
+a stale-branch deploy once removed `PinTranscriptFn` + its route this way. If the guard blocks with a
+REMOVE list, your branch is behind prod: rebase onto the current production tip (see Active Branch / Current
+State) and redeploy — don't reach for `ALLOW_DESTROY` unless the removal is genuinely intended.
 `OPENAI_API_KEY` is in AWS SSM (`bobs-openai-api-key`) — CloudFormation resolves it at deploy time, no shell variable needed.
 The `client-log` Lambda likewise reads `bobs-pagerdoodie-api-base` + `bobs-pagerdoodie-api-key` from SSM (same deploy-time resolution) so it can page the owner (via Pager Doodie) when someone enters the customer-site access code. The customer `AccessGate` fires a PROD-only fire-and-forget `POST /client-log {context:'access-code-entered'}` on a correct code; the gate's existing `bobs_access` localStorage flag means it only fires on a fresh/cleared browser.
-Typecheck first: `cd cdk; npx tsc --noEmit`
+(The guarded deploy runs `tsc --noEmit` for you — no separate typecheck step needed.)
 
 **Frontend (customer-app or agent-app — manual):**
 ```powershell
@@ -422,10 +429,10 @@ In-flight (uncommitted on `heqya/generalize`):
 
 ## Important Rules
 
-1. Always set `OPENAI_API_KEY` before `cdk deploy` or autopilot silently breaks
+1. `OPENAI_API_KEY` lives in SSM (`bobs-openai-api-key`) and resolves at deploy time — no shell var needed
 2. Never push directly to main — always use a PR
 3. When modifying `FORBIDDEN_TOPICS`, remember it affects ALL 19 task experts simultaneously
-4. When editing task prompts, typecheck before deploy: `cd cdk && npx tsc --noEmit`
+4. Deploy the backend ONLY via `npm run deploy:lambda` / `npm run deploy -- …` (guarded: typecheck + cdk diff + destroy-guard). Never raw `cdk deploy`. Never deploy a branch that's behind prod (see Deployment section)
 5. Lambda changes are live immediately after deploy; frontend changes require gh-pages push or PR merge
 6. **Update this file and `docs/PRODUCT.md` whenever making significant architectural changes**
 

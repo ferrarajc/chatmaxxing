@@ -245,12 +245,13 @@ Keyed by `contactId`. Stores:
 
 **BobsLambdaStack:** API Gateway + all 16 Lambda functions, EventBridge scheduler role, all environment variable wiring.
 
-Deploy command:
+Deploy command (guarded — typechecks, diffs, and refuses to delete/replace live resources):
 ```powershell
-$env:OPENAI_API_KEY = "sk-..."   # required — omitting breaks autopilot silently
 cd cdk
-npx cdk deploy BobsLambdaStack --require-approval never
+npm run deploy:lambda
 ```
+`OPENAI_API_KEY` is read from AWS SSM at deploy time (no shell variable needed). Raw `cdk deploy` is
+avoided because it will silently delete any resource missing from the branch being deployed.
 
 Frontend deployment: automatic via GitHub Actions on push to main (separate workflows for customer-app and agent-app). Manual deployment: build locally, copy dist to `.gh-pages-deploy` worktree, push to gh-pages branch.
 
@@ -287,4 +288,4 @@ Frontend deployment: automatic via GitHub Actions on push to main (separate work
 - **Financial advice is hard-blocked.** The bot and all task experts will refuse to provide personalized investment recommendations and will route to a callback with a financial advisor.
 - **Most tasks are mock executions.** Five tasks write to real data (beneficiaries, auto-invest x3, RMD settings). All others return confirmation messages without database writes. This is intentional for the demonstration environment.
 - **The client app requires a demo access code** (`VITE_DEMO_CODE`) to gate access.
-- **OpenAI key required at deploy time.** If `OPENAI_API_KEY` is not set in the shell before `cdk deploy`, the autopilot Lambda deploys without it and AI responses fail silently.
+- **OpenAI key is sourced from SSM at deploy time** (`bobs-openai-api-key`), resolved by CloudFormation — no shell variable required.

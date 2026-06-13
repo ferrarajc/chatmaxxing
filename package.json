@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "deploy": "cd cdk && npx cdk deploy --all"
+    "deploy": "cd cdk && npm run deploy:lambda"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1"
