@@ -1,9 +1,55 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, QueryCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { DEFAULT_CLIENT_DATA, ALL_CLIENT_IDS } from '../shared/client-defaults';
+import { generateClientTransactions, TransactionRow } from '../shared/transaction-history';
 
 const RESET_KEY = 'bobs-reset-2025';
+const TXNS_TABLE = (): string => process.env.TRANSACTIONS_TABLE ?? 'bobs-transactions';
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/** BatchWrite in chunks of 25, retrying UnprocessedItems (which fail silently). */
+async function batchWrite(table: string, requests: Record<string, unknown>[]): Promise<void> {
+  for (let i = 0; i < requests.length; i += 25) {
+    let batch = requests.slice(i, i + 25);
+    for (let attempt = 0; attempt < 6 && batch.length; attempt++) {
+      const res = await docClient.send(new BatchWriteCommand({ RequestItems: { [table]: batch } }));
+      const un = res.UnprocessedItems?.[table] ?? [];
+      batch = un as Record<string, unknown>[];
+      if (batch.length) await sleep(100 * (attempt + 1));
+    }
+  }
+}
+
+/** Delete all existing transaction rows for a client (so a re-seed can't orphan rows). */
+async function clearTransactions(clientId: string): Promise<void> {
+  const table = TXNS_TABLE();
+  let startKey: Record<string, unknown> | undefined;
+  const deletes: Record<string, unknown>[] = [];
+  do {
+    const res = await docClient.send(new QueryCommand({
+      TableName: table,
+      KeyConditionExpression: 'clientId = :c',
+      ExpressionAttributeValues: { ':c': clientId },
+      ProjectionExpression: 'clientId, txnSort',
+      ExclusiveStartKey: startKey,
+    }));
+    for (const it of res.Items ?? []) {
+      deletes.push({ DeleteRequest: { Key: { clientId: it.clientId, txnSort: it.txnSort } } });
+    }
+    startKey = res.LastEvaluatedKey as Record<string, unknown> | undefined;
+  } while (startKey);
+  if (deletes.length) await batchWrite(table, deletes);
+}
+
+/** Clear + reseed the generated transaction history for a client. Returns row count. */
+async function seedTransactions(clientId: string): Promise<number> {
+  await clearTransactions(clientId);
+  const rows: TransactionRow[] = generateClientTransactions(clientId);
+  await batchWrite(TXNS_TABLE(), rows.map(r => ({ PutRequest: { Item: r } })));
+  return rows.length;
+}
 
 function htmlResponse(status: number, body: string): APIGatewayProxyResultV2 {
   return {
@@ -38,13 +84,15 @@ export const handler = async (
         // Clear the "Continue this chat" continuation memory (lastAgentChat) as part of the
         // reset. The permanent transcript log (bobs-transcripts table) is intentionally NOT
         // touched here, so chats remain browsable in the Transcript Review tool.
+        // Transactions now live in the bobs-transactions table (seeded below) — REMOVE the
+        // legacy array off the client item.
         UpdateExpression:
           'SET #nm = :name, phone = :phone, displayPhone = :dp, ' +
           'email = :email, address = :addr, ' +
           'totalBalance = :tb, accounts = :accs, ' +
-          'holdings = :h, transactions = :tx, ' +
+          'holdings = :h, ' +
           'beneficiaries = :b, autoInvest = :ai, rmd = :rmd ' +
-          'REMOVE lastAgentChat',
+          'REMOVE lastAgentChat, transactions',
         ExpressionAttributeNames: { '#nm': 'name' },
         ExpressionAttributeValues: {
           ':name':  d.name,
@@ -55,13 +103,13 @@ export const handler = async (
           ':tb':    d.totalBalance,
           ':accs':  d.accounts,
           ':h':     d.holdings,
-          ':tx':    d.transactions,
           ':b':     d.beneficiaries,
           ':ai':    d.autoInvest,
           ':rmd':   d.rmd,
         },
       }));
-      results.push(`<li class="ok">✓ ${clientId} — ${d.name} reset successfully</li>`);
+      const txnCount = await seedTransactions(clientId);
+      results.push(`<li class="ok">✓ ${clientId} — ${d.name} reset successfully (${txnCount} transactions seeded)</li>`);
     } catch (err) {
       errorOccurred = true;
       results.push(`<li class="err">✗ ${clientId} — ${String(err)}</li>`);

@@ -14,6 +14,7 @@ interface LambdaStackProps extends cdk.StackProps {
   chatSessionsTable: dynamodb.Table;
   callbacksTable: dynamodb.Table;
   transcriptsTable: dynamodb.Table;
+  transactionsTable: dynamodb.Table;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -24,7 +25,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable } = props;
 
     // ── Shared base config ─────────────────────────────────────────
     const baseEnv: Record<string, string> = {
@@ -32,6 +33,7 @@ export class LambdaStack extends cdk.Stack {
       SESSIONS_TABLE: chatSessionsTable.tableName,
       CALLBACKS_TABLE: callbacksTable.tableName,
       TRANSCRIPTS_TABLE: transcriptsTable.tableName,
+      TRANSACTIONS_TABLE: transactionsTable.tableName,
       BEDROCK_MODEL_ID: 'us.amazon.nova-micro-v1:0',
       BEDROCK_REGION: this.region,
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
@@ -157,6 +159,7 @@ export class LambdaStack extends cdk.Stack {
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     clientsTable.grantReadData(nextBestResponseFn);
+    transactionsTable.grantReadData(nextBestResponseFn);
     nextBestResponseFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
       resources: ['*'],
@@ -205,6 +208,7 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
     clientsTable.grantReadData(autopilotTurnFn);
+    transactionsTable.grantReadData(autopilotTurnFn);
 
     // ── generate-acw ──────────────────────────────────────────────
     const generateAcwFn = new NodejsFunction(this, 'GenerateAcwFn', {
@@ -305,6 +309,7 @@ export class LambdaStack extends cdk.Stack {
     });
     clientsTable.grantReadWriteData(executeTaskFn);
     callbacksTable.grantReadWriteData(executeTaskFn);
+    transactionsTable.grantReadWriteData(executeTaskFn);
 
     // ── reset-beneficiaries (browser-accessible demo reset endpoint) ─
     const resetBeneficiariesFn = new NodejsFunction(this, 'ResetBeneficiariesFn', {
@@ -327,12 +332,15 @@ export class LambdaStack extends cdk.Stack {
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
       entry: path.join(lambdaDir, 'reset-all-data/handler.ts'),
-      timeout: cdk.Duration.seconds(15),
-      memorySize: 256,
+      // Seeds thousands of transaction rows across 4 clients via BatchWrite — needs
+      // more headroom than the other 15s/256MB demo Lambdas.
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
       environment: baseEnv,
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     clientsTable.grantReadWriteData(resetClientDataFn);
+    transactionsTable.grantReadWriteData(resetClientDataFn);
 
     // ── client-data (beneficiaries / auto-invest / RMD read+write) ─
     const clientDataFn = new NodejsFunction(this, 'ClientDataFn', {
@@ -347,6 +355,7 @@ export class LambdaStack extends cdk.Stack {
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
     clientsTable.grantReadWriteData(clientDataFn);
+    transactionsTable.grantReadWriteData(clientDataFn);
 
     // ── save-transcript ────────────────────────────────────────────
     const saveTranscriptFn = new NodejsFunction(this, 'SaveTranscriptFn', {

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useClientStore } from '../../../store/clientStore';
 import { post } from '../../../api/client';
+import { useRecentTransactions } from '../../../hooks/useRecentTransactions';
+import { StatusCell } from '../../common/StatusCell';
 import { theme } from '../../../theme';
 
 interface LiveBeneficiary {
@@ -37,9 +39,11 @@ export function AccountDetailPage() {
   const account = activePersona.accounts.find(a => a.id === accountId);
   const holdings  = activePersona.holdings.filter(h => h.accountId === accountId);
   const autoInvest = activePersona.autoInvest.filter(s => s.accountId === accountId);
-  const transactions = activePersona.transactions.filter(t =>
-    account && t.account === account.type,
-  );
+  const { rows: transactions } = useRecentTransactions(activePersona.clientId, {
+    accountId,
+    limit: 8,
+    fallback: activePersona.transactions.filter(t => account && t.account === account.type),
+  });
 
   const isIra = account ? isRetirementAccount(account.type) : false;
   const rmd = activePersona.rmd;
@@ -252,20 +256,27 @@ export function AccountDetailPage() {
       {/* Recent transactions */}
       {transactions.length > 0 && (
         <div style={S.card}>
-          <h2 style={{ margin: '0 0 16px', fontSize: 18, fontFamily: theme.font.serif }}>Recent Transactions</h2>
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 18, position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: theme.font.serif }}>Recent Transactions</h2>
+            <Link to={`/transactions?account=${account.id}`} style={{ fontSize: 13, color: theme.color.primary, textDecoration: 'none', fontWeight: 500 }}>
+              View all →
+            </Link>
+          </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
               <tr style={{ borderBottom: `2px solid ${theme.color.border}` }}>
                 <th style={{ ...S.th, textAlign: 'left' }}>Date</th>
                 <th style={{ ...S.th, textAlign: 'left' }}>Description</th>
+                <th style={{ ...S.th, textAlign: 'left' }}>Status</th>
                 <th style={{ ...S.th, textAlign: 'right' }}>Amount</th>
               </tr>
             </thead>
             <tbody>
               {transactions.map((t, i) => (
-                <tr key={i}>
+                <tr key={t.txnId ?? i}>
                   <td style={{ ...S.td, color: theme.color.textMuted, whiteSpace: 'nowrap', paddingRight: 24 }}>{t.date}</td>
                   <td style={S.td}>{t.description}</td>
+                  <td style={S.td}><StatusCell status={t.status} /></td>
                   <td style={{ ...S.td, textAlign: 'right', fontWeight: 600, color: t.amount >= 0 ? theme.color.success : theme.color.danger }}>
                     {t.amount >= 0 ? '+' : ''}${Math.abs(t.amount).toFixed(2)}
                   </td>

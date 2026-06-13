@@ -21,6 +21,7 @@ const lambdaStack = new LambdaStack(app, 'BobsLambdaStack', {
   chatSessionsTable: dataStack.chatSessionsTable,
   callbacksTable: dataStack.callbacksTable,
   transcriptsTable: dataStack.transcriptsTable,
+  transactionsTable: dataStack.transactionsTable,
 });
 lambdaStack.addDependency(dataStack);
 

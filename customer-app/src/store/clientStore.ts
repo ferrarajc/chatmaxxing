@@ -204,6 +204,8 @@ export const useClientStore = create<ClientStore>((set, get) => {
         description: `Purchase - ${fundName}`,
         amount: -amount,
         account: accountType,
+        accountId,
+        status: 'Pending',
       };
       const newTransactions = [newTxn, ...activePersona.transactions];
 
@@ -223,10 +225,14 @@ export const useClientStore = create<ClientStore>((set, get) => {
         },
       }));
 
-      // Persist to DynamoDB
+      // Persist to DynamoDB. Transactions are appended as a single Pending row to the
+      // bobs-transactions table (the whole-array put-transactions write is deprecated).
       await Promise.all([
         post<{ ok: boolean }>('/client-data', { action: 'put-holdings', clientId, data: newHoldings }),
-        post<{ ok: boolean }>('/client-data', { action: 'put-transactions', clientId, data: newTransactions }),
+        post<{ ok: boolean }>('/client-data', {
+          action: 'append-transaction', clientId,
+          data: { description: newTxn.description, amount: newTxn.amount, account: accountType, accountId, type: 'purchase', status: 'Pending' },
+        }),
         post<{ ok: boolean }>('/client-data', {
           action: 'put-profile', clientId,
           data: {

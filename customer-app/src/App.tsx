@@ -17,6 +17,7 @@ import { FundProfilePage } from './components-v2/pages/research/FundProfilePage'
 import { BuyPage } from './components-v2/pages/research/BuyPage';
 import { AccountPage } from './components-v2/pages/account/AccountPage';
 import { AccountDetailPage } from './components-v2/pages/account/AccountDetailPage';
+import { TransactionHistoryPage } from './components-v2/pages/transactions/TransactionHistoryPage';
 import { BeneficiariesPage } from './components-v2/pages/account/BeneficiariesPage';
 import { AutoInvestPage } from './components-v2/pages/account/AutoInvestPage';
 import { RmdPage } from './components-v2/pages/account/RmdPage';
@@ -87,6 +88,7 @@ export default function App() {
               <Route path="/research/fund/:ticker/buy" element={<BuyPage />} />
               <Route path="/account" element={<AccountPage />} />
               <Route path="/account/detail/:accountId" element={<AccountDetailPage />} />
+              <Route path="/transactions" element={<TransactionHistoryPage />} />
               <Route path="/account/beneficiaries" element={<BeneficiariesPage />} />
               <Route path="/account/auto-invest" element={<AutoInvestPage />} />
               <Route path="/account/rmd" element={<RmdPage />} />
