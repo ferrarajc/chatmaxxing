@@ -218,6 +218,19 @@ Keyed by `clientId`. Stores:
 - `rmd`: RMD delivery and withholding preferences
 - `intents`: recent chat intent history (for personalization)
 
+### DynamoDB — Transactions Table
+Keyed by `clientId` + a date-ordered sort key (one item per transaction), with a per-account
+secondary index. Holds each client's full transaction history back to account inception (seeded
+decades deep for all four demo personas), so the portal can page and filter large histories
+quickly instead of loading everything at once. Every transaction carries a **status** —
+*Scheduled, Pending, Settling, Completed,* or *Canceled* — reflecting the real mutual-fund order
+lifecycle (daily NAV pricing, next-business-day settlement). The client portal surfaces this on
+every transaction table (the Portfolio and account "Recent Transactions" lists plus a dedicated
+**Transaction History** page with filtering, search, sorting, and pagination); each status label
+has a subtle dotted underline and, on click, explains what the status means and what happens next.
+The chatbot and agent autopilot read the same data (including status) so they can answer "where's
+my trade?" accurately.
+
 ### DynamoDB — Sessions Table
 Keyed by `contactId`. Stores:
 - clientId, timestamp, status

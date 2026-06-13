@@ -155,6 +155,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Proposed-action evidence highlighting | Lambda: `locate-evidence` scope in `autopilot-turn/handler.ts` (`locateEvidence`, `LOCATE_EVIDENCE_PROMPT`). Frontend: `ChatColumn.tsx` (`evidencePromise` in `runAutopilotTurn`, `bobs:evidenceJump` listener, `MessageBubble` highlights) + same render half in `FocusingDesktop.tsx` (`FocusMessageBubble`) + ⌖ buttons in `ProposedActionCard.tsx` + `utils/evidenceHighlight.tsx` (span renderer) + `EvidenceSpan`/`proposedActionEvidence` in `types/index.ts`. Highlights/⌖ only render while the card is visible; evidence is keyed by message `id` and cleared on submit/reject. |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |
+| Transaction tables + history + status | Data: `bobs-transactions` table (`cdk/lib/data-stack.ts`), generator `lambda/shared/transaction-history.ts`, statuses `lambda/shared/transaction-status.ts`. API: `lambda/client-data/handler.ts` (`get-recent-transactions`/`get-transactions-page`/`append-transaction`). Frontend: `customer-app/src/data/transactionStatus.ts` (display copy), `components-v2/common/StatusCell.tsx` (dotted-underline popover), `hooks/useRecentTransactions.ts`, recent tables in `PortfolioPage.tsx` + `account/AccountDetailPage.tsx`, full page `components-v2/pages/transactions/TransactionHistoryPage.tsx` (route `/transactions`). Writes: `execute-task/handler.ts` (`appendTransactionRows`). Seed/clear: `reset-all-data/handler.ts`. |
 | Research fund lineup (36 funds) | `customer-app/src/data/funds.ts` (static profiles + `group` field) **and** `lambda/market-data/handler.ts` → `FUND_MAP` (ticker→Vanguard realSymbol for live Yahoo quotes). Keep the two in sync. The Research index page (`components-v2/pages/research/ResearchPage.tsx`) is a search/filter/sortable screener grouped by `group`. |
 | Intent summary label | `lambda/start-chat/handler.ts` → intentLabel prompt |
 | Agent greeting | `lambda/start-chat/handler.ts` → intentGreeting prompt |
@@ -201,7 +202,8 @@ GitHub Actions deploys customer-app to root of gh-pages, agent-app to `/agent`. 
   totalBalance,
   accounts: [{type, balance, id, change}],
   holdings: [{name, ticker, accountId, shares, price, change, value, drip?}],
-  transactions: [{date, description, amount, account}],
+  // transactions are NO LONGER stored here — they live in the bobs-transactions table
+  // (one item per row, see below). The legacy array is REMOVEd on reset.
   beneficiaries: [{accountId, name, relationship, percentage, type}],
   autoInvest: [{id, accountId, accountType, fund, ticker, amount, frequency, dayOfMonth?, nextDate, active, type?}],
   rmd: {eligible, age?, annualRmd?, takenThisYear?, remainingThisYear?, nextDeadline?, distributions?, deliveryMethod?, frequency?, taxWithholding?, ...},
@@ -214,6 +216,18 @@ GitHub Actions deploys customer-app to root of gh-pages, agent-app to `/agent`. 
 
 All fields for all 4 demo clients are seeded via `GET /reset-client-data?key=bobs-reset-2025`
 (which also clears `lastAgentChat`). Factory defaults live in `lambda/shared/client-defaults.ts`.
+
+Transactions Table (`bobs-transactions`): one item per transaction so histories can run
+back to an account's inception without the 400KB client-item cap. `{ clientId (PK),
+txnSort (SK) = "<ISOdate>#<seq>", acctKey = "<clientId>#<accountId>" (GSI `account-index` PK),
+txnId, date, description, descLower, amount, account, accountId, status, type }`. Newest-first
+= Query with `ScanIndexForward:false`. Statuses (`Scheduled/Pending/Settling/Completed/Canceled`)
+come from `lambda/shared/transaction-status.ts` (`assignStatus` by date vs the frozen `DEMO_TODAY`
+= 2025-04-15). Seeded by a deterministic generator (`lambda/shared/transaction-history.ts`) via
+`reset-all-data` (~2,100 rows across the 4 personas; idempotent). Read via `client-data` actions
+`get-recent-transactions` / `get-transactions-page` (paginated, base64 cursor) and the shared
+`get_transactions` tool (now includes status). Live trades (`execute-task`, `clientStore.buyFund`)
+PutItem a `Pending` row dated the real today.
 
 Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 30 days) }`
 
@@ -257,7 +271,22 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ---
 
-## Active Branch / Current State (as of 2026-06-11)
+## Active Branch / Current State (as of 2026-06-13)
+
+In flight (`feature/transaction-history`, branched on top of `feature/type3-client-submit`):
+**Full transaction history + per-row Status column.** Transactions moved off the client item
+into the dedicated `bobs-transactions` table (see DynamoDB Schema above) so histories run back to
+each account's inception. New `/transactions` page (filter by account/status, description search,
+date sort + client-side amount sort, cursor "Load more"); both recent-transactions tables gained a
+**Status** column with a subtle dotted-underline label that pops a definition + "what to expect"
+on click (`StatusCell.tsx`). Realistic decades-deep histories seeded for all 4 personas
+(~2,100 rows, deterministic). Chatbot + agent autopilot see status via the shared `get_transactions`
+tool. Lambdas (`BobsDataStack` + `BobsLambdaStack`) deployed + seeded via `/reset-client-data`.
+Frontend pending gh-pages/PR merge. NOTE: this branch sits on top of `feature/type3-client-submit`
+(the deployed-but-unmerged prod tip) — deploying a `main`-based branch would revert the
+pin-transcript + Type 3 Lambdas, so any Lambda deploy must include that tip.
+
+## Active Branch / Current State (prior — as of 2026-06-11)
 
 In flight (uncommitted): **Type 3 (client-submitted) tasks — `add-account-access`**. Tasks now carry
 a `submissionType` (`'agent'` default / `'licensed-agent'` reserved / `'client'`). For a Type 3 task
