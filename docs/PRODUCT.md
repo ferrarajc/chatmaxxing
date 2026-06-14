@@ -245,15 +245,14 @@ Keyed by `contactId`. Stores:
 
 **BobsLambdaStack:** API Gateway + all 16 Lambda functions, EventBridge scheduler role, all environment variable wiring.
 
-Deploy command (guarded — typechecks, diffs, and refuses to delete/replace live resources):
-```powershell
-cd cdk
-npm run deploy:lambda
-```
-`OPENAI_API_KEY` is read from AWS SSM at deploy time (no shell variable needed). Raw `cdk deploy` is
-avoided because it will silently delete any resource missing from the branch being deployed.
-
-Frontend deployment: automatic via GitHub Actions on push to main (separate workflows for customer-app and agent-app). Manual deployment: build locally, copy dist to `.gh-pages-deploy` worktree, push to gh-pages branch.
+**Environments & deployment.** Two environments built from the same CDK code: **prod** and an
+isolated **dev** (`bobs-*-dev`, ~$0 idle) for testing before prod. **Everything deploys from `main`:**
+merging triggers GitHub Actions that deploy the backend (CDK via OIDC, `deploy-cdk.yml`) and the
+frontends (gh-pages). Deploys are guarded — `cdk/scripts/safe-deploy.mjs` typechecks, diffs, and
+refuses to delete/replace a live resource — so a stale-branch deploy can't silently remove prod
+infrastructure. `OPENAI_API_KEY` resolves from AWS SSM at deploy time (no shell variable). Engineers
+test backend changes on dev (`npm run deploy:dev` + `npm run dev`) before opening a PR. A $15/month
+budget alarm guards spend. **Full developer process: `docs/PROCESS.md`.**
 
 ---
 

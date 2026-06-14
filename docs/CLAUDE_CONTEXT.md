@@ -61,7 +61,8 @@ chatmaxxing/
 ├── docs/
 │   ├── PRODUCT.md         Full product description (human-readable)
 │   └── CLAUDE_CONTEXT.md  This file
-└── .gh-pages-deploy/      Git worktree pointing to gh-pages branch (manual frontend deploys)
+└── .gh-pages-deploy/      gh-pages worktree (gitignored). NOT for app frontends (those deploy via
+                           Actions) — only the gh-pages-only transcripts/ review tool.
 ```
 
 ---
@@ -188,22 +189,19 @@ State) and redeploy — don't reach for `ALLOW_DESTROY` unless the removal is ge
 The `client-log` Lambda likewise reads `bobs-pagerdoodie-api-base` + `bobs-pagerdoodie-api-key` from SSM (same deploy-time resolution) so it can page the owner (via Pager Doodie) when someone enters the customer-site access code. The customer `AccessGate` fires a PROD-only fire-and-forget `POST /client-log {context:'access-code-entered'}` on a correct code; the gate's existing `bobs_access` localStorage flag means it only fires on a fresh/cleared browser.
 (The guarded deploy runs `tsc --noEmit` for you — no separate typecheck step needed.)
 
-**Frontend (customer-app or agent-app — manual):**
-```powershell
-cd customer-app   # or agent-app
-npm run build
-# Then copy dist to .gh-pages-deploy:
-# For customer-app: copy dist/assets/*.js to .gh-pages-deploy/assets/, copy dist/index.html to .gh-pages-deploy/
-# For agent-app: copy dist/* to .gh-pages-deploy/agent/
-cd .gh-pages-deploy
-git add [files]; git commit -m "Deploy [app] — [description]"; git push origin gh-pages
-```
-`.gh-pages-deploy` is a git worktree on the gh-pages branch. DO NOT nest assets into subdirectories.
+**Frontend — CANONICAL: automatic on merge to main.**
+GitHub Actions (`deploy-customer-app` / `deploy-agent-app`) build and publish on merge — customer-app
+to the gh-pages root, agent-app to `/agent` — stamped with the commit SHA (`window.__BUILD__`).
+You do not build/copy frontends by hand.
 
-**Frontend (automatic on merge to main):**
-GitHub Actions deploys customer-app to root of gh-pages, agent-app to `/agent`. Triggered by changes to their respective directories.
+**Frontend — manual (fallback only).** The `.gh-pages-deploy` worktree (now gitignored) is kept only
+for the gh-pages-only **transcripts/** review tool, which has no main-branch source. App frontends go
+via Actions; don't hand-deploy them. (To deploy the transcripts tool: edit `.gh-pages-deploy/transcripts/`
+and push the gh-pages branch.)
 
-**PR workflow:** All changes must go through a PR — never push directly to main. Feature branches → PR → merge.
+**PR / deploy workflow:** branch off `main` → test on **dev** (`npm run deploy:dev` + `npm run dev`) →
+PR (CI gates frontends + CDK typecheck + Lambda bundle) → merge → Actions auto-deploy to prod. Never
+push directly to `main`. Full detail + how to see what's live + rollback: `docs/PROCESS.md`.
 
 ---
 
@@ -285,20 +283,28 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ---
 
-## Active Branch / Current State (as of 2026-06-13)
+## Active Branch / Current State (as of 2026-06-14)
 
-In flight (`feature/transaction-history`, branched on top of `feature/type3-client-submit`):
-**Full transaction history + per-row Status column.** Transactions moved off the client item
-into the dedicated `bobs-transactions` table (see DynamoDB Schema above) so histories run back to
-each account's inception. New `/transactions` page (filter by account/status, description search,
-date sort + client-side amount sort, cursor "Load more"); both recent-transactions tables gained a
-**Status** column with a subtle dotted-underline label that pops a definition + "what to expect"
-on click (`StatusCell.tsx`). Realistic decades-deep histories seeded for all 4 personas
-(~2,100 rows, deterministic). Chatbot + agent autopilot see status via the shared `get_transactions`
-tool. Lambdas (`BobsDataStack` + `BobsLambdaStack`) deployed + seeded via `/reset-client-data`.
-Frontend pending gh-pages/PR merge. NOTE: this branch sits on top of `feature/type3-client-submit`
-(the deployed-but-unmerged prod tip) — deploying a `main`-based branch would revert the
-pin-transcript + Type 3 Lambdas, so any Lambda deploy must include that tip.
+**`main` == production.** No in-flight feature branches — everything below has merged and deployed.
+The earlier divergence (work deployed before its PR merged, so `main` lagged prod) is resolved and
+structurally prevented. **For how we build/test/ship now, `docs/PROCESS.md` is canonical** — it
+supersedes any older "deploy from a laptop / Lambda deploys are immediate" phrasing elsewhere.
+
+Recently shipped (all merged to `main` + deployed):
+- **Dev/prod environments + CI/CD + guardrails** (PR #86): CDK is stage-parameterized — prod is
+  byte-identical, `STAGE=dev` gives an isolated `bobs-*-dev` env for testing before prod
+  (`npm run deploy:dev`; local `npm run dev` → dev data via `.env.development`). Prod backend
+  **auto-deploys from `main`** via GitHub OIDC (`deploy-cdk.yml` + `BobsCicdStack` role) through the
+  destroy-guard (`cdk/scripts/safe-deploy.mjs`, also `npm run deploy:lambda` as manual fallback).
+  `BobsBudgetStack` = $15/mo alert. PR check now also typechecks CDK + bundle-checks Lambdas
+  (`build` + `backend` both required). Build SHA stamped into both apps.
+- **Full transaction history + Status column** (PR #85): transactions live in the dedicated
+  `bobs-transactions` table (see DynamoDB Schema); `/transactions` page (filter/search/sort/paginate);
+  dotted-underline status popover (`StatusCell.tsx`); decades-deep deterministic seed for all 4
+  personas; status exposed to chatbot + autopilot via `get_transactions`.
+- **Type 3 client-submitted proposed actions** (PR #84) and **chat history pin/unpin** (PR #83).
+
+Older historical batches (kept for reference) follow.
 
 ## Active Branch / Current State (prior — as of 2026-06-11)
 

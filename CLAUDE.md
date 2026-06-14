@@ -15,8 +15,8 @@ Whenever you make changes that affect architecture, add/modify tasks, change dep
 ## Key Rules
 
 - Never push directly to main. All changes go through a PR.
+- **`main` == production.** Merging to `main` is what deploys: GitHub Actions deploy the backend (CDK) and the frontends. You don't deploy prod by hand — test on the **dev** environment first. See the Deploying section below and `docs/PROCESS.md`.
 - `OPENAI_API_KEY` is stored in AWS SSM (`bobs-openai-api-key`) and resolved by CloudFormation at deploy time — no shell variable needed.
-- Lambda deploys are immediate. Frontend changes require a gh-pages push or PR merge to go live.
 - When modifying `FORBIDDEN_TOPICS` in `autopilot-turn/handler.ts`, remember it applies to all 19 task experts simultaneously — scope changes carefully.
 
 ## Deploying — read before any deploy (full detail in `docs/PROCESS.md`)
