@@ -34,3 +34,25 @@ jobs:
           VITE_AWS_REGION: 'us-east-1'
           VITE_CONNECT_INSTANCE_URL: 'https://placeholder.example.com'
           VITE_DEMO_CODE: 'demo'
+
+  # Backend gate: typecheck the CDK and verify every Lambda handler bundles (catches
+  # syntax/import breakage). Mirrors the guarded deploy's checks, but BEFORE merge.
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck CDK
+        run: npx tsc --noEmit
+        working-directory: cdk
+
+      - name: Bundle-check Lambdas
+        run: npx esbuild lambda/*/handler.ts --bundle --platform=node --target=node20 "--external:@aws-sdk/*" --outdir="${RUNNER_TEMP}/lambda-bundle-check"

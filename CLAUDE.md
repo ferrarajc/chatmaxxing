@@ -4,6 +4,8 @@
 
 Before doing any work, read `docs/CLAUDE_CONTEXT.md`. It contains the architecture map, file locations, deployment instructions, key patterns, and current branch state. Reading it takes ~60 seconds and prevents most orientation mistakes.
 
+For how we build, test, and ship — environments (dev vs prod), the branch → dev-test → PR → auto-deploy loop, and how to see what's in prod — see **`docs/PROCESS.md`**.
+
 For the full product description (human-readable, PM-style), see `docs/PRODUCT.md`.
 
 ## Document Maintenance
@@ -17,23 +19,22 @@ Whenever you make changes that affect architecture, add/modify tasks, change dep
 - Lambda deploys are immediate. Frontend changes require a gh-pages push or PR merge to go live.
 - When modifying `FORBIDDEN_TOPICS` in `autopilot-turn/handler.ts`, remember it applies to all 19 task experts simultaneously — scope changes carefully.
 
-## Deploying the backend (CDK) — read before any deploy
+## Deploying — read before any deploy (full detail in `docs/PROCESS.md`)
 
-CloudFormation reconciles a stack to whatever template you deploy, so deploying a branch that is
-**missing** a resource that exists in production **deletes that resource**. This has bitten us
-(a stale-branch deploy removed a live Lambda + route). Two standing rules:
+**Prod deploys happen automatically via GitHub Actions on merge to `main`** (`deploy-cdk.yml` for the
+backend via OIDC; `deploy-customer-app` / `deploy-agent-app` for the frontends). You normally don't
+deploy prod by hand. Test backend changes in the **dev** environment first: `cd cdk; npm run deploy:dev`,
+then `npm run dev` (which targets the dev API + dev data, never prod).
 
-1. **Deploy only through the guarded command — never raw `cdk deploy`:**
+CloudFormation reconciles a stack to whatever template you deploy, so deploying a branch **missing** a
+resource that exists in prod **deletes it** (this has bitten us). Therefore:
+
+1. **Deploy only through the guarded command — never raw `cdk deploy`.** `scripts/safe-deploy.mjs`
+   typechecks, runs `cdk diff`, and **aborts if the deploy would remove or replace a live resource**
+   (override only with `ALLOW_DESTROY=1`). Used by CI and by the manual escape hatch:
    ```powershell
-   cd cdk; npm run deploy:lambda        # = DataStack + LambdaStack, the normal case
-   # or, for specific stacks / flags:
-   cd cdk; npm run deploy -- <Stack> [<Stack>...] --require-approval never
+   cd cdk; npm run deploy:dev      # backend → DEV (on demand)
+   cd cdk; npm run deploy:lambda   # backend → PROD (CI does this on merge; manual fallback)
    ```
-   `scripts/safe-deploy.mjs` typechecks, runs `cdk diff`, and **aborts if the deploy would remove
-   or replace any live resource** unless you set `ALLOW_DESTROY=1` for a genuinely intended removal.
-   It replaces the old `npx tsc --noEmit` + `cdk deploy` steps (both are now built in).
-
-2. **Only deploy from a branch that is up to date with what's deployed.** `main` can lag behind
-   production when work is deployed before its PR merges (see `docs/CLAUDE_CONTEXT.md` → current
-   state). Before deploying, branch off / rebase onto the current production tip, not blindly off
-   `main`. If `npm run deploy` blocks with a REMOVE list, that's this rule firing — rebase, don't override.
+2. **Only deploy from `main` (or a branch current with it).** If `npm run deploy` blocks with a
+   REMOVE list, your branch is behind prod — rebase onto `main`, don't reach for `ALLOW_DESTROY`.

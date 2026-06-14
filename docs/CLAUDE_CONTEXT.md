@@ -165,6 +165,13 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 
 ## Deployment
 
+**Full process (environments, dev/PR/auto-deploy loop, transparency, rollback): `docs/PROCESS.md`.**
+Summary: **prod deploys automatically on merge to `main`** (GitHub Actions: `deploy-cdk.yml` via OIDC
+for the backend, `deploy-customer-app`/`deploy-agent-app` for the frontends). There's an isolated
+**dev** environment (`bobs-*-dev` tables + `BobsLambdaStack-dev`, API `1cppcq9q57…`) for testing before
+prod — `cd cdk; npm run deploy:dev`, then `npm run dev` (which targets dev via `.env.development`).
+The commands below are the manual escape hatch / dev deploy.
+
 **Lambda (immediate) — use the GUARDED command, never raw `cdk deploy`:**
 ```powershell
 cd cdk
