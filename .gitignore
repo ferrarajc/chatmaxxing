@@ -10,3 +10,8 @@ cdk.out/
 test-results/
 playwright-report/
 scripts/quality-loop/results/
+
+# Local git worktrees — must never be committed as gitlinks (a committed worktree
+# has no .gitmodules URL and breaks `git submodule` cleanup on every checkout).
+.claude/worktrees/
+/.gh-pages-deploy
