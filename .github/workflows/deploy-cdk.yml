@@ -1,0 +1,48 @@
+name: Deploy CDK (prod)
+
+# Deploys the backend (DynamoDB + Lambdas + API) to PRODUCTION on merge to main.
+# This makes "main == prod" an enforced invariant — backend deploys no longer happen from
+# laptops. Auth is via GitHub OIDC (no stored AWS keys); see cdk/lib/cicd-stack.ts.
+# The guarded deploy (cdk/scripts/safe-deploy.mjs) typechecks, diffs, and refuses to delete
+# or replace live resources.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cdk/**'
+      - 'lambda/**'
+      - '.github/workflows/deploy-cdk.yml'
+  workflow_dispatch: {}   # manual run (also used to validate the OIDC chain)
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+concurrency:
+  group: deploy-cdk-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production   # OIDC sub is scoped to this environment in the deploy role's trust policy
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::192875559617:role/bobs-github-deploy
+          aws-region: us-east-1
+
+      - name: Guarded deploy to prod (typecheck + cdk diff + destroy-guard + deploy)
+        working-directory: cdk
+        run: npm run deploy:lambda

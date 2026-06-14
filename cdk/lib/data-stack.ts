@@ -2,6 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
+interface DataStackProps extends cdk.StackProps {
+  stage?: string;
+}
+
 export class DataStack extends cdk.Stack {
   public readonly clientsTable: dynamodb.Table;
   public readonly chatSessionsTable: dynamodb.Table;
@@ -9,12 +13,15 @@ export class DataStack extends cdk.Stack {
   public readonly transcriptsTable: dynamodb.Table;
   public readonly transactionsTable: dynamodb.Table;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: DataStackProps) {
     super(scope, id, props);
+
+    // '' for prod (names unchanged), '-<stage>' otherwise.
+    const sfx = props?.stage && props.stage !== 'prod' ? `-${props.stage}` : '';
 
     // ── Clients table ──────────────────────────────────────────────
     this.clientsTable = new dynamodb.Table(this, 'ClientsTable', {
-      tableName: 'bobs-clients',
+      tableName: `bobs-clients${sfx}`,
       partitionKey: { name: 'clientId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -22,7 +29,7 @@ export class DataStack extends cdk.Stack {
 
     // ── Chat sessions table ────────────────────────────────────────
     this.chatSessionsTable = new dynamodb.Table(this, 'ChatSessionsTable', {
-      tableName: 'bobs-chat-sessions',
+      tableName: `bobs-chat-sessions${sfx}`,
       partitionKey: { name: 'contactId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       timeToLiveAttribute: 'expiresAt',
@@ -31,7 +38,7 @@ export class DataStack extends cdk.Stack {
 
     // ── Callbacks table ────────────────────────────────────────────
     this.callbacksTable = new dynamodb.Table(this, 'CallbacksTable', {
-      tableName: 'bobs-callbacks',
+      tableName: `bobs-callbacks${sfx}`,
       partitionKey: { name: 'callbackId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -54,7 +61,7 @@ export class DataStack extends cdk.Stack {
     //   (acctKey = `${clientId}#${accountId}`, composite because account IDs like
     //   `acc-001` repeat across personas).
     this.transactionsTable = new dynamodb.Table(this, 'TransactionsTable', {
-      tableName: 'bobs-transactions',
+      tableName: `bobs-transactions${sfx}`,
       partitionKey: { name: 'clientId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'txnSort', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -68,7 +75,7 @@ export class DataStack extends cdk.Stack {
 
     // ── Transcripts table ──────────────────────────────────────────
     this.transcriptsTable = new dynamodb.Table(this, 'TranscriptsTable', {
-      tableName: 'bobs-transcripts',
+      tableName: `bobs-transcripts${sfx}`,
       partitionKey: { name: 'transcriptId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.RETAIN,  // never auto-delete transcript data

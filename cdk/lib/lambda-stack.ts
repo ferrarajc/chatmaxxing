@@ -15,6 +15,7 @@ interface LambdaStackProps extends cdk.StackProps {
   callbacksTable: dynamodb.Table;
   transcriptsTable: dynamodb.Table;
   transactionsTable: dynamodb.Table;
+  stage?: string;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -25,7 +26,11 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, stage } = props;
+
+    // '' for prod (names unchanged), '-<stage>' otherwise. Applied to every physical
+    // resource name (Lambda functionName, role name, API name) so dev is fully isolated.
+    const sfx = stage && stage !== 'prod' ? `-${stage}` : '';
 
     // ── Shared base config ─────────────────────────────────────────
     const baseEnv: Record<string, string> = {
@@ -50,13 +55,13 @@ export class LambdaStack extends cdk.Stack {
 
     // ── EventBridge Scheduler execution role ───────────────────────
     const schedulerRole = new iam.Role(this, 'SchedulerRole', {
-      roleName: 'bobs-scheduler-role',
+      roleName: `bobs-scheduler-role${sfx}`,
       assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com'),
     });
 
     // ── execute-callback (referenced by schedule-callback) ─────────
     this.executeCallbackFn = new NodejsFunction(this, 'ExecuteCallbackFn', {
-      functionName: 'bobs-execute-callback',
+      functionName: `bobs-execute-callback${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -83,7 +88,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── start-chat ─────────────────────────────────────────────────
     const startChatFn = new NodejsFunction(this, 'StartChatFn', {
-      functionName: 'bobs-start-chat',
+      functionName: `bobs-start-chat${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -106,7 +111,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── predict-intent (also Lex fulfillment hook) ─────────────────
     this.predictIntentFn = new NodejsFunction(this, 'PredictIntentFn', {
-      functionName: 'bobs-predict-intent',
+      functionName: `bobs-predict-intent${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -130,7 +135,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── predict-questions (two-level pill drill-down) ──────────────
     const predictQuestionsFn = new NodejsFunction(this, 'PredictQuestionsFn', {
-      functionName: 'bobs-predict-questions',
+      functionName: `bobs-predict-questions${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -148,7 +153,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── next-best-response ─────────────────────────────────────────
     const nextBestResponseFn = new NodejsFunction(this, 'NextBestResponseFn', {
-      functionName: 'bobs-next-best-response',
+      functionName: `bobs-next-best-response${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -167,7 +172,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── schedule-callback ──────────────────────────────────────────
     const scheduleCallbackFn = new NodejsFunction(this, 'ScheduleCallbackFn', {
-      functionName: 'bobs-schedule-callback',
+      functionName: `bobs-schedule-callback${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -189,7 +194,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── autopilot-turn ─────────────────────────────────────────────
     const autopilotTurnFn = new NodejsFunction(this, 'AutopilotTurnFn', {
-      functionName: 'bobs-autopilot-turn',
+      functionName: `bobs-autopilot-turn${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -212,7 +217,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── generate-acw ──────────────────────────────────────────────
     const generateAcwFn = new NodejsFunction(this, 'GenerateAcwFn', {
-      functionName: 'bobs-generate-acw',
+      functionName: `bobs-generate-acw${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -225,7 +230,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── send-agent-message ─────────────────────────────────────────
     const sendAgentMessageFn = new NodejsFunction(this, 'SendAgentMessageFn', {
-      functionName: 'bobs-send-agent-message',
+      functionName: `bobs-send-agent-message${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -239,7 +244,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── client-log ─────────────────────────────────────────────────
     const clientLogFn = new NodejsFunction(this, 'ClientLogFn', {
-      functionName: 'bobs-client-log',
+      functionName: `bobs-client-log${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -260,7 +265,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── agent-connection ───────────────────────────────────────────
     const agentConnectionFn = new NodejsFunction(this, 'AgentConnectionFn', {
-      functionName: 'bobs-agent-connection',
+      functionName: `bobs-agent-connection${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -277,7 +282,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── agent-availability (is the previous agent on queue?) ───────
     const agentAvailabilityFn = new NodejsFunction(this, 'AgentAvailabilityFn', {
-      functionName: 'bobs-agent-availability',
+      functionName: `bobs-agent-availability${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -297,7 +302,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── execute-task (agent proposed-action execution) ─────────────
     const executeTaskFn = new NodejsFunction(this, 'ExecuteTaskFn', {
-      functionName: 'bobs-execute-task',
+      functionName: `bobs-execute-task${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -313,7 +318,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── reset-beneficiaries (browser-accessible demo reset endpoint) ─
     const resetBeneficiariesFn = new NodejsFunction(this, 'ResetBeneficiariesFn', {
-      functionName: 'bobs-reset-beneficiaries',
+      functionName: `bobs-reset-beneficiaries${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -327,7 +332,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── reset-all-data (browser-accessible full demo reset endpoint) ─
     const resetClientDataFn = new NodejsFunction(this, 'ResetClientDataFn', {
-      functionName: 'bobs-reset-client-data',
+      functionName: `bobs-reset-client-data${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -344,7 +349,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── client-data (beneficiaries / auto-invest / RMD read+write) ─
     const clientDataFn = new NodejsFunction(this, 'ClientDataFn', {
-      functionName: 'bobs-client-data',
+      functionName: `bobs-client-data${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -359,7 +364,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── save-transcript ────────────────────────────────────────────
     const saveTranscriptFn = new NodejsFunction(this, 'SaveTranscriptFn', {
-      functionName: 'bobs-save-transcript',
+      functionName: `bobs-save-transcript${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -376,7 +381,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── get-transcripts ────────────────────────────────────────────
     const getTranscriptsFn = new NodejsFunction(this, 'GetTranscriptsFn', {
-      functionName: 'bobs-get-transcripts',
+      functionName: `bobs-get-transcripts${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -390,7 +395,7 @@ export class LambdaStack extends cdk.Stack {
 
     // ── pin-transcript ─────────────────────────────────────────────
     const pinTranscriptFn = new NodejsFunction(this, 'PinTranscriptFn', {
-      functionName: 'bobs-pin-transcript',
+      functionName: `bobs-pin-transcript${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -404,12 +409,15 @@ export class LambdaStack extends cdk.Stack {
 
     // ── HTTP API Gateway ───────────────────────────────────────────
     const api = new apigwv2.HttpApi(this, 'BobsApi', {
-      apiName: 'bobs-api',
+      apiName: `bobs-api${sfx}`,
       corsPreflight: {
         allowOrigins: [
           'https://ferrarajc.github.io',
           'http://localhost:5173',
           'http://localhost:5174',
+          // dev API only: extra local ports so a port-flap on the vite dev server
+          // (5175/5176 when 5173/5174 are taken) isn't CORS-blocked. Prod CORS unchanged.
+          ...(stage !== 'prod' ? ['http://localhost:5175', 'http://localhost:5176'] : []),
         ],
         allowMethods: [
           apigwv2.CorsHttpMethod.POST,
@@ -439,17 +447,18 @@ export class LambdaStack extends cdk.Stack {
       ['/save-transcript', saveTranscriptFn],
       ['/pin-transcript', pinTranscriptFn],
     ];
+    const postRoutes: apigwv2.HttpRoute[] = [];
     for (const [path, fn] of routes) {
-      api.addRoutes({
+      postRoutes.push(...api.addRoutes({
         path,
         methods: [apigwv2.HttpMethod.POST],
         integration: new HttpLambdaIntegration(`${fn.node.id}Integration`, fn),
-      });
+      }));
     }
 
     // ── market-data (Yahoo Finance delayed quotes proxy) ──────────────
     const marketDataFn = new NodejsFunction(this, 'MarketDataFn', {
-      functionName: 'bobs-market-data',
+      functionName: `bobs-market-data${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
       architecture: lambda.Architecture.X86_64,
       handler: 'handler',
@@ -490,6 +499,10 @@ export class LambdaStack extends cdk.Stack {
     // Prevents bot spam from running up OpenAI / Connect costs.
     // These limits are per-API (global), not per-IP — WAF would be needed for per-IP.
     const cfnStage = api.defaultStage?.node.defaultChild as apigwv2.CfnStage;
+    // RouteSettings references routes by key (POST /start-chat, POST /autopilot-turn). On a
+    // fresh stack create CFN may build the stage before those routes exist, which 404s. Make
+    // the stage depend on the POST routes so they're created first.
+    for (const r of postRoutes) api.defaultStage!.node.addDependency(r);
     cfnStage.addOverride('Properties.RouteSettings', {
       'POST /start-chat':     { ThrottlingBurstLimit: 5,  ThrottlingRateLimit: 3  },
       'POST /autopilot-turn': { ThrottlingBurstLimit: 10, ThrottlingRateLimit: 10 },

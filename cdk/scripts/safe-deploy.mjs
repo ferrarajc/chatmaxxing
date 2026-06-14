@@ -43,9 +43,19 @@ function run(command, opts = {}) {
 }
 
 function main() {
-  const args = process.argv.slice(2);
+  let args = process.argv.slice(2);
 
   if (args.includes('--self-test')) return selfTest();
+
+  // `--stage <name>` selects the environment. It is consumed here (not passed to cdk) and
+  // exported as STAGE to the diff + deploy subprocesses, which app.ts reads to suffix names.
+  let stageEnv;
+  {
+    const i = args.indexOf('--stage');
+    if (i !== -1) { stageEnv = args[i + 1]; args = [...args.slice(0, i), ...args.slice(i + 2)]; }
+  }
+  const childEnv = stageEnv ? { ...process.env, STAGE: stageEnv } : process.env;
+  const label = stageEnv ?? 'prod';
 
   // Extract stack names, skipping flags AND the value that follows a value-taking flag
   // (e.g. `--require-approval never` must not treat `never` as a stack).
@@ -61,22 +71,22 @@ function main() {
   }
   const hasAll = args.includes('--all');
   if (!stacks.length && !hasAll) {
-    console.error('Usage: node scripts/safe-deploy.mjs <Stack> [<Stack>...] [--flags]   (or --all)');
+    console.error('Usage: node scripts/safe-deploy.mjs [--stage <name>] <Stack> [<Stack>...] [--flags]   (or --all)');
     process.exit(2);
   }
   const diffTarget = stacks.length ? stacks.join(' ') : '--all';
   const ALLOW_DESTROY = process.env.ALLOW_DESTROY === '1';
 
   // Typecheck first — the project rule is "typecheck before every Lambda deploy".
-  console.log('\n▶  Typecheck: tsc --noEmit\n');
-  const tsc = run('npx tsc --noEmit', { stdio: 'inherit' });
+  console.log(`\n▶  [${label}] Typecheck: tsc --noEmit\n`);
+  const tsc = run('npx tsc --noEmit', { stdio: 'inherit', env: childEnv });
   if (tsc.status !== 0) {
     console.error('🛑 Typecheck failed — not deploying.');
     process.exit(tsc.status || 1);
   }
 
-  console.log(`\n▶  Safety check: cdk diff ${diffTarget}\n`);
-  const diff = run(`npx cdk diff ${diffTarget}`);
+  console.log(`\n▶  [${label}] Safety check: cdk diff ${diffTarget}\n`);
+  const diff = run(`npx cdk diff ${diffTarget}`, { env: childEnv });
   const out = (diff.stdout ?? '') + (diff.stderr ?? '');
 
   if (diff.status !== 0) {
@@ -102,14 +112,14 @@ What to do:
     process.exit(1);
   }
 
-  console.log('✅ No destructive changes detected.\n');
+  console.log(`✅ [${label}] No destructive changes detected.\n`);
 
   if (process.env.DRY_RUN === '1') {
-    console.log(`[dry-run] would deploy: npx cdk deploy ${args.join(' ')}`);
+    console.log(`[dry-run] would deploy (STAGE=${label}): npx cdk deploy ${args.join(' ')}`);
     return;
   }
 
-  const deploy = run(`npx cdk deploy ${args.join(' ')}`, { stdio: 'inherit' });
+  const deploy = run(`npx cdk deploy ${args.join(' ')}`, { stdio: 'inherit', env: childEnv });
   process.exit(deploy.status ?? 0);
 }
 

@@ -37,6 +37,7 @@ jobs:
           VITE_AWS_REGION: ${{ secrets.VITE_AWS_REGION }}
           VITE_CONNECT_INSTANCE_URL: ${{ secrets.VITE_CONNECT_INSTANCE_URL }}
           VITE_DEMO_CODE: ${{ secrets.VITE_DEMO_CODE }}
+          VITE_GIT_SHA: ${{ github.sha }}   # stamps the live build so you can verify what's deployed
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
