@@ -15,6 +15,7 @@ interface LambdaStackProps extends cdk.StackProps {
   callbacksTable: dynamodb.Table;
   transcriptsTable: dynamodb.Table;
   transactionsTable: dynamodb.Table;
+  fundsTable: dynamodb.Table;
   stage?: string;
 }
 
@@ -26,7 +27,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, stage } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, stage } = props;
 
     // '' for prod (names unchanged), '-<stage>' otherwise. Applied to every physical
     // resource name (Lambda functionName, role name, API name) so dev is fully isolated.
@@ -39,6 +40,7 @@ export class LambdaStack extends cdk.Stack {
       CALLBACKS_TABLE: callbacksTable.tableName,
       TRANSCRIPTS_TABLE: transcriptsTable.tableName,
       TRANSACTIONS_TABLE: transactionsTable.tableName,
+      FUNDS_TABLE: fundsTable.tableName,
       BEDROCK_MODEL_ID: 'us.amazon.nova-micro-v1:0',
       BEDROCK_REGION: this.region,
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
@@ -165,6 +167,7 @@ export class LambdaStack extends cdk.Stack {
     });
     clientsTable.grantReadData(nextBestResponseFn);
     transactionsTable.grantReadData(nextBestResponseFn);
+    fundsTable.grantReadData(nextBestResponseFn);  // get_funds tool
     nextBestResponseFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
       resources: ['*'],
@@ -214,6 +217,7 @@ export class LambdaStack extends cdk.Stack {
     }));
     clientsTable.grantReadData(autopilotTurnFn);
     transactionsTable.grantReadData(autopilotTurnFn);
+    fundsTable.grantReadData(autopilotTurnFn);  // get_funds tool
 
     // ── generate-acw ──────────────────────────────────────────────
     const generateAcwFn = new NodejsFunction(this, 'GenerateAcwFn', {
@@ -474,6 +478,46 @@ export class LambdaStack extends cdk.Stack {
       path: '/market-data',
       methods: [apigwv2.HttpMethod.GET],
       integration: new HttpLambdaIntegration('MarketDataIntegration', marketDataFn),
+    });
+
+    // ── get-funds (static fund catalog from DynamoDB, module-cached) ───
+    const getFundsFn = new NodejsFunction(this, 'GetFundsFn', {
+      functionName: `bobs-get-funds${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'get-funds/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    fundsTable.grantReadData(getFundsFn);
+
+    api.addRoutes({
+      path: '/funds',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('GetFundsIntegration', getFundsFn),
+    });
+
+    // ── reset-funds (seed bobs-funds from the bundled fund catalog) ────
+    const resetFundsFn = new NodejsFunction(this, 'ResetFundsFn', {
+      functionName: `bobs-reset-funds${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'reset-funds/handler.ts'),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    fundsTable.grantReadWriteData(resetFundsFn);
+
+    api.addRoutes({
+      path: '/reset-funds',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('ResetFundsIntegration', resetFundsFn),
     });
 
     // GET routes for browser-accessible reset endpoints

@@ -319,25 +319,25 @@ export const KB: KBTopic[] = [
       {
         id: 'q-perf-001',
         text: 'What is BobsFunds 500 Index\'s 1-year return?',
-        answer: "BobsFunds 500 Index (BF500) returned +24.1% over the past year, with a 3-year annualized return of +9.8% and a 5-year annualized return of +13.2%. Its expense ratio is just 0.03%, making it one of the most cost-efficient funds we offer. It tracks a broad index of 500 large U.S. companies.",
+        answer: "BobsFunds 500 Index (BF500) tracks a broad index of 500 large U.S. companies and is one of our most cost-efficient funds at a 0.03% expense ratio. Its current YTD, 1-, 3-, and 5-year returns are shown live on the Research page. As a broad index fund it's a common core portfolio holding.",
         link: { text: 'View fund performance', url: '/research' },
       },
       {
         id: 'q-perf-002',
         text: 'Which BobsFunds fund has the highest 1-year return?',
-        answer: "BobsFunds Growth (BFGR) had the highest 1-year return at +31.4%, followed by BobsFunds 500 Index at +24.1% and BobsFunds ESG Leaders at +22.7%. BobsFunds Growth focuses on U.S. growth companies and has an expense ratio of 0.25%. Past performance is not a guarantee of future results.",
+        answer: "Returns change daily, so the current leaders are shown live on the Research page — you can sort all 36 funds by 1-year return there. In strong equity years our growth and sector funds (such as BobsFunds Growth and BobsFunds Technology Index) tend to lead; in down years bond funds hold up best. Past performance is not a guarantee of future results.",
         link: { text: 'Compare fund returns', url: '/research' },
       },
       {
         id: 'q-perf-003',
         text: 'How did BobsFunds Bond Income perform last year?',
-        answer: "BobsFunds Bond Income (BFBI) returned +4.2% over the past year, with a 3-year annualized return of +2.1% and a 5-year return of +3.8%. Its expense ratio is 0.10%. As a bond fund, it is designed for income and stability rather than growth, and is less volatile than equity funds.",
+        answer: "BobsFunds Bond Income (BFBI) is a bond fund designed for income and stability rather than growth, with a low 0.03% expense ratio. It is less volatile than equity funds. Its current 1-, 3-, and 5-year returns are shown live on the Research page.",
         link: { text: 'View Bond Income details', url: '/research' },
       },
       {
         id: 'q-perf-004',
         text: 'What is BobsFunds ESG Leaders\' expense ratio?',
-        answer: "BobsFunds ESG Leaders (BFESG) has an expense ratio of 0.18% per year. Over the past year it returned +22.7%, with a 3-year annualized return of +9.3% and 5-year return of +12.8%. It invests in companies with strong environmental, social, and governance scores while seeking competitive market returns.",
+        answer: "BobsFunds ESG Leaders (BFESG) has an expense ratio of 0.09% per year. It invests in companies with strong environmental, social, and governance scores while seeking competitive market returns. Its live performance figures are on the Research page, where you can also browse our full 36-fund lineup.",
         link: { text: 'Explore all BobsFunds funds', url: '/research' },
       },
     ],
@@ -352,7 +352,7 @@ export const KB: KBTopic[] = [
       {
         id: 'q-cmp-001',
         text: 'What is the difference between BF500 and BobsFunds Growth?',
-        answer: "BF500 tracks a broad market index of 500 large U.S. companies and has a very low expense ratio of 0.03%. BobsFunds Growth actively focuses on companies with above-average earnings growth potential and charges 0.25%. BF500 returned +24.1% over the past year; Growth returned +31.4% — though active funds carry more variability year to year.",
+        answer: "BF500 tracks a broad market index of 500 large U.S. companies at a very low 0.03% expense ratio. BobsFunds Growth (BFGR) focuses on companies with above-average earnings-growth potential and charges 0.04%. Growth funds tend to swing more from year to year. You can compare their live returns side by side on the Research page.",
         link: { text: 'Compare BF500 vs. Growth', url: '/research' },
       },
       {
@@ -364,13 +364,13 @@ export const KB: KBTopic[] = [
       {
         id: 'q-cmp-003',
         text: 'Which BobsFunds fund has the lowest expense ratio?',
-        answer: "BobsFunds 500 Index (BF500) has the lowest expense ratio at 0.03% per year. BobsFunds Short-Term Treasury is next at 0.08%, followed by BobsFunds Bond Income at 0.10%. BobsFunds ESG Leaders is 0.18%, International is 0.20%, and Growth is 0.25%. Lower fees mean more of your return stays in your account.",
+        answer: "Several funds share our lowest expense ratio of 0.03% — including BobsFunds 500 Index (BF500), BobsFunds Total Market Index (BFTM), and BobsFunds Bond Income (BFBI). Across the full lineup expense ratios range from 0.03% up to 0.13% (BobsFunds Real Estate Index). Lower fees mean more of your return stays in your account — you can sort all 36 funds by expense ratio on the Research page.",
         link: { text: 'Compare expense ratios', url: '/research' },
       },
       {
         id: 'q-cmp-004',
         text: 'Which fund offers international exposure?',
-        answer: "BobsFunds International (BFIN) invests in developed international markets outside the U.S. It returned +15.3% last year with a 5-year annualized return of +9.1% and an expense ratio of 0.20%. Adding international exposure can reduce portfolio concentration risk in U.S. markets. Many financial planning guidelines suggest 20–40% international allocation.",
+        answer: "BobsFunds International (BFIN) invests in developed markets outside the U.S. at a 0.07% expense ratio. We also offer more targeted international funds — Developed Markets (BFDEV), Emerging Markets (BFEMG), European (BFEUR), and Pacific (BFPAC). Adding international exposure can reduce U.S.-concentration risk; many planning guidelines suggest a 20–40% international allocation. Live returns are on the Research page.",
         link: { text: 'View International fund details', url: '/research' },
       },
     ],
@@ -385,25 +385,25 @@ export const KB: KBTopic[] = [
       {
         id: 'q-er-001',
         text: 'What is an expense ratio and why does it matter?',
-        answer: "An expense ratio is the annual fee a mutual fund charges, expressed as a percentage of your investment. A 0.10% expense ratio means you pay $10 per year for every $10,000 invested. Over decades, even small differences in fees compound significantly — a 0.25% fund vs. a 0.03% fund could cost you tens of thousands of dollars over 30 years.",
+        answer: "An expense ratio is the annual fee a mutual fund charges, expressed as a percentage of your investment. A 0.10% expense ratio means you pay $10 per year for every $10,000 invested. Over decades, even small differences in fees compound significantly — a 0.50% fund elsewhere vs. a 0.03% BobsFunds index fund could cost you tens of thousands of dollars over 30 years.",
         link: { text: 'Compare fund expense ratios', url: '/research' },
       },
       {
         id: 'q-er-002',
         text: 'What are the expense ratios for all BobsFunds funds?',
-        answer: "BobsFunds 500 Index: 0.03% | BobsFunds Short-Term Treasury: 0.08% | BobsFunds Bond Income: 0.10% | BobsFunds ESG Leaders: 0.18% | BobsFunds International: 0.20% | BobsFunds Growth: 0.25%. All expense ratios are deducted automatically from fund assets — you never receive a separate bill for them.",
+        answer: "Across our 36 funds, expense ratios range from 0.03% to 0.13%. Broad index and bond funds are the cheapest (0.03%–0.05%, e.g. BobsFunds 500 Index and Total Market at 0.03%), while sector and specialty funds run 0.09%–0.13% (BobsFunds Real Estate Index is the highest at 0.13%). Every fund's exact expense ratio is on the Research page and the Fee Schedule. All expense ratios are deducted automatically from fund assets — you never receive a separate bill.",
         link: { text: 'View all fund expense ratios', url: '/research' },
       },
       {
         id: 'q-er-003',
         text: 'Does Bob\'s Mutual Funds charge any other fees?',
-        answer: "There are no account maintenance fees, inactivity fees, or trading commissions for buying or selling BobsFunds mutual funds. The only ongoing cost is each fund's expense ratio. Wire transfers and outgoing ACAT transfers may carry a small processing fee — see the full fee schedule on the Account page under 'Fee Information.'",
-        link: { text: 'View the fee schedule', url: '/account' },
+        answer: "There are no account maintenance fees, inactivity fees, or trading commissions for buying or selling BobsFunds mutual funds. The only ongoing cost is each fund's expense ratio. Wire transfers and outgoing ACAT transfers may carry a small processing fee — see the full Fee Schedule for details.",
+        link: { text: 'View the fee schedule', url: '/help/fees' },
       },
       {
         id: 'q-er-004',
         text: 'How much do fees cost me over 10 years?',
-        answer: "On a $50,000 investment growing at 8% annually: a fund with a 0.03% expense ratio would cost about $170 in fees over 10 years, while a 0.25% fund would cost about $1,400. The difference ($1,230) stays invested and compounds in the lower-cost fund. This is why minimizing expense ratios is one of the most reliable ways to improve long-term returns.",
+        answer: "On a $50,000 investment growing at 8% annually: a fund with a 0.03% expense ratio would cost about $170 in fees over 10 years, while a typical 0.50% actively managed fund elsewhere would cost roughly $2,800. That difference stays invested and compounds in the lower-cost fund. This is why minimizing expense ratios is one of the most reliable ways to improve long-term returns — every BobsFunds fund is 0.13% or lower.",
         link: { text: 'View fund details', url: '/research' },
       },
     ],
@@ -424,13 +424,13 @@ export const KB: KBTopic[] = [
       {
         id: 'q-idx-002',
         text: 'Which BobsFunds funds are index funds?',
-        answer: "BobsFunds 500 Index (BF500) is an index fund tracking a broad U.S. large-cap benchmark, with a 0.03% expense ratio. BobsFunds Short-Term Treasury (BFST) also follows an index of short-duration U.S. government bonds. The other BobsFunds funds — Growth, Bond Income, International, and ESG Leaders — are actively managed.",
+        answer: "Most of Bob's lineup is low-cost index funds — BobsFunds 500 Index (BF500), Total Market (BFTM), the mid- and small-cap index funds, the eleven sector index funds, the international index funds, and the Treasury and corporate bond index funds. A few apply a style or factor tilt (Value, Growth, Dividend). You can filter the full 36-fund lineup by family on the Research page.",
         link: { text: 'View BF500 details', url: '/research' },
       },
       {
         id: 'q-idx-003',
         text: 'Do index funds always outperform active funds?',
-        answer: "Over long periods (10+ years), data consistently shows that most active funds underperform their comparable index funds, primarily due to higher fees and the difficulty of consistently picking winning stocks. However, in the short term, active funds can and do outperform — BobsFunds Growth returned +31.4% last year vs. BF500's +24.1%. Your time horizon matters.",
+        answer: "Over long periods (10+ years), data consistently shows that most active funds underperform their comparable index funds, primarily due to higher fees and the difficulty of consistently picking winning stocks. In the short term, however, active and growth-tilted funds can and do outperform. You can compare any two funds' live returns on the Research page. Your time horizon matters.",
         link: { text: 'Compare fund performance', url: '/research' },
       },
       {
@@ -451,19 +451,19 @@ export const KB: KBTopic[] = [
       {
         id: 'q-hist-001',
         text: 'What is BobsFunds 500 Index\'s 5-year return?',
-        answer: "BobsFunds 500 Index (BF500) has a 5-year annualized return of +13.2% and a 3-year annualized return of +9.8%. Its 1-year return is +24.1%. These figures are as of the most recent quarter-end. Past performance does not guarantee future results, but BF500's long-term track record reflects broad U.S. market performance.",
+        answer: "BobsFunds 500 Index (BF500) reflects the broad U.S. large-cap market over time. For its exact YTD, 1-, 3-, 5-, and 10-year annualized returns as of the latest close, see the live figures on the Research page. Past performance does not guarantee future results, but BF500's long-term track record mirrors the overall U.S. market.",
         link: { text: 'View BF500 performance history', url: '/research' },
       },
       {
         id: 'q-hist-002',
         text: 'How has BobsFunds ESG Leaders performed long-term?',
-        answer: "BobsFunds ESG Leaders (BFESG) has a 5-year annualized return of +12.8% and a 3-year return of +9.3%, closely tracking its non-ESG peers. Its 1-year return of +22.7% demonstrates that ESG screening has not come at a performance cost in recent years. The fund's expense ratio is 0.18%.",
+        answer: "BobsFunds ESG Leaders (BFESG, 0.09% expense ratio) has historically tracked its non-ESG peers closely, showing that ESG screening hasn't come at a meaningful performance cost. For its 1-, 3-, 5-, and 10-year returns, see the live figures on the Research page.",
         link: { text: 'View ESG Leaders performance', url: '/research' },
       },
       {
         id: 'q-hist-003',
         text: 'What were BobsFunds International\'s returns?',
-        answer: "BobsFunds International (BFIN) returned +15.3% over the past year, +6.4% annualized over 3 years, and +9.1% annualized over 5 years. International funds can lag U.S. funds in strong domestic markets but provide diversification and potentially stronger performance when the U.S. dollar weakens. Its expense ratio is 0.20%.",
+        answer: "BobsFunds International (BFIN, 0.07% expense ratio) can lag U.S. funds in strong domestic markets but adds diversification and may outperform when the U.S. dollar weakens. Its current 1-, 3-, and 5-year returns are shown on the Research page.",
         link: { text: 'View International fund history', url: '/research' },
       },
       {
@@ -656,13 +656,13 @@ export const KB: KBTopic[] = [
       {
         id: 'q-bond-001',
         text: 'What does BobsFunds Bond Income hold?',
-        answer: "BobsFunds Bond Income (BFBI) invests primarily in investment-grade U.S. corporate bonds and U.S. government bonds with intermediate maturities (typically 5–10 years). It aims to provide regular income with moderate interest rate sensitivity. Its 1-year return was +4.2% and the expense ratio is 0.10%.",
+        answer: "BobsFunds Bond Income (BFBI) invests primarily in investment-grade U.S. corporate and government bonds with intermediate maturities (typically 5–10 years), aiming for regular income with moderate interest-rate sensitivity, at a low 0.03% expense ratio. We also offer Treasury and corporate bond funds across the maturity spectrum (short, intermediate, and long term). Current returns are on the Research page.",
         link: { text: 'View Bond Income fund details', url: '/research' },
       },
       {
         id: 'q-bond-002',
         text: 'What does BobsFunds Short-Term Treasury hold?',
-        answer: "BobsFunds Short-Term Treasury (BFST) invests exclusively in U.S. Treasury securities with maturities of 1–3 years. It is designed for capital preservation and income with minimal credit risk and low interest rate sensitivity. Its 1-year return was +5.1% and its expense ratio is a very low 0.08%.",
+        answer: "BobsFunds Short-Term Treasury (BFST) invests exclusively in U.S. Treasury securities with maturities of 1–3 years. It is designed for capital preservation and income with minimal credit risk and low interest-rate sensitivity, at a very low 0.04% expense ratio. Its current return is shown on the Research page.",
         link: { text: 'View Short-Term Treasury details', url: '/research' },
       },
       {
@@ -832,7 +832,7 @@ export const KB: KBTopic[] = [
       {
         id: 'q-esg-002',
         text: 'What is BobsFunds ESG Leaders\' 1-year return?',
-        answer: "BobsFunds ESG Leaders (BFESG) returned +22.7% over the past year, compared to BF500's +24.1%. Its 3-year annualized return is +9.3% and 5-year is +12.8%. The expense ratio is 0.18%. ESG screening has not materially impacted performance in recent years — the fund's long-term returns are competitive with broad market index funds.",
+        answer: "BobsFunds ESG Leaders (BFESG) has a 0.09% expense ratio and seeks returns competitive with broad market index funds while applying ESG screens. Its current YTD, 1-, 3-, and 5-year returns are shown live on the Research page. ESG screening has not materially changed its long-term return profile relative to the broad market.",
         link: { text: 'View ESG Leaders performance', url: '/research' },
       },
       {
@@ -844,7 +844,7 @@ export const KB: KBTopic[] = [
       {
         id: 'q-esg-004',
         text: 'How does BobsFunds ESG Leaders compare to BF500?',
-        answer: "BobsFunds ESG Leaders (0.18% ER, +22.7% 1yr) is more concentrated than BF500 (0.03% ER, +24.1% 1yr) because it screens out companies that fail ESG criteria. BF500 is cheaper and more broadly diversified; ESG Leaders costs more but aligns with values-based investing. Both are reasonable choices — many investors hold both for different goals.",
+        answer: "BobsFunds ESG Leaders (0.09% expense ratio) is more concentrated than BF500 (0.03%) because it screens out companies that fail ESG criteria. BF500 is slightly cheaper and more broadly diversified; ESG Leaders aligns with values-based investing. Both are reasonable choices — compare their live returns side by side on the Research page.",
         link: { text: 'Compare ESG Leaders vs. BF500', url: '/research' },
       },
     ],
@@ -860,19 +860,19 @@ export const KB: KBTopic[] = [
       {
         id: 'q-gvi-001',
         text: 'What types of stocks does BobsFunds Growth hold?',
-        answer: "BobsFunds Growth (BFGR) focuses on U.S. companies with above-average earnings growth potential — typically technology, consumer discretionary, and healthcare companies. It is more concentrated than BF500 and tends to be more volatile. Its 1-year return of +31.4% outpaced the index, though this can reverse in market downturns.",
+        answer: "BobsFunds Growth (BFGR) focuses on U.S. companies with above-average earnings-growth potential — typically technology, consumer discretionary, and healthcare. It is more concentrated than BF500 and tends to be more volatile, which can mean stronger gains in up markets and steeper drops in downturns. See its live returns on the Research page.",
         link: { text: 'View BobsFunds Growth details', url: '/research' },
       },
       {
         id: 'q-gvi-002',
         text: 'Which fund has higher fees: BobsFunds Growth or BF500?',
-        answer: "BobsFunds Growth charges 0.25% per year, while BF500 charges only 0.03%. Over 20 years on a $50,000 investment growing at 9%, the fee difference compounds to roughly $15,000 in lost returns. Growth funds need to consistently outperform to justify the higher fee — which is challenging over long periods.",
+        answer: "Both are very low-cost: BobsFunds Growth charges 0.04% and BF500 charges 0.03% — a negligible difference, and both are far below the 0.50%+ typical of actively managed funds elsewhere. So fees aren't the real distinction here; the difference is strategy and volatility. Growth concentrates in faster-growing companies, while BF500 tracks the broad market.",
         link: { text: 'Compare fund expense ratios', url: '/research' },
       },
       {
         id: 'q-gvi-003',
         text: 'Has BobsFunds Growth outperformed the market index?',
-        answer: "Over the past year, BobsFunds Growth returned +31.4% versus BF500's +24.1% — a 7.3 percentage point advantage. Over 5 years, Growth returned +18.7% annualized vs. BF500's +13.2%, showing consistent outperformance. However, growth stocks can underperform significantly during market corrections or rising-rate environments.",
+        answer: "It varies by period — growth stocks tend to lead in strong bull markets and lag during corrections or rising-rate environments. Rather than rely on a fixed figure, compare BobsFunds Growth and BF500 side by side with live YTD, 1-, 3-, and 5-year returns on the Research page. Past performance is not a guarantee of future results.",
         link: { text: 'View fund performance history', url: '/research' },
       },
       {
@@ -899,7 +899,7 @@ export const KB: KBTopic[] = [
       {
         id: 'q-fi-002',
         text: 'What is the difference between BobsFunds Bond Income and Short-Term Treasury?',
-        answer: "BobsFunds Bond Income (BFBI) holds intermediate-term corporate and government bonds, offering higher yield (+4.2% last year) with more interest rate sensitivity. BobsFunds Short-Term Treasury (BFST) holds only short-term U.S. Treasuries, offering lower yield (+5.1% last year) but much lower volatility and credit risk. BFST is closer to a cash equivalent; BFBI carries more market risk.",
+        answer: "BobsFunds Bond Income (BFBI) holds intermediate-term corporate and government bonds, offering higher yield with more interest-rate sensitivity. BobsFunds Short-Term Treasury (BFST) holds only short-term U.S. Treasuries — lower yield but much lower volatility and credit risk. BFST is closer to a cash equivalent; BFBI carries more market risk. Current yields are shown on the Research page.",
         link: { text: 'Compare bond funds', url: '/research' },
       },
       {
@@ -1072,7 +1072,7 @@ export const KB: KBTopic[] = [
       {
         id: 'q-fee-002',
         text: 'What is an expense ratio and how much do I pay?',
-        answer: "An expense ratio is the annual percentage a fund charges to cover its operating costs, taken from fund assets rather than billed to you directly. BobsFunds index funds run as low as 0.03%, while actively managed funds range up to about 0.25%. On a $10,000 holding, a 0.10% ratio costs roughly $10 per year.",
+        answer: "An expense ratio is the annual percentage a fund charges to cover its operating costs, taken from fund assets rather than billed to you directly. BobsFunds funds run from 0.03% to 0.13%, while actively managed funds elsewhere can exceed 0.50%. On a $10,000 holding, a 0.10% ratio costs roughly $10 per year.",
         link: { text: 'Compare fund expense ratios', url: '/research' },
       },
       {

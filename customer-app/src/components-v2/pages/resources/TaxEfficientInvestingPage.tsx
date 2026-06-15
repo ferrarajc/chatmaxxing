@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { theme } from '../../../theme';
+import { useFunds } from '../../../hooks/useFunds';
+import { FundGroup } from '../../../data/funds';
 
 const card: React.CSSProperties = {
   background: theme.color.surface, borderRadius: theme.radius.lg, padding: '24px',
   boxShadow: theme.shadow.sm, border: `1px solid ${theme.color.border}`, marginBottom: 20,
 };
 
+// Tax-efficiency guidance keyed by asset-class family, so it covers the whole lineup (all 36
+// funds) instead of naming a stale subset. Order matches the Research screener.
+const FAMILY_TAX: { group: FundGroup; efficiency: string; best: string }[] = [
+  { group: 'US Equity',     efficiency: 'High — broad index funds have low turnover and few capital gains', best: 'Taxable or any' },
+  { group: 'Sector Equity', efficiency: 'Medium — narrower funds can distribute more capital gains',        best: 'Roth IRA or taxable' },
+  { group: 'International',  efficiency: 'Medium — foreign tax credit benefits a taxable account',            best: 'Taxable' },
+  { group: 'Fixed Income',  efficiency: 'Low — interest is taxed as ordinary income',                         best: 'IRA / SEP-IRA' },
+];
+
 export function TaxEfficientInvestingPage() {
+  const { funds } = useFunds();
+  const countByGroup = useMemo(() => {
+    const m = new Map<FundGroup, number>();
+    for (const f of funds) m.set(f.group, (m.get(f.group) ?? 0) + 1);
+    return m;
+  }, [funds]);
+
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px', fontFamily: theme.font.sans }}>
       <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, fontFamily: theme.font.serif }}>Tax-Efficient Investing</h1>
@@ -17,31 +35,27 @@ export function TaxEfficientInvestingPage() {
       <div style={card}>
         <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, fontFamily: theme.font.serif }}>Asset Location: Where to Hold Each Fund</h2>
         <p style={{ margin: '0 0 12px', fontSize: 14, color: theme.color.text, lineHeight: 1.6 }}>
-          "Asset location" means placing tax-efficient funds in taxable accounts and tax-inefficient funds in tax-advantaged accounts (IRA, SEP-IRA, Roth IRA) to minimize annual tax bills.
+          "Asset location" means placing tax-efficient funds in taxable accounts and tax-inefficient funds in tax-advantaged accounts (IRA, SEP-IRA, Roth IRA) to minimize annual tax bills. Bob's {funds.length} funds fall into four asset-class families, each with a different tax profile:
         </p>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: `2px solid ${theme.color.border}` }}>
-              {['Fund', 'Tax Efficiency', 'Best Account'].map(h => (
+              {['Fund Family', 'Tax Efficiency', 'Best Account'].map(h => (
                 <th key={h} style={{ textAlign: 'left', padding: '6px 8px 10px', color: theme.color.textMuted, fontWeight: 600, fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {[
-              { fund: 'BobsFunds 500 Index (BF500)', efficiency: 'High — low turnover, few capital gains', best: 'Taxable or any' },
-              { fund: 'BobsFunds Bond Income (BFBI)', efficiency: 'Low — interest taxed as ordinary income', best: 'IRA / SEP-IRA' },
-              { fund: 'BobsFunds Short-Term Treasury (BFST)', efficiency: 'Low — interest taxed as ordinary income', best: 'IRA / SEP-IRA' },
-              { fund: 'BobsFunds Growth (BFGR)', efficiency: 'Medium — some capital gains distributions', best: 'Roth IRA (tax-free growth)' },
-              { fund: 'BobsFunds ESG Leaders (BFESG)', efficiency: 'Medium — moderate turnover', best: 'Roth IRA or taxable' },
-              { fund: 'BobsFunds International (BFIN)', efficiency: 'Medium — foreign tax credit benefit in taxable', best: 'Taxable' },
-            ].map(r => (
-              <tr key={r.fund} style={{ borderBottom: `1px solid ${theme.color.border}` }}>
-                <td style={{ padding: '10px 8px', fontWeight: 500 }}>{r.fund}</td>
-                <td style={{ padding: '10px 8px', color: theme.color.textMuted }}>{r.efficiency}</td>
-                <td style={{ padding: '10px 8px', color: theme.color.primary, fontWeight: 500 }}>{r.best}</td>
-              </tr>
-            ))}
+            {FAMILY_TAX.map(r => {
+              const n = countByGroup.get(r.group) ?? 0;
+              return (
+                <tr key={r.group} style={{ borderBottom: `1px solid ${theme.color.border}` }}>
+                  <td style={{ padding: '10px 8px', fontWeight: 500 }}>{r.group}{n ? <span style={{ color: theme.color.textMuted, fontWeight: 400 }}> ({n} funds)</span> : null}</td>
+                  <td style={{ padding: '10px 8px', color: theme.color.textMuted }}>{r.efficiency}</td>
+                  <td style={{ padding: '10px 8px', color: theme.color.primary, fontWeight: 500 }}>{r.best}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

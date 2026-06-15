@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FUNDS, FundDef, FundGroup } from '../../../data/funds';
+import { FundDef, FundGroup } from '../../../data/funds';
+import { useFunds } from '../../../hooks/useFunds';
 import { useMarketData } from '../../../hooks/useMarketData';
 import { theme } from '../../../theme';
 
@@ -179,6 +180,7 @@ function TableHead({
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export function ResearchPage() {
+  const { funds } = useFunds();
   const { data: marketData } = useMarketData();
   const [family, setFamily] = useState<FamilyFilter>('All');
   const [query, setQuery] = useState('');
@@ -186,7 +188,7 @@ export function ResearchPage() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   // Build a row (fund + live data) for every fund.
-  const rows: FundRow[] = useMemo(() => FUNDS.map(fund => {
+  const rows: FundRow[] = useMemo(() => funds.map(fund => {
     const live = marketData?.funds.find(f => f.ticker === fund.ticker);
     return {
       fund,
@@ -196,7 +198,7 @@ export function ResearchPage() {
       fiveYear:  live?.fiveYear  ?? null,
       expenseRatio: live?.expenseRatio ?? fund.expenseRatio,
     };
-  }), [marketData]);
+  }), [funds, marketData]);
 
   const q = query.trim().toLowerCase();
 
@@ -256,7 +258,7 @@ export function ResearchPage() {
         Fund Research
       </h1>
       <p style={{ margin: '0 0 28px', color: theme.color.textMuted, fontSize: 15, lineHeight: 1.55 }}>
-        Explore our full lineup of {FUNDS.length} low-cost mutual funds — index, sector, international, and bond strategies.
+        Explore our full lineup of {funds.length} low-cost mutual funds — index, sector, international, and bond strategies.
       </p>
 
       {/* Controls: search + family filter */}
@@ -287,7 +289,7 @@ export function ResearchPage() {
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
         {FAMILY_FILTERS.map(f => {
-          const count = f === 'All' ? FUNDS.length : FUNDS.filter(x => x.group === f).length;
+          const count = f === 'All' ? funds.length : funds.filter(x => x.group === f).length;
           const active = family === f;
           return (
             <button
