@@ -22,7 +22,10 @@ export class ConnectStack extends cdk.Stack {
         contactflowLogs: true,
         autoResolveBestVoices: true,
         useCustomTtsVoices: false,
-        contactLens: true,
+        // Contact Lens stays OFF: it adds per-message ai-chat-message billing that caused a
+        // cost spike. It was manually disabled on the live instance; keep the source false so a
+        // BobsConnectStack redeploy never silently re-enables it.
+        contactLens: false,
         earlyMedia: true,
       },
     });
