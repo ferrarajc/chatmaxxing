@@ -237,6 +237,16 @@ Keyed by `contactId`. Stores:
 - Full message array
 - 30-day TTL (`expiresAt`)
 
+### DynamoDB — Funds Table
+Keyed by `ticker`. Holds the static profile for every fund in the lineup (all 36) — name, asset-class
+family, expense ratio, risk level, descriptions, and historical profile data. This is the **single
+source of truth** for fund information: the same data drives the customer content pages (fees, fund
+performance, prospectus library, the Research screener and per-fund profile pages), the fund pickers
+in the account-opening and investment flows, and all three AI systems (the customer chatbot, agent
+Suggested Reply, and Autopilot) via a fund-lookup capability. Updating a fund once propagates
+everywhere, so pages and the AI can never disagree about what funds exist or what they cost. (Live,
+intraday prices and returns are sourced separately from a market-data service.)
+
 ---
 
 ## Infrastructure (CDK)

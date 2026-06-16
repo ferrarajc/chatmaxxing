@@ -184,7 +184,11 @@ export function ChatMessage({ message }: Props) {
         marginTop: 2, paddingLeft: 36,
         fontStyle: 'italic',
       }}>
-        Data fetched from your account
+        {/* get_funds reads the public fund catalog, not the client's account — label it
+            accordingly. Any other tool (or a mix) means account data was actually fetched. */}
+        {message.toolsUsed.some(t => t !== 'get_funds')
+          ? 'Data fetched from your account'
+          : 'Fund details fetched'}
       </div>
     )}
     </>

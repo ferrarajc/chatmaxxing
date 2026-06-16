@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { usePageContextStore } from '../../store/pageContextStore';
+import { useFunds } from '../../hooks/useFunds';
+import { FundGroup } from '../../data/funds';
 import { theme } from '../../theme';
 
 /* ============================================================================
@@ -312,15 +314,10 @@ const BUSINESS_TYPES = ['Sole Proprietor', 'Partnership', 'LLC', 'S-Corporation'
 
 const STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'];
 
-const FUNDS: { value: string; label: string }[] = [
-  { value: 'BF500', label: 'BobsFunds 500 Index (BF500) — 0.03% expense ratio' },
-  { value: 'BFGR', label: 'BobsFunds Growth (BFGR) — 0.25% expense ratio' },
-  { value: 'BFBI', label: 'BobsFunds Bond Income (BFBI) — 0.10% expense ratio' },
-  { value: 'BFESG', label: 'BobsFunds ESG Leaders (BFESG) — 0.18% expense ratio' },
-  { value: 'BFIN', label: 'BobsFunds International (BFIN) — 0.20% expense ratio' },
-  { value: 'BFST', label: 'BobsFunds Short-Term Treasury (BFST) — 0.08% expense ratio' },
-];
-const fundLabel = (v: string) => FUNDS.find(f => f.value === v)?.label ?? '—';
+// Fund dropdown options are built from the live catalog (useFunds) inside the component.
+const FUND_GROUP_ORDER: FundGroup[] = ['US Equity', 'Sector Equity', 'International', 'Fixed Income'];
+const formatFundLabel = (name: string, ticker: string, expenseRatio: number) =>
+  `${name} (${ticker}) — ${expenseRatio.toFixed(2)}% expense ratio`;
 
 interface Beneficiary {
   id: string; tier: 'primary' | 'contingent';
@@ -335,6 +332,19 @@ const newBenef = (tier: 'primary' | 'contingent', allocation = ''): Beneficiary 
 export function OpenAccountPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const preselectedType = searchParams.get('accountType');
+
+  // Fund picklist driven by the live catalog (DB-backed, with bundled fallback).
+  const { funds, byTicker } = useFunds();
+  const fundOptions = useMemo(() => {
+    const rank = (g: FundGroup) => FUND_GROUP_ORDER.indexOf(g);
+    return [...funds]
+      .sort((a, b) => rank(a.group) - rank(b.group) || a.name.localeCompare(b.name))
+      .map(f => ({ value: f.ticker, label: formatFundLabel(f.name, f.ticker, f.expenseRatio) }));
+  }, [funds]);
+  const fundLabel = (v: string) => {
+    const f = byTicker.get(v);
+    return f ? formatFundLabel(f.name, f.ticker, f.expenseRatio) : '—';
+  };
 
   const defaultStart = useMemo(() => {
     const d = new Date();
@@ -944,7 +954,7 @@ export function OpenAccountPage() {
             <SubHeading>Initial investment</SubHeading>
             <div style={grid2}>
               <TextField label="Investment amount" value={form.investmentAmount} onChange={set('investmentAmount')} prefix="$" required inputMode="numeric" hint="Most BobsFunds funds have a $1,000 minimum initial investment." />
-              <SelectField label="Fund" value={form.investmentFund} onChange={set('investmentFund')} options={FUNDS} required placeholder="Choose a fund…" />
+              <SelectField label="Fund" value={form.investmentFund} onChange={set('investmentFund')} options={fundOptions} required placeholder="Choose a fund…" />
             </div>
           </div>
         </>
@@ -976,7 +986,7 @@ export function OpenAccountPage() {
                     <SelectField label="Day of week" value={form.dcaWeekday} onChange={set('dcaWeekday')} options={['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']} />
                   )}
                   <TextField label="Start date" value={form.dcaStartDate} onChange={set('dcaStartDate')} type="date" required />
-                  <SelectField label="Fund for automatic investments" value={form.dcaFund || form.investmentFund} onChange={set('dcaFund')} options={FUNDS} required full hint="Defaults to your initial investment fund — you can choose a different one." />
+                  <SelectField label="Fund for automatic investments" value={form.dcaFund || form.investmentFund} onChange={set('dcaFund')} options={fundOptions} required full hint="Defaults to your initial investment fund — you can choose a different one." />
                 </div>
                 <div style={{ marginTop: 14 }}>
                   <InfoCallout>You can pause, change, or cancel your automatic investing schedule any time from your account page — no fees, no penalties.</InfoCallout>

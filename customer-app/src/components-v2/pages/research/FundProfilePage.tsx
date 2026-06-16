@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { theme } from '../../../theme';
-import { FUND_BY_TICKER, AllocationSlice, Distribution, FundDef } from '../../../data/funds';
+import { AllocationSlice, Distribution, FundDef } from '../../../data/funds';
+import { useFunds } from '../../../hooks/useFunds';
 import { useMarketData, FundQuote } from '../../../hooks/useMarketData';
 import { useClientStore } from '../../../store/clientStore';
 
@@ -476,7 +477,8 @@ function YourHoldings({ ticker, fundName, currentPrice }: { ticker: string; fund
 
 export function FundProfilePage() {
   const { ticker } = useParams<{ ticker: string }>();
-  const fundDef = FUND_BY_TICKER.get(ticker ?? '');
+  const { byTicker } = useFunds();
+  const fundDef = byTicker.get(ticker ?? '');
   const { fundQuote, loading } = useMarketData();
 
   if (!fundDef) {

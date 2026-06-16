@@ -89,6 +89,8 @@ chatmaxxing/
 | `execute-callback` | Fire on scheduled callback time | No |
 | `reset-beneficiaries` | Dev: reset test client beneficiary data | No |
 | `reset-all-data` | Dev: reset ALL fields for all 4 clients to defaults | No |
+| `get-funds` | Read the static fund catalog (all 36 funds) from `bobs-funds`; GET `/funds`, module-cached 60 min | No |
+| `reset-funds` | Seed `bobs-funds` from the bundled catalog; GET `/reset-funds?key=bobs-reset-2025` | No |
 
 ---
 
@@ -157,7 +159,8 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |
 | Transaction tables + history + status | Data: `bobs-transactions` table (`cdk/lib/data-stack.ts`), generator `lambda/shared/transaction-history.ts`, statuses `lambda/shared/transaction-status.ts`. API: `lambda/client-data/handler.ts` (`get-recent-transactions`/`get-transactions-page`/`append-transaction`). Frontend: `customer-app/src/data/transactionStatus.ts` (display copy), `components-v2/common/StatusCell.tsx` (dotted-underline popover), `hooks/useRecentTransactions.ts`, recent tables in `PortfolioPage.tsx` + `account/AccountDetailPage.tsx`, full page `components-v2/pages/transactions/TransactionHistoryPage.tsx` (route `/transactions`). Writes: `execute-task/handler.ts` (`appendTransactionRows`). Seed/clear: `reset-all-data/handler.ts`. |
-| Research fund lineup (36 funds) | `customer-app/src/data/funds.ts` (static profiles + `group` field) **and** `lambda/market-data/handler.ts` → `FUND_MAP` (ticker→Vanguard realSymbol for live Yahoo quotes). Keep the two in sync. The Research index page (`components-v2/pages/research/ResearchPage.tsx`) is a search/filter/sortable screener grouped by `group`. |
+| Research fund lineup (36 funds) | **Canonical source: `customer-app/src/data/funds.ts`** (`FUNDS: FundDef[]`, pure data — keep it React-free). It is the single edit point, the **seed** for the `bobs-funds` DynamoDB table, and the frontend **offline fallback**. At runtime the table is the source of truth: served by `GET /funds` (`lambda/get-funds`, module-cached) and consumed via the **`useFunds()` hook** (`customer-app/src/hooks/useFunds.ts`, localStorage TTL + bundled fallback). Seed/refresh per-env with `GET /reset-funds?key=bobs-reset-2025` (`lambda/reset-funds`). The backend reaches `funds.ts` through the **only** cross-package bridge, `lambda/shared/fund-catalog.ts` (re-exports `FUNDS` + `FUND_PICKLIST`). AI access: the **`get_funds`** tool in `lambda/shared/client-tools.ts` (reads `bobs-funds`, available to bot + NBR + task experts), and task-expert prompts inject `FUND_PICKLIST`. Live prices/returns still come from `lambda/market-data/handler.ts` → `FUND_MAP` (ticker→Vanguard realSymbol, Yahoo quotes) — that map is still hand-maintained and should be kept in sync with the catalog (a documented follow-up to derive it from `fund-catalog.ts`). Pages that show fund data (`/help/fees`, `/help/fund-performance`, `/help/prospectus`, `/resources/tax-efficient-investing`, `OpenAccountPage`, plus Research/`FundProfilePage`) all read via `useFunds()`. |
+| Content-page ordering rule | When a page mixes general explanatory content with a long, growing, data-driven list, put the general content **first** so list growth never buries it (e.g. FeesPage: Account Fees above the 36-row expense-ratio table). Long tables get a `maxHeight`+scroll. |
 | Intent summary label | `lambda/start-chat/handler.ts` → intentLabel prompt |
 | Agent greeting | `lambda/start-chat/handler.ts` → intentGreeting prompt |
 | ACW generation | `lambda/generate-acw/handler.ts` |
@@ -245,6 +248,13 @@ Sessions Table: `{ contactId (PK), clientId, timestamp, status, expiresAt (TTL 3
 
 Transcripts Table (`bobs-transcripts`, RETAIN): per-chat record incl. `messages`, `intentSummary`,
 `wrapUpCode`, `acwSummary`, and `agentUsername`/`agentName` (who handled it). GSI `clientId-savedAt-index`.
+
+Funds Table (`bobs-funds`): static fund-catalog reference data — one item per fund (PK `ticker`),
+the full `FundDef` shape (name, group, expenseRatio, riskLevel, descriptions, sectorAllocation,
+annualReturns, etc.). Runtime source of truth for content pages and AI; seeded from
+`customer-app/src/data/funds.ts` via `GET /reset-funds?key=bobs-reset-2025`. ~36 small items that
+change < once/day → read with a single Scan, module-cached in `get-funds` and the `get_funds` tool.
+Live prices/returns are NOT stored here (those come from the `market-data` Lambda).
 
 ---
 

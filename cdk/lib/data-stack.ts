@@ -12,6 +12,7 @@ export class DataStack extends cdk.Stack {
   public readonly callbacksTable: dynamodb.Table;
   public readonly transcriptsTable: dynamodb.Table;
   public readonly transactionsTable: dynamodb.Table;
+  public readonly fundsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: DataStackProps) {
     super(scope, id, props);
@@ -86,11 +87,26 @@ export class DataStack extends cdk.Stack {
       sortKey: { name: 'savedAt', type: dynamodb.AttributeType.NUMBER },
     });
 
+    // ── Funds table ────────────────────────────────────────────────
+    // Static fund-catalog reference data (the 36-fund lineup) — name, ticker, expense
+    // ratio, group, descriptions, risk, etc. This is the runtime source of truth for the
+    // content pages AND the AI systems, so they can never drift out of sync. Seeded from
+    // customer-app/src/data/funds.ts via the /reset-funds Lambda. Only ~36 small items and
+    // changes < once/day, so reads are a single full Scan (module-cached in the readers).
+    // Live prices/returns are NOT here — those stay in the market-data Lambda (Yahoo).
+    this.fundsTable = new dynamodb.Table(this, 'FundsTable', {
+      tableName: `bobs-funds${sfx}`,
+      partitionKey: { name: 'ticker', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ClientsTableName', { value: this.clientsTable.tableName });
     new cdk.CfnOutput(this, 'ChatSessionsTableName', { value: this.chatSessionsTable.tableName });
     new cdk.CfnOutput(this, 'CallbacksTableName', { value: this.callbacksTable.tableName });
     new cdk.CfnOutput(this, 'TranscriptsTableName', { value: this.transcriptsTable.tableName });
     new cdk.CfnOutput(this, 'TransactionsTableName', { value: this.transactionsTable.tableName });
+    new cdk.CfnOutput(this, 'FundsTableName', { value: this.fundsTable.tableName });
   }
 }

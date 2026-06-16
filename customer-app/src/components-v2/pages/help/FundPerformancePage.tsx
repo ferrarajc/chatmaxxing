@@ -1,20 +1,51 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { theme } from '../../../theme';
+import { useFunds } from '../../../hooks/useFunds';
+import { useMarketData } from '../../../hooks/useMarketData';
+import { FundGroup } from '../../../data/funds';
 
 const card: React.CSSProperties = {
   background: theme.color.surface, borderRadius: theme.radius.lg, padding: '24px',
   boxShadow: theme.shadow.sm, border: `1px solid ${theme.color.border}`, marginBottom: 20,
 };
 
+const GROUP_ORDER: FundGroup[] = ['US Equity', 'Sector Equity', 'International', 'Fixed Income'];
+
+function Perf({ value }: { value: number | null | undefined }) {
+  if (value === null || value === undefined) {
+    return <span style={{ color: theme.color.textSubtle }}>—</span>;
+  }
+  const color = value > 0 ? theme.color.success : value < 0 ? theme.color.danger : theme.color.textMuted;
+  const txt = `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
+  return <span style={{ color, fontWeight: 600 }}>{txt}</span>;
+}
+
+const thR: React.CSSProperties = {
+  textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`,
+  fontWeight: 700, position: 'sticky', top: 0, background: theme.color.bg,
+};
+const thL: React.CSSProperties = { ...thR, textAlign: 'left' };
+const tdR: React.CSSProperties = { padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text, textAlign: 'right' };
+const tdL: React.CSSProperties = { ...tdR, textAlign: 'left' };
+
 export function FundPerformancePage() {
+  const { funds } = useFunds();
+  const { fundQuote } = useMarketData();
+
+  const sorted = useMemo(() => {
+    const rank = (g: FundGroup) => GROUP_ORDER.indexOf(g);
+    return [...funds].sort((a, b) => rank(a.group) - rank(b.group) || a.name.localeCompare(b.name));
+  }, [funds]);
+
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px', fontFamily: theme.font.sans }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 24px', fontFamily: theme.font.sans }}>
       <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, fontFamily: theme.font.serif }}>Fund Performance FAQ</h1>
       <p style={{ margin: '0 0 32px', color: theme.color.textMuted, fontSize: 14 }}>
         Everything you need to know about how we measure and report fund performance at Bob's Mutual Funds.
       </p>
 
+      {/* Explanatory content first, so it stays visible as the fund table grows. */}
       <div style={card}>
         <h2 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, fontFamily: theme.font.serif }}>How is fund performance calculated?</h2>
         <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: theme.color.text }}>
@@ -23,55 +54,56 @@ export function FundPerformancePage() {
       </div>
 
       <div style={card}>
-        <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, fontFamily: theme.font.serif }}>BobsFunds Performance Summary</h2>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, fontFamily: theme.font.serif }}>BobsFunds Performance Summary</h2>
+          <span style={{ fontSize: 12, color: theme.color.textMuted }}>{sorted.length} funds</span>
+        </div>
+        <div style={{ maxHeight: 480, overflowY: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: theme.color.bg }}>
-                <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 700 }}>Fund</th>
-                <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 700 }}>YTD</th>
-                <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 700 }}>1-Year</th>
-                <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 700 }}>3-Year</th>
-                <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 700 }}>5-Year</th>
-                <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, fontWeight: 700 }}>Exp. Ratio</th>
+                <th style={thL}>Fund</th>
+                <th style={thR}>YTD</th>
+                <th style={thR}>1-Year</th>
+                <th style={thR}>3-Year</th>
+                <th style={thR}>5-Year</th>
+                <th style={thR}>Exp. Ratio</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { fund: 'BobsFunds 500 Index (BF500)', ytd: '+8.4%', y1: '+24.1%', y3: '+9.8%', y5: '+13.2%', exp: '0.03%' },
-                { fund: 'BobsFunds Growth (BFGR)', ytd: '+11.2%', y1: '+31.4%', y3: '+12.1%', y5: '+18.7%', exp: '0.25%' },
-                { fund: 'BobsFunds Bond Income (BFBI)', ytd: '+1.8%', y1: '+4.2%', y3: '+2.1%', y5: '+3.8%', exp: '0.10%' },
-                { fund: 'BobsFunds International (BFIN)', ytd: '+6.3%', y1: '+15.3%', y3: '+6.4%', y5: '+9.1%', exp: '0.20%' },
-                { fund: 'BobsFunds ESG Leaders (BFESG)', ytd: '+7.9%', y1: '+22.7%', y3: '+9.3%', y5: '+12.8%', exp: '0.18%' },
-                { fund: 'BobsFunds Short-Term Treasury (BFST)', ytd: '+1.9%', y1: '+5.1%', y3: '+3.2%', y5: '+2.9%', exp: '0.08%' },
-              ].map((row, i) => (
-                <tr key={row.fund} style={{ background: i % 2 === 0 ? 'transparent' : theme.color.bg }}>
-                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text }}>{row.fund}</td>
-                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text, textAlign: 'right' }}>{row.ytd}</td>
-                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text, textAlign: 'right' }}>{row.y1}</td>
-                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text, textAlign: 'right' }}>{row.y3}</td>
-                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text, textAlign: 'right' }}>{row.y5}</td>
-                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text, textAlign: 'right' }}>{row.exp}</td>
-                </tr>
-              ))}
+              {sorted.map((f, i) => {
+                const q = fundQuote(f.ticker);
+                return (
+                  <tr key={f.ticker} style={{ background: i % 2 === 0 ? 'transparent' : theme.color.bg }}>
+                    <td style={tdL}>{f.name} <span style={{ color: theme.color.textMuted, fontWeight: 600 }}>({f.ticker})</span></td>
+                    <td style={tdR}><Perf value={q?.ytd} /></td>
+                    <td style={tdR}><Perf value={q?.oneYear} /></td>
+                    <td style={tdR}><Perf value={q?.threeYear} /></td>
+                    <td style={tdR}><Perf value={q?.fiveYear} /></td>
+                    <td style={tdR}>{f.expenseRatio.toFixed(2)}%</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-        <div style={{ background: theme.color.successSoft, border: `1px solid ${theme.color.successBorder}`, borderRadius: 8, padding: '12px 16px', fontSize: 13, color: theme.color.text }}>
-          Returns as of April 30, 2025. Past performance is not a guarantee of future results.
+        <div style={{ marginTop: 16, background: theme.color.successSoft, border: `1px solid ${theme.color.successBorder}`, borderRadius: 8, padding: '12px 16px', fontSize: 13, color: theme.color.text }}>
+          Returns reflect the latest delayed market quotes and are shown net of fees. Past performance is not a guarantee of future results. A dash (—) means a live quote is temporarily unavailable.
         </div>
       </div>
 
       <div style={card}>
         <h2 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, fontFamily: theme.font.serif }}>What benchmarks do your funds use?</h2>
-        <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, lineHeight: 1.6, color: theme.color.text }}>
-          <li><strong>BF500:</strong> S&amp;P 500 Index</li>
-          <li><strong>BFGR:</strong> Russell 1000 Growth Index</li>
-          <li><strong>BFBI:</strong> Bloomberg US Aggregate Bond Index</li>
-          <li><strong>BFIN:</strong> MSCI EAFE Index</li>
-          <li><strong>BFESG:</strong> MSCI USA ESG Leaders Index</li>
-          <li><strong>BFST:</strong> Bloomberg US 1–3 Year Treasury Index</li>
-        </ul>
+        <p style={{ margin: '0 0 12px', fontSize: 13, color: theme.color.textMuted }}>
+          Each fund is measured against a widely recognized index:
+        </p>
+        <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+          <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, lineHeight: 1.7, color: theme.color.text }}>
+            {sorted.map(f => (
+              <li key={f.ticker}><strong>{f.ticker}:</strong> {f.benchmark}</li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       <div style={card}>

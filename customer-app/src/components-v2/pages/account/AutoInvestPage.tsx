@@ -14,15 +14,6 @@ const card: React.CSSProperties = {
   marginBottom: 20,
 };
 
-const FUNDS = [
-  { name: 'BobsFunds 500 Index', ticker: 'BF500' },
-  { name: 'BobsFunds Growth', ticker: 'BFGR' },
-  { name: 'BobsFunds Bond Income', ticker: 'BFBI' },
-  { name: 'BobsFunds ESG Leaders', ticker: 'BFESG' },
-  { name: 'BobsFunds International', ticker: 'BFIN' },
-  { name: 'BobsFunds Short-Term Treas.', ticker: 'BFST' },
-];
-
 export function AutoInvestPage() {
   const { activePersona, updateAutoInvestSchedule } = useClientStore();
   const [editingId, setEditingId] = useState<string | null>(null);

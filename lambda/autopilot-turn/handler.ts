@@ -11,6 +11,7 @@ import {
   jsonResponse,
 } from '../shared/types';
 import { TASKS, matchTaskByIntent, filterFields } from '../shared/tasks';
+import { FUND_PICKLIST } from '../shared/fund-catalog';
 import { fromZonedTime } from 'date-fns-tz';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
@@ -803,7 +804,7 @@ You are handling a BUY / MAKE A CONTRIBUTION request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND — one of: BF500 (500 Index), BFGR (Growth), BFBI (Bond Income), BFIN (International), BFESG (ESG Leaders), BFST (Short-Term Bond)
+${accountSection}FUND — one of: ${FUND_PICKLIST}
   If the client uses a partial name (e.g. "the growth fund"), map it to the correct ticker.
 
 PURCHASE AMOUNT — a specific dollar amount (e.g. "$5,000")
@@ -867,7 +868,7 @@ You are handling a SELL FUND SHARES request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND TO SELL — one of: BF500, BFGR, BFBI, BFIN, BFESG, BFST
+${accountSection}FUND TO SELL — one of: ${FUND_PICKLIST}
   Map partial names to the correct ticker.
 
 AMOUNT — one of:
@@ -936,10 +937,10 @@ You are handling an EXCHANGE BETWEEN FUNDS request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND TO EXCHANGE OUT OF — one of: BF500, BFGR, BFBI, BFIN, BFESG, BFST
+${accountSection}FUND TO EXCHANGE OUT OF — one of: ${FUND_PICKLIST}
   The source fund (money moves out of this fund).
 
-FUND TO EXCHANGE INTO — one of: BF500, BFGR, BFBI, BFIN, BFESG, BFST
+FUND TO EXCHANGE INTO — one of: ${FUND_PICKLIST}
   The destination fund (money moves into this fund). Must be different from the source.
 
 AMOUNT TO EXCHANGE — one of:
@@ -1008,7 +1009,7 @@ You are handling a CHANGE DIVIDEND REINVESTMENT (DRIP) request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND — one of: BF500, BFGR, BFBI, BFIN, BFESG, BFST
+${accountSection}FUND — one of: ${FUND_PICKLIST}
   Which fund to change the dividend setting for.
 
 TURN ON OR OFF — one of:
@@ -1069,7 +1070,7 @@ You are handling a SET UP AUTOMATIC INVESTMENT request.
 WHAT YOU NEED TO COLLECT — all five
 ════════════════════════════════════
 
-${accountSection}FUND — one of: BF500 (500 Index), BFGR (Growth), BFBI (Bond Income), BFIN (International), BFESG (ESG Leaders), BFST (Short-Term Bond)
+${accountSection}FUND — one of: ${FUND_PICKLIST}
 
 INVESTMENT AMOUNT — a specific dollar amount per period (e.g. "$200")
 
@@ -2078,7 +2079,7 @@ Example — client says "I want to update my beneficiaries":
 "You can update your beneficiaries directly at [Beneficiaries](/account/beneficiaries) — it only takes a minute. For guidance on beneficiary designation rules, see our [Beneficiary Designations](/help/beneficiary) page."
 
 Example — client asks about expense ratios, fees, or management fees:
-"Our fund expense ratios range from 0.03% (500 Index) to 0.25% (Growth) — no account maintenance fees or trading fees. Full details at [Fees & Expense Ratios](/help/fees)."
+"Our fund expense ratios range from 0.03% (500 Index) to 0.13% (Real Estate Index) — no account maintenance fees or trading fees. Full details at [Fees & Expense Ratios](/help/fees)."
 
 Example — client asks about cost basis or changing their cost basis method:
 "You can change your cost basis method under My Account > Tax Settings before placing a sale. See [Cost Basis Methods](/help/cost-basis) for a full explanation of the available methods."`;

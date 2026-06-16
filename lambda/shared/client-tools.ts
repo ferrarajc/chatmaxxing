@@ -1,4 +1,4 @@
-import { GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from './dynamo-client';
 
 export interface OpenAITool {
@@ -10,7 +10,8 @@ export interface OpenAITool {
   };
 }
 
-// All 7 client data tools — empty input schema since clientId lives in Lambda scope
+// Tool catalog — empty input schemas since clientId lives in Lambda scope. Most read the
+// client's own data; get_funds reads the client-agnostic fund lineup (bobs-funds table).
 export const ALL_CLIENT_TOOLS: OpenAITool[] = [
   {
     type: 'function',
@@ -76,13 +77,27 @@ export const ALL_CLIENT_TOOLS: OpenAITool[] = [
       parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'get_funds',
+      description: "Fetch Bob's Mutual Funds' FULL fund lineup (every fund offered): ticker, name, asset-class family (US Equity / Sector Equity / International / Fixed Income), annual expense ratio, and risk level. Use this whenever the customer asks what funds are available, for fund options/expense ratios, or to look up a fund by name or ticker. This is the authoritative catalog — do not rely on memory. Live prices/returns are NOT included here.",
+      parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
+    },
+  },
 ];
 
 export const NBR_CLIENT_TOOLS = ALL_CLIENT_TOOLS;
 
 const TABLE = () => process.env.CLIENTS_TABLE ?? 'bobs-clients';
 const TXNS_TABLE = () => process.env.TRANSACTIONS_TABLE ?? 'bobs-transactions';
+const FUNDS_TABLE = () => process.env.FUNDS_TABLE ?? 'bobs-funds';
 const MAX_RESULT_CHARS = 2000;
+
+// Module-cached formatted fund catalog. The fund lineup is client-agnostic and changes
+// < once/day, so we scan once and reuse across warm invocations (60-min TTL).
+let fundsCache: { text: string; expiresAt: number } | null = null;
+const FUNDS_CACHE_TTL_MS = 60 * 60 * 1000;
 
 function cap(s: string): string {
   return s.length > MAX_RESULT_CHARS ? s.slice(0, MAX_RESULT_CHARS) + '...[truncated]' : s;
@@ -236,6 +251,21 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
       if (!history.length) return 'No recent chat history on file.';
       const lines = history.map(h => `${h.date} — ${h.topic}: ${h.summary}`);
       return cap(lines.join('\n'));
+    }
+
+    case 'get_funds': {
+      // Client-agnostic — reads the bobs-funds catalog (module-cached). Returns the full list
+      // uncapped (the whole lineup matters); ~36 compact lines stay well under token limits.
+      if (fundsCache && Date.now() < fundsCache.expiresAt) return fundsCache.text;
+      const res = await docClient.send(new ScanCommand({ TableName: FUNDS_TABLE() }));
+      const funds = (res.Items as Array<{ ticker: string; name: string; group: string; expenseRatio: number; riskLevel: string }> | undefined) ?? [];
+      if (!funds.length) return 'Fund lineup is temporarily unavailable.';
+      const order = ['US Equity', 'Sector Equity', 'International', 'Fixed Income'];
+      funds.sort((a, b) => (order.indexOf(a.group) - order.indexOf(b.group)) || a.name.localeCompare(b.name));
+      const lines = funds.map(f => `${f.ticker} | ${f.name} | ${f.group} | ${f.expenseRatio}% expense ratio | ${f.riskLevel} risk`);
+      const text = `Bob's Mutual Funds — full lineup (${funds.length} funds):\n${lines.join('\n')}`;
+      fundsCache = { text, expiresAt: Date.now() + FUNDS_CACHE_TTL_MS };
+      return text;
     }
 
     default:
