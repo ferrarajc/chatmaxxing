@@ -1,0 +1,146 @@
+Issue Type,Issue ID,Parent ID,Epic Link,Epic Name,Parent Link,Parent,Summary,Component/s,Priority,Story Points,Labels,Labels,Labels,Description,Acceptance Criteria
+Feature,1,,,,,,Client Self-Service Portal,Client Portal,Highest,,customer-app,self-service,react,"The Vanguard client web application: a responsive single-page portal where retail investors view accounts, holdings, and transactions; research the fund lineup; manage beneficiaries, automatic investing, RMDs, and tax documents; open new accounts; and read education content - all without calling in. This is the surface every other capability plugs into (the chat assistant, autopilot task fulfillment, and fund data all render here).
+
+Value: deflects routine call volume, lets investors self-serve 24/7, and raises satisfaction by making the most common account actions doable in a few clicks.
+
+=== ARCHITECTURE & STACK ===
+This is the customer SPA (one of two React apps). Stack: React 18 + Vite + TypeScript, Zustand for
+state, React Router v6 (BrowserRouter, basename = import.meta.env.BASE_URL). Built as a static bundle
+deployed to the web root (GitHub Pages or S3+CloudFront).
+State: clientStore (Zustand) loads the whole client profile once via fetchAll() and exposes selectors;
+chatStore owns chat UI state. Components read stores and call the API; they hold no business logic.
+Data path: ALL reads/writes go browser -> API Gateway (HTTP API) -> client-data Lambda -> DynamoDB
+Clients table (PK clientId). Never call DynamoDB from the browser.
+Shell: an AccessGate wraps the router; a ScrollToTop listener resets scroll on route change; theme
+tokens live in one module; the build SHA is stamped on window for prod verification.
+Demo data: seed/reset per environment via GET /reset-client-data?key=...","Definition of done:
+- Every route below is reachable from the global navigation and renders live account data.
+- The app is gated behind an access check and is usable on desktop and mobile widths.
+- No page shows placeholder/mock data where a real DynamoDB-backed value exists."
+Feature,53,,,,,,Conversational AI Assistant (Client Chat),Client Chat,Highest,,customer-app,ai,connect,"A floating chat assistant available on every portal page. It opens an Amazon Connect chat session, answers questions instantly via an AI bot, links investors to self-service pages, and escalates to a live agent (or schedules a callback) the moment a request needs a human or an account change. The experience is engineered to feel human: realistic typing/reading delays, agent avatars and names, minimize/persist behavior, chat history, and the ability to resume a recent agent conversation.
+
+Value: gives every investor an immediate, knowledgeable first responder, deflecting simple contacts and warming up the ones that escalate so agents start with full context.
+
+=== ARCHITECTURE & STACK ===
+Lives in the customer SPA. Transport: Amazon Connect ChatJS SDK. A useChatSession hook owns the Connect
+session: start via POST /start-chat (creates the Connect contact, returns participant credentials), then
+ChatJS connect/sendMessage/onMessage/onTyping. chatStore (Zustand) holds view state and is persisted to
+sessionStorage (per tab) for resume.
+Components: ChatWidget (global FAB, mounted OUTSIDE <Routes>), ChatPanel (header, minimize/close, view
+switch chat/history/transcript), ChatBody (messages + typing + cards), ChatMessage, ChatInput,
+TopicButtons/QuestionButtons, ContinueChatCard, ApprovalFormCard, ChatHistoryView, ChatMinimizedBar.
+Pre-agent AI replies come from POST /autopilot-turn (full-auto scope). Control messages (agent name,
+typing-stop sentinel, approval forms) are intercepted in onMessage and NOT rendered as chat bubbles.
+GOTCHA: a customer ChatJS session ends via disconnectParticipant() - there is NO disconnect() (calling it
+throws; a swallowing try/catch hid this for weeks). Treat ChatJS onEnded as ""chat over"" ONLY in
+CONNECTED_TO_AGENT / WAITING_FOR_AGENT states - non-escalated contacts fire onEnded seconds after connect
+while the bot keeps answering via the fallback path.","Definition of done:
+- The widget is reachable from any page and reliably starts and ends Connect sessions.
+- The bot answers, links, and escalates; live-agent UX is indistinguishable from a human.
+- History, persistence, and resume all work across reloads and off-site navigation."
+Feature,89,,,,,,AI Autopilot Engine,Autopilot Engine,Highest,,backend,ai,llm,"The core intelligence of the platform: a single Lambda that handles every AI-driven chat turn for both the pre-agent bot and the live-agent autopilot. For a live chat it identifies which of 19 account tasks the client needs, then drives a structured, reactive field-collection conversation until every required value is confirmed - at which point it hands the agent a ready-to-approve Proposed Action. It applies shared guardrails (financial advice, trades, fraud, inheritance) across every task and uses the right model for each job (Amazon Nova Micro for fast classification; OpenAI GPT for the conversational experts).
+
+Value: this is what lets one agent supervise many conversations - the AI does the collecting, validating, and structuring; the agent does the judgment.
+
+=== ARCHITECTURE & STACK ===
+A single Node 20 Lambda (handler.ts, ~1900 lines) behind POST /autopilot-turn, scope-dispatched
+(full-auto | get-intent | idle-check | callback | locate-evidence). Stateless and reactive: ONE invocation
+per client message, no polling, no server-side state between turns (the transcript is passed in).
+Models: Bedrock Nova Micro (invokeNovaMicro) for classification, full-auto, ACW, NBR, intent labels; OpenAI
+gpt-4o for the get-intent task experts (gpt-4o-mini proved too weak for the experts' rules); gpt-4o-mini is
+the default for bot/NBR/labels for cost. OPENAI_API_KEY resolves from SSM at deploy.
+Shared modules: tasks.ts (TASKS catalog + matchTaskByIntent + filterFields), kb.ts, types.ts, client-tools
+.ts (on-demand tool calling). Returns {reply, shouldExitAutopilot, proposedAction?, scope}.
+INVARIANT (safety guard): never return shouldExitAutopilot=true without a concrete proposedAction - if that
+happens, reset it to false. Wrap model calls in try/catch (holding message + safe exit on error).","Definition of done:
+- The engine routes every scope correctly and never hands off without a complete Proposed Action.
+- All 19 task experts collect their fields, enforce their rules, and exit cleanly.
+- Shared guardrails apply identically across every task."
+Feature,139,,,,,,Agent Workspace,Agent Workspace,Highest,,agent-app,connect,react,"A four-column dashboard that lets a single representative handle up to four simultaneous client chats. Each column carries the client profile, the live chat thread, an AI support panel (suggested replies, predicted topics/questions, recommended articles, autopilot controls), and a Proposed Action card the agent reviews and approves. The workspace also manages incoming contacts, detects client disconnects, and auto-generates after-call work. The guiding principle: the AI does the work, the agent does the judgment.
+
+Value: multiplies agent capacity and quality - more concurrent conversations, less typing and lookup, and consistent wrap-up.
+
+=== ARCHITECTURE & STACK ===
+The agent SPA (React 18 + Vite + TS), served at /agent. Telephony/chat via Amazon Connect Streams + an
+embedded CCP. agentStore (Zustand) holds up to 4 ContactSlots {contactId, clientId, status, messages,
+proposedAction, proposedActionEvidence, customerTyping, customerDisconnected, ...}. A useConnectStreams
+hook wires CCP events (contact.onConnecting/onConnected/onEnded, chatSession.onMessage/onTyping) into the
+store. Layout: AgentDesktop (4-column grid) + FocusingDesktop (single contact). Per column: ChatColumn,
+ProposedActionCard, AISupport, IncomingAlert, IntentLabel, ResponseTimer, AfterCallWork, AutopilotMenu.
+Connection tokens via the agent-connection Lambda; agent->customer messages/typing via send-agent-message.
+GOTCHA: chatjs routes unmapped event types (e.g. participant.left) to onMessage - use that to detect the
+customer leaving. Because Connect ends the whole contact on customer disconnect, hold the slot at 'active'
+(don't auto-advance to ACW) until the agent clicks End chat.","Definition of done:
+- An agent can run up to four concurrent chats with per-column context and AI support.
+- Incoming contacts, disconnects, and ACW are handled in every UI mode.
+- Proposed Actions can be reviewed, edited, and submitted with evidence visible."
+Feature,166,,,,,,Task Execution & Fulfillment,Task Execution,Highest,,backend,dynamodb,,"Turns an approved Proposed Action into a real outcome. The execute-task Lambda performs the action - writing to DynamoDB for the tasks that own real data (beneficiaries, auto-invest, RMD settings) and returning realistic confirmations for the rest - always producing a traceable reference number and a structured confirmation the client sees as a green card. It also implements the submission-type framework, including the client-submitted (Type 3) approval round-trip.
+
+Value: closes the loop - requests collected by AI and approved by an agent actually take effect, with an auditable confirmation.
+
+=== ARCHITECTURE & STACK ===
+execute-task Lambda (Node 20) behind POST /execute-task; dispatch by taskId. Real writes use the
+lib-dynamodb DocumentClient (UpdateCommand) on the Clients table; mock tasks return a well-formed
+confirmation. Every result carries referenceNumber = REF-XXXXXX. The confirmation is delivered to the
+client chat (via send-agent-message) as a structured payload the customer renders as a green confirmation
+card. submissionType is stamped on the proposedAction (withSubmissionType) at both return sites in
+autopilot-turn.","Definition of done:
+- Every execution returns a REF-XXXXXX reference and a structured confirmation.
+- Real-data tasks persist correctly; mock tasks return clean confirmations.
+- Type 3 actions execute only after the client approves, with identical confirmation."
+Feature,183,,,,,,Knowledge & Predictive Assistance,Knowledge & Predict,High,,backend,ai,,"The knowledge and prediction layer that makes both the client chat and the agent workspace feel anticipatory: a curated knowledge base (62 topics, 247 Q&A pairs) mapped to pages and wizard steps, plus three predictive services - predict-intent (relevant topics for the page/conversation), predict-questions (the client's likely next questions), and next-best-response (a suggested agent reply with an autopilot scope hint).
+
+Value: reduces effort on both sides of the conversation and surfaces the right knowledge at the right moment.
+
+=== ARCHITECTURE & STACK ===
+kb.ts is a pure (React-free) data module: KB topics + ~247 Q&A + EXTRA_PAGE_TOPICS (page/step -> topic ids)
++ matchResources (article recommender). Three Nova Micro Lambdas behind their routes: predict-intent
+(page+convo -> topics), predict-questions (convo -> 3 next questions), next-best-response (convo -> reply +
+autopilot scope). Consumed by the customer chat pills (TopicButtons/QuestionButtons) and the agent AISupport
+panel. Keep kb.ts importable by both frontends and lambdas.","Definition of done:
+- KB content is page/step-mapped and powers chat pills and the agent topic row.
+- Predict-intent, predict-questions, and next-best-response each return useful, scoped results."
+Feature,192,,,,,,Callback Scheduling,Callbacks,Medium,,backend,connect,,"For clients who prefer a phone call to a chat, the platform schedules a validated callback: the schedule-callback Lambda creates an Amazon EventBridge Scheduler event for the requested time, the execute-callback Lambda fires at that time (in production it would trigger an outbound call), and the cancel/reschedule task path lets clients change it. The agent app shows a callback confirmation with the scheduled time and a reference.
+
+Value: meets clients on their preferred channel and guarantees the call is scheduled at the right instant.
+
+=== ARCHITECTURE & STACK ===
+schedule-callback Lambda creates a one-time Amazon EventBridge Scheduler schedule targeting the
+execute-callback Lambda at the resolved UTC instant. The time is computed + validated SERVER-side (never by
+the LLM - see the autopilot callback scope, which emits {dayReference,hour24,minute} and lets the server
+resolve ET->UTC). The agent app shows a callback confirmation (time + REF). cancel-reschedule-callback (a
+standard task) updates or deletes the schedule.","Definition of done:
+- A requested callback creates a scheduled event at the correct (validated) time.
+- The event fires at the scheduled time and is observable.
+- Clients can cancel or reschedule via the standard task flow."
+Feature,198,,,,,,Fund Catalog & Market Data,Funds & Market Data,High,,backend,customer-app,funds,"A single source of truth for fund reference data and a separate live-price service. The fund catalog (the full lineup) is seeded into a DynamoDB table from one canonical definition and served via an API with caching; every content page, picker, and all three AI systems read the same catalog, so they can never disagree about what funds exist or what they cost. Live intraday prices and returns come from a dedicated market-data service whose symbol map is derived from the catalog (so it cannot drift).
+
+Value: consistency and trust - one update propagates everywhere, and pages never contradict the assistant.
+
+=== ARCHITECTURE & STACK ===
+One canonical fund data file (pure data, framework-free) is the single edit point, the SEED for the Funds
+DynamoDB table (PK ticker), and the frontend offline fallback. At runtime the TABLE is the source of truth:
+the get-funds Lambda serves GET /funds (module-cached ~60min); the useFunds() hook consumes it (localStorage
+TTL + bundled fallback). The backend reaches the canonical file through ONE bridge module (re-exports the
+fund list + a FUND_PICKLIST). AI access: a get_funds tool (reads the table) for bot/NBR/experts, plus
+FUND_PICKLIST injected into expert prompts. Live prices/returns come from a separate market-data Lambda
+whose ticker->symbol map is DERIVED from the catalog (so it cannot drift). Seed/refresh a fresh env via
+GET /reset-funds?key=...","Definition of done:
+- The catalog is the runtime source of truth, served with caching and an offline fallback.
+- Content pages, pickers, and all AI systems read the same catalog.
+- Live prices come from market data whose symbols derive from the catalog."
+Feature,209,,,,,,"Platform, Infrastructure & Delivery",Platform & Infra,High,,infra,cdk,backend,"The serverless foundation and the safe path to production. Everything is defined as AWS CDK (API Gateway, Lambdas, DynamoDB, EventBridge, IAM, contact center, budgets, CI/CD roles), with an isolated dev environment that mirrors prod and a ""main always equals production"" delivery model: merging to main triggers guarded GitHub Actions deploys that refuse to delete or replace a live resource. It also covers the data layer and demo-data tooling, transcript storage and review, and observability and cost safety.
+
+Value: reliable, low-cost, reproducible infrastructure and a delivery process that cannot silently break prod.
+
+=== ARCHITECTURE & STACK ===
+AWS CDK (TypeScript). Stacks: DataStack (DynamoDB + IAM), LambdaStack (API Gateway HTTP API + all Lambdas +
+env wiring + EventBridge scheduler role), plus ConnectStack, BudgetStack, CicdStack (rarely changed). Stage-
+parameterized: STAGE=dev synthesizes an isolated env (-dev suffixes + a separate API); prod is byte-
+identical. Secrets (model + pager keys) resolve from SSM at deploy. Deploys go through a guarded script
+(safe-deploy.mjs): tsc --noEmit + cdk diff + a destroy-guard that ABORTS if any live resource would be
+removed/replaced (override only with ALLOW_DESTROY=1). GitHub Actions on merge to main: deploy-cdk (CDK via
+OIDC) + frontend deploys to gh-pages. main == production; rollback = revert the merge commit.","Definition of done:
+- All infrastructure is code; dev and prod are built from the same definitions.
+- Merging to main deploys prod through a destroy-guarded pipeline.
+- Data, transcripts, observability, and cost controls are in place."
