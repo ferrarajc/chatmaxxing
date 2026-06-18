@@ -1,0 +1,1708 @@
+Issue Type,Issue ID,Parent ID,Epic Link,Epic Name,Parent Link,Parent,Summary,Component/s,Priority,Story Points,Labels,Labels,Labels,Description,Acceptance Criteria
+Epic,2,,,"Portal Shell, Navigation & Access Gating",,,"Portal Shell, Navigation & Access Gating",Client Portal,Highest,,customer-app,react,,"The application frame that hosts every page: global top navigation, client-side routing, the access gate that protects the demo, scroll-to-top on navigation, web-font loading, and the build-SHA stamp used to confirm exactly what is deployed.
+
+Value: a consistent, fast, secure shell is the precondition for every other portal capability.
+
+=== TECHNICAL SCOPE ===
+Components: AccessGate, a top-nav component, a ScrollToTop route listener, a theme-tokens module.
+AccessGate compares the entered code to a build-time env var (VITE_DEMO_CODE); on success it writes a
+localStorage flag and renders children; the flag short-circuits the gate on return visits.
+Build stamp: set window.__BUILD__ and console.log(""build "" + sha); inject the commit SHA via a Vite
+define at build time (CI passes it from the workflow context).","Definition of done:
+- All routes are registered and 404s are handled gracefully.
+- The access gate blocks unauthenticated access and remembers a valid entry per browser.
+- window.__BUILD__ reflects the deployed commit SHA."
+Story,3,,"Portal Shell, Navigation & Access Gating",,,2,Gate portal access behind an access code,Client Portal,High,3,customer-app,security,,"As a platform owner, I want the client portal to require a valid access code before any page renders, so that only authorized people can reach the demo environment and we can detect first-time sign-ins.
+
+On a correct code the gate persists a flag in localStorage so the prompt is not shown again on that browser; on a fresh/cleared browser a correct code fires a one-time client-log signin event.
+
+=== TECHNICAL DESIGN ===
+Implement AccessGate as a wrapper around <Routes>. Read VITE_DEMO_CODE at build time. State: an
+""unlocked"" boolean seeded from localStorage (e.g. key portal_access). On submit compare; on match set
+localStorage + state; on miss show an inline error and keep the gate. Store only an opaque flag, never
+the code itself.
+Signin beacon: only when the flag was NOT already set (first unlock on this browser) AND only in PROD
+(guard on import.meta.env), fire-and-forget POST /client-log {context:""access-code-entered""} using
+fetch keepalive so it never blocks render.","Scenario: First visit requires the code
+  Given I have never entered the access code on this browser
+  When I open any portal URL
+  Then I am shown the access gate and no portal content is rendered
+
+Scenario: Correct code unlocks and is remembered
+  Given I am on the access gate
+  When I enter the correct access code
+  Then the portal renders and I am not prompted again on this browser
+
+Scenario: Incorrect code is rejected
+  Given I am on the access gate
+  When I enter an incorrect code
+  Then I remain on the gate with an error and no content is exposed"
+Sub-task,4,3,,,,3,Implement AccessGate component with localStorage flag,Client Portal,,,,,,Wrap the router in an access gate; persist an access flag in localStorage on success so the prompt is shown once per browser.,
+Sub-task,5,3,,,,3,Fire one-time access-code-entered client-log event on fresh unlock,Client Portal,,,,,,"PROD-only fire-and-forget POST /client-log {context:""access-code-entered""} when the flag was not already set.",
+Story,6,,"Portal Shell, Navigation & Access Gating",,,2,Provide global top navigation across the portal,Client Portal,High,3,customer-app,ux,,"As an investor, I want a persistent top navigation bar with links to Home, Portfolio, Research, Account, and the help/resources areas, so that I can move between portal areas from anywhere without using the browser back button.
+
+=== TECHNICAL DESIGN ===
+One top-nav component rendered above <Routes>; use NavLink for active styling. Drive links from a small
+declarative config array (Home, Portfolio, Research, Account, Resources/Help). Collapse to a menu under
+a mobile breakpoint.","Scenario: Navigation is always available
+  Given I am on any portal page
+  Then the top navigation is visible and links to the major areas
+  And the current section is visually indicated"
+Story,7,,"Portal Shell, Navigation & Access Gating",,,2,Reset scroll position and load fonts/branding on navigation,Client Portal,,2,customer-app,ux,,"As an investor, I want each page to open scrolled to the top with consistent Vanguard typography, so that navigating feels like a fresh page rather than a mid-scroll jump.
+
+=== TECHNICAL DESIGN ===
+ScrollToTop: a component using useLocation + useEffect to window.scrollTo(0,0) on pathname change. Load
+web fonts via a <link> injected in an effect (or in index.html). Keep theme tokens centralized.","Scenario: New route starts at the top
+  Given I am scrolled down on one page
+  When I navigate to a different route
+  Then the new page is scrolled to the top"
+Story,8,,"Portal Shell, Navigation & Access Gating",,,2,Stamp the deployed build SHA into the app,Client Portal,,1,customer-app,infra,,"As an engineer, I want the running app to log its build commit and expose it on window.__BUILD__, so that I can confirm exactly which commit is live in prod without guessing.
+
+=== TECHNICAL DESIGN ===
+Inject the git SHA via a Vite define (e.g. __BUILD_SHA__) at build time; at startup set window.__BUILD__
+and console.log it. CI provides the SHA from the workflow context (e.g. github.sha).","Scenario: Build SHA is observable
+  Given the app has loaded
+  When I open the browser console
+  Then it logs ""build <sha>"" and window.__BUILD__ equals that SHA"
+Epic,9,,,Account Overview & Detail,,,Account Overview & Detail,Client Portal,Highest,,customer-app,self-service,,"The account hub and per-account detail pages: every account the investor holds (Roth IRA, Traditional IRA, SEP-IRA, Taxable), each balance and day change, and the holdings within each account. Detail pages link out to the self-service actions (beneficiaries, auto-invest, RMD, etc.).
+
+Value: a single, trustworthy view of ""what do I have and what is it worth"" is the most-visited reason investors log in.
+
+=== TECHNICAL SCOPE ===
+Pages: Account hub (/account) and Account detail (/account/detail/:accountId). Data from clientStore
+(accounts[], holdings[], totalBalance). Reuse a shared AccountCard + HoldingsTable. Detail filters
+holdings + recent transactions by accountId and shows type-specific action links.
+Shapes: account {type,balance,id,change}; holding {name,ticker,accountId,shares,price,change,value,drip?}.","Definition of done:
+- The account hub lists every account with type, balance, and day change from live data.
+- Each account detail page shows that account's holdings and recent transactions.
+- Deep links to beneficiaries/auto-invest/RMD/tax-docs are present where applicable."
+Story,10,,Account Overview & Detail,,,9,View all accounts on an account hub,Client Portal,High,3,customer-app,,,"As an investor, I want a hub page listing every account I hold with its type, balance, and day change, so that I get a complete picture of my relationship in one place.
+
+=== TECHNICAL DESIGN ===
+Map clientStore.accounts to AccountCards; verify the displayed total equals the sum of balances;
+right-align currency per the table rules; link each card to /account/detail/:id.","Scenario: Accounts are listed from live data
+  Given I am a signed-in investor with multiple accounts
+  When I open the Account page
+  Then I see each account with its type, current balance, and day change
+  And the totals reconcile with my portfolio total balance"
+Story,11,,Account Overview & Detail,,,9,Drill into a single account's detail,Client Portal,High,3,customer-app,,,"As an investor, I want an account detail page showing that account's holdings and recent transactions, so that I can inspect a specific account without sifting through everything at once.
+
+=== TECHNICAL DESIGN ===
+Read :accountId from route params; filter holdings by accountId; show recent activity via
+useRecentTransactions(accountId); render type-specific links (IRA/SEP -> beneficiaries, RMD; etc.).","Scenario: Account detail shows holdings and recent activity
+  Given I am on the Account hub
+  When I open a specific account
+  Then I see its holdings (fund, shares, price, value) and its most recent transactions
+  And links to the relevant self-service actions for that account type"
+Epic,12,,,Portfolio Dashboard,,,Portfolio Dashboard,Client Portal,High,,customer-app,self-service,,"A consolidated portfolio view: total balance across accounts, holdings, and a recent-transactions snapshot, plus the primary entry point to open a new account. Where the account hub is ""my accounts"", the portfolio is ""my money in aggregate"".
+
+Value: gives investors the at-a-glance net position and a clear next action (invest more / open an account).
+
+=== TECHNICAL SCOPE ===
+Page /portfolio. Aggregate totalBalance + holdings across accounts from clientStore; a recent-
+transactions snapshot (top N via useRecentTransactions) links to /transactions; an ""Open an account""
+button in the header navigates to /open-account. The chat FAB is global (rendered outside <Routes>).","Definition of done:
+- Total balance and holdings aggregate correctly across all accounts.
+- A recent-transactions snapshot links to the full Transaction History page.
+- An ""Open an account"" action is present in the page header."
+Story,13,,Portfolio Dashboard,,,12,See an aggregate portfolio with holdings and recent activity,Client Portal,High,5,customer-app,,,"As an investor, I want a portfolio dashboard with my total balance, holdings, and a snapshot of recent transactions, so that I understand my overall position at a glance.
+
+=== TECHNICAL DESIGN ===
+Aggregate holdings across accounts, sort by value; reuse HoldingsTable. Snapshot = top 5 recent
+transactions with StatusCell. Right-align numeric/currency columns.","Scenario: Portfolio aggregates across accounts
+  Given I hold positions in more than one account
+  When I open the Portfolio page
+  Then I see my combined total balance and a holdings list spanning all accounts
+  And a recent-transactions section linking to the full Transaction History"
+Story,14,,Portfolio Dashboard,,,12,Start opening an account from the portfolio header,Client Portal,,2,customer-app,ux,,"As an investor, I want an ""Open an account"" action in the portfolio header, so that I can begin opening a new account from the place I review my holdings.
+
+=== TECHNICAL DESIGN ===
+Header button -> navigate(""/open-account""). Keep the global chat FAB mounted across the transition.","Scenario: Open-account entry point
+  Given I am on the Portfolio page
+  When I click ""Open an account""
+  Then I am taken to the account-opening wizard"
+Epic,15,,,Fund Research & Discovery,,,Fund Research & Discovery,Client Portal,High,,customer-app,funds,,"The research surface: a screener over the full fund lineup, a per-fund profile page (objective, expense ratio, risk level, sector allocation, historical returns), and a buy entry point. All fund facts are read from the single fund catalog so pages never disagree with the chat assistant.
+
+Value: lets investors discover and evaluate funds themselves, supporting confident, self-directed investing.
+
+=== TECHNICAL SCOPE ===
+Pages: /research (screener), /research/fund/:ticker (profile), /research/fund/:ticker/buy. All fund
+facts via the useFunds() hook (catalog); live price/return via the market-data API. Screener filters in
+component state over the funds array; profile shows catalog attributes + live quote; buy routes into the
+purchase flow scoped to the ticker.","Definition of done:
+- The screener lists every fund in the lineup with key attributes and supports filtering.
+- Each fund profile renders catalog data plus live price/return from market data.
+- A buy action routes into the purchase flow for that fund."
+Story,16,,Fund Research & Discovery,,,15,Browse and filter the fund lineup,Client Portal,High,5,customer-app,funds,,"As a self-directed investor, I want a research screen that lists every fund with its asset class, expense ratio, and risk level and lets me filter, so that I can narrow the lineup to funds that fit my strategy.
+
+=== TECHNICAL DESIGN ===
+useFunds() for the list; filter/sort in component state (asset class, risk level, expense ratio). ~36
+rows so no virtualization needed. Right-align numeric columns; link rows to the profile.","Scenario: Screener lists and filters funds
+  Given I am on the Research page
+  Then I see every fund in the lineup with asset class, expense ratio, and risk level
+  When I apply a filter (e.g. asset class)
+  Then only matching funds remain"
+Story,17,,Fund Research & Discovery,,,15,View a single fund's profile,Client Portal,High,5,customer-app,funds,,"As an investor, I want a fund profile page with the objective, expense ratio, risk level, sector allocation, historical returns, and live price, so that I can evaluate a fund in depth before investing.
+
+=== TECHNICAL DESIGN ===
+Read :ticker; find it in useFunds(); fetch the live quote from market-data; render sectorAllocation and
+annualReturns; primary CTA -> /research/fund/:ticker/buy.","Scenario: Fund profile shows catalog + live data
+  Given I open a fund profile from the screener
+  Then I see the fund's catalog attributes and its current live price/return
+  And a clear action to buy the fund"
+Story,18,,Fund Research & Discovery,,,15,Begin a purchase from a fund profile,Client Portal,,3,customer-app,funds,,"As an investor, I want a buy page reachable from a fund profile, so that I can move from evaluating a fund to investing in it without leaving research.
+
+=== TECHNICAL DESIGN ===
+Buy page reads :ticker and prefills the fund; collects account/amount/funding; in the portal this is a
+mock confirmation (the real brokerage path runs through an agent via execute-task).","Scenario: Buy entry point from profile
+  Given I am on a fund profile
+  When I choose to buy
+  Then I land on the purchase flow pre-scoped to that fund"
+Epic,19,,,Self-Service Account Management Pages,,,Self-Service Account Management Pages,Client Portal,High,,customer-app,self-service,,"Dedicated functional pages for the account actions investors perform most: beneficiary designations, automatic investing schedules, Required Minimum Distribution settings, and tax-document retrieval. These pages read and write the same DynamoDB-backed data the autopilot uses, so the two channels agree.
+
+Value: lets investors complete high-intent account maintenance on their own, the actions that otherwise generate the most calls.
+
+=== TECHNICAL SCOPE ===
+Pages: /account/beneficiaries, /account/auto-invest, /account/rmd, /account/tax-documents. Reads/writes
+go through client-data Lambda actions; writes MUST mirror the execute-task real-write logic so the
+portal and the autopilot never disagree. Beneficiary editor filters to IRA/SEP only and enforces 100%
+per account; auto-invest supports create/edit/pause/resume; RMD shows eligibility + delivery/frequency/
+withholding; tax docs list by year + form.","Definition of done:
+- Beneficiaries, Auto-Invest, RMD, and Tax Documents each have a functional page bound to live data.
+- Beneficiary edits enforce 100% allocation per account.
+- These pages are reachable from account detail and from in-chat links."
+Story,20,,Self-Service Account Management Pages,,,19,Manage beneficiary designations,Client Portal,High,5,customer-app,self-service,,"As an IRA account holder, I want a beneficiaries page where I can view and edit primary and secondary beneficiaries per eligible account, so that I control who inherits each account without paperwork.
+
+=== TECHNICAL DESIGN ===
+Editor keyed by accountId; list only IRA/SEP accounts (never taxable). On save validate
+sum(percentage) === 100 (block otherwise). Persist via a client-data update that atomically replaces
+that account's beneficiaries while preserving the other accounts (identical semantics to execute-task
+update-beneficiaries). Beneficiary shape {accountId,name,relationship,percentage,type}.","Scenario: Allocation must total 100%
+  Given I am editing beneficiaries on an eligible account
+  When I save a set of beneficiaries whose percentages do not total 100%
+  Then the save is blocked with a clear validation message
+
+Scenario: Taxable accounts are excluded
+  Given I hold a taxable brokerage account
+  Then it does not appear as a beneficiary-eligible account"
+Sub-task,21,20,,,,20,IRA/SEP account filter + per-account beneficiary editor UI,Client Portal,,,,,,Exclude taxable accounts; edit primary/secondary entries with percentages.,
+Sub-task,22,20,,,,20,100% allocation validation,Client Portal,,,,,,Block save unless the per-account percentages total exactly 100.,
+Sub-task,23,20,,,,20,Atomic per-account replace via client-data,Client Portal,,,,,,Replace only the target account beneficiaries; preserve all other accounts (match execute-task semantics).,
+Story,24,,Self-Service Account Management Pages,,,19,Manage automatic investment schedules,Client Portal,High,5,customer-app,self-service,,"As an investor, I want an auto-invest page to view, create, edit, pause, and resume recurring investments, so that I can keep dollar-cost-averaging on autopilot and adjust it when life changes.
+
+=== TECHNICAL DESIGN ===
+List autoInvest[] {id,accountId,accountType,fund,ticker,amount,frequency,dayOfMonth,nextDate,active}.
+Actions create/update/pause-resume via client-data; recompute nextDate on change; reflect active state
+in the UI.","Scenario: View and modify schedules
+  Given I have at least one auto-invest schedule
+  When I open the Auto-Invest page
+  Then I see each schedule (fund, amount, frequency, next date, active state)
+  And I can pause, resume, or edit a schedule"
+Story,25,,Self-Service Account Management Pages,,,19,View and configure RMD settings,Client Portal,,5,customer-app,self-service,,"As a retiree with a Traditional or SEP IRA, I want an RMD page showing my required minimum distribution status and letting me set delivery, frequency, and withholding, so that I stay compliant with mandatory withdrawals without calling in.
+
+=== TECHNICAL DESIGN ===
+rmd object {eligible,age,annualRmd,takenThisYear,remainingThisYear,nextDeadline,deliveryMethod,
+frequency,taxWithholding}. If !eligible, render an explanatory state. Writable: deliveryMethod,
+frequency, taxWithholding (0-99%).","Scenario: RMD page reflects eligibility
+  Given I hold a Traditional IRA or SEP-IRA that is RMD-eligible
+  When I open the RMD page
+  Then I see my RMD status and can set delivery method, frequency, and tax withholding
+
+Scenario: Not RMD-eligible
+  Given I hold only Roth or taxable accounts
+  Then the page explains I have no current RMD obligation"
+Story,26,,Self-Service Account Management Pages,,,19,Retrieve tax documents,Client Portal,,3,customer-app,self-service,,"As an investor, I want a tax-documents page listing my available forms (1099-R, 1099-B, 1099-DIV, 5498) by year, so that I can download what I need at tax time without contacting support.
+
+=== TECHNICAL DESIGN ===
+Derive available forms by year (1099-R/1099-B/1099-DIV/5498) from account types + activity; request/
+download triggers a mock document action returning a reference number.","Scenario: List available tax forms
+  Given I have reportable activity in a prior tax year
+  When I open the Tax Documents page
+  Then I see the relevant forms for each available year with a way to request/download them"
+Epic,27,,,Open-an-Account Wizard,,,Open-an-Account Wizard,Client Portal,High,,customer-app,self-service,,"A realistic, multi-step account-opening flow: choose account type, enter personal and contact information, acknowledge FINRA/SEC disclosures, complete account-type-specific setup (IRA beneficiaries with 100% allocation, SEP business info, taxable joint owner/TOD), fund the account and place an initial investment, opt into free dollar-cost-averaging, then review, sign, and confirm. Steps are URL-driven so browser back/forward and refresh work, and the in-flow chat tracks the exact step.
+
+Value: converts prospective and existing investors into funded new accounts entirely online.
+
+=== TECHNICAL SCOPE ===
+Single route /open-account; 8 steps with step + completion encoded in the URL (?step=N, ?done=1) via
+useSearchParams so browser Back/Forward and refresh traverse the wizard. Form state stays in component
+state (a query-param change does not unmount the page). Branch by accountType at the setup step. Publish
+a fine-grained page-context key per step + branch via a pageContextStore so chat pills track the exact
+screen; in-flow topics are ungated and do not link back to /open-account.","Definition of done:
+- The wizard branches correctly by account type and enforces type-specific rules.
+- Step and completion state are encoded in the URL (?step / ?done) and survive refresh.
+- The flow ends in a confirmation timeline; in-flow chat pills track the current step."
+Story,28,,Open-an-Account Wizard,,,27,Open an account through a guided multi-step wizard,Client Portal,High,8,customer-app,self-service,,"As a prospective or existing investor, I want a guided wizard that walks me from account type through funding, agreements, and e-signature, so that I can open and fund a new account online without paper forms or a phone call.
+
+=== TECHNICAL DESIGN ===
+Steps: type -> personal -> contact -> FINRA/SEC disclosures -> setup(branch) -> funding + initial
+investment -> free DCA opt-in -> review/agreements/e-signature -> confirmation. goTo(step)/handleSubmit
+push merged search params. Branch components: IRA (beneficiaries with 100% allocation check), SEP
+(business/EIN), Taxable (joint owner + TOD). Validate per step; block IRA progress until beneficiaries
+total 100%. On submit, mock-create the account and render a confirmation timeline (?done=1).","Scenario: Account-type branch is enforced
+  Given I choose to open a SEP-IRA
+  When I reach the setup step
+  Then I am asked for business/EIN information specific to a SEP-IRA
+
+Scenario: IRA beneficiary allocation is validated
+  Given I am opening an IRA and adding beneficiaries
+  When their allocations do not total 100%
+  Then I cannot proceed until they do
+
+Scenario: Completion confirmation
+  Given I have signed and submitted the application
+  Then I see a confirmation timeline describing what happens next"
+Sub-task,29,28,,,,28,Build the 8-step wizard scaffold and step branching,Client Portal,,,,,,Type -> personal -> contact -> disclosures -> type setup -> funding+initial invest -> DCA opt-in -> review/sign/confirm.,
+Sub-task,30,28,,,,28,Drive step/done state from URL query params,Client Portal,,,,,,Use ?step=N and ?done=1 so browser back/forward and refresh traverse the wizard; form state stays in component state.,
+Sub-task,31,28,,,,28,Publish per-step page context for in-flow chat pills,Client Portal,,,,,,"Publish open-account/<step> and open-account/setup-{ira,sep,taxable} keys via pageContextStore so chat topics track the screen.",
+Sub-task,32,28,,,,28,Encode wizard step + done in URL query params (useSearchParams),Client Portal,,,,,,Drive ?step=N and ?done=1 from the URL so Back/Forward + refresh work; keep form values in component state.,
+Sub-task,33,28,,,,28,Build the 8 step components + account-type branch components,Client Portal,,,,,,"type, personal, contact, disclosures, setup(IRA/SEP/Taxable), funding+initial invest, DCA opt-in, review/sign/confirm.",
+Sub-task,34,28,,,,28,Per-step validation incl. IRA 100% beneficiary allocation gate,Client Portal,,,,,,Block advancing past IRA setup until primary beneficiary allocations total 100%.,
+Sub-task,35,28,,,,28,Publish per-step page-context keys for chat pills,Client Portal,,,,,,"Publish open-account/<step> and setup-{ira,sep,taxable} via pageContextStore; ChatWidget prefers it over the path key.",
+Sub-task,36,28,,,,28,Mock account creation + confirmation timeline,Client Portal,,,,,,"On submit, create the account (mock) and render the terminal confirmation timeline.",
+Epic,37,,,"Education: Resources, Library & Help Center",,,"Education: Resources, Library & Help Center",Client Portal,Medium,,customer-app,content,,"The content estate that powers self-service learning and backs the chat assistant's links: ~10 resource pages (IRA contribution limits, Roth IRA, SEP-IRA, SEP vs Solo 401(k), tax-efficient investing, estate planning, self-employed retirement, tax deductions, rollovers, and an interactive retirement calculator); a library of guide/opinion articles and an investor podcast; and ~27 help pages (account access, transfers, beneficiaries, cost basis, DRIP, fees, fund performance, prospectus library, RMD guide, rollover guide, statements, trading, wire transfer, withdrawals, etc.).
+
+Value: deflects informational contacts, builds investor confidence, and gives the bot authoritative pages to link to instead of free-typing answers.
+
+=== TECHNICAL SCOPE ===
+Mostly static content components: ~10 resource pages, a library (index + ArticlePage by category guide/
+opinion + slug, plus a podcast page), and ~27 help pages. Pages that show fund data use useFunds(). The
+retirement calculator is interactive. Help/resource routes are the bot link targets (SELF_SERVICE_PAGES)
+- keep slugs stable and aligned with the KB link table.","Definition of done:
+- All resource, library, and help routes render and are linkable from chat.
+- The retirement calculator computes projections from user inputs.
+- Pages that show fund data read from the shared fund catalog."
+Story,38,,"Education: Resources, Library & Help Center",,,37,Read education resource pages,Client Portal,,5,customer-app,content,,"As an investor, I want a set of resource pages covering IRAs, rollovers, tax-efficient investing, estate planning, and self-employed retirement, so that I can learn the concepts behind my decisions without leaving the portal.
+
+=== TECHNICAL DESIGN ===
+Static content components with a consistent layout; cross-link to related actions/pages; ensure routes
+match the bot link table so in-chat links resolve.","Scenario: Resource pages are reachable and self-contained
+  Given I follow a resource link from navigation or chat
+  Then the page explains the topic and links to related actions/pages"
+Story,39,,"Education: Resources, Library & Help Center",,,37,Project retirement outcomes with a calculator,Client Portal,,5,customer-app,content,,"As an investor planning for retirement, I want an interactive retirement calculator where I can enter ages, balances, and contributions, so that I can see a projection and adjust assumptions.
+
+=== TECHNICAL DESIGN ===
+Controlled inputs. The NumberInput must NOT min-clamp on each keystroke (support select-all + retype);
+digits-only with a maxDigits cap; ages unclamped by design. Compute a future-value-with-contributions
+projection and re-render on input change.","Scenario: Calculator recomputes on input
+  Given I am on the retirement calculator
+  When I edit an input (e.g. monthly contribution)
+  Then the projected outcome updates accordingly
+
+Scenario: Inputs accept full edits
+  Given a numeric input has a value
+  When I select all and retype
+  Then it is not min-clamped on each keystroke"
+Story,40,,"Education: Resources, Library & Help Center",,,37,Browse the library and listen to the investor podcast,Client Portal,,3,customer-app,content,,"As an investor, I want a content library of guide and opinion articles plus a podcast page, so that I can engage with longer-form education in the format I prefer.
+
+=== TECHNICAL DESIGN ===
+Library index + ArticlePage (route params: category in {guide,opinion}, slug); a podcast page. Source
+content from a data module or markdown.","Scenario: Library lists articles by category
+  Given I open the Library
+  Then I can browse guide and opinion articles and open any one to read it
+  And I can reach the podcast page"
+Story,41,,"Education: Resources, Library & Help Center",,,37,Find answers in the help center,Client Portal,,5,customer-app,content,,"As an investor, I want a help center with focused pages for common how-to topics (fees, beneficiaries, rollovers, statements, withdrawals, trading, and more), so that I can resolve specific questions on my own.
+
+=== TECHNICAL DESIGN ===
+~27 focused help-topic pages, each a stable route the bot can deep-link. Keep slugs aligned with the KB
+link table so the bot never links to a 404.","Scenario: Help pages are focused and linkable
+  Given the bot or navigation links me to a help page
+  Then the page answers that specific topic and the link opens the correct page"
+Epic,42,,,Transaction History & Order Status,,,Transaction History & Order Status,Client Portal,High,,customer-app,dynamodb,self-service,"End-to-end transaction history: a dedicated table (one item per transaction) that stores each account's activity back to inception, a deterministic decades-deep seed for the demo personas, and a per-transaction status reflecting the real mutual-fund order lifecycle (Scheduled, Pending, Settling, Completed, Canceled). The portal surfaces this on every transaction list and on a full Transaction History page with filtering, search, sorting, and pagination; each status has a click-to-explain popover. The same data (including status) is exposed to the chatbot and autopilot.
+
+Value: answers ""where is my trade / what happened to my money"" accurately and self-serve, across both the portal and the assistant.
+
+=== TECHNICAL SCOPE ===
+Dedicated Transactions DynamoDB table, one item per transaction: PK clientId, SK ""<ISOdate>#<seq>"", GSI
+account-index on acctKey=""<clientId>#<accountId>""; newest-first = Query with ScanIndexForward:false.
+Status engine: assignStatus(date vs a frozen DEMO_TODAY) -> Scheduled/Pending/Settling/Completed/
+Canceled. Deterministic seed generator (idempotent, decades deep across personas) via the reset Lambda.
+API: client-data actions get-recent-transactions / get-transactions-page (base64 cursor) /
+append-transaction. Frontend: useRecentTransactions hook + StatusCell popover + the /transactions page.
+Live trades (execute-task) PutItem a Pending row dated today.","Definition of done:
+- Transactions are stored one-per-row with a per-account index and newest-first querying.
+- The history page filters, searches, sorts, and paginates large histories.
+- Status is computed deterministically and explained via an in-line popover."
+Story,43,,Transaction History & Order Status,,,42,Browse full transaction history with filter/search/sort/paginate,Client Portal,High,8,customer-app,dynamodb,,"As an investor, I want a Transaction History page that lets me filter, search, sort, and page through my entire history, so that I can find any past transaction quickly even across decades of activity.
+
+=== TECHNICAL DESIGN ===
+Page calls get-transactions-page with a base64 cursor; render a table with right-aligned amounts and
+StatusCell; provide account filter, text search, column sort, and next/prev paging. Handle loading/
+empty/error states.","Scenario: Paginate a deep history
+  Given my account has years of transactions
+  When I open Transaction History
+  Then transactions load newest-first and I can page without loading everything at once
+
+Scenario: Filter and search
+  Given I am on Transaction History
+  When I filter by account and search a description
+  Then only matching rows are shown"
+Sub-task,44,43,,,,43,Create the transactions table with a per-account GSI,Client Portal,,,,,,"One item per transaction: PK clientId, SK <ISOdate>#<seq>, GSI account-index on acctKey; newest-first via descending sort-key query.",
+Sub-task,45,43,,,,43,Add paginated client-data read actions,Client Portal,,,,,,get-recent-transactions and get-transactions-page (base64 cursor) in client-data Lambda.,
+Sub-task,46,43,,,,43,Build the Transaction History page UI,Client Portal,,,,,,Filter/search/sort/paginate over the paginated API via useRecentTransactions/history hooks.,
+Sub-task,47,43,,,,43,Implement get-transactions-page (base64 cursor) in client-data,Client Portal,,,,,,Query newest-first (ScanIndexForward:false); return items + opaque cursor.,
+Sub-task,48,43,,,,43,"Table UI with account filter, search, sort, paging",Client Portal,,,,,,Right-aligned amounts; StatusCell; loading/empty/error states.,
+Story,49,,Transaction History & Order Status,,,42,Understand each transaction's status,Client Portal,High,3,customer-app,ux,,"As an investor, I want a status on every transaction with a click-to-explain popover, so that I understand whether an order is scheduled, pending, settling, completed, or canceled and what happens next.
+
+=== TECHNICAL DESIGN ===
+StatusCell: a dotted-underline label that opens a popover from a display-copy map (per status: meaning +
+what happens next). Status value comes from assignStatus; expose it through the read APIs and the
+get_transactions AI tool too.","Scenario: Status popover explains the lifecycle
+  Given a transaction shows a status with a dotted underline
+  When I click the status
+  Then a popover explains what the status means and what happens next"
+Sub-task,50,49,,,,49,Implement deterministic status assignment,Client Portal,,,,,,assignStatus by date vs frozen DEMO_TODAY in shared/transaction-status.ts.,
+Sub-task,51,49,,,,49,Build StatusCell popover component,Client Portal,,,,,,Dotted-underline status with click popover; copy in data/transactionStatus.ts.,
+Story,52,,Transaction History & Order Status,,,42,Seed decades-deep transaction history for demo personas,Client Portal,,5,backend,dynamodb,,"As a platform owner, I want a deterministic generator that seeds realistic multi-decade histories for all demo personas, so that the history, status, and pagination features can be demonstrated convincingly and reset idempotently.
+
+=== TECHNICAL DESIGN ===
+A deterministic generator seeded by clientId (identical on reruns); idempotent PutItem; covers each
+account from inception; assigns status via the frozen DEMO_TODAY so the mix of statuses is stable.","Scenario: Idempotent deep seed
+  Given a clean dev environment
+  When I run the data reset
+  Then each persona has a deterministic multi-year transaction history with realistic statuses"
+Epic,54,,,Embedded Chat Widget & Session Lifecycle,,,Embedded Chat Widget & Session Lifecycle,Client Chat,Highest,,customer-app,connect,,"The chat surface and its full lifecycle: a floating action button that expands into a panel, session creation via the start-chat Lambda + Connect ChatJS, minimize-to-docked-bar with an unread badge, a close-confirmation dialog, true Connect disconnect on end, and per-tab persistence so a reload or a trip off-site and back resumes the conversation (with missed agent messages backfilled).
+
+Value: a dependable, forgiving chat container that never loses a conversation is the foundation the rest of the assistant stands on.
+
+=== TECHNICAL SCOPE ===
+useChatSession owns start (POST /start-chat -> contactId + token -> ChatJS connect), send, receive
+(onMessage), typing (onTyping/notifyTyping), end (disconnectParticipant). chatStore persists
+{persist, minimized, unreadCount, chatEnded, messages} to sessionStorage. On load, if a live session
+exists, reconnect and backfill missed agent messages via getTranscript, reconciling by message id. Tab
+close (no persisted live session) = chat over. Close-confirm dialog offers Minimize (default) / End chat;
+skip the dialog for never-engaged or already-ended chats.","Definition of done:
+- Opening the widget starts (or resumes) exactly one Connect session.
+- Minimize keeps the session live; close-after-engagement confirms; end truly disconnects.
+- A reload or off-site round-trip restores the live conversation; tab close ends it."
+Story,55,,Embedded Chat Widget & Session Lifecycle,,,54,Open a chat from any page,Client Chat,High,3,customer-app,,,"As an investor, I want a chat button on every page that expands into a chat panel, so that I can ask for help from wherever I am in the portal.
+
+=== TECHNICAL DESIGN ===
+ChatWidget renders a FAB globally (outside <Routes> in App). On open, useChatSession.start -> POST
+/start-chat {clientId, page} -> ChatJS connect with the returned token. Render the greeting + topic pills.","Scenario: Launch chat
+  Given I am on any portal page
+  When I click the chat button
+  Then a chat panel opens and a Connect chat session is started"
+Story,56,,Embedded Chat Widget & Session Lifecycle,,,54,Minimize chat without ending it,Client Chat,,3,customer-app,ux,,"As an investor, I want to minimize the chat to a docked bar while keeping the session live, so that I can keep using the portal and return to my conversation, seeing if new messages arrived.
+
+=== TECHNICAL DESIGN ===
+Minimize sets chatStore.minimized=true and renders ChatMinimizedBar; the session stays connected. Increment
+unreadCount on inbound messages while minimized; restoring the panel clears it.","Scenario: Minimize keeps session and badges unread
+  Given I am in an active chat
+  When I minimize it and a new message arrives
+  Then the docked bar shows an unread badge and restoring the panel shows the message"
+Story,57,,Embedded Chat Widget & Session Lifecycle,,,54,Close chat with an intentional confirmation,Client Chat,,3,customer-app,ux,,"As an investor, I want a confirmation when I close an engaged chat offering minimize or truly end it, so that I do not accidentally end a live conversation, and ending it actually disconnects me.
+
+=== TECHNICAL DESIGN ===
+On close after engagement, show the confirm dialog. End chat -> endChat() -> disconnectParticipant() (NOT
+disconnect()); do not swallow errors. Never-engaged or already-ended chats close silently (no dialog).","Scenario: Closing an engaged chat confirms
+  Given I have exchanged messages
+  When I click close
+  Then I am offered Minimize (default) or End chat
+
+Scenario: Tire-kicker close is silent
+  Given I opened the chat but never engaged
+  When I click close
+  Then the chat closes without a dialog
+
+Scenario: End truly disconnects
+  Given I choose End chat
+  Then the Connect participant is genuinely disconnected"
+Sub-task,58,57,,,,57,Wire close-confirm dialog (Minimize / End chat),Client Chat,,,,,,Skip dialog for never-engaged or already-ended chats.,
+Sub-task,59,57,,,,57,Call disconnectParticipant() on end,Client Chat,,,,,,Customer ChatJS ends via disconnectParticipant() - there is no disconnect(); ensure errors are not swallowed.,
+Sub-task,60,57,,,,57,Implement endChat via disconnectParticipant() (not disconnect()),Client Chat,,,,,,Customer ChatJS has no disconnect(); call disconnectParticipant() and surface (do not swallow) errors.,
+Sub-task,61,57,,,,57,Close-confirm dialog + silent-close rules,Client Chat,,,,,,Minimize (default) / End chat; skip the dialog for never-engaged or already-ended chats.,
+Story,62,,Embedded Chat Widget & Session Lifecycle,,,54,Resume a chat after reload or leaving the site,Client Chat,High,5,customer-app,,,"As an investor, I want my chat to persist per browser tab and resume on reload or when I navigate away and back, so that I do not lose an in-progress conversation due to a refresh or a quick detour.
+
+=== TECHNICAL DESIGN ===
+Persist session essentials to sessionStorage. On mount, if persisted + live, reconnect ChatJS and backfill
+via getTranscript; reconcile the message list by id (dedupe). A real tab close clears sessionStorage, so it
+ends the chat.","Scenario: Reload resumes the conversation
+  Given I am in an active chat
+  When I reload the page
+  Then the chat resumes and any agent messages I missed are backfilled
+
+Scenario: Tab close ends it
+  Given I am in an active chat
+  When I close the browser tab
+  Then the chat is treated as over"
+Sub-task,63,62,,,,62,Persist chat session to sessionStorage,Client Chat,,,,,,Persist persist/minimized/unreadCount/chatEnded/messages per tab.,
+Sub-task,64,62,,,,62,Reconnect on load + backfill missed agent messages,Client Chat,,,,,,"If a live session exists, reconnect ChatJS and backfill via getTranscript; reconcile by message id.",
+Story,65,,Embedded Chat Widget & Session Lifecycle,,,54,Download a transcript when a live chat ends,Client Chat,,2,customer-app,,,"As an investor, I want a Download transcript button when my live-agent chat ends, so that I keep a record of what was discussed and agreed.
+
+=== TECHNICAL DESIGN ===
+On agent-chat end, render a Download button. Build a .txt (date, agent, duration, timestamped lines) via a
+transcriptDownload util and trigger a client-side Blob download.","Scenario: Transcript download on end
+  Given a live-agent chat has ended
+  Then I see ""Chat ended."" and a Download transcript button that saves a timestamped .txt"
+Epic,66,,,Full-Auto Bot Q&A & Self-Service Linking,,,Full-Auto Bot Q&A & Self-Service Linking,Client Chat,Highest,,customer-app,ai,backend,"The pre-agent bot (autopilot full-auto scope) that handles conversations end-to-end: answering general questions about account types, IRAs, RMDs, rollovers, contributions, and taxes; directing investors to self-service pages with clickable in-chat links; and recognizing when a request needs escalation. It hard-routes trade requests and financial-advice questions to the proper channels and never claims it can make account changes itself.
+
+Value: resolves the large tail of simple informational contacts without a human, at any hour.
+
+=== TECHNICAL SCOPE ===
+Pre-agent bot = autopilot-turn full-auto scope (FULL_AUTO_PROMPT), on Nova Micro or gpt-4o-mini. The prompt
+embeds SELF_SERVICE_PAGES (the route table) so the bot LINKS instead of free-typing, plus the shared
+FORBIDDEN_TOPICS block. In-chat links use a markdown-style link token the client renders as an <a> that
+calls React Router navigate() (same-tab, in-app). The bot must not claim it can perform account changes;
+trade/advice intents are detected and routed (advice -> callback scope).","Definition of done:
+- The bot answers in-scope questions and links to the correct self-service page.
+- Trade and advice intents are detected and routed, not answered.
+- The bot never claims it can directly perform an account change."
+Story,67,,Full-Auto Bot Q&A & Self-Service Linking,,,66,Get instant answers to common questions,Client Chat,High,5,ai,backend,,"As an investor, I want the bot to answer common questions about account types, IRA rules, RMDs, rollovers, contributions, and taxes, so that I get accurate answers immediately without waiting for an agent.
+
+=== TECHNICAL DESIGN ===
+full-auto prompt answers from the KB + general knowledge; keep replies concise; attach a self-service link
+when one fits the question.","Scenario: In-scope question is answered
+  Given I ask the bot an informational question in scope
+  Then it answers concisely and, where relevant, links me to the page that goes deeper"
+Story,68,,Full-Auto Bot Q&A & Self-Service Linking,,,66,Follow clickable in-chat links to portal pages,Client Chat,,3,customer-app,ai,,"As an investor, I want the bot to give me clickable links to the exact portal page for my need, so that I can act on its guidance in one click.
+
+=== TECHNICAL DESIGN ===
+Define a link-token format the bot emits (e.g. [Beneficiaries](/account/beneficiaries)); ChatMessage parses
+it and renders a clickable link that calls navigate() (in-app, same tab). Validate the path against the
+known route table.","Scenario: In-chat link navigates
+  Given the bot suggests a self-service page
+  When I click the in-chat link
+  Then the portal navigates to that page"
+Story,69,,Full-Auto Bot Q&A & Self-Service Linking,,,66,Be safely routed for trades and financial advice,Client Chat,High,3,ai,compliance,,"As a compliance owner, I want the bot to refuse to give personalized investment advice or execute trades and instead route to the proper channel, so that we stay within regulatory boundaries while still helping the client.
+
+=== TECHNICAL DESIGN ===
+Detect advice/trade intent (ADVICE_RE keyword + LLM). Respond with the scripted FORBIDDEN_TOPICS line and
+offer a callback with a licensed rep; never recommend a security or imply the bot can execute a trade.","Scenario: Advice is declined and routed
+  Given I ask the bot which fund I should buy
+  Then it does not recommend a security and offers a callback with a licensed representative
+
+Scenario: Bot does not overclaim
+  Given I ask the bot to change my account
+  Then it does not imply it can perform the change itself and routes me appropriately"
+Epic,70,,,Escalation to Live Agent & Intent Summary,,,Escalation to Live Agent & Intent Summary,Client Chat,High,,customer-app,ai,connect,"When a request needs a human or an account action, the bot offers escalation to a live agent or a callback. On escalation, a secondary LLM call generates an intent label and a suggested agent greeting so the agent's workspace is pre-populated with context before the first human word.
+
+Value: shortens handle time and makes the handoff feel seamless - the agent already knows why the client is here.
+
+=== TECHNICAL SCOPE ===
+EscalationPanel offers live chat or callback. start-chat generates intentLabel + intentGreeting via Nova
+Micro and attaches them to the Connect contact attributes so the agent app shows context before the first
+human word. Pass clientName explicitly to the model to avoid beneficiary/name confusion.","Definition of done:
+- The bot offers live chat or callback when escalation is warranted.
+- An intent label and suggested greeting are generated and attached to the contact.
+- The client is told what to expect while connecting."
+Story,71,,Escalation to Live Agent & Intent Summary,,,70,Escalate to a live agent or a callback,Client Chat,High,5,customer-app,connect,,"As an investor, I want to choose between chatting with a live agent now or scheduling a callback when I need a human, so that I can pick the path that fits my situation.
+
+=== TECHNICAL DESIGN ===
+EscalationPanel: live -> route the Connect contact to the agent queue; callback -> callback scope /
+CallbackScheduler. Reflect the choice in chatStore state.","Scenario: Escalation choice
+  Given the bot determines I need a human
+  Then it offers live chat or a scheduled callback
+  And routes me down whichever I choose"
+Story,72,,Escalation to Live Agent & Intent Summary,,,70,Hand the agent a pre-built intent summary and greeting,Client Chat,High,5,ai,backend,,"As an agent, I want an AI-generated intent label and suggested greeting waiting in my workspace when a chat arrives, so that I open the conversation already knowing the context and can greet the client by need.
+
+=== TECHNICAL DESIGN ===
+Nova Micro prompt -> {intentLabel, intentGreeting}; store on the contact attributes; the agent IntentLabel
++ AISupport components read them on accept.","Scenario: Context precedes the human
+  Given a client escalates to live chat
+  When the contact appears in the agent workspace
+  Then an intent label and a suggested greeting are present before any agent message"
+Epic,73,,,Human-Realistic Live Chat UX,,,Human-Realistic Live Chat UX,Client Chat,High,,customer-app,agent-app,ux,"The details that make a live (and autopilot-assisted) chat feel human: bidirectional typing indicators with a reading delay before a typing delay, avatars that switch from a ""V"" assistant mark to the connected agent's initials, and the agent's full name broadcast on connect so initials and attribution are correct.
+
+Value: trust and warmth - clients engage more openly when the experience feels like a real person.
+
+=== TECHNICAL SCOPE ===
+Typing: customer notifyTyping on keystrokes -> agent maps onTyping to slot.customerTyping -> TypingDots
+(30s expiry). Agent->customer typing via send-agent-message event:'typing' -> customer agentTyping (60s
+expiry). Autopilot send (autopilotSend) runs two phases via autopilotDelay: a READING delay (ellipsis
+hidden) = 2000ms + 10ms*(clientMsgLen-200), min 2000ms, based on the client's last message; then a TYPING
+delay (ellipsis shown) = chars/15 seconds. Cancel sends a typing-stop sentinel to clear it promptly.
+Avatars: an assistant mark for bot turns; once a human connects, agent bubbles + ellipsis show the agent's
+initials (chatStore.agentName via an initialsFromName util). The agent broadcasts its FULL name on connect
+as a control message because Connect DisplayName is only the first name.","Definition of done:
+- Typing indicators appear/expire correctly in both directions.
+- Autopilot replies show a reading delay then a typing delay before sending.
+- Avatars and names reflect the connected agent for the rest of the chat."
+Story,74,,Human-Realistic Live Chat UX,,,73,See when the agent is typing,Client Chat,,3,customer-app,ux,,"As an investor, I want an animated typing indicator when the agent (or autopilot drafting on their behalf) is composing, so that I know a reply is coming and do not send duplicate messages.
+
+=== TECHNICAL DESIGN ===
+Customer ChatInput calls notifyTyping; agent useConnectStreams maps chatSession.onTyping to
+slot.customerTyping and ChatColumn renders TypingDots (30s expiry). Reverse direction: customer ChatBody
+shows agentTyping (60s expiry).","Scenario: Typing indicator lifecycle
+  Given I am connected to an agent
+  When the agent is composing
+  Then I see an animated ellipsis that fades after ~60s of inactivity and reappears when they resume"
+Story,75,,Human-Realistic Live Chat UX,,,73,Make autopilot replies feel human-paced,Client Chat,,5,agent-app,ai,,"As an investor, I want autopilot replies to arrive at a human pace - a reading pause before the typing indicator even appears, so that AI-assisted replies are indistinguishable from a person typing.
+
+=== TECHNICAL DESIGN ===
+Implement autopilotDelay with the reading-then-typing phases (formulas above). Keep the ellipsis hidden
+during the reading delay; show it during the typing delay; then send via send-agent-message.","Scenario: Reading then typing delay
+  Given autopilot has drafted the next agent message
+  Then it first waits a reading delay (min ~2s, longer for longer client messages) with no ellipsis
+  And only then shows the typing ellipsis during the typing delay before sending"
+Sub-task,76,75,,,,75,Implement autopilotDelay reading phase,Client Chat,,,,,,"Ellipsis hidden; 2000ms + 10ms*(clientMsgLen-200), min 2000ms, based on the client last message.",
+Sub-task,77,75,,,,75,Implement autopilotDelay typing phase + cancel sentinel,Client Chat,,,,,,Show ellipsis; delay chars/15 s; on cancel send the typing-stop sentinel to clear it.,
+Story,78,,Human-Realistic Live Chat UX,,,73,Show the connected agent's identity,Client Chat,,3,customer-app,agent-app,,"As an investor, I want the avatar and name to reflect the real agent once a human connects, so that I know I am talking to a named person, not a bot.
+
+=== TECHNICAL DESIGN ===
+On agent connect, broadcast the agent's full name as a control message (intercepted client-side, not
+rendered); store it as chatStore.agentName; derive initials with an initialsFromName util for bubbles + the
+typing ellipsis.","Scenario: Avatar switches to the agent
+  Given a live agent connects to my chat
+  Then agent messages and the typing ellipsis show the agent's initials for the rest of the chat"
+Epic,79,,,Continue a Recent Agent Chat,,,Continue a Recent Agent Chat,Client Chat,Medium,,customer-app,connect,,"If the client spoke with a live agent within the last 7 days, opening the chat shows a card (above the topic pills) with the date and a one-sentence recap and a ""Continue this chat"" button. Clicking it checks whether that specific agent is currently available and lets the client wait for them or take the first available agent; on accept, the prior transcript loads into the agent's workspace marked as a continued conversation. Purely additive - absent when there is no recent agent chat.
+
+Value: continuity - clients pick up where they left off with the person who already knows their story.
+
+=== TECHNICAL SCOPE ===
+Continuation memory = lastAgentChat attribute on the Clients table, written by save-transcript at agent-
+chat end {transcriptId,endedAt,summary,agentUsername,agentName}; cleared by reset-all-data (the permanent
+transcript log is untouched). ContinueChatCard renders above the topic pills when lastAgentChat is within
+7 days. On click: GET /agent-availability?username=... checks whether THAT agent is on queue/Available; the
+client chooses wait-for-them vs first-available (auto first-available if unavailable). On agent accept the
+prior transcript loads above a ""Continued chat"" divider (loadContinuationTranscript). NOTE: true per-agent
+Connect routing is best-effort + a preferredAgentUsername metadata attribute today (documented follow-up).","Definition of done:
+- The card appears only when a qualifying recent agent chat exists.
+- Availability of the specific prior agent is checked; client can wait or take first-available.
+- On accept, the prior transcript loads above a ""continued chat"" divider."
+Story,80,,Continue a Recent Agent Chat,,,79,Offer to continue a recent agent conversation,Client Chat,,5,customer-app,,,"As a returning investor, I want a card offering to continue my recent live-agent chat with its date and a one-line recap, so that I can resume an in-flight matter instead of re-explaining it.
+
+=== TECHNICAL DESIGN ===
+Fetch continuation memory; if lastAgentChat is within 7 days render ContinueChatCard (date + one-line
+summary); otherwise render nothing (degrade to the prior UI exactly).","Scenario: Continue card shows for recent agent chat
+  Given I had a live-agent chat in the last 7 days
+  When I open the chat
+  Then I see a ""Continue this chat"" card with the date and a one-sentence recap
+
+Scenario: No recent agent chat
+  Given I have not had a live-agent chat recently
+  Then the card is absent and the experience is unchanged"
+Story,81,,Continue a Recent Agent Chat,,,79,Choose to wait for my prior agent or take the next available,Client Chat,,5,customer-app,connect,,"As a returning investor, I want to see whether my previous agent is available and choose to wait for them or take the first available agent, so that I can balance continuity against how quickly I need help.
+
+=== TECHNICAL DESIGN ===
+On click, GET /agent-availability for the prior agent; present wait vs first-available; set
+preferredAgentUsername on the contact; on the agent side, load the prior transcript on accept.","Scenario: Prior agent availability drives the choice
+  Given I click Continue this chat
+  When the system checks my prior agent's availability
+  Then I can wait for that agent if available, or take the first available
+  And on accept the agent sees my prior transcript marked as continued"
+Epic,82,,,In-Chat Topic & Question Pills,,,In-Chat Topic & Question Pills,Client Chat,Medium,,customer-app,ai,,"Context-aware suggestion chips in the chat: topic pills reflecting what investors actually ask on the exact page (or wizard step) they are on, and follow-on question pills with pre-written answers for a chosen topic. Open-account in-flow topics are step-aware and ungated to the account being opened.
+
+Value: lowers the effort to ask the right question and showcases relevant self-service, increasing successful self-resolution.
+
+=== TECHNICAL SCOPE ===
+Topic pills: predict-intent over the page key (pageContextStore finer key preferred over pageKeyFromPath)
++ recent messages + KB EXTRA_PAGE_TOPICS. Question pills + pre-written answers: predict-questions for the
+chosen topic. Components: TopicButtons, QuestionButtons. Open-account in-flow topics are ungated + step-
+aware.","Definition of done:
+- Topic pills are specific to the current page/step, not generic.
+- Selecting a topic surfaces likely follow-up questions with answers.
+- Wizard steps publish a fine-grained context key that the chat prefers."
+Story,83,,In-Chat Topic & Question Pills,,,82,See page-relevant topic suggestions,Client Chat,,3,customer-app,ai,,"As an investor, I want topic chips that reflect what people actually ask on the page I am viewing, so that I can start a useful conversation in one tap.
+
+=== TECHNICAL DESIGN ===
+ChatWidget computes the page key (prefer pageContextStore over pageKeyFromPath), calls predict-intent, and
+renders TopicButtons.","Scenario: Topics match the page
+  Given I open the chat on a specific page or wizard step
+  Then the topic pills are specific to that page/step
+  And selecting one starts a relevant exchange"
+Story,84,,In-Chat Topic & Question Pills,,,82,See predicted follow-up questions with answers,Client Chat,,3,customer-app,ai,,"As an investor, I want suggested follow-up questions with ready answers after I pick a topic, so that I can get deeper without typing.
+
+=== TECHNICAL DESIGN ===
+On topic select, call predict-questions; render QuestionButtons; clicking one shows its pre-written answer
+in the thread.","Scenario: Question pills carry answers
+  Given I selected a topic
+  Then I see likely follow-up questions
+  And choosing one shows its pre-written answer"
+Epic,85,,,Chat History & Transcript Access,,,Chat History & Transcript Access,Client Chat,Medium,,customer-app,,,"A hamburger menu in the chat header opens the client's live-agent chats from the last 90 days, newest first - each card shows the date/time, duration, and a short second-person recap. Only chats that have that recap are listed. Cards open a read-only transcript with a download link, and can be pinned to the top for easy future reference.
+
+Value: gives clients a durable, self-serve record of their agent interactions.
+
+=== TECHNICAL SCOPE ===
+A hamburger in the ChatPanel header switches view (chat/history/transcript). ChatHistoryView: GET
+/get-transcripts?clientId=... for the last 90 days; show ONLY rows that have the second-person summary
+recap (no fallback). Card = bold date/time, (mm:ss) duration, recap. Open a transcript via ?transcriptId=;
+Download. Pin: POST /pin-transcript {transcriptId,pinned}; optimistic toggle with revert-on-error; pinned
+sorted first in a tinted section.","Definition of done:
+- History lists qualifying past agent chats with date, duration, and recap.
+- A card opens a read-only, downloadable transcript.
+- Pin/unpin reorders pinned chats to the top and persists."
+Story,86,,Chat History & Transcript Access,,,85,Browse my past agent chats,Client Chat,,5,customer-app,,,"As an investor, I want a history list of my live-agent chats from the last 90 days with date, duration, and a recap, so that I can find and revisit a prior conversation.
+
+=== TECHNICAL DESIGN ===
+GET /get-transcripts (list projection incl. summary, acwSummary, agentName, pinned); filter to rows with a
+summary; render cards newest-first; bot-only chats are never saved so never appear.","Scenario: History lists recapped chats
+  Given I open the chat history menu
+  Then I see my recent live-agent chats newest-first with date, duration, and a recap
+  And bot-only conversations are not listed"
+Story,87,,Chat History & Transcript Access,,,85,Open and download a past transcript,Client Chat,,3,customer-app,,,"As an investor, I want to open a read-only transcript of a past chat and download it, so that I can review or keep a record of what was said.
+
+=== TECHNICAL DESIGN ===
+GET /get-transcripts?transcriptId= -> render read-only; Download via the transcriptDownload util.","Scenario: Read-only transcript with download
+  Given I open a history card
+  Then I see the full conversation read-only with a download link"
+Story,88,,Chat History & Transcript Access,,,85,Pin important chats to the top of history,Client Chat,,3,customer-app,,,"As an investor, I want to pin a chat so it stays at the top of my history, so that I can quickly return to a conversation that matters.
+
+=== TECHNICAL DESIGN ===
+POST /pin-transcript; optimistic update + revert on error; pinned-first sort; smooth scroll-to-top on pin.","Scenario: Pin reorders and persists
+  Given I pin a chat in history
+  Then it moves to a pinned section at the top and stays pinned on my next visit"
+Epic,90,,,Autopilot Scopes & Turn Orchestration,,,Autopilot Scopes & Turn Orchestration,Autopilot Engine,Highest,,backend,ai,,"The dispatcher that runs every chat turn under one of several scopes (full-auto, get-intent, idle-check, callback, locate-evidence) in a single stateless, reactive Lambda. It selects the model per job (Nova Micro vs OpenAI GPT), applies a safety guard that prevents exiting autopilot without a concrete Proposed Action, and degrades gracefully on LLM error.
+
+Value: a single well-structured engine is cheaper to operate, easier to reason about, and avoids the race conditions of a polling design.
+
+=== TECHNICAL SCOPE ===
+Top-level dispatch by scope. full-auto -> FULL_AUTO_PROMPT; get-intent -> two-phase task engine; idle-check
+-> check-in; callback -> CALLBACK_PROMPT; locate-evidence -> post-hoc utility (early-returns before chat-
+turn logic). Choose the model per job. Apply the safety guard before returning.","Definition of done:
+- Each scope is dispatched correctly from a single handler.
+- The safety guard resets a premature exit when no Proposed Action exists.
+- An LLM failure yields a safe holding message rather than a broken turn."
+Story,91,,Autopilot Scopes & Turn Orchestration,,,90,Run all chat turns through one scoped engine,Autopilot Engine,High,5,backend,ai,,"As a platform owner, I want every AI chat turn to run through one scoped, stateless Lambda, so that behavior is consistent and the system stays simple to operate and reason about.
+
+=== TECHNICAL DESIGN ===
+Single handler; parse {scope, transcript, profile, ...}; branch by scope; keep it stateless so concurrent
+turns never race.","Scenario: Scope dispatch
+  Given an incoming chat turn with a scope
+  When the engine runs
+  Then it executes the matching behavior (full-auto, get-intent, idle-check, callback, or locate-evidence)"
+Story,92,,Autopilot Scopes & Turn Orchestration,,,90,Never hand off without a complete Proposed Action,Autopilot Engine,High,3,backend,ai,,"As an agent, I want autopilot to never exit to me unless a concrete Proposed Action is ready, so that I never receive a handoff with nothing to act on.
+
+=== TECHNICAL DESIGN ===
+After the expert turn: if (shouldExitAutopilot && !proposedAction) shouldExitAutopilot = false. Add a unit
+test for this exact case.","Scenario: Premature exit is blocked
+  Given the expert signals completion but has produced no Proposed Action
+  When the engine evaluates the exit
+  Then it resets the exit to false and keeps collecting"
+Story,93,,Autopilot Scopes & Turn Orchestration,,,90,Degrade gracefully on AI failure,Autopilot Engine,,3,backend,ai,,"As an investor, I want a calm holding message if the AI errors rather than a broken chat, so that a transient model failure never leaves me staring at an error.
+
+=== TECHNICAL DESIGN ===
+try/catch around the model call; on throw, reply with a brief holding line (""pulling some information..."")
+and set shouldExitAutopilot=true; log the error to CloudWatch.","Scenario: Safe fallback on error
+  Given the LLM call throws during a turn
+  Then the client receives a brief ""pulling some information"" style message and the turn ends safely"
+Epic,94,,,Task Identification (Phase 1),,,Task Identification (Phase 1),Autopilot Engine,Highest,,backend,ai,,"Phase 1 of the live-agent autopilot: determine which of the 19 tasks the client needs. A zero-LLM keyword matcher tries first (fastest, cheapest); an LLM fallback (Nova Micro) resolves the paraphrased cases (""give his wife access""). Financial-advice requests short-circuit to the callback scope before identification so ""best stocks to buy"" is not swallowed by a purchase task.
+
+Value: fast, accurate task routing keeps cost down and gets the right expert on the conversation.
+
+=== TECHNICAL SCOPE ===
+matchTaskByIntent(intent, accountTypes) scores TASKS by keyword overlap (zero LLM). On miss,
+identifyTaskWithLLM (Nova Micro) classifies. ADVICE_RE short-circuits ""what should I buy"" to the callback
+scope BEFORE identification. Eligibility: tasks with eligibleAccountTypes only match clients holding those
+types.","Definition of done:
+- Keyword matching resolves common intents with no LLM call.
+- The LLM fallback resolves paraphrased intents.
+- Advice intents are routed to callback before task identification."
+Story,95,,Task Identification (Phase 1),,,94,Identify the task from the client's words,Autopilot Engine,High,5,backend,ai,,"As an agent, I want autopilot to recognize which account task the client needs from their own phrasing, so that the right expert starts collecting without me categorizing the request.
+
+=== TECHNICAL DESIGN ===
+Keyword match first; LLM fallback. Once identified, build the expert prompt via buildTaskSystemPrompt(
+profile, taskId) and run the first turn.","Scenario: Keyword match first, LLM fallback
+  Given a client describes their need
+  When keyword matching finds a task
+  Then that task starts immediately
+  And when keywords miss, an LLM classifies the intent before starting"
+Sub-task,96,95,,,,95,Keyword scorer matchTaskByIntent,Autopilot Engine,,,,,,"Score TASKS by keyword overlap, filtered by eligibleAccountTypes; zero LLM.",
+Sub-task,97,95,,,,95,LLM fallback identifyTaskWithLLM (Nova Micro),Autopilot Engine,,,,,,Classify intent when keywords miss; then build the expert prompt for turn 1.,
+Story,98,,Task Identification (Phase 1),,,94,Route advice requests away from task collection,Autopilot Engine,High,3,ai,compliance,,"As a compliance owner, I want requests for financial advice to short-circuit to a callback before any task is identified, so that we never let an advice request masquerade as a transactional task.
+
+=== TECHNICAL DESIGN ===
+Test ADVICE_RE (and/or an LLM check) BEFORE matchTaskByIntent; if it is advice, set scope=callback so a
+purchase task never swallows it.","Scenario: Advice short-circuit
+  Given the client asks what they should buy
+  When intent is evaluated
+  Then it is routed to the callback scope, not the purchase task"
+Epic,99,,,Reactive Field Collection (Phase 2),,,Reactive Field Collection (Phase 2),Autopilot Engine,Highest,,backend,ai,llm,"Phase 2: a dedicated expert prompt for the identified task drives a reactive conversation. The expert knows which fields remain, the client's current account state, the field validation rules, and how to format the proposedAction JSON. It runs only when the client sends a new message (no polling) and exits with shouldExitAutopilot + a populated proposedAction when every field is confirmed.
+
+Value: structured, reliable collection turns messy natural language into a clean, reviewable action.
+
+=== TECHNICAL SCOPE ===
+A per-task expert prompt (buildTaskSystemPrompt switch case) handles each subsequent message. It knows the
+remaining fields (filterFields applies requiresMultipleAccounts / requiresAccountTypes / skipWhenFieldIs),
+the current account state (summarizeAccounts header), the business rules, and the proposedAction JSON
+contract. Exits with shouldExitAutopilot=true + proposedAction when all required fields are confirmed.
+proposedAction shape: {taskId, fields:[{key,label,value}], ...} stamped via withSubmissionType.","Definition of done:
+- The expert collects only the fields still needed, honoring conditional skips.
+- It runs reactively (one turn per client message) and never double-sends.
+- On completion it emits a well-formed proposedAction and exits."
+Story,100,,Reactive Field Collection (Phase 2),,,99,Collect a task's fields conversationally,Autopilot Engine,High,8,backend,ai,,"As an agent, I want autopilot to gather every required field for the identified task by conversing with the client, so that a complete, structured request is assembled for me to review.
+
+=== TECHNICAL DESIGN ===
+Expert enumerates remaining fields and restates captured values; on completion emits the proposedAction
+JSON; the server validates that all required (post-filter) fields are present before honoring the exit.","Scenario: Reactive collection to completion
+  Given a task is in progress
+  When the client answers a question
+  Then the expert records it, asks only for what remains, and on the final field emits a proposedAction and exits"
+Sub-task,101,100,,,,100,filterFields conditional logic,Autopilot Engine,,,,,,Apply requiresMultipleAccounts / requiresAccountTypes / skipWhenFieldIs to compute remaining fields.,
+Sub-task,102,100,,,,100,proposedAction JSON contract + required-field validation,Autopilot Engine,,,,,,"Emit {taskId, fields:[{key,label,value}]}; server validates all required fields before honoring exit.",
+Story,103,,Reactive Field Collection (Phase 2),,,99,Follow up on partially answered prompts,Autopilot Engine,,3,ai,,,"As an investor, I want the assistant to notice when I answered only part of a multi-part question and ask for the rest, so that nothing required is silently skipped.
+
+=== TECHNICAL DESIGN ===
+Prompt rule (shared block): if multiple items were asked and only some answered, follow up for the rest
+before moving on.","Scenario: Partial answer triggers follow-up
+  Given the assistant asked for two pieces of information
+  When I provide only one
+  Then it follows up for the missing piece before moving on"
+Epic,104,,,Cross-Cutting Guardrails (All Tasks),,,Cross-Cutting Guardrails (All Tasks),Autopilot Engine,Highest,,backend,ai,compliance,"Shared constants injected into all 19 task prompts so behavior is uniform: FORBIDDEN_TOPICS (financial advice, trade execution, fraud/security incidents, inheritance) each with a scripted response; a no-trades variant for tasks that legitimately handle trades; language rules for restating client-stated vs database-sourced facts; a no-repeat / frustrated-yes rule; and hallucination protection. Changing one constant changes every expert at once.
+
+Value: consistent, compliant handling of sensitive topics regardless of which task is active.
+
+=== TECHNICAL SCOPE ===
+Shared constants injected into every task prompt: FORBIDDEN_TOPICS (advice, trades, fraud, inheritance -
+each with a scripted response, plus the field-follow-up + restating-language rules) and
+FORBIDDEN_TOPICS_NO_TRADES (same minus the trade clause, for trade-handling tasks). Editing one constant
+changes all 19 experts - scope changes carefully. Plus a hallucination rule: never invent account facts.","Definition of done:
+- All 19 experts share identical forbidden-topic handling.
+- Restating language distinguishes client-stated from database-sourced facts.
+- Experts do not invent account facts they were not given."
+Story,105,,Cross-Cutting Guardrails (All Tasks),,,104,Apply forbidden-topic handling uniformly,Autopilot Engine,High,5,ai,compliance,,"As a compliance owner, I want every task expert to handle advice, trades, fraud, and inheritance with the same scripted responses, so that sensitive topics are handled consistently no matter which task is active.
+
+=== TECHNICAL DESIGN ===
+Define FORBIDDEN_TOPICS once and inject it into every buildTaskSystemPrompt case; trade-handling tasks use
+the FORBIDDEN_TOPICS_NO_TRADES variant.","Scenario: Uniform forbidden-topic response
+  Given any of the 19 tasks is active
+  When the client raises a forbidden topic
+  Then the expert gives the shared scripted response and routes appropriately"
+Story,106,,Cross-Cutting Guardrails (All Tasks),,,104,Restate facts with correct attribution,Autopilot Engine,,3,ai,,,"As an investor, I want the assistant to say ""Got it - X will be Y"" for what I just told it and ""I see X is currently"" for what it read from my account, so that I can trust which facts came from me versus from the system.
+
+=== TECHNICAL DESIGN ===
+Prompt rule: ""Got it - X will be Y"" for client-stated values; ""I see X is currently"" for database-sourced
+values.","Scenario: Attribution language
+  Given the assistant restates information
+  Then client-stated values use ""Got it"" phrasing and database values use ""I see ... currently"" phrasing"
+Story,107,,Cross-Cutting Guardrails (All Tasks),,,104,Prevent the assistant from inventing account facts,Autopilot Engine,High,3,ai,compliance,,"As a compliance owner, I want experts to refuse to fabricate account data they were not provided, so that clients are never given hallucinated balances, holdings, or statuses.
+
+=== TECHNICAL DESIGN ===
+Hallucination-protection rule in all system prompts; route unknown facts through client-tools (get_*) or
+decline rather than guessing.","Scenario: No hallucinated data
+  Given the expert lacks a specific account fact
+  When the client asks for it
+  Then it does not invent a value and instead fetches it or declines"
+Epic,108,,,The 19 Task Experts,,,The 19 Task Experts,Autopilot Engine,Highest,,backend,ai,,"The catalog of nineteen task experts. Each is a narrow, testable conversational specialist with its own field schema (including conditional skips and account-type/eligibility filters), business rules, and an execution type of real (writes data) or mock (returns a realistic confirmation). Each story below is one expert; the engine selects exactly one per conversation.
+
+Value: per-task experts keep each flow precise and verifiable instead of blurring rules in one giant general agent.
+
+=== TECHNICAL SCOPE ===
+Each expert = a case in buildTaskSystemPrompt + a TASKS entry {id,name,keywords,fields[],executionType
+real|mock, submissionType?} + an execute-task handler. Fields support requiresMultipleAccounts (skip the
+account picker when the client has one account), requiresAccountTypes, skipWhenFieldIs (conditional skip),
+and enum options. Adding a task = tasks.ts entry + prompt case + execute-task case.","Definition of done:
+- Each expert collects exactly its required fields and honors its skips/eligibility.
+- Each exits with a correctly shaped proposedAction stamped with its submission type.
+- Real-execution experts write the right records; mock experts return clean confirmations."
+Story,109,,The 19 Task Experts,,,108,Autopilot: Update Contact Information,Autopilot Engine,,3,ai,,,"As an investor, I want to update my phone, email, or mailing address through chat, so that I can keep my contact details current without a form or a call.
+
+=== TECHNICAL DESIGN ===
+Fields: infoType (enum: Phone/Email/Mailing address), newValue (text). executionType mock. Echo the new
+value back for confirmation before exit.","Scenario: Collect contact change
+  Given I want to update contact info
+  When I provide which item and the new value
+  Then autopilot produces a Proposed Action to update that field"
+Story,110,,The 19 Task Experts,,,108,Autopilot: Change Beneficiary Designations,Autopilot Engine,High,8,ai,self-service,,"As an IRA account holder, I want to add, update, or remove a beneficiary on an eligible account through chat, so that I control inheritance without paperwork, with the allocations validated.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (only if multiple accounts), action (Add/Update/Remove), beneficiaryName, relationship
+(skip if Remove), percentage (skip if Remove), beneficiaryType Primary/Secondary (skip if Remove).
+executionType REAL. Pre-prompt: fetch current beneficiaries from DynamoDB; filter accounts to IRA/SEP only
+(iraAccounts) for BOTH the picker and the summarizeAccounts header. Enforce 100% allocation; acknowledge
+existing beneficiaries; handle ADD/REMOVE/UPDATE/REPLACE-ALL. On execute, atomically replace that account's
+beneficiaries, preserving others.","Scenario: Collect a beneficiary change
+  Given I choose an eligible (IRA/SEP) account and an action
+  When the action is add or update
+  Then autopilot collects name, relationship, percentage, and primary/secondary
+  And for remove it collects only the name
+
+Scenario: Allocation and existing-beneficiary rules
+  Given existing beneficiaries are present
+  Then the expert acknowledges them and enforces a 100% total
+  And taxable accounts are never offered for beneficiaries
+
+Scenario: Real write on approval
+  Given the Proposed Action is approved
+  Then the beneficiaries for that account are atomically replaced while other accounts are preserved"
+Sub-task,111,110,,,,110,Fetch current beneficiaries before building the prompt,Autopilot Engine,,,,,,Read existing beneficiaries from DynamoDB so the expert can acknowledge them.,
+Sub-task,112,110,,,,110,IRA/SEP-only account filter (iraAccounts),Autopilot Engine,,,,,,Filter both the account picker and the summarizeAccounts header to IRA/SEP; never taxable.,
+Sub-task,113,110,,,,110,Enforce 100% allocation + ADD/REMOVE/UPDATE/REPLACE-ALL semantics,Autopilot Engine,,,,,,Validate totals; support all four actions; atomic per-account replace on execute.,
+Story,114,,The 19 Task Experts,,,108,Autopilot: Add Authorized Account User (Type 3),Autopilot Engine,High,5,ai,compliance,,"As an account owner, I want to grant another person view-only, limited, or full access to my account, so that I can add a trusted user, with the authorization requiring my own approval.
+
+=== TECHNICAL DESIGN ===
+Fields: personName, personEmail, accessLevel (View-only / Limited / Full, with the access definitions in
+the question text). executionType mock. submissionType 'client' (Type 3): the proposedAction is stamped
+client-submitted; the agent's card reads ""Send to client"" and the client approves in their own chat.","Scenario: Collect access grant
+  Given I want to add an authorized user
+  When I provide their name, email, and access level
+  Then autopilot produces a Proposed Action marked as client-submitted (Type 3)
+
+Scenario: Owner must approve
+  Given the agent sends the action to me
+  Then I approve it in my own chat before it executes"
+Story,115,,The 19 Task Experts,,,108,Autopilot: Open a New Account,Autopilot Engine,,5,ai,,,"As an investor, I want to open a Roth IRA, Traditional IRA, SEP-IRA, or Taxable account through chat, so that I can start a new account in conversation.
+
+=== TECHNICAL DESIGN ===
+Fields: accountType (Roth/Traditional/SEP/Taxable), initialAmount, fundingSource (ACH/Check/Rollover).
+executionType mock.","Scenario: Collect new-account details
+  Given I want to open an account
+  When I provide account type, initial contribution, and funding source
+  Then autopilot produces a Proposed Action to open it"
+Story,116,,The 19 Task Experts,,,108,Autopilot: Buy / Make a Contribution,Autopilot Engine,,5,ai,,,"As an investor, I want to buy shares of a fund or contribute to an account through chat, so that I can place a purchase request for an agent to execute.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (if multiple), fund (from FUND_PICKLIST), amount, fundingSource (Linked bank / Cash in
+account). executionType mock. Uses FORBIDDEN_TOPICS_NO_TRADES.","Scenario: Collect purchase
+  Given I want to buy into an account
+  When I provide account (if I have several), fund, amount, and funding source
+  Then autopilot produces a Proposed Action for the purchase"
+Story,117,,The 19 Task Experts,,,108,Autopilot: Sell Fund Shares,Autopilot Engine,,5,ai,,,"As an investor, I want to sell shares of a fund through chat, so that I can request a sale with the reason captured.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (if multiple), fund, amount (text - allows a dollar amount or full redemption), reason
+(Withdrawal/Exchange/Rebalancing/Other). executionType mock. NO_TRADES variant.","Scenario: Collect sale
+  Given I want to sell
+  When I provide account, fund, amount or full redemption, and reason
+  Then autopilot produces a Proposed Action for the sale"
+Story,118,,The 19 Task Experts,,,108,Autopilot: Exchange Between Funds,Autopilot Engine,,3,ai,,,"As an investor, I want to move money from one fund to another within an account through chat, so that I can rebalance without separate buy/sell steps.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (if multiple), fromFund, toFund, amount (text - dollar amount or full balance).
+executionType mock. NO_TRADES variant.","Scenario: Collect exchange
+  Given I want to exchange funds
+  When I provide account, from-fund, to-fund, and amount
+  Then autopilot produces a Proposed Action for the exchange"
+Story,119,,The 19 Task Experts,,,108,Autopilot: Change Dividend Reinvestment (DRIP),Autopilot Engine,,3,ai,,,"As an investor, I want to turn dividend reinvestment on or off for a fund through chat, so that I control whether dividends buy more shares or pay out as cash.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (if multiple), fund, dripEnabled (ON reinvest / OFF cash). executionType mock.","Scenario: Collect DRIP change
+  Given I want to change dividend handling
+  When I provide account, fund, and on/off
+  Then autopilot produces a Proposed Action for the DRIP setting"
+Story,120,,The 19 Task Experts,,,108,Autopilot: Set Up Automatic Investment,Autopilot Engine,,5,ai,self-service,,"As an investor, I want to create a recurring automatic investment through chat, so that I can start dollar-cost-averaging on a schedule.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (if multiple), fund, amount, frequency (Monthly/Quarterly), dayOfMonth (1-28).
+executionType REAL - creates an autoInvest schedule record; recompute nextDate.","Scenario: Collect new auto-invest
+  Given I want to set up automatic investing
+  When I provide account, fund, amount, frequency, and day of month
+  Then autopilot produces a Proposed Action that, on approval, creates the schedule (real write)"
+Story,121,,The 19 Task Experts,,,108,Autopilot: Modify Auto-Invest Schedule,Autopilot Engine,,3,ai,self-service,,"As an investor, I want to change the amount, frequency, or day of an existing auto-invest schedule through chat, so that I can adjust recurring investing as my situation changes.
+
+=== TECHNICAL DESIGN ===
+Fields: scheduleDescription (free text to identify the schedule), amount, frequency (Monthly/Quarterly/Keep
+the same), dayOfMonth. executionType REAL - updates the matched schedule.","Scenario: Collect auto-invest change
+  Given I describe which schedule to change
+  When I provide the new amount, frequency, and day
+  Then autopilot produces a Proposed Action that updates the schedule (real write)"
+Story,122,,The 19 Task Experts,,,108,Autopilot: Pause or Resume Auto-Invest,Autopilot Engine,,3,ai,self-service,,"As an investor, I want to pause or resume an auto-invest schedule through chat, so that I can temporarily stop and later restart recurring investing.
+
+=== TECHNICAL DESIGN ===
+Fields: scheduleDescription, action (Pause/Resume). executionType REAL - toggles active.","Scenario: Collect pause/resume
+  Given I describe the schedule
+  When I choose pause or resume
+  Then autopilot produces a Proposed Action that toggles it (real write)"
+Story,123,,The 19 Task Experts,,,108,Autopilot: Request a Distribution,Autopilot Engine,,5,ai,,,"As an investor, I want to request a one-time withdrawal from an account through chat, so that I can take money out with delivery and withholding captured correctly.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (if multiple), amount, deliveryMethod (ACH/Check), taxWithholding (ONLY for Traditional/
+SEP via requiresAccountTypes). executionType mock.","Scenario: Collect distribution
+  Given I want to withdraw
+  When I provide account, amount, and delivery method
+  Then autopilot also asks about federal tax withholding for Traditional/SEP IRAs
+  And produces a Proposed Action for the distribution"
+Story,124,,The 19 Task Experts,,,108,Autopilot: Set Up Recurring Distributions,Autopilot Engine,,5,ai,,,"As a retiree, I want to set up systematic recurring withdrawals through chat, so that I can create reliable retirement income.
+
+=== TECHNICAL DESIGN ===
+Fields: accountId (if multiple), amount, frequency (Monthly/Quarterly/Annually), startDate (datetime),
+deliveryMethod (ACH/Check). executionType mock.","Scenario: Collect systematic withdrawal
+  Given I want recurring distributions
+  When I provide account, amount, frequency, start date, and delivery method
+  Then autopilot produces a Proposed Action for the recurring plan"
+Story,125,,The 19 Task Experts,,,108,Autopilot: Update RMD Settings,Autopilot Engine,,5,ai,self-service,,"As a retiree with a Traditional or SEP IRA, I want to set how and when I receive my Required Minimum Distribution through chat, so that I stay compliant with delivery and withholding I choose.
+
+=== TECHNICAL DESIGN ===
+eligibleAccountTypes: Traditional IRA, SEP-IRA (task is not offered otherwise). Fields: deliveryMethod
+(ACH/Check), frequency (Annual December/Monthly/Quarterly), taxWithholding (0-99%). executionType REAL.","Scenario: Eligibility-gated RMD settings
+  Given I hold a Traditional IRA or SEP-IRA
+  When I provide delivery method, frequency, and withholding percentage
+  Then autopilot produces a Proposed Action that writes my RMD preferences (real write)
+
+Scenario: Not offered when ineligible
+  Given I hold only Roth/taxable accounts
+  Then this task is not eligible"
+Story,126,,The 19 Task Experts,,,108,Autopilot: Roll Over From Another Institution,Autopilot Engine,,5,ai,,,"As an investor, I want to start rolling over an employer plan or outside account into Vanguard through chat, so that I can begin consolidating assets without a phone call.
+
+=== TECHNICAL DESIGN ===
+Fields: sourceInstitution, sourceAccountType (401k/Roth 401k/403b/IRA/Other), estimatedAmount,
+targetAccountId (if multiple). executionType mock.","Scenario: Collect rollover
+  Given I want to roll money in
+  When I provide source institution, source type, estimated amount, and receiving account
+  Then autopilot produces a Proposed Action to initiate the rollover"
+Story,127,,The 19 Task Experts,,,108,Autopilot: Convert to Roth IRA,Autopilot Engine,,5,ai,compliance,,"As an investor with a Traditional or SEP IRA, I want to convert all or part of it to a Roth IRA through chat, so that I can initiate a conversion with the taxable nature made clear.
+
+=== TECHNICAL DESIGN ===
+eligibleAccountTypes: Traditional IRA, SEP-IRA. Fields: fromAccountId, amount (text - dollar or full
+balance), taxYear. executionType mock. Convey clearly that a conversion is a taxable event.","Scenario: Collect Roth conversion
+  Given I hold a Traditional or SEP IRA
+  When I provide source account, amount, and tax year
+  Then autopilot produces a Proposed Action and conveys that a conversion is a taxable event"
+Story,128,,The 19 Task Experts,,,108,Autopilot: Request Tax Document,Autopilot Engine,,3,ai,,,"As an investor, I want to request a tax form (1099-R, 1099-B, 1099-DIV, or 5498) through chat, so that I can get the document I need for filing.
+
+=== TECHNICAL DESIGN ===
+Fields: formType (1099-R / 1099-B / 1099-DIV / 5498), taxYear. executionType mock.","Scenario: Collect tax-document request
+  Given I need a tax form
+  When I provide the form type and tax year
+  Then autopilot produces a Proposed Action for the document"
+Story,129,,The 19 Task Experts,,,108,Autopilot: Cancel or Reschedule Callback,Autopilot Engine,,3,ai,,,"As an investor, I want to cancel or reschedule a callback I previously arranged through chat, so that I can change my mind without re-explaining.
+
+=== TECHNICAL DESIGN ===
+Fields: action (Cancel/Reschedule), newScheduledTime (datetime; skip if Cancel). executionType mock - the
+reschedule updates the EventBridge schedule.","Scenario: Collect callback change
+  Given I have a callback arranged
+  When I choose cancel, or reschedule with a new time
+  Then autopilot produces a Proposed Action accordingly"
+Story,130,,The 19 Task Experts,,,108,Autopilot: Update Security Settings,Autopilot Engine,,3,ai,security,,"As an investor, I want to change my password, manage two-factor authentication, or remove a trusted device through chat, so that I can keep my account secure.
+
+=== TECHNICAL DESIGN ===
+Fields: securityAction (Change password / Enable 2FA / Disable 2FA / Remove trusted device). executionType
+mock.","Scenario: Collect security change
+  Given I want to update security
+  When I choose the security action
+  Then autopilot produces a Proposed Action for it"
+Epic,131,,,Callback Scope & Time Resolution,,,Callback Scope & Time Resolution,Autopilot Engine,High,,backend,ai,,"The conversational callback scope: it arranges a phone callback while the LLM never computes timestamps - it emits a day reference, hour, and minute, and the server resolves and validates the Eastern-Time to UTC instant (TZ-safe) and injects authoritative agent availability. Financial-advice requests are funneled here.
+
+Value: reliable, correct scheduling (no timezone bugs) and a compliant home for advice requests.
+
+=== TECHNICAL SCOPE ===
+CALLBACK_PROMPT. The LLM NEVER computes timestamps: it emits {dayReference, hour24, minute}; the server
+resolveCallbackTime (TZ-safe via Intl / date-fns-tz) resolves + validates the ET->UTC instant. The server
+injects authoritative availability (describeCallbackAvailability) and composes the first-turn ""why a
+callback"" opener deterministically. Advice requests short-circuit here (ADVICE_RE).","Definition of done:
+- The model emits a structured time; the server resolves/validates ET->UTC.
+- Real agent availability is injected into the conversation.
+- Advice requests are handled in this scope."
+Story,132,,Callback Scope & Time Resolution,,,131,Arrange a callback at a valid time,Autopilot Engine,High,5,ai,backend,,"As an investor, I want to arrange a callback by describing a day and time in plain language, so that I get a correctly scheduled call without timezone confusion.
+
+=== TECHNICAL DESIGN ===
+Expert emits {dayReference, hour24, minute}; resolveCallbackTime validates business hours / availability
+and rejects invalid times; on success create the schedule via schedule-callback.","Scenario: Server resolves the time
+  Given I describe a callback time conversationally
+  When autopilot captures a day reference, hour, and minute
+  Then the server resolves it to a validated ET->UTC instant and reflects real availability"
+Sub-task,133,132,,,,132,Server-side resolveCallbackTime (TZ-safe ET->UTC),Autopilot Engine,,,,,,"LLM emits {dayReference,hour24,minute}; server resolves+validates via Intl/date-fns-tz.",
+Sub-task,134,132,,,,132,Inject availability + deterministic opener,Autopilot Engine,,,,,,describeCallbackAvailability into the prompt; server composes the first-turn why-a-callback line.,
+Epic,135,,,Proposed-Action Evidence Location,,,Proposed-Action Evidence Location,Autopilot Engine,Medium,,backend,ai,agent-app,"A post-hoc utility scope (locate-evidence) that, given a transcript and a Proposed Action, picks the authoritative transcript span for each collected field - the client's own statement, else the client-confirmed agent recap, never post-confirmation echoes. Every quote is validated server-side against the actual message text. Drives the evidence highlighting in the agent UI.
+
+Value: lets agents verify, at a glance, exactly where each value in a Proposed Action came from.
+
+=== TECHNICAL SCOPE ===
+locate-evidence scope (LOCATE_EVIDENCE_PROMPT, model gpt-4o). Input {transcript, proposedAction}. One LLM
+call picks the authoritative span per field (the client's statement, else the client-confirmed agent recap
+- NEVER post-confirmation echoes). The SERVER validates every quote against the actual message text and
+returns {evidence:[{fieldKey, messageId, start, end}]}. Early-returns before chat-turn logic; ANY failure
+-> {evidence:[]} so the UI simply shows no highlights.","Definition of done:
+- For each field it returns a validated {messageId, start, end} span or nothing.
+- Post-confirmation echoes are never selected.
+- Any failure yields an empty evidence set (no false highlights)."
+Story,136,,Proposed-Action Evidence Location,,,135,Locate the transcript evidence for each collected field,Autopilot Engine,,5,backend,ai,,"As an agent, I want the system to identify where in the transcript each Proposed Action value was established, so that I can trust the card by seeing its source, and scrutinize anything unlocatable.
+
+=== TECHNICAL DESIGN ===
+Additive scope; for each field, validate that message.text.slice(start,end) equals the quoted span (reject
+otherwise); return {evidence:[]} on any mismatch or failure.","Scenario: Validated spans only
+  Given a Proposed Action and its transcript
+  When evidence location runs
+  Then each field maps to a validated client statement or confirmed recap span
+  And degenerate or unverifiable cases return no evidence rather than a wrong span"
+Epic,137,,,Idle Detection & Proactive Check-In,,,Idle Detection & Proactive Check-In,Autopilot Engine,Low,,backend,ai,agent-app,"The idle-check scope: when an agent has asked a question and the client goes quiet, an automatic timer triggers a gentle check-in message so the conversation does not stall.
+
+Value: keeps conversations moving and reduces silent abandonment.
+
+=== TECHNICAL SCOPE ===
+idle-check scope. A client-side ~3-minute timer (started when the agent asks a question) triggers ONE
+check-in turn. Guard against double-fire in React StrictMode (dev) and against firing while the client is
+typing.","Definition of done:
+- A check-in fires after the configured idle period following an agent question.
+- It does not fire repeatedly or when the client is actively typing."
+Story,138,,Idle Detection & Proactive Check-In,,,137,Nudge a quiet client with a check-in,Autopilot Engine,,3,ai,,,"As an agent, I want autopilot to send a friendly check-in when the client goes quiet after I asked something, so that conversations do not stall and I do not have to babysit silence.
+
+=== TECHNICAL DESIGN ===
+Timer lives in the agent column; on expiry POST /autopilot-turn scope=idle-check exactly once; clear the
+timer on any new message.","Scenario: Idle check-in
+  Given I asked the client a question
+  When the client is idle past the threshold
+  Then autopilot sends a single check-in message"
+Epic,140,,,Multi-Chat Desktop & CCP Integration,,,Multi-Chat Desktop & CCP Integration,Agent Workspace,Highest,,agent-app,connect,,"The core desktop: an Amazon Connect CCP-backed, four-column layout where each column is one conversation slot showing client info, the chat thread, and AI support. Connection tokens are managed via the agent-connection Lambda; chat rendering and control messages are handled per column.
+
+Value: the canvas that makes concurrent, context-rich handling possible.
+
+=== TECHNICAL SCOPE ===
+useConnectStreams subscribes to CCP/Streams events and maps them onto agentStore ContactSlots (max 4). The
+agent-connection Lambda mints/refreshes the connection token (a raw fetch with the connection token is what
+fixed the 403s on agent->customer sends). ChatColumn renders each slot's thread; control messages (agent
+name, approval form, typing) are intercepted, not rendered.","Definition of done:
+- Up to four slots render independently with correct client context.
+- CCP connection and tokens are established reliably.
+- Control messages (names, typing, approvals) are intercepted, not rendered as chat."
+Story,141,,Multi-Chat Desktop & CCP Integration,,,140,Handle up to four chats at once,Agent Workspace,High,5,agent-app,connect,,"As an agent, I want a four-column desktop where each column is a separate client conversation, so that I can help several clients at once without losing track of any.
+
+=== TECHNICAL DESIGN ===
+agentStore keeps an array of <=4 slots keyed by contactId; each column reads only its slot so state never
+bleeds across conversations.","Scenario: Independent slots
+  Given I am handling multiple chats
+  Then each column shows its own client info, thread, and AI support independently"
+Story,142,,Multi-Chat Desktop & CCP Integration,,,140,See the client's profile and accounts alongside the chat,Agent Workspace,,3,agent-app,,,"As an agent, I want each column to show the client name, intent label, and account summary, so that I have the context I need without switching tools.
+
+=== TECHNICAL DESIGN ===
+On accept, load the client profile (client-data) plus the intent attributes from the contact; render
+IntentLabel + an account summary panel.","Scenario: Client context panel
+  Given a chat is active in a column
+  Then I see the client name, AI intent label, and account details for that client"
+Epic,143,,,Incoming Contact Management,,,Incoming Contact Management,Agent Workspace,High,,agent-app,connect,,"New contacts arrive as an alert card with a countdown timer, the client name, the AI-generated intent summary, and the account types held; agents accept or skip. A bonus-opportunity badge surfaces when a contact qualifies for an incentive.
+
+Value: agents triage incoming work quickly and with context, improving acceptance and prioritization.
+
+=== TECHNICAL SCOPE ===
+IncomingAlert renders on contact.onConnecting with the client name, AI intentSummary, account types, and a
+ResponseTimer countdown. Accept routes the contact into a slot; skip releases it. Show a bonus badge when
+the contact qualifies (metadata). Guard the Accept/Close handlers against double-fire in React StrictMode
+(dev).","Definition of done:
+- Incoming alerts show name, intent summary, accounts, and a countdown.
+- Accept routes the contact into a slot; skip releases it.
+- Bonus badges render when applicable."
+Story,144,,Incoming Contact Management,,,143,Triage incoming contacts with context and a timer,Agent Workspace,High,5,agent-app,,,"As an agent, I want incoming contacts to appear as a timed alert with the client name, intent summary, and accounts, so that I can decide to accept or skip with enough context and urgency.
+
+=== TECHNICAL DESIGN ===
+Render IncomingAlert + ResponseTimer; accept -> agentStore adds the slot + loads context; skip -> release.
+De-dupe the StrictMode double-invoke.","Scenario: Accept an incoming contact
+  Given a contact alert appears with a countdown
+  When I accept it
+  Then it opens in a column with the client context loaded
+
+Scenario: Bonus opportunity badge
+  Given an incoming contact qualifies for an incentive
+  Then a bonus badge is shown on the alert"
+Epic,145,,,Focus Mode,,,Focus Mode,Agent Workspace,Medium,,agent-app,ux,,"A single-contact focused view (FocusingDesktop) for agents who want to concentrate on one conversation while retaining the same AI support, Proposed Action, evidence, and disconnect behaviors as the grid.
+
+Value: reduces cognitive load for complex conversations without losing any capability.
+
+=== TECHNICAL SCOPE ===
+FocusingDesktop renders one slot full-width, reusing the same ChatColumn/ProposedActionCard/AISupport
+halves; evidence highlighting + disconnect handling must behave identically. GOTCHA: hidden focusing-mode
+ChatColumns must bail on clientWidth===0 for the container-scoped evidence lookups.","Definition of done:
+- Focus mode shows one contact full-width with full AI support and Proposed Action.
+- Evidence highlighting and disconnect handling work identically to grid mode."
+Story,146,,Focus Mode,,,145,Focus on one conversation full-width,Agent Workspace,,3,agent-app,ux,,"As an agent, I want to expand a single conversation into a focused view, so that I can concentrate on a complex case without distraction.
+
+=== TECHNICAL DESIGN ===
+Toggle focus -> render FocusingDesktop with the FocusMessageBubble mirror; verify evidence + disconnect
+parity with the grid.","Scenario: Focus retains capabilities
+  Given I focus a conversation
+  Then I see its full thread, AI support, and Proposed Action
+  And evidence highlighting and disconnect handling still work"
+Epic,147,,,AI Support Panel,,,AI Support Panel,Agent Workspace,High,,agent-app,ai,,"The per-column assist surface: a next-best-response draft the agent can adopt/edit/ignore, predicted topic buttons, one-click predicted questions, recommended knowledge-base articles, and autopilot controls (start/stop, scope hints). It turns the agent from a typist into an editor.
+
+Value: cuts typing and lookup time and raises response quality and consistency.
+
+=== TECHNICAL SCOPE ===
+AISupport per column: a next-best-response draft (reply + autopilot scope hint), topic buttons (predict-
+intent), predicted questions (predict-questions, one-click inject into the composer), recommended KB
+articles (matchResources), and AutopilotMenu (start/stop + scope). All suggestions are non-binding
+(adopt/edit/ignore).","Definition of done:
+- A suggested reply and an autopilot scope hint are shown per turn.
+- Topic and question suggestions inject into the composer in one click.
+- Autopilot can be started and stopped from the panel."
+Story,148,,AI Support Panel,,,147,Adopt an AI-suggested reply,Agent Workspace,High,5,agent-app,ai,,"As an agent, I want a concise suggested reply for my next turn that I can adopt, edit, or ignore, so that I respond faster without sacrificing my judgment or voice.
+
+=== TECHNICAL DESIGN ===
+Call next-best-response; show the draft + scope hint; clicking inserts it into the composer; the agent can
+edit before sending.","Scenario: Suggested reply is editable
+  Given a client message awaits a response
+  Then the panel shows a one-to-two sentence suggested reply and an autopilot scope hint
+  And I can insert it into the composer and edit before sending"
+Story,149,,AI Support Panel,,,147,Insert predicted questions and recommended articles,Agent Workspace,,3,agent-app,ai,,"As an agent, I want predicted client questions and recommended KB articles I can inject with one click, so that I steer the conversation and share the right resource instantly.
+
+=== TECHNICAL DESIGN ===
+predict-questions -> QuestionButtons; KB matchResources -> article links; one click injects the question
+into the composer or shares the article.","Scenario: One-click inject
+  Given the AI support panel shows predicted questions and articles
+  When I click one
+  Then it is inserted into my composer or shared as appropriate"
+Story,150,,AI Support Panel,,,147,Start and stop autopilot from the panel,Agent Workspace,High,5,agent-app,ai,,"As an agent, I want controls to start and stop autopilot for a conversation, so that I can delegate routine collection to the AI and reclaim control whenever I want.
+
+=== TECHNICAL DESIGN ===
+AutopilotMenu starts the runAutopilotTurn loop (POST /autopilot-turn scope=get-intent) until a
+proposedAction appears or the agent stops. Stop cancels in-flight sends and emits the typing-stop sentinel.","Scenario: Autopilot control
+  Given a conversation is active
+  When I start autopilot
+  Then it begins driving turns until it produces a Proposed Action or I stop it
+  And stopping it immediately returns control to me and clears any pending typing indicator"
+Sub-task,151,150,,,,150,runAutopilotTurn loop (scope=get-intent),Agent Workspace,,,,,,Drive turns until a proposedAction appears or the agent stops.,
+Sub-task,152,150,,,,150,Stop cancels in-flight send + emits typing-stop sentinel,Agent Workspace,,,,,,Immediately return control; clear the customer typing indicator.,
+Epic,153,,,"Proposed Action Review, Evidence & Submission",,,"Proposed Action Review, Evidence & Submission",Agent Workspace,Highest,,agent-app,ai,,"When autopilot has collected all fields, a structured Proposed Action card appears with every value. The agent can edit any field, then submit (Type 1) or send to the client (Type 3). While the card is visible, the transcript highlights the exact span each value came from, and each field has a locate (crosshair) button that scrolls to and flashes its span; unlocatable values are flagged.
+
+Value: fast, accountable approvals - the agent verifies the source of each value in seconds.
+
+=== TECHNICAL SCOPE ===
+ProposedActionCard shows proposedAction.fields (editable). Type 1 button ""Submit Action""; Type 3 ""Send to
+client"". Submit is shared via the submitProposedAction util -> POST /execute-task -> confirmation appended +
+send-agent-message. Evidence: while the card is visible, ChatColumn (and FocusingDesktop's FocusMessageBubble)
+highlight each field's span from slot.proposedActionEvidence; each field has a crosshair button firing an
+evidence-jump CustomEvent (container-scoped lookup because pre-*/prior-* message ids repeat across columns).
+Clear evidence on submit/reject; unlocatable fields show a ""not located in transcript"" hint.
+KNOWN BUG to fix: ProposedActionCard editedFields state doesn't reset when FocusingDesktop switches between
+two contacts that both have cards - fix with key={slot.contactId}.","Definition of done:
+- Every collected field is shown and editable before submission.
+- Evidence highlights and locate buttons work while the card is visible.
+- Submit executes the task and posts a confirmation to the client."
+Story,154,,"Proposed Action Review, Evidence & Submission",,,153,Review and edit a Proposed Action before submitting,Agent Workspace,High,5,agent-app,,,"As an agent, I want a card showing every collected field that I can edit before I submit, so that I keep final judgment over what gets executed.
+
+=== TECHNICAL DESIGN ===
+Render fields editable; submit via submitProposedAction; append the confirmation; reset editedFields on
+contact switch via key={slot.contactId}.","Scenario: Edit then submit
+  Given autopilot produced a Proposed Action
+  When I correct a field and submit
+  Then the task executes with my edited values and the client receives a confirmation"
+Story,155,,"Proposed Action Review, Evidence & Submission",,,153,Verify each value against the transcript with evidence,Agent Workspace,High,5,agent-app,ai,,"As an agent, I want each card field to highlight where in the transcript it was established and let me jump to that span, so that I can trust the action and catch anything not actually said.
+
+=== TECHNICAL DESIGN ===
+Fire the locate-evidence request in parallel during the autopilot send delay; store slot.proposedAction
+Evidence; highlight + crosshair-jump (CustomEvent); bail hidden columns (clientWidth===0); clear on
+submit/reject.","Scenario: Locate evidence span
+  Given a Proposed Action card is visible
+  When I click a field's locate button
+  Then the transcript scrolls to and flashes the span where that value was established
+
+Scenario: Unlocatable value is flagged
+  Given a value cannot be traced to the transcript
+  Then the field shows a ""not located in transcript"" hint"
+Sub-task,156,155,,,,155,Fire parallel locate-evidence request on action ready,Agent Workspace,,,,,,"During the autopilot send delay, request validated spans and store on slot.proposedActionEvidence.",
+Sub-task,157,155,,,,155,Render highlights + crosshair jump buttons while card visible,Agent Workspace,,,,,,Container-scoped lookup; clear on submit/reject; bail on hidden columns (clientWidth===0).,
+Epic,158,,,Client Disconnect Detection,,,Client Disconnect Detection,Agent Workspace,High,,agent-app,connect,,"If the client ends/closes the chat on their side, the column does not silently jump to wrap-up: the AI area is replaced by a clear ""Client closed the chat."" notice with an explicit End chat button, the composer is disabled, and any running autopilot stops. Works in all four UI modes.
+
+Value: prevents agents from typing into a dead chat and makes the end-of-conversation explicit.
+
+=== TECHNICAL SCOPE ===
+Detect the customer's participant.left event (chatjs routes unmapped events to chatSession.onMessage) ->
+set slot.customerDisconnected. contact.onEnded holds the slot at 'active' while customerDisconnected is set
+(Connect ends the whole contact on customer disconnect). Replace the AI area with a ""Client closed the
+chat."" notice + End chat button (all 4 UI modes); disable the composer; stop autopilot. End chat -> the ACW
+transition.","Definition of done:
+- The customer participant-left event is detected and surfaced as a notice.
+- The composer is disabled and autopilot stops on disconnect.
+- Clicking End chat transitions the column to ACW."
+Story,159,,Client Disconnect Detection,,,158,Know immediately when a client leaves,Agent Workspace,High,5,agent-app,connect,,"As an agent, I want a clear notice and a disabled composer when the client closes the chat, so that I do not keep typing into a conversation that has ended.
+
+=== TECHNICAL DESIGN ===
+Map participant.left in onMessage -> notice + End chat + disabled composer + autopilot stop; End chat
+advances the column to ACW.","Scenario: Client-left notice
+  Given a client closes the chat on their side
+  Then I see ""Client closed the chat."", the composer is disabled, and autopilot stops
+  And clicking End chat moves the column to after-call work"
+Sub-task,160,159,,,,159,Detect participant.left via chatSession.onMessage,Agent Workspace,,,,,,chatjs routes unmapped events to onMessage; set slot.customerDisconnected.,
+Sub-task,161,159,,,,159,Hold slot at active + show notice/End chat in all 4 modes,Agent Workspace,,,,,,Do not auto-advance to ACW; disable composer; stop autopilot; End chat -> ACW.,
+Epic,162,,,After-Call Work (ACW) Generation,,,After-Call Work (ACW) Generation,Agent Workspace,High,,agent-app,ai,,"When a chat ends, the generate-acw Lambda produces a standardized wrap-up code, a 3-5 sentence factual summary, and one sentence of specific second-person coaching. The agent reviews and submits rather than writing wrap-up by hand.
+
+Value: eliminates manual after-call work, improving accuracy and freeing capacity.
+
+=== TECHNICAL SCOPE ===
+generate-acw Lambda (Nova Micro) takes transcript + profile and returns {wrapUpCode (one of ~30), summary
+(3-5 factual sentences), coaching (1 sentence, second person, + optional improvement)}. The AfterCallWork
+component shows it for review/submit; triggered on chat end (End chat click).","Definition of done:
+- ACW returns a valid wrap-up code, summary, and coaching for any ended chat.
+- The agent can review and submit (and adjust if needed)."
+Story,163,,After-Call Work (ACW) Generation,,,162,Get wrap-up written automatically,Agent Workspace,High,5,agent-app,ai,,"As an agent, I want the system to generate the wrap-up code, summary, and coaching when a chat ends, so that I review and submit after-call work instead of typing it.
+
+=== TECHNICAL DESIGN ===
+POST /generate-acw on end; render AfterCallWork with the three outputs; allow light edit + submit.","Scenario: Auto-generated ACW
+  Given a chat has ended
+  Then I am presented a standardized wrap-up code, a 3-5 sentence summary, and one coaching point
+  And I can review and submit it"
+Epic,164,,,Agent-to-Customer Messaging & Autopilot Send,,,Agent-to-Customer Messaging & Autopilot Send,Agent Workspace,High,,agent-app,connect,ai,"The send path from agent to client: the send-agent-message Lambda pushes agent messages and typing events via the Connect API; autopilotSend layers the human-realistic reading+typing delays and the agent-name broadcast so AI-assisted replies are indistinguishable from the agent typing.
+
+Value: a single, reliable outbound path that powers both manual and AI-assisted replies.
+
+=== TECHNICAL SCOPE ===
+send-agent-message Lambda pushes an agent message OR a typing event (event:'typing') to the client via the
+Connect API (raw fetch with the connection token avoided 403s). autopilotSend layers autopilotDelay
+(reading + typing) and the typing-stop sentinel on cancel; the agent broadcasts its full name on connect.","Definition of done:
+- Agent messages and typing events reach the client via Connect.
+- Autopilot sends honor reading/typing delays and cancel cleanly.
+- The agent full name is broadcast so client-side attribution is correct."
+Story,165,,Agent-to-Customer Messaging & Autopilot Send,,,164,Send agent messages and typing reliably,Agent Workspace,,3,agent-app,connect,,"As an agent, I want my messages and typing state to reach the client reliably, so that the conversation feels live and responsive.
+
+=== TECHNICAL DESIGN ===
+POST /send-agent-message {contactId, text | event:'typing'}; use the connection token; preserve ordering
+with autopilotSend.","Scenario: Outbound message and typing
+  Given I am connected to a client
+  When I type and send
+  Then the client sees my typing indicator and then my message"
+Epic,167,,,Execute-Task Engine,,,Execute-Task Engine,Task Execution,Highest,,backend,,,"The single execution entry point: dispatches by task, distinguishes real vs mock execution, mints a REF-XXXXXX reference number, and returns the confirmation payload that the client chat renders.
+
+Value: one consistent, traceable execution path for all 19 tasks.
+
+=== TECHNICAL SCOPE ===
+switch(taskId){...}; mint REF-XXXXXX; return {referenceNumber, confirmation, ...}. Mock handlers return
+canned confirmations; real handlers perform the DynamoDB write. Make real writes safe to retry.","Definition of done:
+- Each task maps to an execution handler (real or mock).
+- Every execution returns a unique reference number and confirmation text."
+Story,168,,Execute-Task Engine,,,167,Execute an approved action and return a reference,Task Execution,High,5,backend,,,"As an agent, I want an approved action to execute and return a reference number, so that the client and I both have proof the action was taken.
+
+=== TECHNICAL DESIGN ===
+Map each taskId to a handler; generate the REF; shape the structured confirmation payload the client card
+renders.","Scenario: Execution yields a reference
+  Given I submit an approved Proposed Action
+  When execute-task runs
+  Then it returns a REF-XXXXXX reference and a structured confirmation"
+Epic,169,,,Real DynamoDB Executions,,,Real DynamoDB Executions,Task Execution,High,,backend,dynamodb,,"The tasks that own real data write it: beneficiaries (atomic per-account replace that preserves other accounts), auto-invest create/update/pause-resume, and RMD settings. Live trades append a Pending transaction row dated today.
+
+Value: these high-value actions actually change the client record, so portal and assistant stay true.
+
+=== TECHNICAL SCOPE ===
+Real writers: update-beneficiaries (atomic per-account replace, preserving other accounts), setup/update/
+pause auto-invest, update-rmd-settings. Use UpdateCommand with attribute-path expressions; read-modify-write
+only the target sub-structure. Live trades PutItem a Pending transaction row dated today into the
+Transactions table.","Definition of done:
+- Beneficiary writes are atomic and preserve untouched accounts.
+- Auto-invest and RMD writes persist and are reflected on the portal.
+- Trade executions append a Pending transaction row."
+Story,170,,Real DynamoDB Executions,,,169,"Persist beneficiary, auto-invest, and RMD changes",Task Execution,High,5,backend,dynamodb,,"As an investor, I want my approved beneficiary, auto-invest, and RMD changes to actually save, so that the change I asked for is real, not just acknowledged.
+
+=== TECHNICAL DESIGN ===
+UpdateCommand against accounts/autoInvest/rmd; replace beneficiaries keyed by accountId while preserving
+siblings; recompute derived fields (e.g. nextDate).","Scenario: Atomic beneficiary replace
+  Given I approve a beneficiary change on one account
+  When it executes
+  Then that account's beneficiaries are replaced and my other accounts are untouched
+
+Scenario: Auto-invest and RMD persist
+  Given I approve an auto-invest or RMD change
+  Then the new schedule/settings appear on the corresponding portal page"
+Story,171,,Real DynamoDB Executions,,,169,Reflect executed trades in transaction history,Task Execution,,3,backend,dynamodb,,"As an investor, I want an executed buy to show up immediately as a Pending transaction, so that I can see the order I just placed in my history.
+
+=== TECHNICAL DESIGN ===
+On buy execute, append a Pending row (PK clientId, SK ""<today>#<seq>"", status Pending) to the Transactions
+table so it shows immediately.","Scenario: Trade appends a Pending row
+  Given a purchase is executed
+  Then a Pending transaction dated today appears in my history"
+Epic,172,,,Confirmation Experience,,,Confirmation Experience,Task Execution,High,,customer-app,ux,,"Completed actions are rendered to the client as a distinct green confirmation card - structured header, reference number, and a past-tense description - rather than a plain chat bubble.
+
+Value: unambiguous, reassuring proof that an action completed, with a reference for follow-up.
+
+=== TECHNICAL SCOPE ===
+The customer renders a green confirmation card (structured header, REF number, past-tense description)
+rather than a plain bubble; deliver it as a control payload recognized client-side in ChatMessage.","Definition of done:
+- Confirmations render as a green card with header, reference, and past-tense summary.
+- The same card renders for agent-submitted (Type 1) and client-submitted (Type 3) actions."
+Story,173,,Confirmation Experience,,,172,Receive a clear confirmation card for completed actions,Task Execution,,3,customer-app,ux,,"As an investor, I want a clear confirmation card with a reference number when an action completes, so that I know exactly what was done and can reference it later.
+
+=== TECHNICAL DESIGN ===
+Define the confirmation payload schema {referenceNumber, title, body}; ChatMessage detects + renders it as
+the green card.","Scenario: Green confirmation card
+  Given an action I requested completes
+  Then I see a green card with a header, reference number, and a past-tense description of what was done"
+Epic,174,,,Client-Submitted Approvals (Type 3),,,Client-Submitted Approvals (Type 3),Task Execution,High,,customer-app,agent-app,compliance,"For actions only the account owner may authorize (the first is adding an authorized user), the agent collects the details but cannot submit: their card button reads ""Send to client"", which places an editable ""Your approval is required"" card in the client's chat while the agent sees a waiting note. On the client's Submit, the agent app runs the exact same submit path as Type 1, so the confirmation is identical. Decline returns the card to the agent; agent cancel / chat-end / client-left all clean up the pending state, with an idempotency guard on the relay.
+
+Value: enforces that owner-only authorizations are actually made by the owner, without a separate flow.
+
+=== TECHNICAL SCOPE ===
+For submissionType 'client': the agent ProposedActionCard button = ""Send to client"". Round-trip via control
+messages (agent->customer: approval-form, approval-cancel; customer->agent: client-approved, client-
+declined). Agent sends the form -> customer renders ApprovalFormCard (editable fields, NO evidence buttons)
+-> Submit sends client-approved -> the agent app runs the SAME submitProposedAction path as Type 1 (byte-
+identical confirmation). Decline returns the card to the agent. Idempotency: flip awaitingClientApproval=
+false BEFORE the await on the relay. Agent Cancel / chat-end / client-left all clean up the pending state.","Definition of done:
+- Agent ""Send to client"" places an editable approval card in the client chat.
+- Client Submit executes via the shared Type 1 path; Decline returns it to the agent.
+- Cancel/chat-end/client-left clean up; the relay is idempotent."
+Story,175,,Client-Submitted Approvals (Type 3),,,174,Approve an owner-only action in my own chat,Task Execution,High,5,customer-app,,,"As an account owner, I want to review and submit owner-only actions (like granting account access) myself in chat, so that authorizations that require my consent are actually made by me.
+
+=== TECHNICAL DESIGN ===
+Wire the control-message round-trip + ApprovalFormCard + the shared submit util + the idempotency guard +
+cleanup paths.","Scenario: Owner approves in chat
+  Given an agent sends me an approval card
+  When I review the editable fields and Submit
+  Then the action executes and I receive the same confirmation as any other action
+
+Scenario: Decline returns to the agent
+  Given I have an approval card
+  When I Decline
+  Then the agent is notified and the card returns to them"
+Sub-task,176,175,,,,175,"Agent ""Send to client"" relay + waiting state",Task Execution,,,,,,"Send an approval-form control message to the client chat; show ""Waiting for client to submit..."" with Cancel; add an idempotency guard before the await.",
+Sub-task,177,175,,,,175,"Client approval card (editable fields, no evidence) + control messages",Task Execution,,,,,,"Render the approval card from the approval-form state; Submit sends a client-approved control message, Decline sends a client-declined one; reuse the shared submit utility so confirmation is identical to agent submit.",
+Sub-task,178,175,,,,175,Agent Send-to-client relay + waiting note + idempotency guard,Task Execution,,,,,,Send the approval-form control message; flip awaitingClientApproval=false before the await.,
+Sub-task,179,175,,,,175,Client approval card + approve/decline control messages,Task Execution,,,,,,"Editable fields, no evidence; Submit -> client-approved -> shared submit util (identical confirmation); Decline returns to agent.",
+Sub-task,180,175,,,,175,Cleanup on cancel / chat-end / client-left,Task Execution,,,,,,Clear the pending approval state in every termination path.,
+Epic,181,,,Submission-Type Framework,,,Submission-Type Framework,Task Execution,Medium,,backend,,,"A per-task submissionType (agent default / licensed-agent reserved / client = Type 3) stamped onto every Proposed Action, so the agent UI and execution path know who may submit each action.
+
+Value: a clean, extensible model for authorization that new tasks can opt into.
+
+=== TECHNICAL SCOPE ===
+Task.submissionType ('agent' default | 'licensed-agent' reserved | 'client'); withSubmissionType stamps it
+onto the proposedAction at both autopilot-turn return sites; the card adapts its button; a new Type 3 task
+is just the field set to 'client'.","Definition of done:
+- Every Proposed Action carries its submission type.
+- The agent card adapts its button to the type.
+- Adding a Type 3 task requires only setting the field."
+Story,182,,Submission-Type Framework,,,181,Stamp and honor each task's submission type,Task Execution,,3,backend,agent-app,,"As a product owner, I want each task to declare who may submit it and the system to honor that, so that authorization rules are explicit and consistent across tasks.
+
+=== TECHNICAL DESIGN ===
+Add submissionType to the TASKS entry; stamp it in autopilot-turn; branch the card button; keep the execute
+path identical regardless of type.","Scenario: Submission type drives the UI
+  Given a task declares its submission type
+  Then the Proposed Action is stamped with it
+  And the agent card shows Submit Action (agent) or Send to client (Type 3) accordingly"
+Epic,184,,,Knowledge Base Content & Mapping,,,Knowledge Base Content & Mapping,Knowledge & Predict,High,,backend,content,,"The curated KB: 62 financial topics with 247 pre-written Q&A pairs covering IRAs, RMDs, rollovers, taxes, fund info, and account types, mapped to the page (and, in flows, the exact step) so suggestions stay tightly relevant. Includes per-page extra-topic mappings and the page-context keys the wizard publishes.
+
+Value: authoritative, reusable answers that keep the assistant accurate and on-message.
+
+=== TECHNICAL SCOPE ===
+KB[] topics each with questions + answers; EXTRA_PAGE_TOPICS maps page keys (and open-account/<step>) to
+topic ids; pageKeyFromPath derives the key from the route; a pageContextStore can publish a finer key. Keep
+help-page slugs aligned with the link table.","Definition of done:
+- Topics and Q&A are mapped to page/step keys.
+- The mapping resolves the correct topics for each page and wizard step."
+Story,185,,Knowledge Base Content & Mapping,,,184,Maintain a page-mapped knowledge base,Knowledge & Predict,High,5,backend,content,,"As a content owner, I want a knowledge base of topics and Q&A mapped to the pages and steps where they apply, so that the assistant always offers relevant, accurate answers.
+
+=== TECHNICAL DESIGN ===
+Author topics + Q&A; map them to page/step keys in EXTRA_PAGE_TOPICS; verify each mapped page route exists.","Scenario: Topics resolve by page/step
+  Given a client is on a specific page or wizard step
+  When topic suggestions are requested
+  Then the KB returns topics mapped to that exact context"
+Epic,186,,,Predict Intent (Topic Suggestions),,,Predict Intent (Topic Suggestions),Knowledge & Predict,Medium,,backend,ai,,"Given the client's current page (or published sub-page/step) and recent messages, predict-intent suggests which KB topics are most relevant. Powers the client chat's topic pills and the agent AI support panel's topic row.
+
+Value: one engine drives relevant suggestions on both sides of the conversation.
+
+=== TECHNICAL SCOPE ===
+predict-intent Lambda (Nova Micro): input {pageKey, recentMessages} -> ranked topic ids drawn from KB +
+EXTRA_PAGE_TOPICS. Powers the customer TopicButtons and the agent topic row.","Definition of done:
+- Returns ranked topics for a given page/context and recent messages.
+- Powers both client pills and the agent topic row."
+Story,187,,Predict Intent (Topic Suggestions),,,186,Suggest relevant topics from page and conversation,Knowledge & Predict,,3,backend,ai,,"As an investor, I want topic suggestions based on where I am and what we have discussed, so that the suggestions feel relevant rather than generic.
+
+=== TECHNICAL DESIGN ===
+Build the prompt from pageKey + EXTRA_PAGE_TOPICS + recent messages; return ranked topic ids; cache per
+page where possible.","Scenario: Context-ranked topics
+  Given my page and recent messages
+  When predict-intent runs
+  Then it returns the most relevant KB topics for my situation"
+Epic,188,,,Predict Questions,,,Predict Questions,Knowledge & Predict,Medium,,backend,ai,,"Given the current conversation, predict-questions suggests the three most likely next questions the client might ask; each can be injected into the agent composer with one click.
+
+Value: helps agents pre-empt needs and keeps clients moving with one-tap follow-ups.
+
+=== TECHNICAL SCOPE ===
+predict-questions Lambda: input conversation -> 3 likely next questions (strings) with optional pre-written
+answers; one-click inject into the agent composer.","Definition of done:
+- Returns three plausible next questions for the conversation.
+- Each is insertable into the agent composer in one click."
+Story,189,,Predict Questions,,,188,Anticipate the client's next questions,Knowledge & Predict,,3,backend,ai,,"As an agent, I want the three most likely next questions surfaced so I can address them proactively, so that I stay a step ahead and reduce back-and-forth.
+
+=== TECHNICAL DESIGN ===
+Prompt for the top 3 next questions; return an array; render as QuestionButtons.","Scenario: Next-question suggestions
+  Given an in-progress conversation
+  When predict-questions runs
+  Then it returns three likely next questions I can insert with one click"
+Epic,190,,,Next-Best Response,,,Next-Best Response,Knowledge & Predict,High,,backend,ai,,"next-best-response suggests a concise one-to-two sentence reply for the agent's next turn plus an autopilot scope recommendation, shown as a draft the agent can adopt, edit, or ignore.
+
+Value: the single biggest lever on agent typing time and consistency.
+
+=== TECHNICAL SCOPE ===
+next-best-response Lambda: input conversation -> {reply (1-2 sentences), scope hint}; shown in AISupport as
+an editable draft.","Definition of done:
+- Returns a concise suggested reply and an autopilot scope hint per turn.
+- The suggestion is non-binding and editable."
+Story,191,,Next-Best Response,,,190,Draft the agent's next reply,Knowledge & Predict,High,5,backend,ai,,"As an agent, I want a suggested next reply and a recommended autopilot scope each turn, so that I can respond quickly and know when to hand off to autopilot.
+
+=== TECHNICAL DESIGN ===
+Prompt for a concise reply + a recommended autopilot scope; return both; keep it non-binding.","Scenario: Reply + scope hint
+  Given a client message awaits my response
+  When next-best-response runs
+  Then it returns a concise suggested reply and an autopilot scope recommendation"
+Epic,193,,,Schedule a Callback,,,Schedule a Callback,Callbacks,Medium,,backend,connect,,"Create a scheduled callback from the client's requested time, with agent availability reflected and the time validated server-side. Surfaced via the in-chat callback scheduler UI and confirmed in the agent app.
+
+Value: dependable scheduling with no timezone or availability surprises.
+
+=== TECHNICAL SCOPE ===
+schedule-callback creates the EventBridge schedule (no flexible window); persist {callbackId, scheduledUtc,
+clientId, REF}. CallbackScheduler renders in chat; reflect availability from describeCallbackAvailability.","Definition of done:
+- A schedule event is created for the validated instant.
+- The client and agent both see a confirmation with the time and reference."
+Story,194,,Schedule a Callback,,,193,Schedule a callback for a chosen time,Callbacks,,5,backend,connect,,"As an investor, I want to schedule a callback at a time that works for me, so that I can get help by phone without waiting on hold.
+
+=== TECHNICAL DESIGN ===
+POST /schedule-callback {clientId, instantUtc}; create the schedule; return REF + confirmation; render it
+in chat and in the agent app.","Scenario: Callback is scheduled
+  Given I request a callback at a specific time
+  When the request is accepted
+  Then a scheduled event is created for the validated time and I receive a confirmation with a reference"
+Epic,195,,,Execute & Manage Callback Lifecycle,,,Execute & Manage Callback Lifecycle,Callbacks,Medium,,backend,,,"The execution and lifecycle side: the execute-callback Lambda fires at the scheduled time, and cancel/reschedule (handled by the standard autopilot task) updates or removes the scheduled event.
+
+Value: callbacks actually happen, and clients can adjust them without friction.
+
+=== TECHNICAL SCOPE ===
+execute-callback is the schedule target (in prod it would place the outbound call / notify the queue).
+Cancel deletes the schedule; reschedule updates its time. Both confirm to the client.","Definition of done:
+- The scheduled handler runs at the target time.
+- Cancel removes and reschedule moves the event; both confirm to the client."
+Story,196,,Execute & Manage Callback Lifecycle,,,195,Have my callback fire at the scheduled time,Callbacks,,3,backend,,,"As an investor, I want my scheduled callback to actually trigger at the right time, so that the call I arranged happens as promised.
+
+=== TECHNICAL DESIGN ===
+execute-callback handler invoked by EventBridge at the instant; make it idempotent; log it and (in prod)
+trigger the outbound action.","Scenario: Scheduled callback fires
+  Given a callback is scheduled
+  When the scheduled time arrives
+  Then the execute-callback handler runs (and in production would place the outbound call)"
+Story,197,,Execute & Manage Callback Lifecycle,,,195,Cancel or reschedule a callback,Callbacks,,3,backend,ai,,"As an investor, I want to cancel or move a callback I arranged, so that plans change and I am not stuck with the original time.
+
+=== TECHNICAL DESIGN ===
+The cancel-reschedule-callback task -> execute-task -> delete or update the EventBridge schedule; confirm
+to the client.","Scenario: Cancel and reschedule
+  Given I have a callback scheduled
+  When I cancel it, the event is removed
+  And when I reschedule it, the event moves to the new validated time"
+Epic,199,,,Fund Catalog Source of Truth,,,Fund Catalog Source of Truth,Funds & Market Data,High,,backend,funds,dynamodb,"One canonical fund definition seeds a DynamoDB catalog table; an API serves it (module-cached) and a client hook consumes it with a local cache and a bundled offline fallback. A per-environment seed/refresh endpoint repopulates it.
+
+Value: a single edit point that fans out to every consumer, eliminating drift.
+
+=== TECHNICAL SCOPE ===
+Canonical file -> seed table (one item per fund). get-funds Scans once and module-caches; useFunds reads
+/funds with a localStorage TTL + a bundled fallback. ~36 small items that change < once/day, so a single
+Scan + cache is correct. reset-funds (key-gated) seeds/refreshes per environment.","Definition of done:
+- The catalog table is seeded from the canonical definition.
+- The serving API is cached; the client hook caches and falls back offline.
+- A seed/refresh endpoint repopulates a fresh environment."
+Story,200,,Fund Catalog Source of Truth,,,199,Serve the fund catalog from a single source,Funds & Market Data,High,5,backend,funds,,"As a platform owner, I want one fund catalog that seeds the database and feeds every page and AI system, so that fund facts can never disagree between the portal and the assistant.
+
+=== TECHNICAL DESIGN ===
+Build the bridge re-export (fund list + FUND_PICKLIST). reset-funds writes one item per fund. get-funds
+Scans + caches. useFunds reads /funds with localStorage TTL and falls back to the bundled catalog offline.","Scenario: One catalog, many consumers
+  Given the catalog is seeded from the canonical definition
+  When a page or AI system needs fund data
+  Then it reads the same catalog (cached) with a bundled offline fallback"
+Sub-task,201,200,,,,200,Seed the funds catalog table from the canonical fund definition,Funds & Market Data,,,,,,Bridge the canonical fund list into the table via a seed/reset endpoint; one item per fund keyed by ticker.,
+Sub-task,202,200,,,,200,Serve via cached API + client hook with offline fallback,Funds & Market Data,,,,,,get-funds module-cached; useFunds() with local TTL cache and bundled fallback.,
+Epic,203,,,Fund Content Pages,,,Fund Content Pages,Funds & Market Data,Medium,,customer-app,funds,content,"The investor-facing pages that present fund data - fees/expense ratios, fund performance, the prospectus library, the research screener and per-fund profile, and tax-efficient-investing - all reading from the shared catalog with the content-above-long-lists ordering rule applied.
+
+Value: trustworthy, consistent fund information presented where investors make decisions.
+
+=== TECHNICAL SCOPE ===
+Fees, Fund Performance, Prospectus library, Research screener, Fund Profile, and tax-efficient-investing
+all read via useFunds(). Apply the content-above-long-lists rule: put general content first and give long
+fund tables a maxHeight + scroll (e.g. the Fees page: account fees above the 36-row expense-ratio table).","Definition of done:
+- Fees, performance, prospectus, research, and profile pages read the catalog.
+- Long fund tables follow the content-first ordering and scroll rules."
+Story,204,,Fund Content Pages,,,203,See consistent fund data across content pages,Funds & Market Data,,3,customer-app,funds,,"As an investor, I want fees, performance, and prospectus pages to show the same fund facts as everywhere else, so that I can rely on the numbers no matter where I read them.
+
+=== TECHNICAL DESIGN ===
+Each page reads useFunds() so it matches the catalog + the assistant; fees page uses content-first
+ordering; performance/prospectus read the same source.","Scenario: Pages reflect the catalog
+  Given the catalog defines the lineup and its attributes
+  When I view the fees, performance, or prospectus pages
+  Then they show data consistent with the catalog and the assistant"
+Epic,205,,,AI Fund Access,,,AI Fund Access,Funds & Market Data,Medium,,backend,ai,funds,"A fund-lookup capability that exposes the catalog to all three AI systems (customer bot, agent suggested reply, and autopilot experts), plus a fund pick-list injected into task-expert prompts so they reference only real funds.
+
+Value: the AI never invents or misquotes a fund - it reads the same catalog the pages do.
+
+=== TECHNICAL SCOPE ===
+A get_funds tool in client-tools.ts (reads the Funds table) registered for the customer bot, NBR, and the
+task experts; FUND_PICKLIST is injected into expert prompts so experts only ever reference real funds.","Definition of done:
+- A fund-lookup tool is available to bot, NBR, and experts.
+- Expert prompts inject a current fund pick-list."
+Story,206,,AI Fund Access,,,205,Let the AI look up real fund data,Funds & Market Data,,3,backend,ai,funds,"As an investor, I want the assistant to answer fund questions from real catalog data, so that I get accurate fund facts, not hallucinated ones.
+
+=== TECHNICAL DESIGN ===
+Implement get_funds as an OpenAI tool/function (reads the table); register it for bot/NBR/experts; inject
+FUND_PICKLIST into the expert prompts.","Scenario: AI reads the catalog
+  Given I ask the assistant about a fund
+  When it answers
+  Then it uses the fund-lookup tool and references only funds in the catalog"
+Epic,207,,,Live Market Data,,,Live Market Data,Funds & Market Data,Medium,,backend,funds,,"A market-data service that provides live intraday prices and returns, with its ticker-to-symbol map derived from the catalog so the priced set always matches the lineup and cannot drift.
+
+Value: current, accurate prices wherever fund data appears, with zero manual sync.
+
+=== TECHNICAL SCOPE ===
+market-data Lambda fetches live quotes (e.g. Yahoo) per fund; the ticker->realSymbol FUND_MAP is derived
+from the catalog via the bridge (FUNDS.map(...)) so it always matches the lineup. Cache quotes briefly.","Definition of done:
+- Live prices/returns are available for every fund in the lineup.
+- The symbol map derives from the catalog (no hand-maintained list)."
+Story,208,,Live Market Data,,,207,Show live fund prices and returns,Funds & Market Data,,3,backend,funds,,"As an investor, I want fund pages to show current prices and returns, so that I make decisions on up-to-date numbers.
+
+=== TECHNICAL DESIGN ===
+Derive FUND_MAP from the catalog; fetch quotes; short cache; expose via the market-data route consumed by
+the fund pages.","Scenario: Live pricing matches the lineup
+  Given the catalog defines the lineup
+  When market data is fetched
+  Then every listed fund has a live price/return and the symbol set matches the catalog"
+Epic,210,,,Infrastructure as Code (CDK),,,Infrastructure as Code (CDK),Platform & Infra,High,,infra,cdk,,"The full stack expressed in CDK: an HTTP API Gateway, all Lambdas with their environment wiring, DynamoDB tables, the EventBridge scheduler role, the contact-center stack, a budget stack, and the CI/CD role stack. Secrets (e.g. the model API key) resolve from SSM at deploy time.
+
+Value: reproducible, reviewable infrastructure with no click-ops.
+
+=== TECHNICAL SCOPE ===
+API Gateway HTTP API with a route per Lambda; Lambdas bundled with esbuild (Node 20); DynamoDB tables (on-
+demand); EventBridge scheduler role; secrets via CloudFormation SSM dynamic references. DataStack +
+LambdaStack are the CI-deployed pair; the others are deployed manually when they change.","Definition of done:
+- API, Lambdas, tables, scheduler, budget, and CI/CD roles are all defined in CDK.
+- Secrets resolve from SSM at deploy time (no shell variables)."
+Story,211,,Infrastructure as Code (CDK),,,210,Define all infrastructure as code,Platform & Infra,High,5,infra,cdk,,"As a platform engineer, I want the entire platform defined in CDK, so that I can review, reproduce, and safely change infrastructure.
+
+=== TECHNICAL DESIGN ===
+Author the stacks; wire env vars + least-privilege IAM; resolve secrets from SSM at deploy; esbuild-bundle
+each Lambda. Verify with cdk synth/diff.","Scenario: One source for infrastructure
+  Given the CDK app
+  When I synthesize/deploy
+  Then it provisions the API, Lambdas, tables, scheduler, budget, and CI/CD roles with secrets from SSM"
+Sub-task,212,211,,,,211,DataStack: DynamoDB tables + IAM,Platform & Infra,,,,,,"Clients/Sessions/Transcripts/Transactions/Funds with the documented keys, indexes, TTL, and RETAIN.",
+Sub-task,213,211,,,,211,LambdaStack: HTTP API routes + env wiring + scheduler role,Platform & Infra,,,,,,A route per Lambda; SSM secret references; EventBridge scheduler role.,
+Epic,214,,,Dev/Prod Environments,,,Dev/Prod Environments,Platform & Infra,High,,infra,cdk,,"A stage-parameterized setup: prod is byte-identical to the code, and STAGE=dev produces an isolated parallel environment (suffix-named tables and stack, separate API) that costs ~$0 idle. Local dev points at the dev API so engineers can mutate, seed, and break freely without touching prod.
+
+Value: safe iteration - test against real infrastructure without risk to production.
+
+=== TECHNICAL SCOPE ===
+A STAGE parameter drives -dev suffixes (dev tables, a -dev Lambda stack, a separate API); .env.development
+points local frontends at the dev API; dev is ~$0 idle (on-demand). NOTE: Connect/live-chat is shared with
+prod (single instance), so chat-handoff testing still hits prod.","Definition of done:
+- The same CDK builds an isolated dev environment from STAGE=dev.
+- Local development targets dev data by default."
+Story,215,,Dev/Prod Environments,,,214,Test against an isolated dev environment,Platform & Infra,High,5,infra,cdk,,"As an engineer, I want an isolated dev environment that mirrors prod, so that I can validate changes against real infrastructure before they reach customers.
+
+=== TECHNICAL DESIGN ===
+Parameterize stack/resource names by STAGE; ""npm run deploy:dev"" provisions dev; local ""npm run dev"" uses
+.env.development (dev API + dev data).","Scenario: Dev mirrors prod, isolated
+  Given I deploy with STAGE=dev
+  Then an isolated parallel environment is created
+  And local development targets the dev API and data"
+Epic,216,,,CI/CD & Guarded Deploys,,,CI/CD & Guarded Deploys,Platform & Infra,Highest,,infra,cdk,,"Continuous delivery with a hard safety guard: merging to main triggers GitHub Actions that deploy the backend (CDK via OIDC) and both frontends (to GitHub Pages), all routed through a deploy guard that typechecks, diffs, and refuses to remove or replace a live resource (override only with an explicit flag). PR checks build both apps and bundle-check the Lambdas; the build SHA is stamped into each app.
+
+Value: fast, hands-off releases that cannot silently delete production infrastructure.
+
+=== TECHNICAL SCOPE ===
+GitHub Actions: a PR gate (build both apps + tsc the CDK + bundle-check the Lambdas; both 'build' and
+'backend' checks required) and, on merge to main, deploy-cdk (assumes an OIDC role) + frontend deploys. The
+guarded safe-deploy.mjs is the ONLY deploy path (CI + manual). The build SHA is stamped into both apps.","Definition of done:
+- Merge to main auto-deploys backend and frontends.
+- The deploy guard aborts on any destructive diff unless explicitly overridden.
+- PR checks gate builds and bundles; the deployed SHA is observable."
+Story,217,,CI/CD & Guarded Deploys,,,216,Ship to prod automatically on merge,Platform & Infra,High,5,infra,cdk,,"As an engineer, I want merging to main to deploy prod automatically, so that releases are consistent and nobody deploys by hand.
+
+=== TECHNICAL DESIGN ===
+deploy-cdk.yml assumes the OIDC role and runs the guarded deploy; the frontend workflows build + publish to
+the gh-pages root (customer) and /agent (agent).","Scenario: Auto-deploy on merge
+  Given a PR is merged to main
+  Then GitHub Actions deploy the backend (CDK via OIDC) and both frontends"
+Story,218,,CI/CD & Guarded Deploys,,,216,Block deploys that would delete live resources,Platform & Infra,High,5,infra,cdk,,"As a platform owner, I want any deploy that would remove or replace a live resource to be blocked by default, so that a stale or wrong branch can never silently destroy prod.
+
+=== TECHNICAL DESIGN ===
+safe-deploy.mjs parses cdk diff for REMOVE/REPLACE of any live resource (Lambda / route / integration /
+permission / table / GSI) and aborts with the list unless ALLOW_DESTROY=1. This is why a stale-branch
+deploy can no longer silently delete prod resources.","Scenario: Destroy guard aborts
+  Given a deploy diff would remove or replace a live resource
+  When the guarded deploy runs
+  Then it aborts with a clear list unless an explicit override flag is set"
+Sub-task,219,218,,,,218,Implement safe-deploy.mjs (typecheck + cdk diff + destroy-guard),Platform & Infra,,,,,,Parse the diff for REMOVE/REPLACE of live resources; abort unless ALLOW_DESTROY=1.,
+Story,220,,CI/CD & Guarded Deploys,,,216,Gate every PR with builds and bundle checks,Platform & Infra,,3,infra,,,"As an engineer, I want every PR to build both apps, typecheck CDK, and bundle-check the Lambdas, so that broken code cannot merge.
+
+=== TECHNICAL DESIGN ===
+The PR workflow builds both frontends, typechecks the CDK, and bundle-checks each Lambda before merge is
+allowed.","Scenario: PR gate
+  Given an open PR
+  Then CI builds both frontends, typechecks CDK, and bundle-checks the Lambdas before it can merge"
+Epic,221,,,Data Layer & Demo Data,,,Data Layer & Demo Data,Platform & Infra,High,,backend,dynamodb,,"The DynamoDB data model (Clients, Sessions, Transcripts, Transactions, Funds) and the read/write access layer (client-data), plus demo-data tooling: reset endpoints that restore all client fields to factory defaults (and seed transactions and funds) per environment, idempotently.
+
+Value: a clean, well-modeled data layer and the ability to reset the demo to a known-good state.
+
+=== TECHNICAL SCOPE ===
+Tables: Clients (PK clientId), Sessions (PK contactId, 30-day TTL), Transcripts (RETAIN, GSI clientId-
+savedAt-index), Transactions (PK clientId, SK ""<ISOdate>#<seq>"", GSI account-index), Funds (PK ticker).
+client-data is the read/write access layer (lib-dynamodb). reset-all-data / reset-client-data /
+reset-beneficiaries seed defaults + transactions + funds idempotently per env (key-gated). Factory defaults
+live in a client-defaults module.","Definition of done:
+- All five tables are modeled with correct keys and indexes.
+- Reset endpoints restore defaults and seed data idempotently per environment."
+Story,222,,Data Layer & Demo Data,,,221,Read and write client data through one access layer,Platform & Infra,,3,backend,dynamodb,,"As a platform engineer, I want a single access layer for client profile reads and writes, so that data access is consistent and testable.
+
+=== TECHNICAL DESIGN ===
+client-data dispatches actions over the Clients table via the lib-dynamodb DocumentClient; provide
+consistent read/write helpers so callers never hand-roll DynamoDB calls.","Scenario: Consistent client-data access
+  Given a client profile operation
+  When it runs through client-data
+  Then it reads/writes the Clients table consistently"
+Story,223,,Data Layer & Demo Data,,,221,Reset demo data to a known-good state,Platform & Infra,,3,backend,dynamodb,,"As a platform owner, I want a one-call reset that restores all demo client data, transactions, and funds, so that the demo can always be returned to a clean, predictable state.
+
+=== TECHNICAL DESIGN ===
+reset-all-data restores all fields from client-defaults, REMOVEs legacy arrays + lastAgentChat, and reseeds
+transactions (deterministic) + funds. Idempotent and key-gated (?key=...).","Scenario: Idempotent reset
+  Given any environment state
+  When I call the reset endpoint
+  Then all client fields return to defaults and transactions/funds are reseeded idempotently"
+Sub-task,224,223,,,,223,reset-all-data from client-defaults (+ legacy cleanup),Platform & Infra,,,,,,Restore all fields; REMOVE legacy arrays + lastAgentChat; key-gated.,
+Sub-task,225,223,,,,223,Deterministic transaction + fund reseed,Platform & Infra,,,,,,"Seed transactions (deterministic, idempotent) and funds from the canonical catalog.",
+Epic,226,,,Transcript Storage & Review,,,Transcript Storage & Review,Platform & Infra,Medium,,backend,dynamodb,,"Durable transcript handling: save-transcript writes the full message history (with the AI recap summary, wrap-up code, ACW summary, and the agent who handled it) to a retained table and records the client's most recent agent chat as continuation memory; get-transcripts reads them; pin-transcript flags pinned chats; and a standalone transcript review UI supports post-hoc quality analysis.
+
+Value: a permanent record for continuity, history, compliance, and quality review.
+
+=== TECHNICAL SCOPE ===
+save-transcript writes the full record (messages, intentSummary, wrapUpCode, acwSummary, agentUsername/
+agentName, and a second-person summary recap) to the Transcripts table (RETAIN) and writes lastAgentChat
+continuation memory on Clients. get-transcripts lists via the GSI (clientId-savedAt-index) and fetches by
+id. pin-transcript sets pinned. A standalone review UI (separate from the agent app) deep-links via ?id=.","Definition of done:
+- Transcripts persist with recap, wrap-up, ACW, and agent attribution.
+- Continuation memory powers Continue this chat; pins persist.
+- A review UI can browse and deep-link transcripts."
+Story,227,,Transcript Storage & Review,,,226,Persist every agent chat as a reviewable transcript,Platform & Infra,,5,backend,dynamodb,,"As a quality lead, I want every live-agent chat saved with its recap, wrap-up, and the agent who handled it, so that we have a durable record for history, continuity, and quality review.
+
+=== TECHNICAL DESIGN ===
+On end, generate the recap summary (Nova Micro), save the transcript row, and write the lastAgentChat
+continuation memory (transcriptId, endedAt, summary, agentUsername, agentName).","Scenario: Transcript saved on end
+  Given a live-agent chat ends
+  When save-transcript runs
+  Then the full transcript persists with recap summary, wrap-up code, ACW summary, and agent attribution
+  And the client's most recent agent chat is recorded as continuation memory"
+Sub-task,228,227,,,,227,Generate recap summary (Nova Micro) on chat end,Platform & Infra,,,,,,Second-person summary used by history + Continue this chat.,
+Sub-task,229,227,,,,227,Write transcript row + lastAgentChat continuation memory,Platform & Infra,,,,,,Save to Transcripts (RETAIN); write lastAgentChat on Clients.,
+Story,230,,Transcript Storage & Review,,,226,Review transcripts in a dedicated tool,Platform & Infra,,3,backend,,,"As a quality lead, I want a standalone UI to browse and deep-link transcripts, so that I can perform post-hoc conversation review and quality analysis.
+
+=== TECHNICAL DESIGN ===
+A standalone static review UI (separate deploy from the agent app) reads get-transcripts; support ?id=
+deep-linking (pushState/popstate) and a copy-conversation-id button.","Scenario: Deep-linkable review
+  Given a saved transcript
+  When I open the review UI with its id
+  Then it loads that conversation for review"
+Epic,231,,,Observability & Cost Safety,,,Observability & Cost Safety,Platform & Infra,Medium,,infra,backend,,"Operational guardrails: CloudWatch logging across Lambdas (optionally enriched by an AI observability integration), a monthly budget alarm that emails the owner at 80% actual / 100% forecast, and a client-log path that pages the owner on a customer-site access-code sign-in.
+
+Value: the team sees problems and spend early, and gets alerted to noteworthy events.
+
+=== TECHNICAL SCOPE ===
+CloudWatch logs per Lambda (log scope/model/taskId/outcome); optional Arize tracing (arize.ts). BudgetStack
+= a $15/mo budget alarm at 80% actual / 100% forecast (emails the owner). The client-log Lambda pages the
+owner (via the pager API, base+key from SSM) on an access-code signin.","Definition of done:
+- Lambdas log to CloudWatch; optional AI tracing can be enabled.
+- A budget alarm notifies at the configured thresholds.
+- Access-code sign-ins trigger an alert."
+Story,232,,Observability & Cost Safety,,,231,Get alerted on spend and key events,Platform & Infra,,3,infra,,,"As a platform owner, I want budget alerts and an alert on customer-site sign-in, so that I catch cost overruns and noteworthy access early.
+
+=== TECHNICAL DESIGN ===
+BudgetStack budget + email/SNS; client-log {context:""access-code-entered""} -> an urgent page via the pager
+API (base + key from SSM).","Scenario: Budget threshold alert
+  Given monthly spend crosses the configured threshold
+  Then the owner is emailed
+
+Scenario: Sign-in alert
+  Given someone enters the customer-site access code on a fresh browser
+  Then an urgent alert is sent to the owner"
+Story,233,,Observability & Cost Safety,,,231,Diagnose production behavior from logs,Platform & Infra,,2,infra,backend,,"As an engineer, I want each Lambda to log enough context to CloudWatch, so that I can diagnose production issues without redeploying.
+
+=== TECHNICAL DESIGN ===
+Emit structured logs in each Lambda (scope, model, taskId, outcome) - enough to trace a turn end-to-end
+without redeploying.","Scenario: Traceable turns
+  Given a production chat turn
+  When I inspect CloudWatch
+  Then I can trace the scope, model, and outcome of the turn"
+Epic,234,,,Contact-Center Platform (Amazon Connect),,,Contact-Center Platform (Amazon Connect),Platform & Infra,High,,infra,connect,,"The Amazon Connect foundation shared by client chat and the agent CCP: the Connect instance/stack and agent provisioning (logins and routing profiles) that make live chat handoff possible.
+
+Value: the real contact-center backbone behind every live conversation.
+
+=== TECHNICAL SCOPE ===
+ConnectStack provisions the instance + routing. Agent provisioning = aws connect create-user with the right
+routing profile (mirror an existing agent). Connect is shared across dev + prod (single instance). Do not
+re-enable Contact Lens (cost).","Definition of done:
+- The Connect instance and routing are provisioned.
+- New agents can be added with the correct routing profile."
+Story,235,,Contact-Center Platform (Amazon Connect),,,234,Provision Connect and agent logins,Platform & Infra,,3,infra,connect,,"As a platform engineer, I want the Connect instance and agent logins provisioned, so that live chat can be routed to real agents.
+
+=== TECHNICAL DESIGN ===
+Stand up the Connect instance, queues, and routing profiles; add an agent via aws connect create-user with
+the chat routing profile id.","Scenario: Agent can take chats
+  Given the Connect instance is provisioned
+  When an agent login with the correct routing profile is created
+  Then that agent can receive and handle live chats"
