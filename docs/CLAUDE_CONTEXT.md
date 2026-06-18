@@ -158,6 +158,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Proposed-action evidence highlighting | Lambda: `locate-evidence` scope in `autopilot-turn/handler.ts` (`locateEvidence`, `LOCATE_EVIDENCE_PROMPT`). Frontend: `ChatColumn.tsx` (`evidencePromise` in `runAutopilotTurn`, `bobs:evidenceJump` listener, `MessageBubble` highlights) + same render half in `FocusingDesktop.tsx` (`FocusMessageBubble`) + ⌖ buttons in `ProposedActionCard.tsx` + `utils/evidenceHighlight.tsx` (span renderer) + `EvidenceSpan`/`proposedActionEvidence` in `types/index.ts`. Highlights/⌖ only render while the card is visible; evidence is keyed by message `id` and cleared on submit/reject. |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |
+| Tools / calculators suite | Customer-facing `/tools` hub + 5 interactive calculators. Pages: `customer-app/src/components-v2/pages/tools/` (ToolsHubPage, FeeCalculatorPage, GrowthCalculatorPage, DcaCalculatorPage, RothVsTraditionalPage, RiskQuizPage). Shared layout/inputs/format helpers: `customer-app/src/components-v2/tools/` (`ui.tsx`, `inputs.tsx`, `format.ts`). Routes in `App.tsx` (`/tools`, `/tools/{fees,growth,dollar-cost-averaging,roth-vs-traditional,risk-profile}`); discoverable via the Library **Reference Library → Retirement & Tax Planning** link labeled "Tools & Calculators" (`LibraryPage.tsx` `REFERENCE`), which replaced the old direct Retirement Calculator link (that calculator is now reached through the hub). NOT in the global `TopNavV2` nav. Charts via **recharts**; all figures hard-sourced from `funds.ts` + `kb.ts` facts. Self-contained (does not import from RetirementCalculatorPage) so it's purely additive. |
 | Transaction tables + history + status | Data: `bobs-transactions` table (`cdk/lib/data-stack.ts`), generator `lambda/shared/transaction-history.ts`, statuses `lambda/shared/transaction-status.ts`. API: `lambda/client-data/handler.ts` (`get-recent-transactions`/`get-transactions-page`/`append-transaction`). Frontend: `customer-app/src/data/transactionStatus.ts` (display copy), `components-v2/common/StatusCell.tsx` (dotted-underline popover), `hooks/useRecentTransactions.ts`, recent tables in `PortfolioPage.tsx` + `account/AccountDetailPage.tsx`, full page `components-v2/pages/transactions/TransactionHistoryPage.tsx` (route `/transactions`). Writes: `execute-task/handler.ts` (`appendTransactionRows`). Seed/clear: `reset-all-data/handler.ts`. |
 | Research fund lineup (36 funds) | **Canonical source: `customer-app/src/data/funds.ts`** (`FUNDS: FundDef[]`, pure data — keep it React-free). It is the single edit point, the **seed** for the `bobs-funds` DynamoDB table, and the frontend **offline fallback**. At runtime the table is the source of truth: served by `GET /funds` (`lambda/get-funds`, module-cached) and consumed via the **`useFunds()` hook** (`customer-app/src/hooks/useFunds.ts`, localStorage TTL + bundled fallback). Seed/refresh per-env with `GET /reset-funds?key=bobs-reset-2025` (`lambda/reset-funds`). The backend reaches `funds.ts` through the **only** cross-package bridge, `lambda/shared/fund-catalog.ts` (re-exports `FUNDS` + `FUND_PICKLIST`). AI access: the **`get_funds`** tool in `lambda/shared/client-tools.ts` (reads `bobs-funds`, available to bot + NBR + task experts), and task-expert prompts inject `FUND_PICKLIST`. Live prices/returns still come from `lambda/market-data/handler.ts` → `FUND_MAP` (ticker→Vanguard realSymbol, Yahoo quotes), which is now **derived from the catalog** (`FUNDS.map(...)` via `fund-catalog.ts`) — no longer hand-maintained, so it can't drift from the lineup. Pages that show fund data (`/help/fees`, `/help/fund-performance`, `/help/prospectus`, `/resources/tax-efficient-investing`, `OpenAccountPage`, plus Research/`FundProfilePage`) all read via `useFunds()`. |
 | Content-page ordering rule | When a page mixes general explanatory content with a long, growing, data-driven list, put the general content **first** so list growth never buries it (e.g. FeesPage: Account Fees above the 36-row expense-ratio table). Long tables get a `maxHeight`+scroll. |
@@ -295,10 +296,18 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ## Active Branch / Current State (as of 2026-06-15)
 
-**`main` == production.** No in-flight feature branches — everything below has merged and deployed.
-The earlier divergence (work deployed before its PR merged, so `main` lagged prod) is resolved and
-structurally prevented. **For how we build/test/ship now, `docs/PROCESS.md` is canonical** — it
-supersedes any older "deploy from a laptop / Lambda deploys are immediate" phrasing elsewhere.
+**`main` == production.** One in-flight feature branch (`feature/tools-suite`, see *In flight* below);
+everything else has merged and deployed. The earlier divergence (work deployed before its PR merged, so
+`main` lagged prod) is resolved and structurally prevented. **For how we build/test/ship now,
+`docs/PROCESS.md` is canonical** — it supersedes any older "deploy from a laptop / Lambda deploys are
+immediate" phrasing elsewhere.
+
+**In flight (uncommitted, branch `feature/tools-suite`): Tools & calculators suite.** New customer-facing
+`/tools` hub + 5 interactive calculators — Cost of Fees, Growth Projector, Dollar-Cost Averaging,
+Roth vs. Traditional IRA, and a Risk Profile quiz (→ a BFTM/BFIN/BFBI allocation). See the "Tools /
+calculators suite" row in Key Files for the file map. Frontend-only and **purely additive** — the only change to an
+existing page is one swapped Reference link on `LibraryPage` (Retirement Calculator → "Tools & Calculators" → `/tools`). `tsc` + scoped `eslint` + `vite build` all clean;
+**not yet visually QA'd** (no browser tooling that session) and not yet PR'd.
 
 Recently shipped (all merged to `main` + deployed):
 - **DB-driven fund catalog** (PR #89): the 36-fund lineup is seeded from `customer-app/src/data/funds.ts`

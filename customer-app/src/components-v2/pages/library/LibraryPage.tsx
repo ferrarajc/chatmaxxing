@@ -18,7 +18,7 @@ const REFERENCE = [
       { label: 'Tax-Efficient Investing',         to: '/resources/tax-efficient-investing' },
       { label: 'Tax Deductions',                  to: '/resources/tax-deductions' },
       { label: 'Rollover Guide',                  to: '/resources/rollover' },
-      { label: 'Retirement Calculator',           to: '/resources/retirement-calculator' },
+      { label: 'Tools & Calculators',             to: '/tools' },
     ],
   },
   {
