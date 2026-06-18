@@ -36,6 +36,12 @@ import { RetirementCalculatorPage } from './components-v2/pages/resources/Retire
 import { LibraryPage } from './components-v2/pages/library/LibraryPage';
 import { ArticlePage } from './components-v2/pages/library/ArticlePage';
 import { BobPodPage } from './components-v2/pages/library/BobPodPage';
+import { ToolsHubPage } from './components-v2/pages/tools/ToolsHubPage';
+import { FeeCalculatorPage } from './components-v2/pages/tools/FeeCalculatorPage';
+import { GrowthCalculatorPage } from './components-v2/pages/tools/GrowthCalculatorPage';
+import { DcaCalculatorPage } from './components-v2/pages/tools/DcaCalculatorPage';
+import { RothVsTraditionalPage } from './components-v2/pages/tools/RothVsTraditionalPage';
+import { RiskQuizPage } from './components-v2/pages/tools/RiskQuizPage';
 import { AccountAccessPage } from './components-v2/pages/help/AccountAccessPage';
 import { AccountApplicationPage } from './components-v2/pages/help/AccountApplicationPage';
 import { AccountTransferPage } from './components-v2/pages/help/AccountTransferPage';
@@ -106,6 +112,12 @@ export default function App() {
               <Route path="/resources/retirement-calculator" element={<RetirementCalculatorPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/library/bob-pod" element={<BobPodPage />} />
+              <Route path="/tools" element={<ToolsHubPage />} />
+              <Route path="/tools/fees" element={<FeeCalculatorPage />} />
+              <Route path="/tools/growth" element={<GrowthCalculatorPage />} />
+              <Route path="/tools/dollar-cost-averaging" element={<DcaCalculatorPage />} />
+              <Route path="/tools/roth-vs-traditional" element={<RothVsTraditionalPage />} />
+              <Route path="/tools/risk-profile" element={<RiskQuizPage />} />
               <Route path="/library/guide/:slug" element={<ArticlePage category="guide" />} />
               <Route path="/library/opinion/:slug" element={<ArticlePage category="opinion" />} />
               <Route path="/help/account-access" element={<AccountAccessPage />} />
