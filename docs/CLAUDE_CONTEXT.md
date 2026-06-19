@@ -294,22 +294,20 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ---
 
-## Active Branch / Current State (as of 2026-06-15)
+## Active Branch / Current State (as of 2026-06-17)
 
-**`main` == production.** One in-flight feature branch (`feature/tools-suite`, see *In flight* below);
-everything else has merged and deployed. The earlier divergence (work deployed before its PR merged, so
+**`main` == production.** No in-flight feature branches — everything below has merged and deployed. The earlier divergence (work deployed before its PR merged, so
 `main` lagged prod) is resolved and structurally prevented. **For how we build/test/ship now,
 `docs/PROCESS.md` is canonical** — it supersedes any older "deploy from a laptop / Lambda deploys are
 immediate" phrasing elsewhere.
 
-**In flight (uncommitted, branch `feature/tools-suite`): Tools & calculators suite.** New customer-facing
-`/tools` hub + 5 interactive calculators — Cost of Fees, Growth Projector, Dollar-Cost Averaging,
-Roth vs. Traditional IRA, and a Risk Profile quiz (→ a BFTM/BFIN/BFBI allocation). See the "Tools /
-calculators suite" row in Key Files for the file map. Frontend-only and **purely additive** — the only change to an
-existing page is one swapped Reference link on `LibraryPage` (Retirement Calculator → "Tools & Calculators" → `/tools`). `tsc` + scoped `eslint` + `vite build` all clean;
-**not yet visually QA'd** (no browser tooling that session) and not yet PR'd.
-
 Recently shipped (all merged to `main` + deployed):
+- **Tools & calculators suite** (PR #93, frontend-only, 2026-06-17): customer-facing `/tools` hub + 5
+  interactive calculators — Cost of Fees, Growth Projector, Dollar-Cost Averaging, Roth vs. Traditional IRA,
+  and a Risk Profile quiz (→ a BFTM/BFIN/BFBI allocation). See the "Tools / calculators suite" row in Key
+  Files for the file map. Purely additive — the only existing-page change is one swapped Reference link on
+  `LibraryPage` (Retirement Calculator → "Tools & Calculators" → `/tools`); not in the global nav, per the
+  product owner. Only the `Deploy Customer App` Action fired (CDK/agent deploys are path-filtered).
 - **DB-driven fund catalog** (PR #89): the 36-fund lineup is seeded from `customer-app/src/data/funds.ts`
   into the `bobs-funds` DynamoDB table (via the `fund-catalog.ts` bridge); served by `GET /funds`
   (`get-funds`, module-cached) and consumed via the `useFunds()` hook; the `get_funds` tool exposes it
