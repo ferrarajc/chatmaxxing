@@ -3,6 +3,8 @@ import { NavLink, Link } from 'react-router-dom';
 import { PERSONAS } from '../../data/personas';
 import { useClientStore } from '../../store/clientStore';
 import { theme } from '../../theme';
+import { useFeatureFlags, EXPERIMENTS } from '../../store/featureFlagsStore';
+import { ToggleSwitch } from '../common/ToggleSwitch';
 
 const RESET_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001'}/reset-client-data?key=bobs-reset-2025`;
 
@@ -15,6 +17,8 @@ const NAV_LINKS = [
 
 export function TopNavV2() {
   const { activePersona, setActivePersona, refreshFromDb } = useClientStore();
+  const flags = useFeatureFlags(s => s.flags);
+  const setFlag = useFeatureFlags(s => s.setFlag);
   const [open, setOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [resetDone, setResetDone] = useState(false);
@@ -184,6 +188,29 @@ export function TopNavV2() {
                   </div>
                 );
               })}
+
+              {/* ── Experimental features ── */}
+              <div style={{ borderTop: `1px solid ${theme.color.border}`, background: theme.color.surfaceMuted }}>
+                <div style={{
+                  padding: '10px 14px 6px', fontSize: 10, fontWeight: 700,
+                  color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.08em',
+                }}>
+                  Experimental features
+                </div>
+                {EXPERIMENTS.map(exp => (
+                  <div key={exp.key} style={{ padding: '8px 14px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: theme.color.text }}>{exp.label}</div>
+                      <div style={{ fontSize: 11, color: theme.color.textMuted, lineHeight: 1.35 }}>{exp.description}</div>
+                    </div>
+                    <ToggleSwitch
+                      on={flags[exp.key] === true}
+                      onChange={on => setFlag(exp.key, on)}
+                      title={`Turn ${exp.label} ${flags[exp.key] ? 'off' : 'on'}`}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

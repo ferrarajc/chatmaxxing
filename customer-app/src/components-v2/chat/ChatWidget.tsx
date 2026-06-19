@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, lazy, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useChatStore } from '../../store/chatStore';
 import { usePageContextStore } from '../../store/pageContextStore';
@@ -7,11 +7,19 @@ import { usePredictedTopics } from '../../hooks/usePredictedTopics';
 import { ChatBubbleFAB } from './ChatBubbleFAB';
 import { ChatMinimizedBar } from './ChatMinimizedBar';
 import { ChatPanel } from './ChatPanel';
+import { useFlag } from '../../store/featureFlagsStore';
+import { useVoiceStore } from '../../store/voiceStore';
+
+// Voice ("Talk to Bob") is an experimental feature: lazy-loaded so none of its code is
+// fetched or executed unless the flag is on — the off state stays completely cost-free.
+const VoiceLaunchFAB = lazy(() => import('../voice/VoiceLaunchFAB').then(m => ({ default: m.VoiceLaunchFAB })));
+const TalkToBobOverlay = lazy(() => import('../voice/TalkToBobOverlay').then(m => ({ default: m.TalkToBobOverlay })));
 
 // Normalize a route path into a stable page key used for chat topic selection.
 // Top-level pages keep their existing keys (home/portfolio/research/account);
 // dynamic segments (a fund ticker, account id, article slug) are collapsed so
 // every instance of a page maps to one key the KB can target.
+// eslint-disable-next-line react-refresh/only-export-components
 export function pageKeyFromPath(pathname: string): string {
   const p = pathname.replace(/^\/+/, '').replace(/\/+$/, '');
   if (p === '') return 'home';
@@ -29,6 +37,10 @@ export function ChatWidget() {
   // the URL implies; prefer it so pills track the exact step/branch on screen.
   const pageContext = usePageContextStore(s => s.pageContext);
   const currentPage = pageContext ?? pageKeyFromPath(location.pathname);
+  const voiceOn = useFlag('talkToBob');
+  const voiceOpen = useVoiceStore(s => s.open);
+  const openVoice = useVoiceStore(s => s.openVoice);
+  const closeVoice = useVoiceStore(s => s.closeVoice);
 
   const chatState = useChatStore(s => s.state);
   const minimized = useChatStore(s => s.minimized);
@@ -60,6 +72,13 @@ export function ChatWidget() {
           onSubmitApproval={submitApproval}
           onDeclineApproval={declineApproval}
         />
+      )}
+
+      {voiceOn && (
+        <Suspense fallback={null}>
+          <VoiceLaunchFAB onClick={openVoice} />
+          {voiceOpen && <TalkToBobOverlay currentPage={currentPage} onClose={closeVoice} />}
+        </Suspense>
       )}
     </>
   );
