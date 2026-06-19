@@ -434,7 +434,26 @@ export class LambdaStack extends cdk.Stack {
       },
     });
 
+    // ── tts (OpenAI text-to-speech for the "Talk to Bob" voice feature) ──
+    const ttsFn = new NodejsFunction(this, 'TtsFn', {
+      functionName: `bobs-tts${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'tts/handler.ts'),
+      timeout: cdk.Duration.seconds(29),
+      memorySize: 512,
+      environment: {
+        ...baseEnv,
+        OPENAI_TTS_MODEL: process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts',
+        OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE ?? 'onyx',
+      },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    // No DynamoDB access — calls OpenAI /v1/audio/speech over HTTPS.
+
     const routes: [string, NodejsFunction][] = [
+      ['/tts', ttsFn],
       ['/start-chat', startChatFn],
       ['/predict-intent', this.predictIntentFn],
       ['/predict-questions', predictQuestionsFn],
