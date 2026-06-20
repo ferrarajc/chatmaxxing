@@ -303,13 +303,13 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 `docs/PROCESS.md` is canonical** — it supersedes any older "deploy from a laptop / Lambda deploys are
 immediate" phrasing elsewhere.
 
-**In flight (branch `feature/talk-to-bob`): "Talk to Bob" voice assistant (experimental, flag-gated).**
+**Shipped (PR #95): "Talk to Bob" voice assistant (experimental, flag-gated).**
 Customer-only. A new **Experimental features** toggle in the avatar menu (off by default) reveals a
 full-screen voice experience: speak → Web Speech STT → existing `/autopilot-turn` brain → spoken answer
 via **OpenAI TTS** (new `lambda/tts`, voice `onyx`; browser `speechSynthesis` fallback) + a synchronized
 balance/allocation/holding card derived from `activePersona`. All voice code is lazy-loaded and
 flag-gated, so OFF = today's behavior with zero voice cost. See the Key Files "Talk to Bob" row. TTS
-Lambda deployed to **dev** + verified; not yet visually QA'd (no browser tooling that session) — toggle
+Lambda deployed to dev + prod (prod `/tts` verified; voice livened via an `instructions` prompt); not yet visually QA'd (no browser tooling that session) — toggle
 on and test with a mic in Chrome before demoing.
 
 Recently shipped (all merged to `main` + deployed):

@@ -22,7 +22,7 @@ const CREAM = theme.color.textOnPrimary;       // #FBF9F4
 const CREAM_DIM = 'rgba(251,249,244,0.62)';
 
 const STATE_LABEL: Record<VoicePhase, string> = {
-  idle: 'Tap the orb and ask me anything',
+  idle: 'Click the BOrB and ask me anything',
   listening: 'Listening…',
   thinking: 'Thinking…',
   speaking: 'Bob is speaking',
@@ -143,8 +143,8 @@ export function TalkToBobOverlay({ currentPage, onClose }: { currentPage: string
         <div
           onClick={onOrbTap}
           role="button"
-          title={phase === 'listening' ? 'Stop' : phase === 'speaking' ? 'Interrupt and ask' : 'Tap to talk'}
-          style={{ cursor: blocked || phase === 'thinking' ? 'default' : 'pointer', borderRadius: '50%' }}
+          title={phase === 'listening' ? 'Stop' : phase === 'speaking' ? 'Interrupt and ask' : 'Click the BOrB'}
+          style={{ cursor: blocked || phase === 'thinking' ? 'default' : 'pointer', borderRadius: '50%', outline: 'none' }}
         >
           <VoiceOrb amplitudeRef={voice.amplitudeRef} phase={phase} size={240} />
         </div>

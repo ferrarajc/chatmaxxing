@@ -11,11 +11,18 @@ const MODEL = process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts';
 const DEFAULT_VOICE = process.env.OPENAI_TTS_VOICE ?? 'onyx';
 const MAX_CHARS = 1200; // cap latency/cost — answers are short; longer text is truncated
 
+// gpt-4o(-mini)-tts honors an `instructions` field that steers delivery (tone, energy, pacing).
+// This is the lever that keeps Bob lively instead of monotone. Ignored by older tts-1 models.
+const DEFAULT_INSTRUCTIONS = process.env.OPENAI_TTS_INSTRUCTIONS ??
+  'Speak in a warm, upbeat, and expressive voice — lively and friendly, with natural variation in ' +
+  'pitch and pace, like an engaging, personable financial guide. Keep the energy light and ' +
+  'conversational, with a gentle smile in your tone; never flat or monotone.';
+
 export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
   try {
-    const { text, voice } = JSON.parse(event.body ?? '{}') as { text?: string; voice?: string };
+    const { text, voice, instructions } = JSON.parse(event.body ?? '{}') as { text?: string; voice?: string; instructions?: string };
     const input = (text ?? '').trim().slice(0, MAX_CHARS);
     if (!input) return jsonResponse(400, { error: 'text is required' });
 
@@ -33,6 +40,8 @@ export const handler = async (
         voice: voice ?? DEFAULT_VOICE,
         input,
         response_format: 'mp3',
+        // `instructions` is only supported by gpt-4o(-mini)-tts; omit for older tts-1 models.
+        ...(MODEL.includes('gpt-4o') ? { instructions: instructions ?? DEFAULT_INSTRUCTIONS } : {}),
       }),
     });
 
