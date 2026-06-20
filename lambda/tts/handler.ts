@@ -16,12 +16,12 @@ const MAX_CHARS = 1200; // cap latency/cost — answers are short; longer text i
 // The BOrB's voice character. gpt-4o-mini-tts steers strongly off `instructions`, so this is the
 // main dial — change it (or OPENAI_TTS_VOICE) to retune the voice with no code change.
 const DEFAULT_INSTRUCTIONS = process.env.OPENAI_TTS_INSTRUCTIONS ??
-  "You are 'The BOrB' — a VERY old, grizzled Texas cowboy, around eighty years old, with a deep, " +
-  'gravelly, weathered voice and a thick, slow West Texas drawl. Talk slowly and lazily; draaaw out ' +
-  'your vowels and take long, unhurried pauses, like an old rancher telling a story on the porch. Be ' +
-  'folksy and brimming with character, with a warm chuckle and a twinkle in your voice. Vary your ' +
-  'pitch a LOT — never flat or monotone — and let it lift with real energy at the end of every ' +
-  "question and exclamation. A kindly, leathery old cowpoke who has seen it all and is in no hurry.";
+  'An elderly gentleman, slow delivery, lots of pauses, folksy, really sharp intonation, with big ' +
+  'crescendo highs and deep thoughtful lows. Responds absolutely literally to punctuation, coming up ' +
+  'at the ends of sentences ending in a question mark, excited at the ends of sentences ending in ' +
+  'exclamation points, and coming way down at the ends of sentences ending in periods. Every comma is ' +
+  'a pause. Every parenthetical is an aside, and every em dash is a digression to a separate thought. ' +
+  'The mind speaks to the punctuation powerfully.';
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
