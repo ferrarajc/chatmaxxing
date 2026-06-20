@@ -42,18 +42,27 @@ export function VoiceOrb({ amplitudeRef, phase, size = 220 }: {
       const amp = amplitudeRef.current;
       const ph = phaseRef.current;
 
-      // Gentle target pulse (0..~0.4), eased toward — subtle, never balloons.
+      // Target pulse, eased toward. LISTENING and SPEAKING ride the real audio amplitude, so
+      // the orb pulses on each syllable of Bob's voice; a small procedural floor keeps it alive
+      // when there's no amplitude (e.g. the browser-TTS fallback). Capped so it never reaches
+      // the canvas edge.
       let target: number;
-      if (ph === 'listening') target = Math.min(1, amp) * 0.35;
-      else if (ph === 'speaking') target = 0.10 + 0.06 * (0.5 + 0.5 * Math.sin(t * 0.16));
-      else if (ph === 'thinking') target = 0.06 + 0.03 * (0.5 + 0.5 * Math.sin(t * 0.10));
-      else target = 0.03 + 0.02 * (0.5 + 0.5 * Math.sin(t * 0.05));
-      smooth += (target - smooth) * 0.12;
+      if (ph === 'listening') {
+        target = Math.min(1, amp) * 0.55;
+      } else if (ph === 'speaking') {
+        const floor = 0.08 + 0.05 * (0.5 + 0.5 * Math.sin(t * 0.30));
+        target = Math.max(floor, 0.08 + Math.min(1, amp) * 0.6);
+      } else if (ph === 'thinking') {
+        target = 0.07 + 0.04 * (0.5 + 0.5 * Math.sin(t * 0.12));
+      } else {
+        target = 0.04 + 0.03 * (0.5 + 0.5 * Math.sin(t * 0.06));
+      }
+      smooth += (target - smooth) * 0.30;
       const pulse = smooth;
 
       // soft halo rings (contained, fading outward)
       for (let i = 3; i >= 1; i--) {
-        const r = Math.min(coreR * (1.35 + i * 0.42) * (1 + pulse * 0.12), safeMax);
+        const r = Math.min(coreR * (1.35 + i * 0.42) * (1 + pulse * 0.16), safeMax);
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(201,130,78,${(0.045 - i * 0.01).toFixed(3)})`;
@@ -61,7 +70,7 @@ export function VoiceOrb({ amplitudeRef, phase, size = 220 }: {
       }
 
       // glowing body — fades fully to transparent before the edge
-      const glowR = Math.min(coreR * 1.9 * (1 + pulse * 0.18), safeMax);
+      const glowR = Math.min(coreR * 1.9 * (1 + pulse * 0.22), safeMax);
       const glow = ctx.createRadialGradient(cx, cy, coreR * 0.3, cx, cy, glowR);
       glow.addColorStop(0, CORE);
       glow.addColorStop(0.5, ACCENT);
@@ -73,7 +82,7 @@ export function VoiceOrb({ amplitudeRef, phase, size = 220 }: {
 
       // bright core
       ctx.beginPath();
-      ctx.arc(cx, cy, coreR * (1 + pulse * 0.14), 0, Math.PI * 2);
+      ctx.arc(cx, cy, coreR * (1 + pulse * 0.20), 0, Math.PI * 2);
       ctx.fillStyle = CORE;
       ctx.fill();
 

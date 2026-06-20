@@ -22,10 +22,10 @@ const CREAM = theme.color.textOnPrimary;       // #FBF9F4
 const CREAM_DIM = 'rgba(251,249,244,0.62)';
 
 const STATE_LABEL: Record<VoicePhase, string> = {
-  idle: 'Click the BOrB and ask me anything',
-  listening: 'Listening…',
-  thinking: 'Thinking…',
-  speaking: 'Bob is speaking',
+  idle: 'Click the BOrB and ask away!',
+  listening: 'The BOrB is listening…',
+  thinking: 'The BOrB is thinking…',
+  speaking: 'The BOrB is speaking!',
   unsupported: 'Voice input isn’t supported in this browser',
   denied: 'Microphone access is blocked',
 };
@@ -45,7 +45,6 @@ export function TalkToBobOverlay({ currentPage, onClose }: { currentPage: string
   const handleUtteranceRef = useRef<(t: string) => void>(() => {});
 
   const voice = useVoice({
-    ttsVoice: 'onyx',
     onFinalTranscript: (t) => handleUtteranceRef.current(t),
     onError: (e) => { if (e.kind === 'no-speech') setActivePhase(p => (p === 'listening' ? 'idle' : p)); },
   });
