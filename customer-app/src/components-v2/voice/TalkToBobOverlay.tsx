@@ -8,6 +8,7 @@ import { VoiceOrb, VoicePhase } from './VoiceOrb';
 import { toSpeakable } from './voiceText';
 import { deriveCard, VoiceCard } from './voiceCards';
 import { VoiceAnswerCard } from './VoiceAnswerCard';
+import { useVoiceSettings, OPENAI_VOICES, VOICE_PRESETS } from '../../store/voiceSettingsStore';
 
 interface BrainResult { response: string; shouldExitAutopilot: boolean; toolsUsed?: string[] }
 
@@ -30,6 +31,16 @@ const STATE_LABEL: Record<VoicePhase, string> = {
   denied: 'Microphone access is blocked',
 };
 
+const panelField: React.CSSProperties = {
+  display: 'block', marginTop: 4, width: '100%', padding: '8px 10px', borderRadius: 8,
+  background: 'rgba(251,249,244,0.08)', color: CREAM, border: '1px solid rgba(251,249,244,0.25)',
+  fontSize: 14, fontFamily: theme.font.sans, boxSizing: 'border-box',
+};
+const panelChip: React.CSSProperties = {
+  background: 'rgba(251,249,244,0.08)', color: CREAM, border: '1px solid rgba(251,249,244,0.25)',
+  borderRadius: theme.radius.pill, padding: '6px 12px', fontSize: 13, cursor: 'pointer', fontFamily: theme.font.sans,
+};
+
 export function TalkToBobOverlay({ currentPage, onClose }: { currentPage: string; onClose: () => void }) {
   const activePersona = useClientStore(s => s.activePersona);
   // activePhase is the explicitly-driven phase (idle/listening/thinking/speaking). The hard
@@ -39,12 +50,16 @@ export function TalkToBobOverlay({ currentPage, onClose }: { currentPage: string
   const [advisorBadge, setAdvisorBadge] = useState(false);
   const [typed, setTyped] = useState('');
   const [card, setCard] = useState<VoiceCard | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const voiceSettings = useVoiceSettings();
 
   // Break the cycle: useVoice needs an onFinalTranscript handler, but the handler needs the
   // voice object. Route the callback through a ref that we point at the real handler below.
   const handleUtteranceRef = useRef<(t: string) => void>(() => {});
 
   const voice = useVoice({
+    ttsVoice: voiceSettings.voice || undefined,
+    ttsInstructions: voiceSettings.instructions || undefined,
     onFinalTranscript: (t) => handleUtteranceRef.current(t),
     onError: (e) => { if (e.kind === 'no-speech') setActivePhase(p => (p === 'listening' ? 'idle' : p)); },
   });
@@ -110,6 +125,12 @@ export function TalkToBobOverlay({ currentPage, onClose }: { currentPage: string
 
   const handleClose = useCallback(() => { voice.reset(); onClose(); }, [voice, onClose]);
 
+  const previewVoice = useCallback(() => {
+    setActivePhase('speaking');
+    void voice.speak("Well, howdy there, partner! This is how I sound. How can I help ya today?",
+      { onEnd: () => setActivePhase(p => (p === 'speaking' ? 'idle' : p)) });
+  }, [voice]);
+
   const submitTyped = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (typed.trim()) void handleUtterance(typed);
@@ -130,12 +151,79 @@ export function TalkToBobOverlay({ currentPage, onClose }: { currentPage: string
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: theme.color.accent }}>
           Bob's Mutual Funds · Talk to Bob
         </div>
-        <button
-          onClick={handleClose}
-          title="Close"
-          style={{ background: 'rgba(251,249,244,0.1)', color: CREAM, border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
-        >×</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            onClick={() => setSettingsOpen(o => !o)}
+            title="Voice settings"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: settingsOpen ? theme.color.accent : 'rgba(251,249,244,0.1)', color: CREAM,
+              border: 'none', borderRadius: theme.radius.pill, padding: '7px 14px', fontSize: 13,
+              fontWeight: 600, cursor: 'pointer', fontFamily: theme.font.sans,
+            }}
+          >⚙ Voice</button>
+          <button
+            onClick={handleClose}
+            title="Close"
+            style={{ background: 'rgba(251,249,244,0.1)', color: CREAM, border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
+          >×</button>
+        </div>
       </div>
+
+      {/* Voice settings panel */}
+      {settingsOpen && (
+        <div style={{
+          width: '100%', maxWidth: 560, marginTop: 12, padding: 16,
+          background: 'rgba(8,20,41,0.92)', border: '1px solid rgba(251,249,244,0.2)',
+          borderRadius: theme.radius.xl, display: 'flex', flexDirection: 'column', gap: 14,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.color.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Voice settings
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, color: CREAM_DIM, marginBottom: 8 }}>Quick presets</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {VOICE_PRESETS.map(p => {
+                const active = voiceSettings.voice === p.voice && voiceSettings.instructions === p.instructions;
+                return (
+                  <button
+                    key={p.label}
+                    onClick={() => voiceSettings.applyPreset(p)}
+                    style={{ ...panelChip, ...(active ? { background: theme.color.accent, borderColor: theme.color.accent } : {}) }}
+                  >{p.label}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          <label style={{ fontSize: 12, color: CREAM_DIM }}>
+            Base voice
+            <select value={voiceSettings.voice} onChange={e => voiceSettings.setVoice(e.target.value)} style={panelField}>
+              {OPENAI_VOICES.map(v => <option key={v} value={v} style={{ color: '#1A1814' }}>{v}</option>)}
+            </select>
+          </label>
+
+          <label style={{ fontSize: 12, color: CREAM_DIM }}>
+            Character / delivery
+            <textarea
+              value={voiceSettings.instructions}
+              onChange={e => voiceSettings.setInstructions(e.target.value)}
+              placeholder="e.g. a grizzled old Texas cowboy with a slow, gravelly drawl"
+              rows={3}
+              style={{ ...panelField, resize: 'vertical', lineHeight: 1.45 }}
+            />
+          </label>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              onClick={previewVoice}
+              style={{ background: theme.color.accent, color: '#fff', border: 'none', borderRadius: theme.radius.pill, padding: '9px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: theme.font.sans }}
+            >▶ Preview voice</button>
+            <span style={{ fontSize: 12, color: CREAM_DIM }}>Applies to Bob's next reply, and saves automatically.</span>
+          </div>
+        </div>
+      )}
 
       {/* Orb + state */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 720, gap: 18 }}>

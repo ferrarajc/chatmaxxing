@@ -14,7 +14,8 @@ export interface UseVoiceOptions {
   onFinalTranscript?: (text: string) => void;
   onError?: (e: { kind: VoiceErrorKind; message?: string }) => void;
   lang?: string;
-  ttsVoice?: string; // OpenAI voice name; server defaults to 'onyx'
+  ttsVoice?: string;        // OpenAI voice name; server default applies if omitted
+  ttsInstructions?: string; // OpenAI delivery instructions; server default applies if omitted
 }
 
 export interface SpeakOptions {
@@ -208,7 +209,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoice {
 
     let url: string;
     try {
-      url = await fetchSpeechUrl(clean, optsRef.current.ttsVoice);
+      url = await fetchSpeechUrl(clean, optsRef.current.ttsVoice, optsRef.current.ttsInstructions);
     } catch {
       speakBrowser(clean, opts); // OpenAI TTS unavailable/slow/blocked → browser voice
       return;
