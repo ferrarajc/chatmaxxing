@@ -198,11 +198,8 @@ export function TopNavV2() {
                   Experimental features
                 </div>
                 {EXPERIMENTS.map(exp => (
-                  <div key={exp.key} style={{ padding: '8px 14px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: theme.color.text }}>{exp.label}</div>
-                      <div style={{ fontSize: 11, color: theme.color.textMuted, lineHeight: 1.35 }}>{exp.description}</div>
-                    </div>
+                  <div key={exp.key} style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: theme.color.text }}>{exp.label}</span>
                     <ToggleSwitch
                       on={flags[exp.key] === true}
                       onChange={on => setFlag(exp.key, on)}

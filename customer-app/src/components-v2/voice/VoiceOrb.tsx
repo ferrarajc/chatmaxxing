@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 
-// The animated voice orb. A canvas + requestAnimationFrame loop that glows and pulses by
-// phase: it reacts to the real mic amplitude while LISTENING, and uses a procedural pulse
-// while speaking/thinking/idle (the browser can't expose TTS output as an audio signal).
+// The animated voice orb ("BOrB"). A canvas + requestAnimationFrame loop that glows and
+// gently pulses by phase: it reacts to the real mic amplitude while LISTENING, and uses a
+// soft procedural pulse otherwise. All drawing stays well inside the canvas (safeMax) so the
+// halo never reaches the square edges and clips — and the motion is smoothed + subtle.
 
 export type VoicePhase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'unsupported' | 'denied';
 
@@ -29,9 +30,11 @@ export function VoiceOrb({ amplitudeRef, phase, size = 220 }: {
     ctx.scale(dpr, dpr);
     const cx = size / 2;
     const cy = size / 2;
-    const baseR = size * 0.17;
+    const coreR = size * 0.15;
+    const safeMax = size * 0.46; // hard cap so nothing reaches the square canvas edge
     let raf = 0;
     let t = 0;
+    let smooth = 0; // eased pulse for graceful, un-jittery motion
 
     const render = () => {
       t += 1;
@@ -39,35 +42,38 @@ export function VoiceOrb({ amplitudeRef, phase, size = 220 }: {
       const amp = amplitudeRef.current;
       const ph = phaseRef.current;
 
-      let pulse: number;
-      if (ph === 'listening') pulse = Math.min(0.9, amp * 0.9);
-      else if (ph === 'speaking') pulse = 0.14 + 0.09 * Math.sin(t * 0.20);
-      else if (ph === 'thinking') pulse = 0.07 + 0.05 * Math.sin(t * 0.09);
-      else pulse = 0.04 + 0.03 * Math.sin(t * 0.04); // idle / unsupported / denied: gentle breathing
+      // Gentle target pulse (0..~0.4), eased toward — subtle, never balloons.
+      let target: number;
+      if (ph === 'listening') target = Math.min(1, amp) * 0.35;
+      else if (ph === 'speaking') target = 0.10 + 0.06 * (0.5 + 0.5 * Math.sin(t * 0.16));
+      else if (ph === 'thinking') target = 0.06 + 0.03 * (0.5 + 0.5 * Math.sin(t * 0.10));
+      else target = 0.03 + 0.02 * (0.5 + 0.5 * Math.sin(t * 0.05));
+      smooth += (target - smooth) * 0.12;
+      const pulse = smooth;
 
-      // outer halo rings
+      // soft halo rings (contained, fading outward)
       for (let i = 3; i >= 1; i--) {
-        const r = baseR * (1 + i * 0.55 + pulse * i);
+        const r = Math.min(coreR * (1.35 + i * 0.42) * (1 + pulse * 0.12), safeMax);
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(201,130,78,${(0.06 * i).toFixed(3)})`;
+        ctx.fillStyle = `rgba(201,130,78,${(0.045 - i * 0.01).toFixed(3)})`;
         ctx.fill();
       }
 
-      // glowing body
-      const outer = baseR * (1.25 + pulse);
-      const glow = ctx.createRadialGradient(cx, cy, baseR * 0.2, cx, cy, outer);
+      // glowing body — fades fully to transparent before the edge
+      const glowR = Math.min(coreR * 1.9 * (1 + pulse * 0.18), safeMax);
+      const glow = ctx.createRadialGradient(cx, cy, coreR * 0.3, cx, cy, glowR);
       glow.addColorStop(0, CORE);
-      glow.addColorStop(0.55, ACCENT);
+      glow.addColorStop(0.5, ACCENT);
       glow.addColorStop(1, 'rgba(201,130,78,0)');
       ctx.beginPath();
-      ctx.arc(cx, cy, outer, 0, Math.PI * 2);
+      ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
       ctx.fillStyle = glow;
       ctx.fill();
 
       // bright core
       ctx.beginPath();
-      ctx.arc(cx, cy, baseR * (0.78 + pulse * 0.5), 0, Math.PI * 2);
+      ctx.arc(cx, cy, coreR * (1 + pulse * 0.14), 0, Math.PI * 2);
       ctx.fillStyle = CORE;
       ctx.fill();
 
