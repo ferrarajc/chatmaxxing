@@ -185,9 +185,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoice {
     if (!ttsSupported) { setStatus('idle'); opts?.onEnd?.(); return; }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
-    // Diagnostic: deep + slow, so a browser-TTS fallback is obviously distinct from the OpenAI voice.
-    u.pitch = 0.4;
-    u.rate = 0.85;
+    // Browser-TTS fallback (rare — only if the OpenAI audio fails): a slightly deep, slow read so it
+    // at least leans toward Bob's older character.
+    u.pitch = 0.85;
+    u.rate = 0.92;
     const voices = window.speechSynthesis.getVoices();
     const preferred =
       voices.find(v => /en-US/i.test(v.lang) && /natural|google|samantha|aaron|zoe/i.test(v.name))
