@@ -3,8 +3,8 @@ import { post } from '../../api/client';
 // Calls the /tts endpoint (OpenAI text-to-speech) and returns an object URL for the
 // generated mp3. Throws on any failure so the caller can fall back to the browser's
 // built-in speechSynthesis. The caller is responsible for URL.revokeObjectURL().
-export async function fetchSpeechUrl(text: string, voice?: string): Promise<string> {
-  const res = await post<{ audioBase64?: string; mime?: string }>('/tts', { text, voice });
+export async function fetchSpeechUrl(text: string, voice?: string, instructions?: string): Promise<string> {
+  const res = await post<{ audioBase64?: string; mime?: string }>('/tts', { text, voice, instructions });
   if (!res?.audioBase64) throw new Error('no audio');
   const byteChars = atob(res.audioBase64);
   const bytes = new Uint8Array(byteChars.length);
