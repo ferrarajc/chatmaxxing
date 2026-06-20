@@ -8,15 +8,17 @@ import { jsonResponse } from '../shared/types';
 
 const OPENAI_TTS_URL = 'https://api.openai.com/v1/audio/speech';
 const MODEL = process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts';
-const DEFAULT_VOICE = process.env.OPENAI_TTS_VOICE ?? 'onyx';
+const DEFAULT_VOICE = process.env.OPENAI_TTS_VOICE ?? 'ash';
 const MAX_CHARS = 1200; // cap latency/cost — answers are short; longer text is truncated
 
 // gpt-4o(-mini)-tts honors an `instructions` field that steers delivery (tone, energy, pacing).
 // This is the lever that keeps Bob lively instead of monotone. Ignored by older tts-1 models.
 const DEFAULT_INSTRUCTIONS = process.env.OPENAI_TTS_INSTRUCTIONS ??
-  'Speak in a warm, upbeat, and expressive voice — lively and friendly, with natural variation in ' +
-  'pitch and pace, like an engaging, personable financial guide. Keep the energy light and ' +
-  'conversational, with a gentle smile in your tone; never flat or monotone.';
+  "You are 'The BOrB' — an elderly, grizzled Texas cowboy: a warm, gravelly old rancher with a " +
+  'strong down-home Texas drawl, like a weathered old-timer swapping stories on the porch. Be VERY ' +
+  'expressive and folksy, never flat or monotone: stretch out your vowels, take your time, and swing ' +
+  'your pitch way up and down. Lift your intonation and energy at the end of every question and ' +
+  'exclamation. Add a warm chuckle and a twinkle in your tone, like a kindly old cowboy who has seen it all.';
 
 export const handler = async (
   event: APIGatewayProxyEventV2,

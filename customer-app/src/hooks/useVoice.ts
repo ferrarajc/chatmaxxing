@@ -59,6 +59,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoice {
   const rafRef = useRef<number | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const blobUrlRef = useRef<string | null>(null);
+  const speakRafRef = useRef<number | null>(null);
 
   const stopAnalyser = useCallback(() => {
     if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -164,7 +165,13 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoice {
     setStatus(s => (s === 'denied' || s === 'unsupported') ? s : 'idle');
   }, [stopAnalyser]);
 
+  const stopSpeakAnalyser = useCallback(() => {
+    if (speakRafRef.current != null) { cancelAnimationFrame(speakRafRef.current); speakRafRef.current = null; }
+    amplitudeRef.current = 0;
+  }, []);
+
   const cancelSpeak = useCallback(() => {
+    stopSpeakAnalyser();
     if (audioElRef.current) {
       try { audioElRef.current.pause(); } catch { /* ignore */ }
       audioElRef.current.src = '';
@@ -172,7 +179,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoice {
     }
     if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
     if (ttsSupported) { try { window.speechSynthesis.cancel(); } catch { /* ignore */ } }
-  }, [ttsSupported]);
+  }, [ttsSupported, stopSpeakAnalyser]);
 
   const speakBrowser = useCallback((text: string, opts?: SpeakOptions) => {
     if (!ttsSupported) { setStatus('idle'); opts?.onEnd?.(); return; }
@@ -194,28 +201,57 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoice {
     const clean = text.trim();
     if (!clean) { opts?.onEnd?.(); return; }
     setStatus('speaking');
+
+    let url: string;
     try {
-      const url = await fetchSpeechUrl(clean, optsRef.current.ttsVoice);
-      blobUrlRef.current = url;
-      const audio = new Audio(url);
-      audioElRef.current = audio;
-      audio.onended = () => {
-        if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
-        audioElRef.current = null;
-        setStatus('idle');
-        opts?.onEnd?.();
+      url = await fetchSpeechUrl(clean, optsRef.current.ttsVoice);
+    } catch {
+      speakBrowser(clean, opts); // OpenAI TTS unavailable/slow/blocked → browser voice
+      return;
+    }
+
+    blobUrlRef.current = url;
+    const audio = new Audio(url);
+    audioElRef.current = audio;
+    const cleanup = () => {
+      stopSpeakAnalyser();
+      if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
+      audioElRef.current = null;
+    };
+    audio.onended = () => { cleanup(); setStatus('idle'); opts?.onEnd?.(); };
+    audio.onerror = () => { cleanup(); speakBrowser(clean, opts); };
+
+    // Route the mp3 through an AnalyserNode so the orb pulses on each syllable of Bob's real
+    // speech. createMediaElementSource re-routes the element into the graph, so we must also
+    // connect it to the destination or playback would be silent.
+    try {
+      let ctx = audioCtxRef.current;
+      if (!ctx) { ctx = new AudioContext(); audioCtxRef.current = ctx; }
+      if (ctx.state === 'suspended') await ctx.resume();
+      const srcNode = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      srcNode.connect(analyser);
+      analyser.connect(ctx.destination);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const loop = () => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
+        const rms = Math.sqrt(sum / data.length);
+        amplitudeRef.current = amplitudeRef.current * 0.5 + Math.min(1, rms * 4) * 0.5;
+        speakRafRef.current = requestAnimationFrame(loop);
       };
-      audio.onerror = () => {
-        if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null; }
-        audioElRef.current = null;
-        speakBrowser(clean, opts);
-      };
+      loop();
+    } catch { /* analysis optional; if createMediaElementSource threw, the element plays normally */ }
+
+    try {
       await audio.play();
     } catch {
-      // OpenAI TTS unavailable/slow/blocked → browser voice.
+      cleanup();
       speakBrowser(clean, opts);
     }
-  }, [cancelSpeak, speakBrowser]);
+  }, [cancelSpeak, speakBrowser, stopSpeakAnalyser]);
 
   const reset = useCallback(() => {
     intentionalStopRef.current = true;
