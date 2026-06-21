@@ -16,6 +16,7 @@ interface LambdaStackProps extends cdk.StackProps {
   transcriptsTable: dynamodb.Table;
   transactionsTable: dynamodb.Table;
   fundsTable: dynamodb.Table;
+  verificationTable: dynamodb.Table;
   stage?: string;
 }
 
@@ -27,7 +28,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, stage } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, verificationTable, stage } = props;
 
     // '' for prod (names unchanged), '-<stage>' otherwise. Applied to every physical
     // resource name (Lambda functionName, role name, API name) so dev is fully isolated.
@@ -411,6 +412,38 @@ export class LambdaStack extends cdk.Stack {
     });
     transcriptsTable.grantReadWriteData(pinTranscriptFn);
 
+    // ── verify (real email + SMS verification for the My Account hub) ──
+    // SES_SENDER / SMS_ORIGINATION are optional config (like Arize) so the stack always
+    // deploys; when blank the handler returns a clean "not configured" instead of throwing.
+    //   • SES_SENDER       = a verified SES sender identity (e.g. "Bob's <no-reply@yourdomain>")
+    //   • SMS_ORIGINATION  = an origination identity (toll-free number / phone-pool / sender-id ARN)
+    // Set them at deploy time, e.g.  SES_SENDER="no-reply@…" SMS_ORIGINATION="+1800…" npm run deploy:lambda
+    const verifyFn = new NodejsFunction(this, 'VerifyFn', {
+      functionName: `bobs-verify${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'verify/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: {
+        ...baseEnv,
+        VERIFICATION_TABLE: verificationTable.tableName,
+        SES_SENDER: process.env.SES_SENDER ?? '',
+        SMS_ORIGINATION: process.env.SMS_ORIGINATION ?? '',
+      },
+      // The SES + SMS clients aren't guaranteed in the Lambda runtime, so bundle them;
+      // the DynamoDB SDK is runtime-provided, so keep it external (matches the other fns).
+      bundling: {
+        minify: true, forceDockerBundling: false,
+        externalModules: ['@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb', '@aws-sdk/util-dynamodb'],
+      },
+    });
+    verificationTable.grantReadWriteData(verifyFn);
+    clientsTable.grantReadWriteData(verifyFn);
+    verifyFn.addToRolePolicy(new iam.PolicyStatement({ actions: ['ses:SendEmail'], resources: ['*'] }));
+    verifyFn.addToRolePolicy(new iam.PolicyStatement({ actions: ['sms-voice:SendTextMessage'], resources: ['*'] }));
+
     // ── HTTP API Gateway ───────────────────────────────────────────
     const api = new apigwv2.HttpApi(this, 'BobsApi', {
       apiName: `bobs-api${sfx}`,
@@ -469,6 +502,7 @@ export class LambdaStack extends cdk.Stack {
       ['/execute-task', executeTaskFn],
       ['/save-transcript', saveTranscriptFn],
       ['/pin-transcript', pinTranscriptFn],
+      ['/verify', verifyFn],
     ];
     const postRoutes: apigwv2.HttpRoute[] = [];
     for (const [path, fn] of routes) {

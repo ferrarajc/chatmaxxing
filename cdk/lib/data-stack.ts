@@ -13,6 +13,7 @@ export class DataStack extends cdk.Stack {
   public readonly transcriptsTable: dynamodb.Table;
   public readonly transactionsTable: dynamodb.Table;
   public readonly fundsTable: dynamodb.Table;
+  public readonly verificationTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: DataStackProps) {
     super(scope, id, props);
@@ -101,6 +102,18 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // ── Verification codes table ───────────────────────────────────
+    // Short-lived one-time codes for real email/SMS verification on the My Account
+    // hub. PK codeId = `${clientId}#${channel}#${target}`; rows auto-expire via the
+    // `expiresAt` TTL (~10 min) so stale codes can't accumulate or be reused.
+    this.verificationTable = new dynamodb.Table(this, 'VerificationTable', {
+      tableName: `bobs-verification-codes${sfx}`,
+      partitionKey: { name: 'codeId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'expiresAt',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ClientsTableName', { value: this.clientsTable.tableName });
     new cdk.CfnOutput(this, 'ChatSessionsTableName', { value: this.chatSessionsTable.tableName });
@@ -108,5 +121,6 @@ export class DataStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'TranscriptsTableName', { value: this.transcriptsTable.tableName });
     new cdk.CfnOutput(this, 'TransactionsTableName', { value: this.transactionsTable.tableName });
     new cdk.CfnOutput(this, 'FundsTableName', { value: this.fundsTable.tableName });
+    new cdk.CfnOutput(this, 'VerificationTableName', { value: this.verificationTable.tableName });
   }
 }

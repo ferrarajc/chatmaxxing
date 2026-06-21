@@ -63,6 +63,116 @@ export interface RmdEntry {
   taxWithholding?: number;
 }
 
+// Current version of the SMS consent disclosure text. Stored with every opt-in so we
+// have a record of exactly which legal language the customer agreed to (TCPA/CTIA).
+export const SMS_DISCLOSURE_VERSION = 'sms-2026-06-v1';
+
+export interface PhoneSmsConsent {
+  accountAlerts: boolean;          // transactional / security texts (2FA, fraud alerts)
+  marketing: boolean;              // promotional texts — requires prior express written consent
+  status: 'opted-in' | 'opted-out' | 'none';
+  consentedAt?: string;            // ISO date the consent was captured
+  disclosureVersion?: string;      // which SMS_DISCLOSURE_VERSION they agreed to
+  method?: string;                 // 'web' | 'phone-agent' | etc.
+}
+
+export interface PhoneEntry {
+  id: string;
+  type: 'mobile' | 'home' | 'work' | 'other';
+  number: string;                  // raw digits, e.g. '4842384838'
+  displayNumber: string;           // '(484) 238-4838'
+  verified: boolean;               // proven via real SMS code
+  sms: PhoneSmsConsent;
+}
+
+export interface PersonalDetails {
+  dateOfBirth: string;             // 'YYYY-MM-DD' (read-only)
+  maritalStatus: string;
+  employmentStatus: string;
+  employer: string;
+  occupation: string;
+  citizenship: string;             // tax residency / citizenship (read-only)
+  memberSince: string;             // 'YYYY-MM-DD'
+}
+
+export interface SecuritySettings {
+  twoFactorEnabled: boolean;
+  twoFactorMethod: 'sms' | 'email' | 'app';
+  loginAlerts: boolean;
+  lastPasswordChange: string;      // ISO date
+  recentLogins?: { date: string; device: string; location: string }[];
+}
+
+export interface CommunicationPreferences {
+  paperlessStatements: boolean;
+  taxDocDelivery: 'electronic' | 'mail';
+  tradeConfirms: 'electronic' | 'mail';
+  prospectusDelivery: 'electronic' | 'mail';
+  proxyDelivery: 'electronic' | 'mail';
+  notifyEmail: boolean;
+  notifySms: boolean;
+  notifyPush: boolean;
+  language: string;
+  marketing: boolean;
+}
+
+export interface BankAccountEntry {
+  id: string;
+  bankName: string;
+  accountType: 'Checking' | 'Savings';
+  maskedNumber: string;
+  primary: boolean;
+  verified?: boolean;
+  pendingMicroDeposits?: number[];
+}
+
+export type AuthorizationLevel = 'View only' | 'Limited' | 'Full';
+
+export interface AuthorizedAgentEntry {
+  id: string;
+  name: string;
+  relationship: string;
+  email: string;
+  level: AuthorizationLevel;
+  addedAt: string;
+}
+
+export interface TrustedContactEntry {
+  name: string;
+  relationship: string;
+  phone: string;
+  email: string;
+}
+
+export interface InvestorProfileEntry {
+  riskProfile: string;             // 'Conservative' | 'Balanced' | 'Growth' | ...
+  riskScorePct: number;
+  stocksPct: number;
+  bondPct: number;
+  cashPct: number;
+  slices?: { name: string; ticker: string; pct: number }[];
+  goals: string[];
+  timeHorizon: string;
+  annualIncomeRange: string;
+  netWorthRange: string;
+  investmentExperience: string;
+  updatedAt: string;
+}
+
+export interface WatchlistEntry {
+  ticker: string;
+  addedAt: string;
+}
+
+export interface AgreementEntry {
+  id: string;
+  title: string;
+  version: string;
+  type: string;                    // 'customer' | 'e-delivery' | 'privacy' | 'sms-consent' | 'ira' | 'sep'
+  signedAt: string;                // ISO date
+  signature: string;               // typed legal name
+}
+
 export interface FullClientData {
   clientId: string;
   name: string;
@@ -78,6 +188,18 @@ export interface FullClientData {
   autoInvest: AutoInvestEntry[];
   rmd: RmdEntry;
   recentChatHistory: { date: string; topic: string; summary: string }[];
+  // ── My Account hub (DB-driven, editable) ──────────────────────────────────
+  phones: PhoneEntry[];
+  emailVerified: boolean;
+  personal: PersonalDetails;
+  security: SecuritySettings;
+  preferences: CommunicationPreferences;
+  bankAccounts: BankAccountEntry[];
+  trustedContact: TrustedContactEntry | null;
+  investorProfile: InvestorProfileEntry | null;
+  watchlist: WatchlistEntry[];
+  agreements: AgreementEntry[];
+  authorizedAgents?: AuthorizedAgentEntry[];
 }
 
 // Fund price catalog — used by execute-task when computing new holding values
@@ -137,6 +259,61 @@ const alexJohnson: FullClientData = {
     { date: '2025-03-10', topic: 'Fund performance', summary: 'Asked about BobsFunds 500 Index YTD returns' },
     { date: '2025-02-14', topic: 'RMD rules',        summary: 'Asked about required minimum distributions for Traditional IRA' },
   ],
+  phones: [
+    { id: 'ph-001a', type: 'mobile', number: '4842384838', displayNumber: '(484) 238-4838', verified: true,
+      sms: { accountAlerts: true, marketing: false, status: 'opted-in', consentedAt: '2024-11-02', disclosureVersion: SMS_DISCLOSURE_VERSION, method: 'web' } },
+    { id: 'ph-001b', type: 'home', number: '6105550173', displayNumber: '(610) 555-0173', verified: false,
+      sms: { accountAlerts: false, marketing: false, status: 'none' } },
+  ],
+  emailVerified: true,
+  personal: {
+    dateOfBirth: '1966-08-19', maritalStatus: 'Married', employmentStatus: 'Employed',
+    employer: 'Keystone Analytics', occupation: 'Software Engineer',
+    citizenship: 'U.S. Citizen', memberSince: '2016-03-12',
+  },
+  security: {
+    twoFactorEnabled: true, twoFactorMethod: 'sms', loginAlerts: true, lastPasswordChange: '2025-01-15',
+    recentLogins: [
+      { date: '2025-04-14 09:14 ET', device: 'Chrome · macOS',  location: 'Wayne, PA' },
+      { date: '2025-04-10 18:02 ET', device: 'Safari · iPhone', location: 'Philadelphia, PA' },
+      { date: '2025-04-03 07:48 ET', device: 'Chrome · macOS',  location: 'Wayne, PA' },
+    ],
+  },
+  preferences: {
+    paperlessStatements: true, taxDocDelivery: 'electronic', tradeConfirms: 'electronic',
+    prospectusDelivery: 'electronic', proxyDelivery: 'electronic',
+    notifyEmail: true, notifySms: true, notifyPush: false, language: 'English', marketing: false,
+  },
+  bankAccounts: [
+    { id: 'bank-001', bankName: 'Keystone Community Bank',      accountType: 'Checking', maskedNumber: '••••7832', primary: true  },
+    { id: 'bank-002', bankName: 'Philadelphia Federal Savings', accountType: 'Savings',  maskedNumber: '••••4419', primary: false },
+  ],
+  trustedContact: { name: 'Sarah Johnson', relationship: 'Spouse', phone: '(484) 238-4801', email: 'sarah.johnson@email.com' },
+  investorProfile: {
+    riskProfile: 'Balanced', riskScorePct: 52, stocksPct: 65, bondPct: 35, cashPct: 0,
+    slices: [
+      { name: 'BobsFunds Total Market', ticker: 'BFTM', pct: 43 },
+      { name: 'BobsFunds International', ticker: 'BFIN', pct: 22 },
+      { name: 'BobsFunds Bond Income',  ticker: 'BFBI', pct: 35 },
+    ],
+    goals: ['Retirement', 'Build long-term wealth'], timeHorizon: '10+ years',
+    annualIncomeRange: '$75,000–$150,000', netWorthRange: '$250,000–$500,000',
+    investmentExperience: 'Good', updatedAt: '2025-02-20',
+  },
+  watchlist: [
+    { ticker: 'BFGR',  addedAt: '2025-03-01' },
+    { ticker: 'BFESG', addedAt: '2025-02-12' },
+  ],
+  authorizedAgents: [
+    { id: 'aa-001', name: 'Sarah Johnson', relationship: 'Spouse',            email: 'sarah.johnson@email.com', level: 'Full',      addedAt: '2018-05-01' },
+    { id: 'aa-002', name: 'Dana Brooks',   relationship: 'Financial advisor', email: 'dana.brooks@advisors.com', level: 'View only', addedAt: '2022-09-14' },
+  ],
+  agreements: [
+    { id: 'ag-001', title: "Bob's Mutual Funds Customer Agreement", version: '2024.1',             type: 'customer',    signedAt: '2016-03-12', signature: 'Alex Johnson' },
+    { id: 'ag-002', title: 'Electronic Delivery Consent',          version: '2024.1',             type: 'e-delivery',  signedAt: '2016-03-12', signature: 'Alex Johnson' },
+    { id: 'ag-003', title: 'Privacy Policy Acknowledgment',        version: '2024.1',             type: 'privacy',     signedAt: '2016-03-12', signature: 'Alex Johnson' },
+    { id: 'ag-004', title: 'Text Messaging Consent (SMS)',         version: SMS_DISCLOSURE_VERSION, type: 'sms-consent', signedAt: '2024-11-02', signature: 'Alex Johnson' },
+  ],
 };
 
 // ── Maria Chen ────────────────────────────────────────────────────────────────
@@ -191,6 +368,59 @@ const mariaChen: FullClientData = {
     taxWithholding: 10,
   },
   recentChatHistory: [],
+  phones: [
+    { id: 'ph-002a', type: 'mobile', number: '6175550192', displayNumber: '(617) 555-0192', verified: true,
+      sms: { accountAlerts: true, marketing: false, status: 'opted-in', consentedAt: '2023-08-14', disclosureVersion: SMS_DISCLOSURE_VERSION, method: 'phone-agent' } },
+    { id: 'ph-002b', type: 'home', number: '7815550144', displayNumber: '(781) 555-0144', verified: true,
+      sms: { accountAlerts: false, marketing: false, status: 'opted-out' } },
+  ],
+  emailVerified: true,
+  personal: {
+    dateOfBirth: '1951-02-03', maritalStatus: 'Widowed', employmentStatus: 'Retired',
+    employer: '', occupation: 'Retired (former Professor)',
+    citizenship: 'U.S. Citizen', memberSince: '2009-06-01',
+  },
+  security: {
+    twoFactorEnabled: true, twoFactorMethod: 'sms', loginAlerts: true, lastPasswordChange: '2024-09-30',
+    recentLogins: [
+      { date: '2025-04-13 11:20 ET', device: 'Safari · iPad', location: 'Wellesley, MA' },
+      { date: '2025-04-08 15:55 ET', device: 'Safari · iPad', location: 'Wellesley, MA' },
+    ],
+  },
+  preferences: {
+    paperlessStatements: false, taxDocDelivery: 'mail', tradeConfirms: 'mail',
+    prospectusDelivery: 'mail', proxyDelivery: 'mail',
+    notifyEmail: true, notifySms: true, notifyPush: false, language: 'English', marketing: false,
+  },
+  bankAccounts: [
+    { id: 'bank-201', bankName: 'Wellesley Savings Bank',           accountType: 'Checking', maskedNumber: '••••2291', primary: true  },
+    { id: 'bank-202', bankName: 'New England Federal Credit Union', accountType: 'Savings',  maskedNumber: '••••6074', primary: false },
+  ],
+  trustedContact: { name: 'David Chen', relationship: 'Child', phone: '(617) 555-0455', email: 'david.chen@email.com' },
+  investorProfile: {
+    riskProfile: 'Conservative', riskScorePct: 18, stocksPct: 30, bondPct: 55, cashPct: 15,
+    slices: [
+      { name: 'BobsFunds Total Market',          ticker: 'BFTM', pct: 20 },
+      { name: 'BobsFunds International',          ticker: 'BFIN', pct: 10 },
+      { name: 'BobsFunds Bond Income',           ticker: 'BFBI', pct: 55 },
+      { name: 'BobsFunds Short-Term Treasury',   ticker: 'BFST', pct: 15 },
+    ],
+    goals: ['Preserve capital', 'Generate retirement income'], timeHorizon: 'Income now',
+    annualIncomeRange: 'Under $75,000', netWorthRange: '$750,000–$1,000,000',
+    investmentExperience: 'Extensive', updatedAt: '2025-01-08',
+  },
+  watchlist: [
+    { ticker: 'BFBI', addedAt: '2025-02-20' },
+    { ticker: 'BFST', addedAt: '2025-01-15' },
+  ],
+  authorizedAgents: [
+    { id: 'aa-201', name: 'David Chen', relationship: 'Child', email: 'david.chen@email.com', level: 'Limited', addedAt: '2021-03-22' },
+  ],
+  agreements: [
+    { id: 'ag-201', title: "Bob's Mutual Funds Customer Agreement", version: '2024.1', type: 'customer', signedAt: '2009-06-01', signature: 'Maria Chen' },
+    { id: 'ag-202', title: 'IRA Custodial Agreement & Disclosure',  version: '2024.1', type: 'ira',      signedAt: '2009-06-01', signature: 'Maria Chen' },
+    { id: 'ag-203', title: 'Privacy Policy Acknowledgment',         version: '2024.1', type: 'privacy',  signedAt: '2009-06-01', signature: 'Maria Chen' },
+  ],
 };
 
 // ── Jordan Williams ───────────────────────────────────────────────────────────
@@ -227,6 +457,57 @@ const jordanWilliams: FullClientData = {
   ],
   rmd: { eligible: false },
   recentChatHistory: [],
+  phones: [
+    { id: 'ph-003a', type: 'mobile', number: '5035550847', displayNumber: '(503) 555-0847', verified: true,
+      sms: { accountAlerts: true, marketing: true, status: 'opted-in', consentedAt: '2024-02-09', disclosureVersion: SMS_DISCLOSURE_VERSION, method: 'web' } },
+    { id: 'ph-003b', type: 'work', number: '5035550900', displayNumber: '(503) 555-0900', verified: false,
+      sms: { accountAlerts: false, marketing: false, status: 'none' } },
+  ],
+  emailVerified: false,
+  personal: {
+    dateOfBirth: '1997-05-27', maritalStatus: 'Single', employmentStatus: 'Employed',
+    employer: 'Rose City Creative', occupation: 'Graphic Designer',
+    citizenship: 'U.S. Citizen', memberSince: '2021-09-15',
+  },
+  security: {
+    twoFactorEnabled: false, twoFactorMethod: 'email', loginAlerts: true, lastPasswordChange: '2024-12-02',
+    recentLogins: [
+      { date: '2025-04-14 22:40 ET', device: 'Chrome · Android', location: 'Portland, OR' },
+      { date: '2025-04-11 08:15 ET', device: 'Chrome · Windows', location: 'Portland, OR' },
+    ],
+  },
+  preferences: {
+    paperlessStatements: true, taxDocDelivery: 'electronic', tradeConfirms: 'electronic',
+    prospectusDelivery: 'electronic', proxyDelivery: 'electronic',
+    notifyEmail: true, notifySms: true, notifyPush: true, language: 'English', marketing: true,
+  },
+  bankAccounts: [
+    { id: 'bank-301', bankName: 'Pacific Northwest Credit Union', accountType: 'Checking', maskedNumber: '••••5583', primary: true  },
+    { id: 'bank-302', bankName: 'Cascade Community Bank',         accountType: 'Savings',  maskedNumber: '••••9027', primary: false },
+  ],
+  trustedContact: null,
+  investorProfile: {
+    riskProfile: 'Growth', riskScorePct: 74, stocksPct: 80, bondPct: 20, cashPct: 0,
+    slices: [
+      { name: 'BobsFunds Total Market', ticker: 'BFTM', pct: 53 },
+      { name: 'BobsFunds International', ticker: 'BFIN', pct: 27 },
+      { name: 'BobsFunds Bond Income',  ticker: 'BFBI', pct: 20 },
+    ],
+    goals: ['Build long-term wealth', 'Buy a home'], timeHorizon: '10+ years',
+    annualIncomeRange: '$50,000–$75,000', netWorthRange: 'Under $100,000',
+    investmentExperience: 'Some', updatedAt: '2025-03-18',
+  },
+  watchlist: [
+    { ticker: 'BFGR', addedAt: '2025-03-10' },
+    { ticker: 'BF500', addedAt: '2025-02-28' },
+    { ticker: 'BFTM', addedAt: '2025-02-28' },
+  ],
+  authorizedAgents: [],
+  agreements: [
+    { id: 'ag-301', title: "Bob's Mutual Funds Customer Agreement", version: '2024.1',             type: 'customer',    signedAt: '2021-09-15', signature: 'Jordan Williams' },
+    { id: 'ag-302', title: 'Electronic Delivery Consent',          version: '2024.1',             type: 'e-delivery',  signedAt: '2021-09-15', signature: 'Jordan Williams' },
+    { id: 'ag-303', title: 'Text Messaging Consent (SMS)',         version: SMS_DISCLOSURE_VERSION, type: 'sms-consent', signedAt: '2024-02-09', signature: 'Jordan Williams' },
+  ],
 };
 
 // ── Robert Martinez ───────────────────────────────────────────────────────────
@@ -269,6 +550,60 @@ const robertMartinez: FullClientData = {
   ],
   rmd: { eligible: false },
   recentChatHistory: [],
+  phones: [
+    { id: 'ph-004a', type: 'mobile', number: '7135550234', displayNumber: '(713) 555-0234', verified: true,
+      sms: { accountAlerts: true, marketing: false, status: 'opted-in', consentedAt: '2024-05-21', disclosureVersion: SMS_DISCLOSURE_VERSION, method: 'web' } },
+    { id: 'ph-004b', type: 'work', number: '7135550588', displayNumber: '(713) 555-0588', verified: true,
+      sms: { accountAlerts: true, marketing: false, status: 'opted-in', consentedAt: '2024-05-21', disclosureVersion: SMS_DISCLOSURE_VERSION, method: 'web' } },
+  ],
+  emailVerified: true,
+  personal: {
+    dateOfBirth: '1973-11-30', maritalStatus: 'Married', employmentStatus: 'Self-employed',
+    employer: 'Martinez Consulting LLC', occupation: 'Business Owner / Consultant',
+    citizenship: 'U.S. Citizen', memberSince: '2014-02-20',
+  },
+  security: {
+    twoFactorEnabled: true, twoFactorMethod: 'app', loginAlerts: true, lastPasswordChange: '2025-03-01',
+    recentLogins: [
+      { date: '2025-04-14 13:05 ET', device: 'Chrome · Windows', location: 'Houston, TX' },
+      { date: '2025-04-12 09:30 ET', device: 'Safari · iPhone',  location: 'Houston, TX' },
+    ],
+  },
+  preferences: {
+    paperlessStatements: true, taxDocDelivery: 'electronic', tradeConfirms: 'electronic',
+    prospectusDelivery: 'electronic', proxyDelivery: 'mail',
+    notifyEmail: true, notifySms: true, notifyPush: false, language: 'English', marketing: false,
+  },
+  bankAccounts: [
+    { id: 'bank-401', bankName: 'Lone Star National Bank',         accountType: 'Checking', maskedNumber: '••••8847', primary: true  },
+    { id: 'bank-402', bankName: 'Gulf Coast Federal Credit Union', accountType: 'Savings',  maskedNumber: '••••3319', primary: false },
+  ],
+  trustedContact: { name: 'Elena Martinez', relationship: 'Spouse', phone: '(713) 555-0299', email: 'elena.martinez@email.com' },
+  investorProfile: {
+    riskProfile: 'Growth', riskScorePct: 64, stocksPct: 80, bondPct: 20, cashPct: 0,
+    slices: [
+      { name: 'BobsFunds Total Market', ticker: 'BFTM', pct: 53 },
+      { name: 'BobsFunds International', ticker: 'BFIN', pct: 27 },
+      { name: 'BobsFunds Bond Income',  ticker: 'BFBI', pct: 20 },
+    ],
+    goals: ['Retirement', 'Tax-efficient growth', "Fund children's education"], timeHorizon: '10+ years',
+    annualIncomeRange: '$150,000+', netWorthRange: '$500,000–$750,000',
+    investmentExperience: 'Good', updatedAt: '2025-02-02',
+  },
+  watchlist: [
+    { ticker: 'BFGR', addedAt: '2025-03-05' },
+    { ticker: 'BFIN', addedAt: '2025-01-20' },
+  ],
+  authorizedAgents: [
+    { id: 'aa-401', name: 'Elena Martinez', relationship: 'Spouse',     email: 'elena.martinez@email.com', level: 'Full',      addedAt: '2015-06-10' },
+    { id: 'aa-402', name: 'Raymond Ortiz',  relationship: 'Accountant', email: 'r.ortiz@ortizcpa.com',     level: 'View only', addedAt: '2019-01-30' },
+  ],
+  agreements: [
+    { id: 'ag-401', title: "Bob's Mutual Funds Customer Agreement", version: '2024.1',             type: 'customer',    signedAt: '2014-02-20', signature: 'Robert Martinez' },
+    { id: 'ag-402', title: 'SEP Plan Adoption Agreement',          version: '2024.1',             type: 'sep',         signedAt: '2014-02-20', signature: 'Robert Martinez' },
+    { id: 'ag-403', title: 'Electronic Delivery Consent',          version: '2024.1',             type: 'e-delivery',  signedAt: '2014-02-20', signature: 'Robert Martinez' },
+    { id: 'ag-404', title: 'Text Messaging Consent (SMS)',         version: SMS_DISCLOSURE_VERSION, type: 'sms-consent', signedAt: '2024-05-21', signature: 'Robert Martinez' },
+  ],
 };
 
 export const DEFAULT_CLIENT_DATA: Record<string, FullClientData> = {

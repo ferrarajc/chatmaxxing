@@ -480,6 +480,9 @@ export function FundProfilePage() {
   const { byTicker } = useFunds();
   const fundDef = byTicker.get(ticker ?? '');
   const { fundQuote, loading } = useMarketData();
+  const watchlist = useClientStore(s => s.activePersona.watchlist) ?? [];
+  const toggleWatchlist = useClientStore(s => s.toggleWatchlist);
+  const isWatching = watchlist.some(w => w.ticker === (ticker ?? ''));
 
   if (!fundDef) {
     return (
@@ -558,19 +561,32 @@ export function FundProfilePage() {
             ) : (
               <div />
             )}
-            <Link
-              to={`/research/fund/${fundDef.ticker}/buy`}
-              style={{
-                display: 'inline-block', padding: '10px 24px',
-                background: theme.color.accent, color: '#fff',
-                borderRadius: theme.radius.md, textDecoration: 'none',
-                fontSize: 14, fontWeight: 700, letterSpacing: '0.03em',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-              Buy {fundDef.ticker}
-            </Link>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+              <button
+                onClick={() => toggleWatchlist(fundDef.ticker)}
+                title={isWatching ? 'Remove from watchlist' : 'Add to watchlist'}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px',
+                  background: isWatching ? 'rgba(160,90,44,0.25)' : 'rgba(255,255,255,0.08)',
+                  color: theme.color.textOnPrimary,
+                  border: `1px solid ${isWatching ? theme.color.accent : 'rgba(255,255,255,0.25)'}`,
+                  borderRadius: theme.radius.md, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                }}>
+                {isWatching ? '★ Watching' : '☆ Watch'}
+              </button>
+              <Link
+                to={`/research/fund/${fundDef.ticker}/buy`}
+                style={{
+                  display: 'inline-block', padding: '10px 24px',
+                  background: theme.color.accent, color: '#fff',
+                  borderRadius: theme.radius.md, textDecoration: 'none',
+                  fontSize: 14, fontWeight: 700, letterSpacing: '0.03em',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+                Buy {fundDef.ticker}
+              </Link>
+            </div>
           </div>
 
           {/* Key stats strip */}

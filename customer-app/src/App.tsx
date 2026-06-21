@@ -62,6 +62,7 @@ import { ProspectusPage } from './components-v2/pages/help/ProspectusPage';
 import { RmdGuidePage } from './components-v2/pages/help/RmdGuidePage';
 import { RolloverGuidePage } from './components-v2/pages/help/RolloverGuidePage';
 import { SipPage } from './components-v2/pages/help/SipPage';
+import { SmsTermsPage } from './components-v2/pages/help/SmsTermsPage';
 import { StatementsPage } from './components-v2/pages/help/StatementsPage';
 import { TaxDocumentsHelpPage } from './components-v2/pages/help/TaxDocumentsHelpPage';
 import { TradingPage } from './components-v2/pages/help/TradingPage';
@@ -140,6 +141,7 @@ export default function App() {
               <Route path="/help/rmd-guide" element={<RmdGuidePage />} />
               <Route path="/help/rollover-guide" element={<RolloverGuidePage />} />
               <Route path="/help/sip" element={<SipPage />} />
+              <Route path="/help/sms-terms" element={<SmsTermsPage />} />
               <Route path="/help/statements" element={<StatementsPage />} />
               <Route path="/help/tax-documents" element={<TaxDocumentsHelpPage />} />
               <Route path="/help/trading" element={<TradingPage />} />

@@ -91,9 +91,18 @@ export const handler = async (
           'email = :email, address = :addr, ' +
           'totalBalance = :tb, accounts = :accs, ' +
           'holdings = :h, ' +
-          'beneficiaries = :b, autoInvest = :ai, rmd = :rmd ' +
+          'beneficiaries = :b, autoInvest = :ai, rmd = :rmd, ' +
+          // My Account hub attributes (names aliased — `security` etc. are reserved words)
+          '#phones = :phones, #ev = :ev, #personal = :personal, #security = :security, ' +
+          '#prefs = :prefs, #bank = :bank, #tc = :tc, #ip = :ip, #wl = :wl, #ag = :ag, #aa = :aa ' +
           'REMOVE lastAgentChat, transactions',
-        ExpressionAttributeNames: { '#nm': 'name' },
+        ExpressionAttributeNames: {
+          '#nm': 'name',
+          '#phones': 'phones', '#ev': 'emailVerified', '#personal': 'personal',
+          '#security': 'security', '#prefs': 'preferences', '#bank': 'bankAccounts',
+          '#tc': 'trustedContact', '#ip': 'investorProfile', '#wl': 'watchlist', '#ag': 'agreements',
+          '#aa': 'authorizedAgents',
+        },
         ExpressionAttributeValues: {
           ':name':  d.name,
           ':phone': d.phone,
@@ -106,6 +115,17 @@ export const handler = async (
           ':b':     d.beneficiaries,
           ':ai':    d.autoInvest,
           ':rmd':   d.rmd,
+          ':phones':   d.phones,
+          ':ev':       d.emailVerified,
+          ':personal': d.personal,
+          ':security': d.security,
+          ':prefs':    d.preferences,
+          ':bank':     d.bankAccounts,
+          ':tc':       d.trustedContact,
+          ':ip':       d.investorProfile,
+          ':wl':       d.watchlist,
+          ':ag':       d.agreements,
+          ':aa':       d.authorizedAgents ?? [],
         },
       }));
       const txnCount = await seedTransactions(clientId);

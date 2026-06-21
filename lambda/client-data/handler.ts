@@ -11,6 +11,7 @@ type Action =
   | 'get-auto-invest'   | 'put-auto-invest'
   | 'get-rmd'           | 'put-rmd'
   | 'put-profile'
+  | 'put-account-settings'          // My Account hub — generic allowlisted partial write
   | 'put-holdings'
   | 'put-transactions'              // deprecated (no-op) — kept for one release
   | 'get-recent-transactions'       // newest-first, optional accountId
@@ -134,6 +135,18 @@ export const handler = async (
           autoInvest:        item.autoInvest        ?? [],
           rmd:               item.rmd               ?? { eligible: false },
           recentChatHistory: item.recentChatHistory ?? [],
+          // My Account hub attributes
+          phones:            item.phones            ?? [],
+          emailVerified:     item.emailVerified     ?? false,
+          personal:          item.personal          ?? null,
+          security:          item.security          ?? null,
+          preferences:       item.preferences       ?? null,
+          bankAccounts:      item.bankAccounts      ?? [],
+          trustedContact:    item.trustedContact    ?? null,
+          investorProfile:   item.investorProfile   ?? null,
+          watchlist:         item.watchlist         ?? [],
+          agreements:        item.agreements        ?? [],
+          authorizedAgents:  item.authorizedAgents  ?? [],
         });
       }
 
@@ -173,6 +186,42 @@ export const handler = async (
             ':tb':   p.totalBalance,
             ':accs': p.accounts,
           },
+        }));
+        return jsonResponse(200, { ok: true });
+      }
+
+      // ── My Account hub: generic partial write ─────────────────────────────
+      // Each section's "Save" sends only its own slice. Keys are validated against
+      // an allowlist and every name is aliased so reserved words (security, etc.)
+      // are safe. Mirrors the optimistic whole-object writes used elsewhere.
+      case 'put-account-settings': {
+        const ALLOWED = new Set([
+          'phones', 'email', 'phone', 'displayPhone', 'emailVerified',
+          'personal', 'security', 'preferences', 'bankAccounts',
+          'trustedContact', 'investorProfile', 'watchlist', 'agreements',
+          'authorizedAgents',
+        ]);
+        const patch = (data ?? {}) as Record<string, unknown>;
+        const names: Record<string, string> = {};
+        const values: Record<string, unknown> = {};
+        const sets: string[] = [];
+        let i = 0;
+        for (const [k, v] of Object.entries(patch)) {
+          if (!ALLOWED.has(k) || v === undefined) continue;
+          names[`#k${i}`] = k;
+          values[`:v${i}`] = v;
+          sets.push(`#k${i} = :v${i}`);
+          i++;
+        }
+        if (sets.length === 0) {
+          return jsonResponse(400, { error: 'no valid fields to update' });
+        }
+        await docClient.send(new UpdateCommand({
+          TableName: table,
+          Key: { clientId },
+          UpdateExpression: 'SET ' + sets.join(', '),
+          ExpressionAttributeNames: names,
+          ExpressionAttributeValues: values,
         }));
         return jsonResponse(200, { ok: true });
       }

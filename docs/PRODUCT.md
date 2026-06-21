@@ -217,6 +217,25 @@ Keyed by `clientId`. Stores:
 - `autoInvest`: array of recurring investment schedules
 - `rmd`: RMD delivery and withholding preferences
 - `intents`: recent chat intent history (for personalization)
+- **My Account hub** fields: `phones` (multiple numbers, each with verification status + SMS consent),
+  `emailVerified`, `personal` (DOB, marital/employment, citizenship), `security` (2FA, login alerts,
+  recent activity), `preferences` (paperless/e-delivery, notifications, language, marketing),
+  `bankAccounts`, `trustedContact`, `investorProfile` (risk tolerance + goals), `watchlist`, and
+  `agreements` (signed e-sign records)
+
+### My Account hub (self-service profile & settings)
+The customer **My Account** page is a comprehensive, fully database-driven profile and settings center
+comparable to a Vanguard/Schwab/Fidelity profile hub. Every value is editable and persisted to the
+Clients Table (optimistic save, the same pattern as the Beneficiaries/RMD/Auto-Invest pages), spanning:
+contact information (multiple phone numbers + email), personal & employment details, a security center,
+communication & delivery preferences, linked bank accounts, a FINRA-style trusted contact, an investor
+profile (populated from the risk-tolerance quiz), an investment watchlist, and a vault of signed
+agreements — plus a services grid linking to Beneficiaries, Auto-Invest, RMD, Tax Documents, and
+Transaction History. **Contact verification is real:** changing or adding an email/phone marks it
+*unverified*, and a one-time code (Amazon SES for email, AWS End User Messaging for text) proves
+ownership before it clears — there is no cosmetic/fake "verified" state. The text-messaging section
+carries a full TCPA/CTIA-compliant consent experience (separate account-alert vs. marketing opt-in,
+required disclosures, STOP/HELP, an SMS Terms page, and stored consent records).
 
 ### DynamoDB — Transactions Table
 Keyed by `clientId` + a date-ordered sort key (one item per transaction), with a per-account
