@@ -92,6 +92,7 @@ chatmaxxing/
 | `get-funds` | Read the static fund catalog (all 36 funds) from `bobs-funds`; GET `/funds`, module-cached 60 min | No |
 | `reset-funds` | Seed `bobs-funds` from the bundled catalog; GET `/reset-funds?key=bobs-reset-2025` | No |
 | `tts` | OpenAI text-to-speech for the "Talk to Bob" voice feature (POST `/tts` `{text,voice,instructions}` → base64 mp3) | No (OpenAI audio API) |
+| `verify` | Real email/SMS verification for the My Account hub. POST `/verify` `{action,clientId,target,code?}`; `send-*-code` stores a hashed 6-digit code (TTL 10 min, `bobs-verification-codes`) and sends via **Amazon SES** (email) / **AWS End User Messaging SMS** (text); `confirm-*-code` flips `emailVerified` or the matching `phones[].verified`. Sender identity via `SES_SENDER`/`SMS_ORIGINATION` env (optional — blank ⇒ graceful "not configured") | No |
 
 ---
 
@@ -159,6 +160,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Proposed-action evidence highlighting | Lambda: `locate-evidence` scope in `autopilot-turn/handler.ts` (`locateEvidence`, `LOCATE_EVIDENCE_PROMPT`). Frontend: `ChatColumn.tsx` (`evidencePromise` in `runAutopilotTurn`, `bobs:evidenceJump` listener, `MessageBubble` highlights) + same render half in `FocusingDesktop.tsx` (`FocusMessageBubble`) + ⌖ buttons in `ProposedActionCard.tsx` + `utils/evidenceHighlight.tsx` (span renderer) + `EvidenceSpan`/`proposedActionEvidence` in `types/index.ts`. Highlights/⌖ only render while the card is visible; evidence is keyed by message `id` and cleared on submit/reject. |
 | Client chat rendering | `customer-app/src/components/chat/ChatMessage.tsx` |
 | Client routes | `customer-app/src/App.tsx` |
+| My Account hub (DB-driven, editable) | Page `customer-app/src/components-v2/pages/account/AccountPage.tsx` is a hub composed of section components in `account/sections/` (`ProfileHeader`, `ContactInfoSection` [multi-phone + email + verify], `PersonalDetailsSection`, `SecuritySection`, `AuthorizedAgentsSection` [view-only/limited/full], `CommunicationSection`+`SmsConsentPanel` [TCPA/CTIA], `BankingSection` [micro-deposit verification], `TrustedContactSection`, `InvestorProfileSection`, `WatchlistSection`, `AgreementsSection` [opens real PDFs via `utils/pdf.ts`], `AccountServicesGrid`, `VerifyCodeModal`, shared `ui.tsx` incl. `ConfirmDialog`/`ModalShell` [intercepts drastic actions like bank/agent removal]). Data: new attributes on the `bobs-clients` item (`phones, emailVerified, personal, security, preferences, bankAccounts, trustedContact, investorProfile, watchlist, agreements, authorizedAgents`) typed in `customer-app/src/data/personas.ts` + `lambda/shared/client-defaults.ts`, seeded for all 4 personas + reset by `reset-all-data`. Reads via `client-data` `get-all`; **all edits use one generic `put-account-settings` action** (allowlisted dynamic SET). Store: `clientStore` `saveAccountSettings`/`toggleWatchlist`/`sendVerifyCode`/`confirmVerifyCode` (legacy `phone`/`displayPhone`/`email` kept in sync from the primary mobile). Cross-page hooks: RiskQuizPage "Save to my profile" → `investorProfile`; FundProfilePage ★ Watch toggle → `watchlist`. Phone masking via shared `customer-app/src/utils/mask.ts`. SMS Terms page `help/SmsTermsPage` (`/help/sms-terms`). Real verification = the `verify` Lambda (see Lambda Map). |
 | Tools / calculators suite | Customer-facing `/tools` hub + 5 interactive calculators. Pages: `customer-app/src/components-v2/pages/tools/` (ToolsHubPage, FeeCalculatorPage, GrowthCalculatorPage, DcaCalculatorPage, RothVsTraditionalPage, RiskQuizPage). Shared layout/inputs/format helpers: `customer-app/src/components-v2/tools/` (`ui.tsx`, `inputs.tsx`, `format.ts`). Routes in `App.tsx` (`/tools`, `/tools/{fees,growth,dollar-cost-averaging,roth-vs-traditional,risk-profile}`); discoverable via the Library **Reference Library → Retirement & Tax Planning** link labeled "Tools & Calculators" (`LibraryPage.tsx` `REFERENCE`), which replaced the old direct Retirement Calculator link (that calculator is now reached through the hub). NOT in the global `TopNavV2` nav. Charts via **recharts**; all figures hard-sourced from `funds.ts` + `kb.ts` facts. Self-contained (does not import from RetirementCalculatorPage) so it's purely additive. |
 | "Talk to Bob" voice assistant (experimental, flag-gated, customer-only) | Voice chat over the existing brain. **Feature-flag framework:** `customer-app/src/store/featureFlagsStore.ts` (localStorage, default off, extensible `EXPERIMENTS` registry) + `components-v2/common/ToggleSwitch.tsx` (mirrors the agent "On queue" toggle, `agent-app/.../TopBar.tsx`), surfaced in an **Experimental features** section of the `TopNavV2` avatar dropdown. **Voice code (all lazy-loaded; only when the flag is on):** `hooks/useVoice.ts` (Web Speech STT + mic AnalyserNode + OpenAI-audio-with-`speechSynthesis`-fallback), `components-v2/voice/*` (`TalkToBobOverlay` centerpiece, `VoiceOrb` canvas, `VoiceAnswerCard` balance/allocation/holding cards derived from `activePersona`, `voiceTts`→`/tts`, `voiceText`, `voiceCards`, `VoiceLaunchFAB`), `store/voiceStore.ts` (open state) + `store/voiceSettingsStore.ts` (user voice/character settings — the ⚙ Voice panel + presets). Mounted gated+lazy in `ChatWidget`; in-panel mic in `ChatInput`. **Brain = existing `/autopilot-turn`** (scope `customer-bot`, so it inherits `FORBIDDEN_TOPICS` — advice questions get a spoken compliant decline). **Backend:** `lambda/tts` (OpenAI `/v1/audio/speech`; POST `{text,voice,instructions}`). **Default voice = an "elderly gentleman" character** (`ash` + a punctuation-literal prompt), tunable per-env (`OPENAI_TTS_VOICE` / `OPENAI_TTS_INSTRUCTIONS`) or per-browser (the ⚙ Voice panel). OFF by default → no voice chunk loads, nothing runs. |
 | Transaction tables + history + status | Data: `bobs-transactions` table (`cdk/lib/data-stack.ts`), generator `lambda/shared/transaction-history.ts`, statuses `lambda/shared/transaction-status.ts`. API: `lambda/client-data/handler.ts` (`get-recent-transactions`/`get-transactions-page`/`append-transaction`). Frontend: `customer-app/src/data/transactionStatus.ts` (display copy), `components-v2/common/StatusCell.tsx` (dotted-underline popover), `hooks/useRecentTransactions.ts`, recent tables in `PortfolioPage.tsx` + `account/AccountDetailPage.tsx`, full page `components-v2/pages/transactions/TransactionHistoryPage.tsx` (route `/transactions`). Writes: `execute-task/handler.ts` (`appendTransactionRows`). Seed/clear: `reset-all-data/handler.ts`. |
@@ -226,6 +228,18 @@ push directly to `main`. Full detail + how to see what's live + rollback: `docs/
   autoInvest: [{id, accountId, accountType, fund, ticker, amount, frequency, dayOfMonth?, nextDate, active, type?}],
   rmd: {eligible, age?, annualRmd?, takenThisYear?, remainingThisYear?, nextDeadline?, distributions?, deliveryMethod?, frequency?, taxWithholding?, ...},
   recentChatHistory: [{date, topic, summary}],
+  // ── My Account hub (DB-driven, editable; seeded + reset by reset-all-data) ──
+  phones: [{id, type, number, displayNumber, verified, sms:{accountAlerts, marketing, status, consentedAt?, disclosureVersion?, method?}}],
+  emailVerified: bool,                 // email itself stays the top-level `email`
+  personal: {dateOfBirth, maritalStatus, employmentStatus, employer, occupation, citizenship, memberSince},
+  security: {twoFactorEnabled, twoFactorMethod, loginAlerts, lastPasswordChange, recentLogins?},
+  preferences: {paperlessStatements, taxDocDelivery, tradeConfirms, prospectusDelivery, proxyDelivery, notifyEmail, notifySms, notifyPush, language, marketing},
+  bankAccounts: [{id, bankName, accountType, maskedNumber, primary, verified?, pendingMicroDeposits?}],  // verified via micro-deposits
+  trustedContact: {name, relationship, phone, email} | null,
+  investorProfile: {riskProfile, riskScorePct, stocksPct, bondPct, cashPct, slices?, goals, timeHorizon, annualIncomeRange, netWorthRange, investmentExperience, updatedAt} | null,
+  watchlist: [{ticker, addedAt}],
+  agreements: [{id, title, version, type, signedAt, signature}],
+  authorizedAgents: [{id, name, relationship, email, level: 'View only'|'Limited'|'Full', addedAt}],
   // Continuation memory for the customer "Continue this chat" card — written by save-transcript
   // at agent-chat end, REMOVEd by reset-all-data. Distinct from the permanent transcript log.
   lastAgentChat?: {transcriptId, endedAt, summary, agentUsername, agentName}
@@ -258,6 +272,11 @@ annualReturns, etc.). Runtime source of truth for content pages and AI; seeded f
 `customer-app/src/data/funds.ts` via `GET /reset-funds?key=bobs-reset-2025`. ~36 small items that
 change < once/day → read with a single Scan, module-cached in `get-funds` and the `get_funds` tool.
 Live prices/returns are NOT stored here (those come from the `market-data` Lambda).
+
+Verification Codes Table (`bobs-verification-codes`): short-lived one-time codes for real
+email/SMS verification on the My Account hub. `{ codeId (PK) = "<clientId>#<channel>#<target>",
+codeHash (sha256), expiresAt (TTL, ~10 min), createdAt, attempts, channel, target }`. Written +
+read only by the `verify` Lambda; rows auto-expire via the `expiresAt` TTL so codes can't be reused.
 
 ---
 
@@ -298,7 +317,24 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ## Active Branch / Current State (as of 2026-06-17)
 
-**`main` == production.** No in-flight feature branches — everything below has merged and deployed. The earlier divergence (work deployed before its PR merged, so
+**In flight (`feature/my-account-hub`, not yet merged): comprehensive My Account hub.**
+Rebuilds the thin `/account` page into a full, **fully DB-driven, editable** profile/settings hub
+(see the "My Account hub" Key Files row + the new client attributes/table in DynamoDB Schema +
+the `verify` Lambda in the Lambda Map). Edit model = optimistic save (like Beneficiaries/RMD) via
+one generic `put-account-settings` action; **real** email/SMS verification via the new `verify`
+Lambda. Typechecks (customer-app + CDK + handlers) and `cdk synth` are green. **To enable live
+verification** (the code path + UI are real; only delivery is gated on an identity):
+1. **Email (SES):** verify a sender identity (`aws sesv2 create-email-identity …` or console), request
+   SES production access (free, ~24h) to email arbitrary addresses, then deploy with
+   `SES_SENDER="Bob's <no-reply@yourdomain>"`.
+2. **SMS (AWS End User Messaging):** provision an origination identity (toll-free ~$2/mo) and, for the
+   free demo path, verify the owner's phone in the **SMS sandbox**; deploy with `SMS_ORIGINATION="+1800…"`
+   (or the phone-pool/sender-id ARN). Arbitrary numbers later need production access + toll-free/10DLC
+   registration. Blank env ⇒ the handler returns a clean "not configured" (no fakery).
+Deploy backend to dev first (`cd cdk; npm run deploy:dev`), seed (`/reset-client-data?key=bobs-reset-2025`),
+then `npm run dev`.
+
+**`main` == production.** No other in-flight feature branches — everything below has merged and deployed. The earlier divergence (work deployed before its PR merged, so
 `main` lagged prod) is resolved and structurally prevented. **For how we build/test/ship now,
 `docs/PROCESS.md` is canonical** — it supersedes any older "deploy from a laptop / Lambda deploys are
 immediate" phrasing elsewhere.

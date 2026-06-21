@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
 import { theme } from '../../../theme';
 import { ToolPage, ToolCard, Callout, CtaButton, chartTooltipStyle } from '../../tools/ui';
+import { useClientStore } from '../../../store/clientStore';
 
 interface Question {
   id: string;
@@ -112,8 +113,36 @@ export function RiskQuizPage() {
       { ...SLICE_META.bond, pct: a.bondPct },
       { ...SLICE_META.cash, pct: a.cashPct },
     ].filter(s => s.pct > 0);
-    return { profile: profile.name, blurb: a.blurb, stocksPct: a.usPct + a.intlPct, bondPct: a.bondPct, cashPct: a.cashPct, slices };
+    return { profile: profile.name, blurb: a.blurb, scorePct: Math.round(pct), stocksPct: a.usPct + a.intlPct, bondPct: a.bondPct, cashPct: a.cashPct, slices };
   }, [answers, complete]);
+
+  const persona = useClientStore(s => s.activePersona);
+  const saveSettings = useClientStore(s => s.saveAccountSettings);
+  const [savedToProfile, setSavedToProfile] = useState(false);
+
+  const saveToProfile = async () => {
+    if (!result) return;
+    const existing = persona.investorProfile;
+    await saveSettings({
+      investorProfile: {
+        riskProfile: result.profile,
+        riskScorePct: result.scorePct,
+        stocksPct: result.stocksPct,
+        bondPct: result.bondPct,
+        cashPct: result.cashPct,
+        slices: result.slices.map(s => ({ name: s.name, ticker: s.ticker, pct: s.pct })),
+        // Preserve goals/suitability the customer entered on the account page.
+        goals: existing?.goals ?? [],
+        timeHorizon: existing?.timeHorizon ?? '',
+        annualIncomeRange: existing?.annualIncomeRange ?? '',
+        netWorthRange: existing?.netWorthRange ?? '',
+        investmentExperience: existing?.investmentExperience ?? '',
+        updatedAt: new Date().toISOString().slice(0, 10),
+      },
+    });
+    setSavedToProfile(true);
+    setTimeout(() => setSavedToProfile(false), 2500);
+  };
 
   return (
     <ToolPage
@@ -236,6 +265,16 @@ export function RiskQuizPage() {
                 </Callout>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={saveToProfile}
+                    style={{
+                      background: savedToProfile ? theme.color.success : theme.color.primary,
+                      color: theme.color.textOnPrimary, border: 'none', borderRadius: theme.radius.md,
+                      padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: theme.font.sans,
+                    }}
+                  >
+                    {savedToProfile ? '✓ Saved to profile' : 'Save to my profile'}
+                  </button>
                   <CtaButton to="/research">Explore these funds →</CtaButton>
                   <button
                     onClick={() => setAnswers({})}
@@ -247,6 +286,9 @@ export function RiskQuizPage() {
                   >
                     Retake
                   </button>
+                </div>
+                <div style={{ fontSize: 12.5, color: theme.color.textSubtle, textAlign: 'center' }}>
+                  Saving updates the Investor profile on your <Link to="/account" style={{ color: theme.color.primary }}>My Account</Link> page.
                 </div>
               </div>
             )}

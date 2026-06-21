@@ -1,6 +1,13 @@
 import { create } from 'zustand';
-import { PERSONAS, Persona, Beneficiary, AutoInvestSchedule, RmdData } from '../data/personas';
+import { PERSONAS, Persona, Beneficiary, AutoInvestSchedule, RmdData, WatchlistEntry } from '../data/personas';
 import { post } from '../api/client';
+
+// Slice of the persona the My Account hub can write. Keys map 1:1 to the
+// `put-account-settings` allowlist in lambda/client-data/handler.ts.
+export type AccountSettingsPatch = Partial<Pick<Persona,
+  'phones' | 'email' | 'phone' | 'displayPhone' | 'emailVerified' |
+  'personal' | 'security' | 'preferences' | 'bankAccounts' |
+  'trustedContact' | 'investorProfile' | 'watchlist' | 'agreements' | 'authorizedAgents'>>;
 
 const STORAGE_KEY = 'bobs_active_client_id';
 
@@ -36,6 +43,18 @@ interface ClientStore {
   fetchRmd: () => Promise<void>;
   saveRmdPreferences: (updates: Partial<RmdData>) => Promise<void>;
   buyFund: (params: BuyParams) => Promise<void>;
+  // ── My Account hub ────────────────────────────────────────────────────────
+  saveAccountSettings: (patch: AccountSettingsPatch) => Promise<void>;
+  toggleWatchlist: (ticker: string) => Promise<void>;
+  sendVerifyCode: (channel: 'email' | 'sms', target: string) => Promise<VerifyResult>;
+  confirmVerifyCode: (channel: 'email' | 'sms', target: string, code: string) => Promise<VerifyResult>;
+}
+
+export interface VerifyResult {
+  ok: boolean;
+  sent?: boolean;
+  verified?: boolean;
+  error?: string;
 }
 
 export const useClientStore = create<ClientStore>((set, get) => {
@@ -80,6 +99,18 @@ export const useClientStore = create<ClientStore>((set, get) => {
                 ? (data.autoInvest as AutoInvestSchedule[])
                 : p.autoInvest,
               rmd: data.rmd ? { ...p.rmd, ...(data.rmd as RmdData) } : p.rmd,
+              // ── My Account hub (DB value wins when present) ────────────────
+              phones:          (data.phones          as Persona['phones'])?.length          ? (data.phones        as Persona['phones'])          : p.phones,
+              emailVerified:   typeof data.emailVerified === 'boolean'                       ? (data.emailVerified as boolean)                     : p.emailVerified,
+              personal:        (data.personal         as Persona['personal'])        ?? p.personal,
+              security:        (data.security         as Persona['security'])        ?? p.security,
+              preferences:     (data.preferences      as Persona['preferences'])     ?? p.preferences,
+              bankAccounts:    (data.bankAccounts     as Persona['bankAccounts'])?.length     ? (data.bankAccounts as Persona['bankAccounts'])    : p.bankAccounts,
+              trustedContact:  (data.trustedContact   as Persona['trustedContact'])  ?? p.trustedContact,
+              investorProfile: (data.investorProfile  as Persona['investorProfile']) ?? p.investorProfile,
+              watchlist:       (data.watchlist         as Persona['watchlist'])       ?? p.watchlist,
+              agreements:      (data.agreements        as Persona['agreements'])?.length      ? (data.agreements   as Persona['agreements'])       : p.agreements,
+              authorizedAgents: (data.authorizedAgents as Persona['authorizedAgents'])?.length ? (data.authorizedAgents as Persona['authorizedAgents']) : p.authorizedAgents,
             },
           };
         });
@@ -242,6 +273,59 @@ export const useClientStore = create<ClientStore>((set, get) => {
           },
         }),
       ]);
+    },
+
+    // ── My Account hub ──────────────────────────────────────────────────────
+    // Generic optimistic write: merge the patch into the active persona, then
+    // persist just that slice. Mirrors saveRmdPreferences. The caller is
+    // responsible for keeping legacy mirrors in sync (e.g. sending phone/
+    // displayPhone alongside a phones[] change).
+    saveAccountSettings: async (patch: AccountSettingsPatch) => {
+      const { clientId } = get().activePersona;
+      set(state => ({ activePersona: { ...state.activePersona, ...patch } }));
+      try {
+        await post<{ ok: boolean }>('/client-data', {
+          action: 'put-account-settings', clientId, data: patch,
+        });
+      } catch {
+        // optimistic update stays; non-critical
+      }
+    },
+
+    toggleWatchlist: async (ticker: string) => {
+      const current = get().activePersona.watchlist ?? [];
+      const exists = current.some(w => w.ticker === ticker);
+      const updated: WatchlistEntry[] = exists
+        ? current.filter(w => w.ticker !== ticker)
+        : [...current, { ticker, addedAt: new Date().toISOString().slice(0, 10) }];
+      await get().saveAccountSettings({ watchlist: updated });
+    },
+
+    sendVerifyCode: async (channel, target) => {
+      const { clientId } = get().activePersona;
+      try {
+        return await post<VerifyResult>('/verify', {
+          action: channel === 'email' ? 'send-email-code' : 'send-sms-code',
+          clientId, target,
+        });
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Could not send code' };
+      }
+    },
+
+    confirmVerifyCode: async (channel, target, code) => {
+      const { clientId } = get().activePersona;
+      try {
+        const res = await post<VerifyResult>('/verify', {
+          action: channel === 'email' ? 'confirm-email-code' : 'confirm-sms-code',
+          clientId, target, code,
+        });
+        // Pull the freshly-set verified flag(s) back from the DB.
+        if (res.verified) await get().refreshFromDb();
+        return res;
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Could not verify code' };
+      }
     },
   };
 

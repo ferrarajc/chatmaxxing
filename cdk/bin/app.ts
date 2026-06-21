@@ -34,6 +34,7 @@ const lambdaStack = new LambdaStack(app, `BobsLambdaStack${sfx}`, {
   transcriptsTable: dataStack.transcriptsTable,
   transactionsTable: dataStack.transactionsTable,
   fundsTable: dataStack.fundsTable,
+  verificationTable: dataStack.verificationTable,
 });
 lambdaStack.addDependency(dataStack);
 
