@@ -92,7 +92,7 @@ chatmaxxing/
 | `get-funds` | Read the static fund catalog (all 36 funds) from `bobs-funds`; GET `/funds`, module-cached 60 min | No |
 | `reset-funds` | Seed `bobs-funds` from the bundled catalog; GET `/reset-funds?key=bobs-reset-2025` | No |
 | `tts` | OpenAI text-to-speech for the "Talk to Bob" voice feature (POST `/tts` `{text,voice,instructions}` → base64 mp3) | No (OpenAI audio API) |
-| `verify` | Real email/SMS verification for the My Account hub. POST `/verify` `{action,clientId,target,code?}`; `send-*-code` stores a hashed 6-digit code (TTL 10 min, `bobs-verification-codes`) and sends via **Amazon SES** (email) / **AWS End User Messaging SMS** (text); `confirm-*-code` flips `emailVerified` or the matching `phones[].verified`. Sender identity via `SES_SENDER`/`SMS_ORIGINATION` env (optional — blank ⇒ graceful "not configured") | No |
+| `verify` | Real email/SMS verification for the My Account hub. POST `/verify` `{action,clientId,target,code?}`; `send-*-code` stores a hashed 6-digit code (TTL 10 min, `bobs-verification-codes`) and sends via **Amazon SES** (email) / **AWS End User Messaging SMS** (text); `confirm-*-code` flips `emailVerified` or the matching `phones[].verified`. Sender identity via SSM `bobs-ses-sender` / `bobs-sms-origination` (resolved at deploy like the OpenAI key; value `unset`/blank ⇒ graceful "not configured") | No |
 
 ---
 
@@ -317,22 +317,21 @@ The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are *
 
 ## Active Branch / Current State (as of 2026-06-17)
 
-**In flight (`feature/my-account-hub`, not yet merged): comprehensive My Account hub.**
-Rebuilds the thin `/account` page into a full, **fully DB-driven, editable** profile/settings hub
+**Shipped (PR #103, merged + deployed to prod 2026-06-21): comprehensive My Account hub.**
+Rebuilt the thin `/account` page into a full, **fully DB-driven, editable** profile/settings hub
 (see the "My Account hub" Key Files row + the new client attributes/table in DynamoDB Schema +
 the `verify` Lambda in the Lambda Map). Edit model = optimistic save (like Beneficiaries/RMD) via
-one generic `put-account-settings` action; **real** email/SMS verification via the new `verify`
-Lambda. Typechecks (customer-app + CDK + handlers) and `cdk synth` are green. **To enable live
-verification** (the code path + UI are real; only delivery is gated on an identity):
-1. **Email (SES):** verify a sender identity (`aws sesv2 create-email-identity …` or console), request
-   SES production access (free, ~24h) to email arbitrary addresses, then deploy with
-   `SES_SENDER="Bob's <no-reply@yourdomain>"`.
-2. **SMS (AWS End User Messaging):** provision an origination identity (toll-free ~$2/mo) and, for the
-   free demo path, verify the owner's phone in the **SMS sandbox**; deploy with `SMS_ORIGINATION="+1800…"`
-   (or the phone-pool/sender-id ARN). Arbitrary numbers later need production access + toll-free/10DLC
-   registration. Blank env ⇒ the handler returns a clean "not configured" (no fakery).
-Deploy backend to dev first (`cd cdk; npm run deploy:dev`), seed (`/reset-client-data?key=bobs-reset-2025`),
-then `npm run dev`.
+one generic `put-account-settings` action; **real** email/SMS verification via the `verify` Lambda.
+**Verification delivery is configured via SSM** (`bobs-ses-sender` / `bobs-sms-origination`, resolved
+at deploy like the OpenAI key; value `unset`/blank ⇒ graceful "not configured" — never faked):
+1. **Email (SES):** verify a sender identity (`aws sesv2 create-email-identity <addr>` then click the
+   confirmation link, or a domain identity). To reach arbitrary recipients, request SES production
+   access (free, ~24h); or stay in sandbox by also verifying the recipient. Then
+   `aws ssm put-parameter --name bobs-ses-sender --value "Bob's <addr>" --type String --overwrite` + redeploy.
+   *(Prod sender = `ferrarajc@me.com`, pending the owner clicking the SES confirmation link.)*
+2. **SMS (AWS End User Messaging):** provision an origination identity (toll-free ~$2/mo); for the free
+   demo path verify the owner's phone in the **SMS sandbox**; set `bobs-sms-origination` to the number/ARN
+   + redeploy. Arbitrary numbers later need production access + toll-free/10DLC. *(Currently `unset`.)*
 
 **`main` == production.** No other in-flight feature branches — everything below has merged and deployed. The earlier divergence (work deployed before its PR merged, so
 `main` lagged prod) is resolved and structurally prevented. **For how we build/test/ship now,

@@ -413,11 +413,13 @@ export class LambdaStack extends cdk.Stack {
     transcriptsTable.grantReadWriteData(pinTranscriptFn);
 
     // ── verify (real email + SMS verification for the My Account hub) ──
-    // SES_SENDER / SMS_ORIGINATION are optional config (like Arize) so the stack always
-    // deploys; when blank the handler returns a clean "not configured" instead of throwing.
-    //   • SES_SENDER       = a verified SES sender identity (e.g. "Bob's <no-reply@yourdomain>")
-    //   • SMS_ORIGINATION  = an origination identity (toll-free number / phone-pool / sender-id ARN)
-    // Set them at deploy time, e.g.  SES_SENDER="no-reply@…" SMS_ORIGINATION="+1800…" npm run deploy:lambda
+    // SES_SENDER / SMS_ORIGINATION resolve from SSM at deploy time (like OPENAI_API_KEY) so the
+    // OIDC prod deploy picks them up. The seeded placeholder value "unset" (or blank) ⇒ the handler
+    // returns a clean "not configured" instead of throwing. To enable / point them:
+    //   aws ssm put-parameter --name bobs-ses-sender      --value "Bob's <no-reply@yourdomain>" --type String --overwrite
+    //   aws ssm put-parameter --name bobs-sms-origination --value "+1800…"                       --type String --overwrite
+    //   • SES_SENDER      = a verified SES sender identity
+    //   • SMS_ORIGINATION = an origination identity (toll-free number / phone-pool / sender-id ARN)
     const verifyFn = new NodejsFunction(this, 'VerifyFn', {
       functionName: `bobs-verify${sfx}`,
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -429,8 +431,8 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...baseEnv,
         VERIFICATION_TABLE: verificationTable.tableName,
-        SES_SENDER: process.env.SES_SENDER ?? '',
-        SMS_ORIGINATION: process.env.SMS_ORIGINATION ?? '',
+        SES_SENDER: ssm.StringParameter.valueForStringParameter(this, 'bobs-ses-sender'),
+        SMS_ORIGINATION: ssm.StringParameter.valueForStringParameter(this, 'bobs-sms-origination'),
       },
       // The SES + SMS clients aren't guaranteed in the Lambda runtime, so bundle them;
       // the DynamoDB SDK is runtime-provided, so keep it external (matches the other fns).
