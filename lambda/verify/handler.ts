@@ -42,9 +42,11 @@ interface CodeRow {
   target: string;
 }
 
+const notConfigured = (v: string | undefined): boolean => !v || v.trim() === '' || v.trim() === 'unset';
+
 async function sendEmail(to: string, code: string): Promise<void> {
   const sender = process.env.SES_SENDER;
-  if (!sender) throw new ConfigError('Email verification is not configured yet.');
+  if (notConfigured(sender)) throw new ConfigError('Email verification is not configured yet.');
   await sesClient.send(new SendEmailCommand({
     FromEmailAddress: sender,
     Destination: { ToAddresses: [to] },
@@ -62,7 +64,7 @@ async function sendEmail(to: string, code: string): Promise<void> {
 
 async function sendSms(digits: string, code: string): Promise<void> {
   const origination = process.env.SMS_ORIGINATION;
-  if (!origination) throw new ConfigError('Text verification is not configured yet.');
+  if (notConfigured(origination)) throw new ConfigError('Text verification is not configured yet.');
   await smsClient.send(new SendTextMessageCommand({
     DestinationPhoneNumber: `+1${digits}`,
     OriginationIdentity: origination,
