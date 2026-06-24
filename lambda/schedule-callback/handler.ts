@@ -10,7 +10,7 @@ import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { isWeekend, getHours, getMinutes } from 'date-fns';
-import { randomUUID } from 'crypto';
+import { randomUUID, randomInt } from 'crypto';
 
 const schedulerClient = new SchedulerClient({
   region: process.env.AWS_REGION ?? 'us-east-1',
@@ -83,6 +83,9 @@ export const handler = async (
     }
 
     const callbackId = randomUUID();
+    // 4-digit code surfaced to the client in chat and checked by the outbound IVR when we
+    // call — the literal thread that ties the chat session to the phone call.
+    const verificationCode = String(randomInt(0, 10000)).padStart(4, '0');
 
     // Persist to DynamoDB
     await docClient.send(
@@ -95,6 +98,7 @@ export const handler = async (
           phoneNumber,
           scheduledTime: fireTime.toISOString(),
           intentSummary: intentSummary ?? '',
+          verificationCode,
           status: 'scheduled',
           createdAt: new Date().toISOString(),
         },
@@ -123,7 +127,8 @@ export const handler = async (
       callbackId,
       scheduledTime: fireTime.toISOString(),
       displayTime: formatDisplayTime(fireTime),
-      message: `We'll call you at ${phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')} ${scheduledTime === 'ASAP' ? 'in about 2 minutes' : `around ${formatDisplayTime(fireTime)}`}.`,
+      verificationCode,
+      message: `We'll call you at ${phoneNumber.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')} ${scheduledTime === 'ASAP' ? 'in about 2 minutes' : `around ${formatDisplayTime(fireTime)}`}. For your security, we'll ask for verification code ${verificationCode} when we call.`,
     });
   } catch (err) {
     console.error('schedule-callback error', err);

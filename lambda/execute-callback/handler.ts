@@ -46,6 +46,7 @@ export const handler = async (event: ExecuteCallbackEvent): Promise<void> => {
           callbackId,
           intentSummary: callback.intentSummary ?? '',
           clientId: callback.clientId,
+          verificationCode: callback.verificationCode ?? '',
         },
       }),
     );
