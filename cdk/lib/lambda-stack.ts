@@ -446,6 +446,26 @@ export class LambdaStack extends cdk.Stack {
     verifyFn.addToRolePolicy(new iam.PolicyStatement({ actions: ['ses:SendEmail'], resources: ['*'] }));
     verifyFn.addToRolePolicy(new iam.PolicyStatement({ actions: ['sms-voice:SendTextMessage'], resources: ['*'] }));
 
+    // ── validate-callback-code (invoked by the outbound-callback IVR flow) ──
+    // Not on the HTTP API — Amazon Connect invokes it directly from a contact flow to
+    // verify the caller's spoken verification code. Must be associated with the Connect
+    // instance post-deploy: `aws connect associate-lambda-function`.
+    const validateCallbackFn = new NodejsFunction(this, 'ValidateCallbackFn', {
+      functionName: `bobs-validate-callback-code${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'validate-callback-code/handler.ts'),
+      timeout: cdk.Duration.seconds(5),
+      memorySize: 128,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    validateCallbackFn.addPermission('ConnectInvoke', {
+      principal: new iam.ServicePrincipal('connect.amazonaws.com'),
+      action: 'lambda:InvokeFunction',
+      sourceArn: 'arn:aws:connect:us-east-1:192875559617:instance/467c849e-e16e-404a-b9f8-ebb623f84c8b',
+    });
+
     // ── HTTP API Gateway ───────────────────────────────────────────
     const api = new apigwv2.HttpApi(this, 'BobsApi', {
       apiName: `bobs-api${sfx}`,
