@@ -23,6 +23,8 @@ interface Store {
   vvStage: number;            // index into the mock voice-verification stages
   audioOn: boolean;
   setAudioOn: (v: boolean) => void;
+  micOn: boolean;             // wait for the agent's real mic input on "client" turns
+  setMicOn: (v: boolean) => void;
   ring: (item: CallbackListItem) => Promise<void>;
   accept: () => void;
   decline: () => void;
@@ -56,6 +58,8 @@ export const useStore = create<Store>((set, get) => ({
   vvStage: 0,
   audioOn: true,
   setAudioOn: (v) => set({ audioOn: v }),
+  micOn: true,
+  setMicOn: (v) => set({ micOn: v }),
 
   ring: async (item) => {
     set({ call: { item, phase: 'ringing' }, vvStage: 0 });
