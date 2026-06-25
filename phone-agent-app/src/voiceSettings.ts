@@ -19,8 +19,9 @@ export const ELEVEN_VOICES: { id: string; name: string }[] = [
 
 export const DEFAULT_OPENAI_INSTRUCTIONS =
   "You are the automated voice assistant for Bob's Mutual Funds placing a scheduled callback to a client. " +
-  'Speak warmly, clearly, and professionally — like a courteous, reassuring call-center representative. ' +
-  'Use a natural, human, conversational pace with gentle, genuine expressiveness. Never sound flat, robotic, or theatrical.';
+  'Speak excitedly and clearly — like a courteous, upbeat call-center representative. ' +
+  'Use a natural, human, conversational pace with gentle, genuine expressiveness. Never sound flat, robotic, or theatrical. ' +
+  "Sound like you're really delighted to talk to the client.";
 
 export interface VoiceSettings {
   provider: TtsProvider;
@@ -35,7 +36,7 @@ export interface VoiceSettings {
 const KEY = 'pa_voice_settings';
 
 function load(): Pick<VoiceSettings, 'provider' | 'openaiVoice' | 'openaiInstructions' | 'elevenVoiceId'> {
-  const defaults = { provider: 'openai' as TtsProvider, openaiVoice: 'nova', openaiInstructions: DEFAULT_OPENAI_INSTRUCTIONS, elevenVoiceId: ELEVEN_VOICES[0].id };
+  const defaults = { provider: 'openai' as TtsProvider, openaiVoice: 'echo', openaiInstructions: DEFAULT_OPENAI_INSTRUCTIONS, elevenVoiceId: ELEVEN_VOICES[0].id };
   try {
     const s = localStorage.getItem(KEY);
     if (s) return { ...defaults, ...JSON.parse(s) };
