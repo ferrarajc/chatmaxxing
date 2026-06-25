@@ -11,6 +11,11 @@ const MODEL = process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts';
 const DEFAULT_VOICE = process.env.OPENAI_TTS_VOICE ?? 'ash';
 const MAX_CHARS = 1200; // cap latency/cost — answers are short; longer text is truncated
 
+// ElevenLabs (alternate TTS engine — the phone-agent cockpit can A/B against OpenAI). Key is
+// resolved from SSM at deploy (bobs-elevenlabs-api-key); blank/"unset" ⇒ graceful not-configured.
+const ELEVEN_MODEL = process.env.ELEVENLABS_MODEL ?? 'eleven_turbo_v2_5';
+const ELEVEN_DEFAULT_VOICE = '21m00Tcm4TlvDq8ikWAM'; // Rachel
+
 // gpt-4o(-mini)-tts honors an `instructions` field that steers delivery (tone, energy, pacing).
 // This is the lever that keeps Bob lively instead of monotone. Ignored by older tts-1 models.
 // The BOrB's voice character. gpt-4o-mini-tts steers strongly off `instructions`, so this is the
@@ -27,9 +32,34 @@ export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
   try {
-    const { text, voice, instructions } = JSON.parse(event.body ?? '{}') as { text?: string; voice?: string; instructions?: string };
+    const { text, voice, instructions, provider } = JSON.parse(event.body ?? '{}') as { text?: string; voice?: string; instructions?: string; provider?: string };
     const input = (text ?? '').trim().slice(0, MAX_CHARS);
     if (!input) return jsonResponse(400, { error: 'text is required' });
+
+    // ── ElevenLabs branch ────────────────────────────────────────────────────
+    if (provider === 'elevenlabs') {
+      const key = process.env.ELEVENLABS_API_KEY;
+      if (!key || key === 'unset') {
+        return jsonResponse(200, { error: 'ElevenLabs is not configured — no API key set on the backend.' });
+      }
+      const voiceId = voice || ELEVEN_DEFAULT_VOICE;
+      const elRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
+        method: 'POST',
+        headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: input,
+          model_id: ELEVEN_MODEL,
+          voice_settings: { stability: 0.4, similarity_boost: 0.8, style: 0.25, use_speaker_boost: true },
+        }),
+      });
+      if (!elRes.ok) {
+        const detail = await elRes.text().catch(() => '');
+        console.error('elevenlabs error', elRes.status, detail.slice(0, 500));
+        return jsonResponse(200, { error: `ElevenLabs error ${elRes.status}` });
+      }
+      const elBuf = Buffer.from(await elRes.arrayBuffer());
+      return jsonResponse(200, { audioBase64: elBuf.toString('base64'), mime: 'audio/mpeg' });
+    }
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return jsonResponse(500, { error: 'tts not configured' });

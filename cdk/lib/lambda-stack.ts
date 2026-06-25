@@ -521,6 +521,10 @@ export class LambdaStack extends cdk.Stack {
         ...baseEnv,
         OPENAI_TTS_MODEL: process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts',
         OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE ?? 'onyx',
+        // ElevenLabs alternate TTS engine — resolved from SSM at deploy (set via
+        // aws ssm put-parameter --name bobs-elevenlabs-api-key --value <key> --type String --overwrite).
+        // Seeded "unset" ⇒ the handler returns a clean "not configured".
+        ELEVENLABS_API_KEY: ssm.StringParameter.valueForStringParameter(this, 'bobs-elevenlabs-api-key'),
       },
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });

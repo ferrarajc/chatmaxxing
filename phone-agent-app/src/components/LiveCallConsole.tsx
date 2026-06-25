@@ -4,6 +4,7 @@ import { theme } from '../theme';
 import { Avatar, Button, SectionLabel, Overlay, panel, h2Style } from './ui';
 import { initials } from '../util';
 import { speak, stopSpeaking } from '../voiceTts';
+import { useVoiceSettings } from '../voiceSettings';
 import { DossierBody } from './DossierView';
 
 type Who = 'system' | 'bob' | 'client';
@@ -34,6 +35,7 @@ export function LiveCallConsole() {
   const dismissCall = useStore(s => s.dismissCall);
   const audioOn = useStore(s => s.audioOn);
   const setAudioOn = useStore(s => s.setAudioOn);
+  const openVoicePanel = useVoiceSettings(s => s.openPanel);
 
   const name = call?.item.clientName || 'the client';
   const stages = useMemo(() => buildStages(name, call?.item.phoneNumber || ''), [name, call?.item.phoneNumber]);
@@ -67,6 +69,10 @@ export function LiveCallConsole() {
               {phase === 'connecting' ? 'Verifying identity…' : phase === 'live' ? 'On the call' : 'Call complete'}
             </div>
           </div>
+          <button onClick={() => openVoicePanel(true)} title="Voice settings" style={{
+            background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', borderRadius: theme.radius.md,
+            padding: '6px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+          }}>⚙</button>
           <button onClick={() => setAudioOn(!audioOn)} title="Toggle voice" style={{
             background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', borderRadius: theme.radius.md,
             padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
