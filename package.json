@@ -6,7 +6,8 @@
     "cdk",
     "lambda",
     "customer-app",
-    "agent-app"
+    "agent-app",
+    "phone-agent-app"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
