@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useStore } from '../store';
 import { theme } from '../theme';
 import { Avatar, Button, SectionLabel, Overlay, panel, h2Style } from './ui';
@@ -7,32 +8,15 @@ import { speak, stopSpeaking } from '../voiceTts';
 import { listenForSpeech, stopListening, speechSupported } from '../speech';
 import { useVoiceSettings } from '../voiceSettings';
 import { DossierBody } from './DossierView';
+import * as flow from '../callFlow';
 
-type Who = 'system' | 'bob' | 'client';
-interface Stage { who: Who; text: string }
-
-function buildStages(name: string, phone: string): Stage[] {
-  const display = phone && phone.length === 10 ? `(${phone.slice(0, 3)}) ${phone.slice(3, 6)}-${phone.slice(6)}` : phone;
-  return [
-    { who: 'system', text: `Placing call to ${display || name}…` },
-    { who: 'system', text: 'Ringing…' },
-    { who: 'client', text: '“Hello?”' },
-    { who: 'bob', text: `Hi, this is a scheduled callback from Bob's Mutual Funds. Am I speaking with ${name}?` },
-    { who: 'client', text: '“Yes, this is.”' },
-    { who: 'bob', text: `Great. To confirm your identity, please repeat: "At Bob's, my voice is my password."` },
-    { who: 'client', text: "“At Bob's, my voice is my password.”" },
-    { who: 'system', text: '✓ Voice verified (simulated)' },
-    { who: 'bob', text: 'Identity confirmed. Hang on one moment while I connect you.' },
-  ];
-}
+interface Line { who: 'system' | 'bob' | 'client'; text: string }
 
 export function LiveCallConsole() {
   const call = useStore(s => s.call);
   const phase = call?.phase;
-  const vvStage = useStore(s => s.vvStage);
-  const setVvStage = useStore(s => s.setVvStage);
-  const connect = useStore(s => s.connect);
   const endCall = useStore(s => s.endCall);
+  const endWithOutcome = useStore(s => s.endWithOutcome);
   const dismissCall = useStore(s => s.dismissCall);
   const audioOn = useStore(s => s.audioOn);
   const setAudioOn = useStore(s => s.setAudioOn);
@@ -40,43 +24,10 @@ export function LiveCallConsole() {
   const setMicOn = useStore(s => s.setMicOn);
   const openVoicePanel = useVoiceSettings(s => s.openPanel);
 
-  const [listening, setListening] = useState(false);
-  const [heard, setHeard] = useState<Record<number, string>>({});
-
-  const name = call?.item.clientName || 'the client';
-  const stages = useMemo(() => buildStages(name, call?.item.phoneNumber || ''), [name, call?.item.phoneNumber]);
-
-  // Fresh call → clear any prior recognized speech.
-  useEffect(() => { setHeard({}); setListening(false); }, [call?.item.callbackId]);
-
-  // Drive the mock voice-verification while connecting. On "client" turns, wait for the agent's
-  // real microphone input (if mic is on + supported); otherwise fall back to the scripted timing.
-  useEffect(() => {
-    if (phase !== 'connecting') return;
-    if (vvStage >= stages.length) { const t = setTimeout(() => connect(), 500); return () => clearTimeout(t); }
-    let cancelled = false;
-    const stage = stages[vvStage];
-    const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
-    (async () => {
-      if (stage.who === 'bob') {
-        if (audioOn) await speak(stage.text); else await wait(1500);
-      } else if (stage.who === 'client' && micOn && speechSupported()) {
-        setListening(true);
-        const r = await listenForSpeech();
-        if (cancelled) return;
-        setListening(false);
-        if (r.heard && r.transcript) setHeard(h => ({ ...h, [vvStage]: r.transcript }));
-      } else {
-        await wait(stage.who === 'system' ? 1100 : 1500);
-      }
-      if (!cancelled) setVvStage(vvStage + 1);
-    })();
-    return () => { cancelled = true; setListening(false); stopListening(); };
-  }, [phase, vvStage, stages, audioOn, micOn, setVvStage, connect]);
-
   useEffect(() => () => { stopSpeaking(); stopListening(); }, []);
 
   if (!call || !phase || phase === 'ringing') return null;
+  const name = call.item.clientName || 'the client';
 
   return (
     <Overlay>
@@ -86,24 +37,20 @@ export function LiveCallConsole() {
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 16, fontFamily: theme.font.serif }}>{name}</div>
             <div style={{ fontSize: 12, opacity: 0.7 }}>
-              {phase === 'connecting' ? 'Verifying identity…' : phase === 'live' ? 'On the call' : 'Call complete'}
+              {phase === 'connecting' ? 'Automated callback in progress…' : phase === 'live' ? 'Connected — identity verified' : 'Call ended'}
             </div>
           </div>
-          <button onClick={() => openVoicePanel(true)} title="Voice settings" style={{
-            background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', borderRadius: theme.radius.md,
-            padding: '6px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>⚙</button>
-          <button onClick={() => setAudioOn(!audioOn)} title="Toggle Bob's spoken lines" style={{
-            background: 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', borderRadius: theme.radius.md,
-            padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>{audioOn ? '🔊 Voice on' : '🔇 Voice off'}</button>
-          <button onClick={() => setMicOn(!micOn)} title="Wait for your microphone on the client's turns" style={{
-            background: micOn ? 'rgba(160,90,44,0.45)' : 'rgba(255,255,255,0.12)', color: '#fff', border: 'none', borderRadius: theme.radius.md,
-            padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>{micOn ? '🎤 Mic on' : '🎤 Mic off'}</button>
+          {phase === 'connecting' && (
+            <>
+              <button onClick={() => openVoicePanel(true)} title="Voice settings" style={hdrBtn(false)}>⚙</button>
+              <button onClick={() => setAudioOn(!audioOn)} title="Toggle Bob's spoken lines" style={hdrBtn(false)}>{audioOn ? '🔊 Voice on' : '🔇 Voice off'}</button>
+              <button onClick={() => setMicOn(!micOn)} title="Wait for your microphone on the client's turns" style={hdrBtn(micOn)}>{micOn ? '🎤 Mic on' : '🎤 Mic off'}</button>
+              <button onClick={() => void endWithOutcome('☎️ Agent ended the call')} title="Hang up" style={{ ...hdrBtn(false), background: 'rgba(180,60,50,0.5)' }}>Hang up</button>
+            </>
+          )}
         </div>
 
-        {phase === 'connecting' && <Connecting stages={stages} vvStage={vvStage} listening={listening} heard={heard} />}
+        {phase === 'connecting' && <CallSim name={name} />}
         {phase === 'live' && <LiveBody name={name} onEnd={() => void endCall()} />}
         {phase === 'wrapup' && <WrapUp name={name} onDone={dismissCall} />}
       </div>
@@ -111,48 +58,244 @@ export function LiveCallConsole() {
   );
 }
 
-function Connecting({ stages, vvStage, listening, heard }: { stages: Stage[]; vvStage: number; listening: boolean; heard: Record<number, string> }) {
-  const visible = stages.slice(0, Math.min(vvStage + 1, stages.length));
+function hdrBtn(active: boolean): React.CSSProperties {
+  return {
+    background: active ? 'rgba(160,90,44,0.45)' : 'rgba(255,255,255,0.12)', color: '#fff', border: 'none',
+    borderRadius: theme.radius.md, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+  };
+}
+
+/**
+ * The simulated outbound call. Starts on a ringing screen with a big "Answer phone" button; once
+ * answered, runs a branching conversation that reacts to the agent's real recognized speech —
+ * wrong-party / availability / re-identify, opt-out, identity verification (with retries), and a
+ * good-time check — each leading to the happy connect or an honest non-happy outcome.
+ */
+function CallSim({ name }: { name: string }) {
+  const firstName = name.split(' ')[0] || name;
+  const [answered, setAnswered] = useState(false);
+  const [lines, setLines] = useState<Line[]>([]);
+  const [listening, setListening] = useState(false);
+  const [waitPutOn, setWaitPutOn] = useState(false);
+  const cancelled = useRef(false);
+  const putOnResolve = useRef<(() => void) | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { scrollRef.current?.scrollTo({ top: 1e9, behavior: 'smooth' }); }, [lines, listening, waitPutOn]);
+
+  useEffect(() => {
+    if (!answered) return;
+    cancelled.current = false;
+    void runScript();
+    return () => {
+      cancelled.current = true;
+      stopSpeaking();
+      stopListening();
+      putOnResolve.current?.();
+      putOnResolve.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answered]);
+
+  const dead = () => cancelled.current;
+  const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+  const push = (who: Line['who'], text: string) => setLines(l => [...l, { who, text }]);
+  const sysLine = (text: string) => push('system', text);
+
+  const sayBob = async (text: string) => {
+    if (dead()) return;
+    push('bob', text);
+    if (useStore.getState().audioOn) await speak(text);
+    else await wait(Math.min(2600, 700 + text.length * 22));
+  };
+
+  // Listen for the agent's spoken reply; returns the transcript ('' if nothing heard).
+  const listen = async (): Promise<{ text: string; heard: boolean }> => {
+    if (dead()) return { text: '', heard: false };
+    if (!useStore.getState().micOn || !speechSupported()) { await wait(1500); return { text: '', heard: false }; }
+    setListening(true);
+    const r = await listenForSpeech();
+    setListening(false);
+    if (r.heard && r.transcript) push('client', `“${r.transcript}”`);
+    return { text: r.transcript, heard: r.heard };
+  };
+
+  const finish = (outcome: string) => { if (!dead()) void useStore.getState().endWithOutcome(outcome); };
+
+  async function runScript() {
+    await sayBob(`Hello! This is a scheduled callback from Bob's Mutual Funds. Am I speaking with ${name}?`);
+    let tries = 0;
+    while (!dead()) {
+      const { text, heard } = await listen();
+      if (dead()) return;
+      if (flow.isOptOut(text)) return optOut();
+      if (flow.isQuestionWhy(text) && tries < 2) {
+        tries++;
+        await sayBob(`Of course — this is a callback you scheduled with Bob's Mutual Funds. For your security I just need to confirm I'm speaking with ${name}. Is that you?`);
+        continue;
+      }
+      if (flow.isWrongParty(text, firstName)) return wrongParty();
+      if (!heard && tries < 2) { tries++; await sayBob(`Sorry, I didn't quite catch that. Am I speaking with ${name}?`); continue; }
+      if (!heard) return noResponse();
+      break; // affirmative (yes / "this is …" / their name) → verify
+    }
+    if (!dead()) return verify();
+  }
+
+  async function wrongParty() {
+    await sayBob(`My apologies for the confusion. Is ${name} available?`);
+    let tries = 0;
+    while (!dead()) {
+      const { text, heard } = await listen();
+      if (dead()) return;
+      if (flow.isOptOut(text)) return optOut();
+      if (flow.isAvailableNo(text) || flow.isWrongParty(text, firstName)) return unavailable();
+      if (flow.isAvailableYes(text) || heard) return waitForClient(); // available → put them on
+      if (tries < 1) { tries++; await sayBob(`No problem — is ${firstName} able to come to the phone?`); continue; }
+      return unavailable();
+    }
+  }
+
+  async function waitForClient() {
+    await sayBob(`Thank you — I'll hold while you put ${firstName} on the line.`);
+    if (dead()) return;
+    setWaitPutOn(true);
+    await new Promise<void>(res => { putOnResolve.current = res; });
+    setWaitPutOn(false);
+    if (dead()) return;
+    sysLine(`${firstName} has come to the phone.`);
+    // Re-identify the new person. They may state their name, or just say "hello".
+    const { text } = await listen();
+    if (dead()) return;
+    if (flow.isOptOut(text)) return optOut();
+    if (flow.statesName(text, firstName)) return verify(); // stated identity → still run voice verification
+    // Ambiguous greeting ("hello" / "yeah") → confirm before verifying.
+    await sayBob(`Hi there — am I speaking with ${name}?`);
+    const r2 = await listen();
+    if (dead()) return;
+    if (flow.isOptOut(r2.text)) return optOut();
+    if (flow.isWrongParty(r2.text, firstName) || flow.isAvailableNo(r2.text)) return unavailable();
+    return verify();
+  }
+
+  async function verify() {
+    await sayBob(`Great. For security, please confirm your identity by repeating this phrase: "At Bob's, my voice is my password."`);
+    let attempts = 0;
+    while (!dead()) {
+      const { text } = await listen();
+      if (dead()) return;
+      if (flow.isOptOut(text)) return optOut();
+      if (flow.isPassphrase(text)) { sysLine('✓ Voice verified (simulated).'); return goodTime(); }
+      attempts++;
+      if (attempts >= 3) return failed();
+      await sayBob(`I'm sorry, that didn't match. Once more, please repeat: "At Bob's, my voice is my password."`);
+    }
+  }
+
+  async function goodTime() {
+    await sayBob(`Thank you, ${firstName} — your identity is confirmed. And is now still a good time to talk?`);
+    const { text } = await listen();
+    if (dead()) return;
+    if (flow.isOptOut(text)) return optOut();
+    if (flow.isBadTime(text)) return reschedule();
+    await sayBob(`Wonderful — connecting you with a specialist now.`);
+    if (!dead()) useStore.getState().connect();
+  }
+
+  async function optOut() {
+    await sayBob(`Understood — I'll remove this number right away, and you won't receive further calls. Sorry for the interruption. Goodbye.`);
+    finish('🚫 Opted out — number flagged do-not-call');
+  }
+  async function unavailable() {
+    await sayBob(`No problem — we'll reach out to ${firstName} again later, and they can always call us at our main line. Thanks for your time. Goodbye.`);
+    finish('👤 Client unavailable — will retry / advised call-in');
+  }
+  async function noResponse() {
+    await sayBob(`I'm having trouble hearing you, so I'll try again another time. Goodbye.`);
+    finish('🤫 No response — call ended');
+  }
+  async function failed() {
+    await sayBob(`I'm sorry, I wasn't able to verify your identity. For your security, please call us directly at our main line. Goodbye.`);
+    finish('🔒 Identity not verified — not connected');
+  }
+  async function reschedule() {
+    await sayBob(`No problem at all — we'll reach back out at a better time. Take care!`);
+    finish('📅 Reschedule requested');
+  }
+
+  if (!answered) {
+    return <AnswerScreen name={name} onAnswer={() => setAnswered(true)} onNoAnswer={() => finish('📭 No answer — voicemail left')} />;
+  }
+
   return (
-    <div style={{ flex: 1, minHeight: 320, padding: '20px 22px', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {visible.map((s, i) => {
-          if (s.who === 'system') {
-            return <div key={i} style={{ textAlign: 'center', fontSize: 12, color: theme.color.textSubtle }}>{s.text}</div>;
-          }
-          const isBob = s.who === 'bob';
-          const isActive = i === vvStage && i === visible.length - 1;
-          const isListeningHere = !isBob && isActive && listening && !heard[i];
-          const speaking = (isActive && isBob) || isListeningHere;
+    <div ref={scrollRef} style={{ flex: 1, minHeight: 340, padding: '18px 22px', overflowY: 'auto' }}>
+      <Transcript lines={lines} listening={listening} />
+      {waitPutOn && (
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Button tone="success" big onClick={() => { putOnResolve.current?.(); putOnResolve.current = null; }}>
+            📞 Put {firstName} on the line
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
-          // Client bubble: prefer what was actually heard; else show the live listening prompt; else the scripted line.
-          let content: React.ReactNode = s.text;
-          if (!isBob) {
-            if (heard[i]) content = `“${heard[i]}”`;
-            else if (isListeningHere) content = '🎤 Listening… go ahead and speak';
-          }
+function AnswerScreen({ name, onAnswer, onNoAnswer }: { name: string; onAnswer: () => void; onNoAnswer: () => void }) {
+  return (
+    <div style={{ flex: 1, minHeight: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 28 }}>
+      <div className="pa-speaking"><Avatar initials={initials(name)} size={80} /></div>
+      <div style={{ fontSize: 19, fontWeight: 700, fontFamily: theme.font.serif }}>Calling {name}…</div>
+      <div style={{ fontSize: 13, color: theme.color.textMuted, letterSpacing: 1 }}>📞 Ringing</div>
+      <button onClick={onAnswer} style={{
+        marginTop: 6, background: theme.color.success, color: '#fff', border: 'none', borderRadius: 999,
+        padding: '16px 40px', fontSize: 18, fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 18px rgba(40,140,70,0.35)',
+      }}>📞 Answer phone</button>
+      <button onClick={onNoAnswer} style={{
+        background: 'none', border: 'none', color: theme.color.textSubtle, fontSize: 12.5, cursor: 'pointer', marginTop: 2, textDecoration: 'underline',
+      }}>Let it ring — no answer →</button>
+    </div>
+  );
+}
 
-          return (
-            <div key={i} style={{ display: 'flex', justifyContent: isBob ? 'flex-start' : 'flex-end' }}>
-              <div className={speaking ? 'pa-speaking' : ''} style={{
-                maxWidth: '80%', padding: '10px 14px', borderRadius: theme.radius.lg, fontSize: 14, lineHeight: 1.45,
-                background: isBob ? theme.color.primarySoft : (isListeningHere ? theme.color.accentSoft : theme.color.surfaceMuted),
-                color: theme.color.text,
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: isBob ? theme.color.primary : theme.color.accent, marginBottom: 2 }}>
-                  {isBob ? "Bob's (automated)" : 'Client (you)'}
-                </div>
-                {content}
-                {isListeningHere && (
-                  <div style={{ marginTop: 6 }}>
-                    <button onClick={stopListening} style={{ background: 'none', border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.md, padding: '3px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: theme.color.textMuted }}>Skip ▶</button>
-                  </div>
-                )}
-              </div>
+function Transcript({ lines, listening }: { lines: Line[]; listening: boolean }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {lines.map((l, i) => {
+        if (l.who === 'system') {
+          return <div key={i} style={{ textAlign: 'center', fontSize: 12, color: theme.color.textSubtle }}>{l.text}</div>;
+        }
+        const isBob = l.who === 'bob';
+        return (
+          <div key={i} style={{ display: 'flex', justifyContent: isBob ? 'flex-start' : 'flex-end' }}>
+            <Bubble isBob={isBob}>{l.text}</Bubble>
+          </div>
+        );
+      })}
+      {listening && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="pa-speaking" style={{ maxWidth: '80%', padding: '10px 14px', borderRadius: theme.radius.lg, fontSize: 14, background: theme.color.accentSoft, color: theme.color.accent, fontWeight: 600 }}>
+            🎤 Listening… go ahead and speak
+            <div style={{ marginTop: 6 }}>
+              <button onClick={stopListening} style={{ background: 'none', border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.md, padding: '3px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: theme.color.textMuted }}>Skip ▶</button>
             </div>
-          );
-        })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Bubble({ isBob, children }: { isBob: boolean; children: ReactNode }) {
+  return (
+    <div style={{
+      maxWidth: '80%', padding: '10px 14px', borderRadius: theme.radius.lg, fontSize: 14, lineHeight: 1.45,
+      background: isBob ? theme.color.primarySoft : theme.color.surfaceMuted, color: theme.color.text,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: isBob ? theme.color.primary : theme.color.accent, marginBottom: 2 }}>
+        {isBob ? "Bob's (automated)" : 'Client (you)'}
       </div>
+      {children}
     </div>
   );
 }
@@ -202,12 +345,21 @@ function LiveBody({ name, onEnd }: { name: string; onEnd: () => void }) {
 }
 
 function WrapUp({ name, onDone }: { name: string; onDone: () => void }) {
+  const outcome = useStore(s => s.callOutcome);
+  const connected = outcome.startsWith('✅');
   return (
     <div style={{ padding: '34px 26px', textAlign: 'center' }}>
-      <div style={{ fontSize: 40, color: theme.color.success }}>✓</div>
-      <div style={{ ...h2Style(), fontSize: 20, marginTop: 6 }}>Call complete</div>
-      <div style={{ fontSize: 14, color: theme.color.textMuted, margin: '8px 0 20px' }}>
-        Your call with {name} is wrapped up and removed from the board.
+      <div style={{ fontSize: 40, color: connected ? theme.color.success : theme.color.primary }}>{connected ? '✓' : '📞'}</div>
+      <div style={{ ...h2Style(), fontSize: 20, marginTop: 6 }}>Call ended</div>
+      {outcome && (
+        <div style={{ display: 'inline-block', marginTop: 12, background: theme.color.surfaceMuted, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.pill, padding: '7px 18px', fontSize: 13.5, fontWeight: 600 }}>
+          {outcome}
+        </div>
+      )}
+      <div style={{ fontSize: 14, color: theme.color.textMuted, margin: '16px 0 20px' }}>
+        {connected
+          ? `Your call with ${name} is wrapped up and removed from the board.`
+          : `This callback has been logged and removed from the board.`}
       </div>
       <Button onClick={onDone} big>Back to board</Button>
     </div>

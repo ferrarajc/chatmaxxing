@@ -20,7 +20,7 @@ interface Store {
 
   // Active (simulated) call
   call: ActiveCall | null;
-  vvStage: number;            // index into the mock voice-verification stages
+  callOutcome: string;        // how the call ended, shown on the wrap-up card
   audioOn: boolean;
   setAudioOn: (v: boolean) => void;
   micOn: boolean;             // wait for the agent's real mic input on "client" turns
@@ -28,8 +28,8 @@ interface Store {
   ring: (item: CallbackListItem) => Promise<void>;
   accept: () => void;
   decline: () => void;
-  setVvStage: (n: number) => void;
   connect: () => void;
+  endWithOutcome: (outcome: string) => Promise<void>;
   endCall: () => Promise<void>;
   dismissCall: () => void;
 }
@@ -55,29 +55,29 @@ export const useStore = create<Store>((set, get) => ({
   clearSelected: () => set({ selectedId: null, selected: null }),
 
   call: null,
-  vvStage: 0,
+  callOutcome: '',
   audioOn: true,
   setAudioOn: (v) => set({ audioOn: v }),
   micOn: true,
   setMicOn: (v) => set({ micOn: v }),
 
   ring: async (item) => {
-    set({ call: { item, phase: 'ringing' }, vvStage: 0 });
+    set({ call: { item, phase: 'ringing' }, callOutcome: '' });
     const full = await fetchFull(item.callbackId);
     set(s => (s.call && s.call.item.callbackId === item.callbackId
       ? { call: { ...s.call, dossier: full?.dossier } }
       : {}));
   },
-  accept: () => set(s => (s.call ? { call: { ...s.call, phase: 'connecting' }, vvStage: 0 } : {})),
+  accept: () => set(s => (s.call ? { call: { ...s.call, phase: 'connecting' } } : {})),
   decline: () => set({ call: null }),
-  setVvStage: (n) => set({ vvStage: n }),
   connect: () => set(s => (s.call ? { call: { ...s.call, phase: 'live' } } : {})),
-  endCall: async () => {
+  endWithOutcome: async (outcome) => {
     const c = get().call;
-    set(s => (s.call ? { call: { ...s.call, phase: 'wrapup' } } : {}));
+    set(s => (s.call ? { call: { ...s.call, phase: 'wrapup' }, callOutcome: outcome } : {}));
     if (c) {
       try { await post('/agent-callbacks', { action: 'complete', callbackId: c.item.callbackId }); } catch { /* ignore */ }
     }
   },
-  dismissCall: () => set({ call: null }),
+  endCall: async () => { await get().endWithOutcome('✅ Completed — handled by agent'); },
+  dismissCall: () => set({ call: null, callOutcome: '' }),
 }));
