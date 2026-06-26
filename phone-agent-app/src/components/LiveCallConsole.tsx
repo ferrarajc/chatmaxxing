@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useStore } from '../store';
 import { theme } from '../theme';
-import { Avatar, Button, SectionLabel, Overlay, panel, h2Style } from './ui';
+import { Avatar, Button, Overlay, panel, h2Style } from './ui';
 import { initials } from '../util';
 import { speak, stopSpeaking, prefetch } from '../voiceTts';
 import { listenForSpeech, stopListening, speechSupported } from '../speech';
 import { startRinging, stopRinging } from '../ringtone';
 import { useVoiceSettings } from '../voiceSettings';
 import { DossierBody } from './DossierView';
+import { IntentHeader, GuidedScript } from './GuidedScript';
 import * as flow from '../callFlow';
 
 interface Line { who: 'system' | 'bob' | 'client'; text: string }
@@ -330,34 +331,18 @@ function Bubble({ isBob, children }: { isBob: boolean; children: ReactNode }) {
 
 function LiveBody({ name, onEnd }: { name: string; onEnd: () => void }) {
   const dossier = useStore(s => s.call?.dossier);
-  const [done, setDone] = useState<Set<number>>(new Set());
-  const toggle = (i: number) => setDone(prev => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; });
 
   return (
     <>
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <div style={{ flex: 1, padding: '18px 20px', overflowY: 'auto', borderRight: `1px solid ${theme.color.border}` }}>
-          <div style={{ background: theme.color.successSoft, border: `1px solid ${theme.color.successBorder}`, borderRadius: theme.radius.md, padding: '8px 12px', fontSize: 13, color: theme.color.success, fontWeight: 600, marginBottom: 14 }}>
+        <div style={{ flex: 1.1, padding: '18px 20px', overflowY: 'auto', borderRight: `1px solid ${theme.color.border}` }}>
+          <div style={{ background: theme.color.successSoft, border: `1px solid ${theme.color.successBorder}`, borderRadius: theme.radius.md, padding: '8px 12px', fontSize: 13, color: theme.color.success, fontWeight: 600, marginBottom: 16 }}>
             ✓ Identity verified — you're connected with {name}.
           </div>
-          <SectionLabel>Your script — tick as you go</SectionLabel>
           {dossier && (
             <>
-              <div style={{ fontStyle: 'italic', fontSize: 14, marginBottom: 12, lineHeight: 1.5 }}>“{dossier.script.opening}”</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {dossier.script.talkingPoints.map((p, i) => (
-                  <label key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, cursor: 'pointer', opacity: done.has(i) ? 0.5 : 1 }}>
-                    <input type="checkbox" checked={done.has(i)} onChange={() => toggle(i)} style={{ marginTop: 3 }} />
-                    <span style={{ textDecoration: done.has(i) ? 'line-through' : 'none' }}>{p}</span>
-                  </label>
-                ))}
-              </div>
-              {dossier.research.openItems.length > 0 && (
-                <div style={{ marginTop: 16, background: theme.color.warningSoft, border: `1px solid ${theme.color.warningBorder}`, borderRadius: theme.radius.md, padding: '10px 12px' }}>
-                  <SectionLabel>Don't forget — open items</SectionLabel>
-                  {dossier.research.openItems.map((o, i) => <div key={i} style={{ fontSize: 13, marginTop: i ? 6 : 2, fontWeight: 600 }}>{o.question}</div>)}
-                </div>
-              )}
+              <IntentHeader intent={dossier.intent} />
+              <GuidedScript gs={dossier.guidedScript} />
             </>
           )}
         </div>

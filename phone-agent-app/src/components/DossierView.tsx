@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { useNow, fmtCountdown, fmtScheduled, fmtMoney, initials } from '../util';
 import { theme } from '../theme';
 import { card, Chip, Button, Avatar, SectionLabel, h2Style } from './ui';
+import { IntentHeader, GuidedScript } from './GuidedScript';
 import type { Dossier } from '../types';
 
 function Empty({ text }: { text: string }) {
@@ -34,7 +35,6 @@ export function DossierView() {
           <Avatar initials={initials(selected.clientName || '?')} size={48} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ ...h2Style(), fontSize: 20 }}>{selected.clientName}</div>
-            <div style={{ fontSize: 13, color: theme.color.textMuted, marginTop: 2 }}>{selected.intentSummary}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 12, color: theme.color.textSubtle }}>{fmtScheduled(selected.scheduledTime)}</div>
@@ -53,7 +53,15 @@ export function DossierView() {
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>⏳ Researching the client's ask…</div>
           <div style={{ fontSize: 13 }}>Bob's AI is pulling the account data and working out the answer — it'll be ready before the call.</div>
         </div>
-      ) : <DossierBody d={d!} />}
+      ) : (
+        <>
+          <IntentHeader intent={d!.intent} />
+          <DossierBody d={d!} />
+          <div style={{ marginTop: 16 }}>
+            <GuidedScript gs={d!.guidedScript} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -122,17 +130,6 @@ export function DossierBody({ d, compact }: { d: Dossier; compact?: boolean }) {
           </ul>
         </div>
       )}
-
-      {/* Script */}
-      <div style={{ ...card, padding: '16px 18px' }}>
-        <SectionLabel>Suggested script</SectionLabel>
-        <div style={{ fontSize: 14, fontStyle: 'italic', color: theme.color.text, marginBottom: 10, lineHeight: 1.5 }}>“{d.script.opening}”</div>
-        {d.script.talkingPoints.length > 0 && (
-          <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {d.script.talkingPoints.map((p, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5 }}>{p}</li>)}
-          </ol>
-        )}
-      </div>
 
       {/* Resources */}
       {!compact && d.resources.length > 0 && (

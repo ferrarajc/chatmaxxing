@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { post } from './api/client';
+import { normalizeDossier } from './dossier';
 import type { CallbackListItem, CallbackFull, Dossier } from './types';
 
 export type CallPhase = 'ringing' | 'connecting' | 'live' | 'wrapup';
@@ -37,7 +38,9 @@ interface Store {
 async function fetchFull(callbackId: string): Promise<CallbackFull | null> {
   try {
     const res = await post<{ callback: CallbackFull }>('/agent-callbacks', { action: 'get', callbackId });
-    return res.callback;
+    const cb = res.callback;
+    // Guarantee the dossier carries an `intent` + `guidedScript` (older records predate them).
+    return { ...cb, dossier: normalizeDossier(cb.dossier, cb.clientName, cb.intentSummary) };
   } catch {
     return null;
   }

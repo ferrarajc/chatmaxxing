@@ -13,7 +13,14 @@ import { matchResources, summarizeAccounts, Account } from '../shared/types';
 
 interface PrepEvent { callbackId: string }
 
+interface ScriptStepOut {
+  kind: 'say' | 'ask';
+  text: string;
+  options?: { label: string; then: ScriptStepOut[] }[];
+}
+
 interface ResearchOut {
+  intent: { headline: string; detail?: string[] };
   research: {
     summary: string;
     findings: { point: string; detail: string; source?: string }[];
@@ -21,7 +28,7 @@ interface ResearchOut {
     openItems: { question: string; why: string }[];
   };
   coaching: string[];
-  script: { opening: string; talkingPoints: string[] };
+  guidedScript: { confirmAsk: string; steps: ScriptStepOut[]; points?: string[] };
 }
 
 const CALLBACKS_TABLE = () => process.env.CALLBACKS_TABLE!;
@@ -45,8 +52,23 @@ Rules:
 Reference articles you may cite as sources:
 ${kbList}
 
+THE GUIDED SCRIPT — this is what the human agent reads on the call. The UI already speaks a fixed opening: "This is <agent> at Bob's Mutual Funds, speaking on a recorded line — and I understand that you want <confirmAsk>. Is that correct?" You provide:
+- "confirmAsk": the second-person clause that completes "…you want ___". Specific and natural. E.g. ask "wants their 2026 RMD deadline" -> "to know the last day you can take your 2026 RMD without a penalty". No leading "to want"; usually starts with "to".
+- "steps": what the agent does AFTER the client confirms. Each step is one of:
+    { "kind": "say", "text": "<a first-person line the agent says to the client>" }
+    { "kind": "ask", "text": "<a question the agent asks>", "options": [ { "label": "<the client's answer, short, fits a button>", "then": [ <steps for that answer> ] } ] }
+  Choose the script's shape by how completely you resolved the ask:
+  1. FULLY RESOLVED -> one or two "say" steps that deliver the exact answer using the real figures/dates from your findings, ending with a natural close like "Is there anything else I can help you with?". Example for an RMD-deadline ask: [{"kind":"say","text":"The last day you can take your 2026 RMD without a penalty is December 31, 2026. Is there anything else I can help you with?"}]
+  2. NEEDS 1-2 DETERMINABLE FACTS FROM THE CLIENT (each possible answer is computable from the data you have) -> use an "ask" step whose options each carry the matching scripted answer, with the real per-branch figure, in "then". Keep it at most two questions deep. Example for "how much can I still contribute to my 2026 IRA": [{"kind":"ask","text":"Have you made any contributions this year to an IRA you hold outside of Bob's?","options":[{"label":"No, none outside Bob's","then":[{"kind":"say","text":"Got it. Then as of today you can still contribute $2,425.87 to your IRA this year. Would you like me to repeat that?"}]},{"label":"Yes, some elsewhere","then":[{"kind":"say","text":"Understood — I'll need that amount to give you an exact figure. Once you have it, your remaining room is $7,000 minus everything contributed across all your IRAs this year."}]}]}]
+  3. OPEN-ENDED / JUDGMENT-BASED / NOT FULLY RESOLVED -> give the "say" lines you can, do NOT invent an answer, and list the remaining discussion points or questions in "points". Anything needing a decision, the client's input, or an action you can't take must ALSO be in research.openItems.
+- NEVER put a figure or date in a script line that you did not get from a tool or from the data above. If a branch's answer isn't computable, make that branch a "say" describing what the agent will do / where it routes, and record the gap in openItems.
+
 Return ONLY valid JSON:
 {
+  "intent": {
+    "headline": "ONE self-contained sentence, AT MOST 18 words, whose FIRST word is the client's first name only (no surname). If the agent reads only this, it must be enough to start a meaningful conversation. Third person. E.g. \\"${clientName.split(' ')[0]} wants the last day she can take her 2026 RMD without a penalty.\\"",
+    "detail": ["0-3 short extra germane facts about the ask that you actually gathered; OMIT this field or use [] if there is nothing more of substance"]
+  },
   "research": {
     "summary": "2-4 sentences: what you worked out for the agent on this ask, grounded in the data you pulled.",
     "findings": [{"point": "short headline", "detail": "the specific, fact-backed detail", "source": "which tool or article it came from, e.g. get_holdings"}],
@@ -54,9 +76,10 @@ Return ONLY valid JSON:
     "openItems": [{"question": "what still needs the agent or the client", "why": "the specific reason"}]
   },
   "coaching": ["at most 3 short, specific tips for handling THIS call"],
-  "script": {
-    "opening": "a warm, specific opening line the agent can say once identity is confirmed",
-    "talkingPoints": ["ordered points to cover, each short"]
+  "guidedScript": {
+    "confirmAsk": "the second-person clause completing '…you want ___'",
+    "steps": [ /* say/ask steps as described above */ ],
+    "points": ["only for open-ended asks: the main points or questions to cover; [] otherwise"]
   }
 }`;
 }
@@ -87,7 +110,7 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
       [{ role: 'user', content: `Research the client's ask thoroughly and prepare the agent. Ask: "${ask}"` }],
       ALL_CLIENT_TOOLS,
       executor,
-      1500,
+      2200,        // headroom for the branching script tree on top of findings
       { fn: 'prep-callback', clientId, scope: 'callback-prep' },
       true,        // jsonMode
       undefined,   // model — default
@@ -98,9 +121,13 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
     console.error('prep-callback research failed', e);
   }
 
+  const firstName = clientName.split(' ')[0] || clientName;
   const generatedAt = new Date().toISOString();
   const dossier = {
     topic: ask,
+    intent: out?.intent?.headline
+      ? { headline: out.intent.headline, detail: (out.intent.detail ?? []).filter(Boolean) }
+      : { headline: `${firstName} requested a callback: ${ask}`.split(/\s+/).slice(0, 18).join(' '), detail: [] },
     research: out?.research ?? {
       summary: 'Automated pre-call research was unavailable — please review the client snapshot and the ask below.',
       findings: [],
@@ -108,7 +135,9 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
       openItems: [{ question: 'The full ask — auto-research did not run.', why: 'The research service was temporarily unavailable.' }],
     },
     coaching: (out?.coaching ?? []).slice(0, 3),
-    script: out?.script ?? { opening: `Hi ${clientName}, thanks for scheduling time with us.`, talkingPoints: [] },
+    guidedScript: out?.guidedScript?.confirmAsk
+      ? { confirmAsk: out.guidedScript.confirmAsk, steps: out.guidedScript.steps ?? [], points: (out.guidedScript.points ?? []).filter(Boolean) }
+      : { confirmAsk: `to talk through ${ask}`, steps: [], points: [] },
     resources,
     clientSnapshot: {
       name: clientName,
