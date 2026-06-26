@@ -87,7 +87,6 @@ function CallSim({ name }: { name: string }) {
   const [lines, setLines] = useState<Line[]>([]);
   const [listening, setListening] = useState(false);
   const [waitPutOn, setWaitPutOn] = useState(false);
-  const cancelled = useRef(false);
   const putOnResolve = useRef<(() => void) | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -101,12 +100,147 @@ function CallSim({ name }: { name: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The whole conversation engine lives inside the effect with a per-run `alive` flag, so a
+  // superseded run (e.g. React StrictMode's throwaway first mount) can't keep talking after its
+  // mic listen is aborted — that bug made the opening "wait for Hello" skip straight to the greeting.
   useEffect(() => {
     if (!answered) return;
-    cancelled.current = false;
+    let alive = true;
+
+    const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const push = (who: Line['who'], text: string) => setLines(l => [...l, { who, text }]);
+    const sysLine = (text: string) => push('system', text);
+
+    const sayBob = async (text: string) => {
+      if (!alive) return;
+      await wait(250); // a brief, natural beat before speaking
+      if (!alive) return;
+      push('bob', text);
+      if (useStore.getState().audioOn) await speak(text);
+      else await wait(Math.min(2600, 700 + text.length * 22));
+    };
+
+    // Listen for the agent's spoken reply; returns the transcript ('' if nothing heard).
+    const listen = async (): Promise<{ text: string; heard: boolean }> => {
+      if (!alive) return { text: '', heard: false };
+      if (!useStore.getState().micOn || !speechSupported()) { await wait(1500); return { text: '', heard: false }; }
+      setListening(true);
+      const r = await listenForSpeech();
+      setListening(false);
+      if (r.heard && r.transcript) push('client', `“${r.transcript}”`);
+      return { text: r.transcript, heard: r.heard };
+    };
+
+    const finish = (outcome: string) => { if (alive) void useStore.getState().endWithOutcome(outcome); };
+
+    async function runScript() {
+      // Wait for them to pick up and greet ("Hello?") before the automated line starts.
+      const greeting = await listen();
+      if (!alive) return;
+      if (flow.isOptOut(greeting.text)) return optOut();
+      await sayBob(L.greeting);
+      let tries = 0;
+      while (alive) {
+        const { text, heard } = await listen();
+        if (!alive) return;
+        if (flow.isOptOut(text)) return optOut();
+        if (flow.isQuestionWhy(text) && tries < 2) {
+          tries++;
+          await sayBob(`Of course — this is a callback you scheduled with Bob's Mutual Funds. For your security I just need to confirm I'm speaking with ${name}. Is that you?`);
+          continue;
+        }
+        if (flow.isWrongParty(text, firstName)) return wrongParty();
+        if (!heard && tries < 2) { tries++; await sayBob(`Sorry, I didn't quite catch that. Am I speaking with ${name}?`); continue; }
+        if (!heard) return noResponse();
+        break; // affirmative (yes / "this is …" / their name) → verify
+      }
+      if (alive) return verify();
+    }
+
+    async function wrongParty() {
+      await sayBob(`My apologies for the confusion. Is ${name} available?`);
+      let tries = 0;
+      while (alive) {
+        const { text, heard } = await listen();
+        if (!alive) return;
+        if (flow.isOptOut(text)) return optOut();
+        if (flow.isAvailableNo(text) || flow.isWrongParty(text, firstName)) return unavailable();
+        if (flow.isAvailableYes(text) || heard) return waitForClient(); // available → put them on
+        if (tries < 1) { tries++; await sayBob(`No problem — is ${firstName} able to come to the phone?`); continue; }
+        return unavailable();
+      }
+    }
+
+    async function waitForClient() {
+      await sayBob(`Thank you — I'll hold while you put ${firstName} on the line.`);
+      if (!alive) return;
+      setWaitPutOn(true);
+      await new Promise<void>(res => { putOnResolve.current = res; });
+      setWaitPutOn(false);
+      if (!alive) return;
+      sysLine(`${firstName} has come to the phone.`);
+      // Re-identify the new person. They may state their name, or just say "hello".
+      const { text } = await listen();
+      if (!alive) return;
+      if (flow.isOptOut(text)) return optOut();
+      if (flow.statesName(text, firstName)) return verify(); // stated identity → still run voice verification
+      // Ambiguous greeting ("hello" / "yeah") → confirm before verifying.
+      await sayBob(`Hi there — am I speaking with ${name}?`);
+      const r2 = await listen();
+      if (!alive) return;
+      if (flow.isOptOut(r2.text)) return optOut();
+      if (flow.isWrongParty(r2.text, firstName) || flow.isAvailableNo(r2.text)) return unavailable();
+      return verify();
+    }
+
+    async function verify() {
+      await sayBob(L.verify);
+      let attempts = 0;
+      while (alive) {
+        const { text } = await listen();
+        if (!alive) return;
+        if (flow.isOptOut(text)) return optOut();
+        if (flow.isPassphrase(text)) { sysLine('✓ Voice verified (simulated).'); return goodTime(); }
+        attempts++;
+        if (attempts >= 3) return failed();
+        await sayBob(`I'm sorry, that didn't match. Once more, please repeat: "At Bob's, my voice is my password."`);
+      }
+    }
+
+    async function goodTime() {
+      await sayBob(L.goodTime);
+      const { text } = await listen();
+      if (!alive) return;
+      if (flow.isOptOut(text)) return optOut();
+      if (flow.isBadTime(text)) return reschedule();
+      await sayBob(L.connect);
+      if (alive) useStore.getState().connect();
+    }
+
+    async function optOut() {
+      await sayBob(`Understood — I'll remove this number right away, and you won't receive further calls. Sorry for the interruption. Goodbye.`);
+      finish('🚫 Opted out — number flagged do-not-call');
+    }
+    async function unavailable() {
+      await sayBob(`No problem — we'll reach out to ${firstName} again later, and they can always call us at our main line. Thanks for your time. Goodbye.`);
+      finish('👤 Client unavailable — will retry / advised call-in');
+    }
+    async function noResponse() {
+      await sayBob(`I'm having trouble hearing you, so I'll try again another time. Goodbye.`);
+      finish('🤫 No response — call ended');
+    }
+    async function failed() {
+      await sayBob(`I'm sorry, I wasn't able to verify your identity. For your security, please call us directly at our main line. Goodbye.`);
+      finish('🔒 Identity not verified — not connected');
+    }
+    async function reschedule() {
+      await sayBob(`No problem at all — we'll reach back out at a better time. Take care!`);
+      finish('📅 Reschedule requested');
+    }
+
     void runScript();
     return () => {
-      cancelled.current = true;
+      alive = false;
       stopSpeaking();
       stopListening();
       putOnResolve.current?.();
@@ -115,138 +249,8 @@ function CallSim({ name }: { name: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answered]);
 
-  const dead = () => cancelled.current;
-  const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
-  const push = (who: Line['who'], text: string) => setLines(l => [...l, { who, text }]);
-  const sysLine = (text: string) => push('system', text);
-
-  const sayBob = async (text: string) => {
-    if (dead()) return;
-    push('bob', text);
-    if (useStore.getState().audioOn) await speak(text);
-    else await wait(Math.min(2600, 700 + text.length * 22));
-  };
-
-  // Listen for the agent's spoken reply; returns the transcript ('' if nothing heard).
-  const listen = async (): Promise<{ text: string; heard: boolean }> => {
-    if (dead()) return { text: '', heard: false };
-    if (!useStore.getState().micOn || !speechSupported()) { await wait(1500); return { text: '', heard: false }; }
-    setListening(true);
-    const r = await listenForSpeech();
-    setListening(false);
-    if (r.heard && r.transcript) push('client', `“${r.transcript}”`);
-    return { text: r.transcript, heard: r.heard };
-  };
-
-  const finish = (outcome: string) => { if (!dead()) void useStore.getState().endWithOutcome(outcome); };
-
-  async function runScript() {
-    // Wait for them to pick up and greet ("Hello?") before the automated line starts.
-    const greeting = await listen();
-    if (dead()) return;
-    if (flow.isOptOut(greeting.text)) return optOut();
-    await sayBob(L.greeting);
-    let tries = 0;
-    while (!dead()) {
-      const { text, heard } = await listen();
-      if (dead()) return;
-      if (flow.isOptOut(text)) return optOut();
-      if (flow.isQuestionWhy(text) && tries < 2) {
-        tries++;
-        await sayBob(`Of course — this is a callback you scheduled with Bob's Mutual Funds. For your security I just need to confirm I'm speaking with ${name}. Is that you?`);
-        continue;
-      }
-      if (flow.isWrongParty(text, firstName)) return wrongParty();
-      if (!heard && tries < 2) { tries++; await sayBob(`Sorry, I didn't quite catch that. Am I speaking with ${name}?`); continue; }
-      if (!heard) return noResponse();
-      break; // affirmative (yes / "this is …" / their name) → verify
-    }
-    if (!dead()) return verify();
-  }
-
-  async function wrongParty() {
-    await sayBob(`My apologies for the confusion. Is ${name} available?`);
-    let tries = 0;
-    while (!dead()) {
-      const { text, heard } = await listen();
-      if (dead()) return;
-      if (flow.isOptOut(text)) return optOut();
-      if (flow.isAvailableNo(text) || flow.isWrongParty(text, firstName)) return unavailable();
-      if (flow.isAvailableYes(text) || heard) return waitForClient(); // available → put them on
-      if (tries < 1) { tries++; await sayBob(`No problem — is ${firstName} able to come to the phone?`); continue; }
-      return unavailable();
-    }
-  }
-
-  async function waitForClient() {
-    await sayBob(`Thank you — I'll hold while you put ${firstName} on the line.`);
-    if (dead()) return;
-    setWaitPutOn(true);
-    await new Promise<void>(res => { putOnResolve.current = res; });
-    setWaitPutOn(false);
-    if (dead()) return;
-    sysLine(`${firstName} has come to the phone.`);
-    // Re-identify the new person. They may state their name, or just say "hello".
-    const { text } = await listen();
-    if (dead()) return;
-    if (flow.isOptOut(text)) return optOut();
-    if (flow.statesName(text, firstName)) return verify(); // stated identity → still run voice verification
-    // Ambiguous greeting ("hello" / "yeah") → confirm before verifying.
-    await sayBob(`Hi there — am I speaking with ${name}?`);
-    const r2 = await listen();
-    if (dead()) return;
-    if (flow.isOptOut(r2.text)) return optOut();
-    if (flow.isWrongParty(r2.text, firstName) || flow.isAvailableNo(r2.text)) return unavailable();
-    return verify();
-  }
-
-  async function verify() {
-    await sayBob(L.verify);
-    let attempts = 0;
-    while (!dead()) {
-      const { text } = await listen();
-      if (dead()) return;
-      if (flow.isOptOut(text)) return optOut();
-      if (flow.isPassphrase(text)) { sysLine('✓ Voice verified (simulated).'); return goodTime(); }
-      attempts++;
-      if (attempts >= 3) return failed();
-      await sayBob(`I'm sorry, that didn't match. Once more, please repeat: "At Bob's, my voice is my password."`);
-    }
-  }
-
-  async function goodTime() {
-    await sayBob(L.goodTime);
-    const { text } = await listen();
-    if (dead()) return;
-    if (flow.isOptOut(text)) return optOut();
-    if (flow.isBadTime(text)) return reschedule();
-    await sayBob(L.connect);
-    if (!dead()) useStore.getState().connect();
-  }
-
-  async function optOut() {
-    await sayBob(`Understood — I'll remove this number right away, and you won't receive further calls. Sorry for the interruption. Goodbye.`);
-    finish('🚫 Opted out — number flagged do-not-call');
-  }
-  async function unavailable() {
-    await sayBob(`No problem — we'll reach out to ${firstName} again later, and they can always call us at our main line. Thanks for your time. Goodbye.`);
-    finish('👤 Client unavailable — will retry / advised call-in');
-  }
-  async function noResponse() {
-    await sayBob(`I'm having trouble hearing you, so I'll try again another time. Goodbye.`);
-    finish('🤫 No response — call ended');
-  }
-  async function failed() {
-    await sayBob(`I'm sorry, I wasn't able to verify your identity. For your security, please call us directly at our main line. Goodbye.`);
-    finish('🔒 Identity not verified — not connected');
-  }
-  async function reschedule() {
-    await sayBob(`No problem at all — we'll reach back out at a better time. Take care!`);
-    finish('📅 Reschedule requested');
-  }
-
   if (!answered) {
-    return <AnswerScreen name={name} onAnswer={() => setAnswered(true)} onNoAnswer={() => finish('📭 No answer — voicemail left')} />;
+    return <AnswerScreen name={name} onAnswer={() => setAnswered(true)} onNoAnswer={() => void useStore.getState().endWithOutcome('📭 No answer — voicemail left')} />;
   }
 
   return (
