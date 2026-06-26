@@ -4,8 +4,9 @@ import { useStore } from '../store';
 import { theme } from '../theme';
 import { Avatar, Button, SectionLabel, Overlay, panel, h2Style } from './ui';
 import { initials } from '../util';
-import { speak, stopSpeaking } from '../voiceTts';
+import { speak, stopSpeaking, prefetch } from '../voiceTts';
 import { listenForSpeech, stopListening, speechSupported } from '../speech';
+import { startRinging, stopRinging } from '../ringtone';
 import { useVoiceSettings } from '../voiceSettings';
 import { DossierBody } from './DossierView';
 import * as flow from '../callFlow';
@@ -24,7 +25,7 @@ export function LiveCallConsole() {
   const setMicOn = useStore(s => s.setMicOn);
   const openVoicePanel = useVoiceSettings(s => s.openPanel);
 
-  useEffect(() => () => { stopSpeaking(); stopListening(); }, []);
+  useEffect(() => () => { stopSpeaking(); stopListening(); stopRinging(); }, []);
 
   if (!call || !phase || phase === 'ringing') return null;
   const name = call.item.clientName || 'the client';
@@ -73,6 +74,15 @@ function hdrBtn(active: boolean): React.CSSProperties {
  */
 function CallSim({ name }: { name: string }) {
   const firstName = name.split(' ')[0] || name;
+  // The happy-path lines, defined once so prefetch and playback share the exact same text (and
+  // therefore the same audio cache entry).
+  const L = {
+    greeting: `Hello! This is a scheduled callback from Bob's Mutual Funds. Am I speaking with ${name}?`,
+    verify: `Great. For security, please confirm your identity by repeating this phrase: "At Bob's, my voice is my password."`,
+    goodTime: `Thank you, ${firstName} — your identity is confirmed. And is now still a good time to talk?`,
+    connect: `Wonderful — connecting you with a specialist now.`,
+  };
+
   const [answered, setAnswered] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
   const [listening, setListening] = useState(false);
@@ -82,6 +92,14 @@ function CallSim({ name }: { name: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: 1e9, behavior: 'smooth' }); }, [lines, listening, waitPutOn]);
+
+  // Warm the TTS cache for the happy-path lines while the phone is still ringing, so Bob starts
+  // speaking near-instantly once the call connects.
+  useEffect(() => {
+    if (!useStore.getState().audioOn) return;
+    [L.greeting, L.verify, L.goodTime, L.connect].forEach(prefetch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!answered) return;
@@ -123,7 +141,11 @@ function CallSim({ name }: { name: string }) {
   const finish = (outcome: string) => { if (!dead()) void useStore.getState().endWithOutcome(outcome); };
 
   async function runScript() {
-    await sayBob(`Hello! This is a scheduled callback from Bob's Mutual Funds. Am I speaking with ${name}?`);
+    // Wait for them to pick up and greet ("Hello?") before the automated line starts.
+    const greeting = await listen();
+    if (dead()) return;
+    if (flow.isOptOut(greeting.text)) return optOut();
+    await sayBob(L.greeting);
     let tries = 0;
     while (!dead()) {
       const { text, heard } = await listen();
@@ -179,7 +201,7 @@ function CallSim({ name }: { name: string }) {
   }
 
   async function verify() {
-    await sayBob(`Great. For security, please confirm your identity by repeating this phrase: "At Bob's, my voice is my password."`);
+    await sayBob(L.verify);
     let attempts = 0;
     while (!dead()) {
       const { text } = await listen();
@@ -193,12 +215,12 @@ function CallSim({ name }: { name: string }) {
   }
 
   async function goodTime() {
-    await sayBob(`Thank you, ${firstName} — your identity is confirmed. And is now still a good time to talk?`);
+    await sayBob(L.goodTime);
     const { text } = await listen();
     if (dead()) return;
     if (flow.isOptOut(text)) return optOut();
     if (flow.isBadTime(text)) return reschedule();
-    await sayBob(`Wonderful — connecting you with a specialist now.`);
+    await sayBob(L.connect);
     if (!dead()) useStore.getState().connect();
   }
 
@@ -242,6 +264,8 @@ function CallSim({ name }: { name: string }) {
 }
 
 function AnswerScreen({ name, onAnswer, onNoAnswer }: { name: string; onAnswer: () => void; onNoAnswer: () => void }) {
+  // Ring until the call is answered (or this screen unmounts).
+  useEffect(() => { startRinging(); return () => stopRinging(); }, []);
   return (
     <div style={{ flex: 1, minHeight: 340, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 28 }}>
       <div className="pa-speaking"><Avatar initials={initials(name)} size={80} /></div>
