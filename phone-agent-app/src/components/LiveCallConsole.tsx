@@ -164,7 +164,11 @@ function CallSim({ name }: { name: string }) {
         if (flow.isWrongParty(text, firstName)) return wrongParty();
         if (!heard && tries < 2) { tries++; await sayBob(`Sorry, I didn't quite catch that. Am I speaking with ${name}?`); continue; }
         if (!heard) return noResponse();
-        break; // affirmative (yes / "this is …" / their name) → verify
+        if (flow.isAffirmative(text, firstName)) break;     // clear "yes / this is me" → verify
+        if (flow.isNegative(text)) return wrongParty();      // clear "no / not me" → wrong party
+        // Heard something ambiguous (neither a clear yes nor a known branch): confirm once more.
+        if (tries < 2) { tries++; await sayBob(`Sorry — just to confirm, am I speaking with ${name}?`); continue; }
+        break;                                               // still unclear → proceed to verify
       }
       if (alive) return verify();
     }
