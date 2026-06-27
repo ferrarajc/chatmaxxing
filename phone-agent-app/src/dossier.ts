@@ -9,6 +9,9 @@ export const AGENT_NAME = 'John Ferrara';
 
 const firstNameOf = (name: string) => (name || '').trim().split(/\s+/)[0] || 'there';
 const lowerFirst = (s: string) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+// The greeting template appends ". Is that correct?", so the clause must not carry its own
+// trailing sentence punctuation (otherwise we get a double period).
+const cleanClause = (s: string) => s.replace(/[\s.;:,]+$/, '').trim();
 const clip = (words: string[], n: number) => (words.length > n ? words.slice(0, n) : words);
 
 /** A best-effort ≤18-word, first-name-led objective line, for records prepped before `intent` existed. */
@@ -51,7 +54,7 @@ function deriveConfirm(intentSummary: string): string {
     .trim();
   if (!t) return 'to talk through your request';
   if (!/^to\b/i.test(t)) t = 'to discuss ' + lowerFirst(t);
-  return toSecondPerson(t);
+  return cleanClause(toSecondPerson(t));
 }
 
 /** Recursively validate the LLM's step tree, coercing anything malformed into a plain `say`. */
@@ -116,7 +119,7 @@ export function normalizeDossier(
   if (raw.guidedScript && steps.length) {
     const confirm = raw.guidedScript.confirmAsk?.trim();
     guidedScript = {
-      confirmAsk: confirm ? toSecondPerson(confirm) : deriveConfirm(intentSummary),
+      confirmAsk: confirm ? cleanClause(toSecondPerson(confirm)) : deriveConfirm(intentSummary),
       steps,
       points: (raw.guidedScript.points ?? []).filter(p => !!p && p.trim()),
     };
