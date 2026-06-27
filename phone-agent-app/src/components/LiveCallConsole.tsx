@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useStore } from '../store';
 import { theme } from '../theme';
-import { Avatar, Button, Overlay, panel, h2Style } from './ui';
+import { Avatar, Button, Overlay, panel, h2Style, card } from './ui';
 import { initials } from '../util';
 import { speak, stopSpeaking, prefetch } from '../voiceTts';
-import { listenForSpeech, stopListening, speechSupported } from '../speech';
+import { listenForSpeech, stopListening, speechSupported, startLiveTranscription } from '../speech';
 import { startRinging, stopRinging } from '../ringtone';
 import { useVoiceSettings } from '../voiceSettings';
 import { DossierBody } from './DossierView';
-import { IntentHeader, GuidedScript } from './GuidedScript';
-import { TranscriptPanel } from './TranscriptFlipper';
+import { OriginalTranscriptCard } from './TranscriptFlipper';
+import { AGENT_NAME } from '../dossier';
+import type { GuidedScript as GuidedScriptT, ScriptStep, ScriptBranch } from '../types';
 import * as flow from '../callFlow';
 
 interface Line { who: 'system' | 'bob' | 'client'; text: string }
@@ -26,25 +27,23 @@ export function LiveCallConsole() {
   const micOn = useStore(s => s.micOn);
   const setMicOn = useStore(s => s.setMicOn);
   const openVoicePanel = useVoiceSettings(s => s.openPanel);
-  const [showTx, setShowTx] = useState(false);
 
   useEffect(() => () => { stopSpeaking(); stopListening(); stopRinging(); }, []);
-  useEffect(() => { if (phase !== 'live') setShowTx(false); }, [phase]);
 
   if (!call || !phase || phase === 'ringing') return null;
   const name = call.item.clientName || 'the client';
-  const transcript = call.dossier?.originTranscript;
+  const verified = call.identityVerified !== false;
 
   return (
     <Overlay>
       <div style={{ ...panel, width: '100%', maxWidth: phase === 'live' ? 1000 : 560, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', background: theme.color.primary, color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 22px', background: theme.color.primary, color: '#fff' }}>
           <Avatar initials={initials(name)} size={40} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 16, fontFamily: theme.font.serif }}>{name}</div>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>
-              {phase === 'connecting' ? 'Automated callback in progress…' : phase === 'live' ? 'Connected — identity verified' : 'Call ended'}
-            </div>
+            {phase === 'live'
+              ? <IdentityChip verified={verified} />
+              : <div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>{phase === 'connecting' ? 'Automated callback in progress…' : 'Call ended'}</div>}
           </div>
           {phase === 'connecting' && (
             <>
@@ -54,20 +53,31 @@ export function LiveCallConsole() {
               <button onClick={() => void endWithOutcome('☎️ Agent ended the call')} title="Hang up" style={{ ...hdrBtn(false), background: 'rgba(180,60,50,0.5)' }}>Hang up</button>
             </>
           )}
-          {phase === 'live' && transcript && (
-            <button onClick={() => setShowTx(v => !v)} title="See the chat / call that led to this callback" style={hdrBtn(showTx)}>
-              {showTx ? '‹ Back to call' : '📄 How this started'}
-            </button>
+          {phase === 'live' && (
+            <>
+              <button onClick={() => setMicOn(!micOn)} title="Live transcription of your mic" style={hdrBtn(micOn)}>{micOn ? '🎤 Live' : '🎤 Off'}</button>
+              <button onClick={() => void endCall()} style={{ background: theme.color.danger, color: '#fff', border: 'none', borderRadius: theme.radius.md, padding: '9px 18px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>End call</button>
+            </>
           )}
         </div>
 
         {phase === 'connecting' && <CallSim name={name} />}
-        {phase === 'live' && (showTx && transcript
-          ? <TranscriptPanel transcript={transcript} fill onBack={() => setShowTx(false)} />
-          : <LiveBody name={name} onEnd={() => void endCall()} />)}
+        {phase === 'live' && <LiveBody name={name} />}
         {phase === 'wrapup' && <WrapUp name={name} onDone={dismissCall} />}
       </div>
     </Overlay>
+  );
+}
+
+function IdentityChip({ verified }: { verified: boolean }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4,
+      fontSize: 11.5, fontWeight: 700, padding: '2px 10px', borderRadius: theme.radius.pill,
+      background: verified ? 'rgba(34,160,94,0.95)' : 'rgba(201,58,48,0.95)', color: '#fff',
+    }}>
+      {verified ? '✓ Identity verified' : '⚠ Identity not verified'}
+    </span>
   );
 }
 
@@ -344,31 +354,163 @@ function Bubble({ isBob, children }: { isBob: boolean; children: ReactNode }) {
   );
 }
 
-function LiveBody({ name, onEnd }: { name: string; onEnd: () => void }) {
+function LiveBody({ name }: { name: string }) {
   const dossier = useStore(s => s.call?.dossier);
+  const verified = useStore(s => s.call?.identityVerified) !== false;
+  const transcript = dossier?.originTranscript;
 
   return (
-    <>
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <div style={{ flex: 1.1, padding: '18px 20px', overflowY: 'auto', borderRight: `1px solid ${theme.color.border}` }}>
-          <div style={{ background: theme.color.successSoft, border: `1px solid ${theme.color.successBorder}`, borderRadius: theme.radius.md, padding: '8px 12px', fontSize: 13, color: theme.color.success, fontWeight: 600, marginBottom: 16 }}>
-            ✓ Identity verified — you're connected with {name}.
+    <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      {/* LEFT — drive the call: fixed summary, then a scrolling teleprompter + live transcription */}
+      <div style={{ flex: 1.15, display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: `1px solid ${theme.color.border}` }}>
+        {dossier && (
+          <div style={{ padding: '15px 20px 13px', borderBottom: `1px solid ${theme.color.border}`, flexShrink: 0 }}>
+            <div style={{ fontFamily: theme.font.serif, fontSize: 18, fontWeight: 800, lineHeight: 1.3, color: theme.color.text, letterSpacing: '-0.01em' }}>
+              {dossier.intent.headline}
+            </div>
           </div>
-          {dossier && (
-            <>
-              <IntentHeader intent={dossier.intent} />
-              <GuidedScript gs={dossier.guidedScript} />
-            </>
-          )}
-        </div>
-        <div style={{ flex: 1, padding: '18px 20px', overflowY: 'auto', background: theme.color.bg }}>
-          {dossier && <DossierBody d={dossier} compact />}
+        )}
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          {dossier && <LiveScript gs={dossier.guidedScript} verified={verified} clientName={name} />}
         </div>
       </div>
-      <div style={{ padding: '14px 22px', borderTop: `1px solid ${theme.color.border}`, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button tone="danger" big onClick={onEnd}>End call</Button>
+      {/* RIGHT — background & context */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px', background: theme.color.bg, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {transcript && <OriginalTranscriptCard transcript={transcript} />}
+        {dossier && <DossierBody d={dossier} compact />}
       </div>
-    </>
+    </div>
+  );
+}
+
+type FeedItem = { kind: 'said'; text: string } | { kind: 'stt'; speaker: 'agent' | 'client'; text: string };
+type ScriptStage = 'verify' | 'greeting' | 'steps' | 'done';
+
+/**
+ * The live teleprompter. Shows ONE "say/ask next" suggestion at a time, advancing as the agent
+ * marks each line said (or picks a branch), while free browser speech-to-text streams the agent's
+ * actual words into the feed as bubbles. If identity isn't verified, it leads with a verify step.
+ */
+function LiveScript({ gs, verified, clientName }: { gs: GuidedScriptT; verified: boolean; clientName: string }) {
+  void clientName;
+  const micOn = useStore(s => s.micOn);
+  const sttSupported = speechSupported();
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [interim, setInterim] = useState('');
+  const [stage, setStage] = useState<ScriptStage>(verified ? 'greeting' : 'verify');
+  const [activeSteps, setActiveSteps] = useState<ScriptStep[]>(gs.steps);
+  const [si, setSi] = useState(0);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [feed, interim, stage, si]);
+
+  // Free, continuous transcription of the agent's microphone → feed bubbles.
+  useEffect(() => {
+    if (!micOn || !sttSupported) return;
+    const stop = startLiveTranscription(
+      (final) => setFeed(f => [...f, { kind: 'stt', speaker: 'agent', text: final }]),
+      (txt) => setInterim(txt),
+    );
+    return () => { stop(); setInterim(''); };
+  }, [micOn, sttSupported]);
+
+  const greetingText = `This is ${AGENT_NAME} at Bob's Mutual Funds, speaking on a recorded line — and I understand that you want ${gs.confirmAsk}. Is that correct?`;
+  const verifyText = `Before we go further, I need to confirm your identity. Could you please verify your full name and the date of birth on your account?`;
+
+  const current: ScriptStep | null =
+    stage === 'verify' ? { kind: 'say', text: verifyText }
+    : stage === 'greeting' ? { kind: 'say', text: greetingText }
+    : stage === 'steps' && si < activeSteps.length ? activeSteps[si]
+    : null;
+
+  const advanceSay = (text: string) => {
+    setFeed(f => [...f, { kind: 'said', text }]);
+    if (stage === 'verify') setStage('greeting');
+    else if (stage === 'greeting') { setStage('steps'); setSi(0); }
+    else { const next = si + 1; setSi(next); if (next >= activeSteps.length) setStage('done'); }
+  };
+
+  const pickOption = (question: string, opt: ScriptBranch) => {
+    setFeed(f => [...f, { kind: 'said', text: `${question} — ${opt.label}` }]);
+    if (opt.then.length) { setActiveSteps(opt.then); setSi(0); setStage('steps'); }
+    else setStage('done');
+  };
+
+  return (
+    <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {!verified && stage !== 'done' && (
+        <div style={{ fontSize: 12, color: theme.color.danger, fontWeight: 600 }}>Identity not verified — confirm it before discussing the account.</div>
+      )}
+      {feed.map((it, i) => it.kind === 'said'
+        ? <SaidLine key={i} text={it.text} />
+        : <SttBubble key={i} speaker={it.speaker} text={it.text} />)}
+      {interim && <SttBubble speaker="agent" text={interim} interim />}
+      {current && <SuggestionCard step={current} onSaid={() => advanceSay(current.text)} onPick={(opt) => pickOption(current.text, opt)} />}
+      {stage === 'done' && (
+        <div style={{ textAlign: 'center', fontSize: 12.5, color: theme.color.textSubtle, padding: '8px 0' }}>
+          — End of script. Wrap up and end the call when you're done. —
+        </div>
+      )}
+      {micOn && sttSupported && feed.length === 0 && !interim && (
+        <div style={{ fontSize: 11.5, color: theme.color.textSubtle, fontStyle: 'italic' }}>🎤 Live transcription on — your words will appear here as you speak.</div>
+      )}
+      <div ref={endRef} />
+    </div>
+  );
+}
+
+function SuggestionCard({ step, onSaid, onPick }: { step: ScriptStep; onSaid: () => void; onPick: (opt: ScriptBranch) => void }) {
+  const isAsk = step.kind === 'ask';
+  return (
+    <div style={{ ...card, borderLeft: `3px solid ${theme.color.primary}`, background: theme.color.primarySoft, padding: '12px 14px' }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase', color: theme.color.primary, marginBottom: 6 }}>
+        {isAsk ? 'Ask next' : 'Say next'}
+      </div>
+      <div style={{ fontSize: 14.5, lineHeight: 1.5, color: theme.color.text }}>{isAsk ? step.text : `“${step.text}”`}</div>
+      {isAsk ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+          {step.options.map((op, i) => (
+            <button key={i} onClick={() => onPick(op)} style={{
+              background: theme.color.surface, color: theme.color.text, border: `1px solid ${theme.color.borderStrong}`,
+              borderRadius: theme.radius.md, padding: '7px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            }}>{op.label}</button>
+          ))}
+        </div>
+      ) : (
+        <div style={{ marginTop: 10 }}>
+          <button onClick={onSaid} style={{
+            background: theme.color.primary, color: '#fff', border: 'none', borderRadius: theme.radius.md,
+            padding: '7px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}>Said it ›</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SaidLine({ text }: { text: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, opacity: 0.65, fontSize: 12.5, lineHeight: 1.45, color: theme.color.textMuted }}>
+      <span style={{ color: theme.color.success }}>✓</span>
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function SttBubble({ speaker, text, interim }: { speaker: 'agent' | 'client'; text: string; interim?: boolean }) {
+  const isAgent = speaker === 'agent';
+  return (
+    <div style={{ display: 'flex', justifyContent: isAgent ? 'flex-end' : 'flex-start' }}>
+      <div style={{
+        maxWidth: '85%', padding: '8px 12px', borderRadius: theme.radius.lg, fontSize: 13.5, lineHeight: 1.45,
+        background: isAgent ? theme.color.accentSoft : theme.color.surfaceMuted, color: theme.color.text, opacity: interim ? 0.6 : 1,
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: isAgent ? theme.color.accent : theme.color.textMuted, marginBottom: 2 }}>
+          {isAgent ? 'You (agent)' : 'Client'}{interim ? ' · …' : ''}
+        </div>
+        {text}
+      </div>
+    </div>
   );
 }
 

@@ -6,7 +6,11 @@ export interface OpenItem { question: string; why: string }
 /** The interaction that precipitated the callback, reviewable via the cockpit's flipper. */
 export type TranscriptChannel = 'chatbot' | 'escalated' | 'ivr';
 export type TranscriptSpeaker = 'client' | 'bob' | 'agent' | 'ivr' | 'system';
-export interface TranscriptMessage { speaker: TranscriptSpeaker; text: string }
+export interface TranscriptMessage {
+  speaker: TranscriptSpeaker;
+  text: string;
+  highlights?: string[];          // exact substrings to mark — the client's intent / material parameters
+}
 export interface OriginTranscript {
   channel: TranscriptChannel;
   title: string;                 // e.g. "Web chat with Bob · earlier today"

@@ -42,7 +42,7 @@ const CLIENTS_TABLE = () => process.env.CLIENTS_TABLE!;
 type OriginChannel = 'chatbot' | 'escalated' | 'ivr';
 const ORIGIN_CHANNELS: OriginChannel[] = ['chatbot', 'escalated', 'ivr'];
 
-interface TranscriptOut { title: string; messages: { speaker: string; text: string }[] }
+interface TranscriptOut { title: string; messages: { speaker: string; text: string; highlights?: string[] }[] }
 
 const CHANNEL_GUIDE: Record<OriginChannel, string> = {
   chatbot: `The client was chatting with "Bob", Bob's automated web assistant. Speakers: "bob" and "client". Bob greets, the client asks their question in their own words, Bob acknowledges briefly but explains a specialist can go through it properly, then OFFERS to schedule a phone callback. The client agrees and picks a time. End once the callback is booked.`,
@@ -60,8 +60,9 @@ Rules:
 - 6 to 12 short, natural messages. Specific, real phrasing — the client speaks in the FIRST person ("my", "I").
 - Do NOT resolve the question or quote specific account figures; the whole point is that a specialist calls back with the answer. Keep it to the ask plus the callback being offered and accepted.
 - "title": a short label, e.g. "Web chat with Bob - earlier today" / "Call to Bob's 1-800 line" / "Web chat escalated to a representative".
+- "highlights" (per message, optional): the 1-2 EXACT substrings in that message's text that a human agent must not miss — the words that carry the client's intent or a material parameter (an account, an amount, a date, a constraint). Copy them verbatim from the text. Omit on messages that carry no such span.
 
-Return ONLY JSON: {"title":"...","messages":[{"speaker":"...","text":"..."}]}`;
+Return ONLY JSON: {"title":"...","messages":[{"speaker":"...","text":"...","highlights":["..."]}]}`;
 }
 
 async function generateOriginTranscript(channel: OriginChannel, clientName: string, ask: string, clientId: string) {
@@ -76,7 +77,13 @@ async function generateOriginTranscript(channel: OriginChannel, clientName: stri
     const out = parseJsonFromBedrock<TranscriptOut>(raw);
     const messages = (out.messages ?? [])
       .filter(m => m && typeof m.text === 'string' && m.text.trim())
-      .map(m => ({ speaker: String(m.speaker || 'system'), text: m.text.trim() }));
+      .map(m => ({
+        speaker: String(m.speaker || 'system'),
+        text: m.text.trim(),
+        ...(Array.isArray(m.highlights) && m.highlights.length
+          ? { highlights: m.highlights.filter(h => typeof h === 'string' && h.trim()).map(h => h.trim()) }
+          : {}),
+      }));
     if (!messages.length) return undefined;
     return { channel, title: out.title?.trim() || 'How this callback started', messages };
   } catch (e) {

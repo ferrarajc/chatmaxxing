@@ -9,6 +9,7 @@ interface ActiveCall {
   item: CallbackListItem;
   dossier?: Dossier;
   phase: CallPhase;
+  identityVerified?: boolean;   // set when the automated verification passes before connecting
 }
 
 interface Store {
@@ -73,7 +74,7 @@ export const useStore = create<Store>((set, get) => ({
   },
   accept: () => set(s => (s.call ? { call: { ...s.call, phase: 'connecting' } } : {})),
   decline: () => set({ call: null }),
-  connect: () => set(s => (s.call ? { call: { ...s.call, phase: 'live' } } : {})),
+  connect: () => set(s => (s.call ? { call: { ...s.call, phase: 'live', identityVerified: true } } : {})),
   endWithOutcome: async (outcome) => {
     const c = get().call;
     set(s => (s.call ? { call: { ...s.call, phase: 'wrapup' }, callOutcome: outcome } : {}));

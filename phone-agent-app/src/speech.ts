@@ -60,3 +60,43 @@ export function listenForSpeech(maxMs = 12000): Promise<ListenResult> {
     try { rec.start(); } catch { finish(false); }
   });
 }
+
+/**
+ * Continuous, free (browser Web Speech API) transcription for the live call. Calls `onFinal` for
+ * each finalized utterance and `onInterim` with the in-progress text. Auto-restarts when the engine
+ * stops on a pause. Returns a stop function. No-op (and reports unsupported) where SR is unavailable.
+ */
+export function startLiveTranscription(
+  onFinal: (text: string) => void,
+  onInterim?: (text: string) => void,
+): () => void {
+  const SR = getSR();
+  if (!SR) return () => { /* unsupported */ };
+  let stopped = false;
+  let rec: any = null;
+
+  const begin = () => {
+    if (stopped) return;
+    try { rec = new SR(); } catch { return; }
+    rec.lang = 'en-US';
+    rec.interimResults = true;
+    rec.continuous = true;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e: any) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        const text = (r[0]?.transcript ?? '').trim();
+        if (r.isFinal) { if (text) onFinal(text); }
+        else interim += r[0]?.transcript ?? '';
+      }
+      onInterim?.(interim.trim());
+    };
+    rec.onerror = () => { /* keep going; onend will restart */ };
+    rec.onend = () => { if (!stopped) { try { rec.start(); } catch { setTimeout(begin, 400); } } };
+    try { rec.start(); } catch { /* will retry via onend */ }
+  };
+  begin();
+
+  return () => { stopped = true; try { rec?.stop(); } catch { /* ignore */ } rec = null; };
+}

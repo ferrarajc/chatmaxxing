@@ -90,6 +90,9 @@ function sanitizeTranscript(t: unknown): OriginTranscript | undefined {
     .map(m => ({
       speaker: (SPEAKERS.includes(m.speaker as TranscriptSpeaker) ? m.speaker : 'system') as TranscriptSpeaker,
       text: String(m.text).trim(),
+      highlights: Array.isArray(m.highlights)
+        ? (m.highlights as unknown[]).filter((h): h is string => typeof h === 'string' && !!h.trim()).map(h => h.trim())
+        : undefined,
     }));
   if (!messages.length) return undefined;
   return {

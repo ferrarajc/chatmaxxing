@@ -1,4 +1,5 @@
-import type { CSSProperties } from 'react';
+import { useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { theme } from '../theme';
 import type { OriginTranscript, TranscriptChannel, TranscriptMessage, TranscriptSpeaker } from '../types';
 
@@ -79,8 +80,68 @@ function TxBubble({ msg }: { msg: TranscriptMessage }) {
     <div style={{ display: 'flex', justifyContent: s.side === 'r' ? 'flex-end' : 'flex-start' }}>
       <div style={{ maxWidth: '82%', padding: '9px 13px', borderRadius: theme.radius.lg, background: s.bg, color: theme.color.text }}>
         <div style={{ fontSize: 10.5, fontWeight: 700, color: s.fg, marginBottom: 2 }}>{s.name}</div>
-        <div style={{ fontSize: 13.5, lineHeight: 1.45 }}>{msg.text}</div>
+        <div style={{ fontSize: 13.5, lineHeight: 1.45 }}>{highlightText(msg.text, msg.highlights)}</div>
       </div>
+    </div>
+  );
+}
+
+/** Wrap each significant substring in a yellow <mark> so the agent's eye lands on the meaning. */
+function highlightText(text: string, highlights?: string[]): ReactNode {
+  const spans = (highlights ?? []).filter(Boolean);
+  if (!spans.length) return text;
+  let nodes: ReactNode[] = [text];
+  spans.forEach((span, hi) => {
+    const needle = span.toLowerCase();
+    nodes = nodes.flatMap((node, ni) => {
+      if (typeof node !== 'string') return [node];
+      const out: ReactNode[] = [];
+      const lower = node.toLowerCase();
+      let from = 0, idx: number;
+      while ((idx = lower.indexOf(needle, from)) !== -1) {
+        if (idx > from) out.push(node.slice(from, idx));
+        out.push(
+          <mark key={`${hi}-${ni}-${idx}`} style={{ background: '#fde68a', color: 'inherit', padding: '0 2px', borderRadius: 3 }}>
+            {node.slice(idx, idx + span.length)}
+          </mark>,
+        );
+        from = idx + span.length;
+      }
+      if (from < node.length) out.push(node.slice(from));
+      return out.length ? out : [node];
+    });
+  });
+  return nodes;
+}
+
+/**
+ * Collapsible "Original transcript" card for the live-call right column. Closed by default — the
+ * label stays visible — and when open it scrolls internally within a capped height so the context
+ * cards below stay in view.
+ */
+export function OriginalTranscriptCard({ transcript }: { transcript: OriginTranscript }) {
+  const [open, setOpen] = useState(false);
+  const m = CHANNEL_META[transcript.channel];
+  return (
+    <div style={{ background: theme.color.surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.color.border}`, boxShadow: theme.shadow.sm, overflow: 'hidden' }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
+        background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+      }}>
+        <span style={{ fontSize: 11, color: theme.color.textMuted, width: 12 }}>{open ? '▾' : '▸'}</span>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: theme.color.textMuted, flex: 1 }}>
+          Original transcript
+        </span>
+        <span style={{ ...chipStyle, background: theme.color.surfaceMuted, color: theme.color.textMuted }}>{m.icon} {m.label}</span>
+      </button>
+      {open && (
+        <div style={{ borderTop: `1px solid ${theme.color.border}` }}>
+          <div style={{ padding: '8px 14px 4px', fontSize: 12, color: theme.color.textSubtle }}>{transcript.title}</div>
+          <div style={{ maxHeight: 260, overflowY: 'auto', padding: '6px 14px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {transcript.messages.map((msg, i) => <TxBubble key={i} msg={msg} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
