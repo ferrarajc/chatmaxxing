@@ -87,7 +87,7 @@ export const handler = async (
         // Transactions now live in the bobs-transactions table (seeded below) — REMOVE the
         // legacy array off the client item.
         UpdateExpression:
-          'SET #nm = :name, phone = :phone, displayPhone = :dp, ' +
+          'SET #nm = :name, pronouns = :pronouns, phone = :phone, displayPhone = :dp, ' +
           'email = :email, address = :addr, ' +
           'totalBalance = :tb, accounts = :accs, ' +
           'holdings = :h, ' +
@@ -105,6 +105,7 @@ export const handler = async (
         },
         ExpressionAttributeValues: {
           ':name':  d.name,
+          ':pronouns': d.pronouns,
           ':phone': d.phone,
           ':dp':    d.displayPhone,
           ':email': d.email,

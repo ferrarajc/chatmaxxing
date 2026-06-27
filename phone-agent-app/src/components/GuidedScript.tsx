@@ -9,7 +9,6 @@ export function IntentHeader({ intent }: { intent: IntentBrief }) {
   const detail = (intent.detail ?? []).filter(Boolean);
   return (
     <div style={{ marginBottom: 18 }}>
-      <SectionLabel>Why they're calling</SectionLabel>
       <div style={{ fontFamily: theme.font.serif, fontSize: 23, fontWeight: 800, lineHeight: 1.28, color: theme.color.text, letterSpacing: '-0.01em' }}>
         {intent.headline}
       </div>

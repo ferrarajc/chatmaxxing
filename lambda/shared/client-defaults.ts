@@ -179,6 +179,7 @@ export interface AgreementEntry {
 export interface FullClientData {
   clientId: string;
   name: string;
+  pronouns: string;                // e.g. 'she/her', 'he/him', 'they/them' — honored, never inferred from the name
   phone: string;
   displayPhone: string;
   email: string;
@@ -219,6 +220,7 @@ export const FUND_PRICES: Record<string, { name: string; price: number }> = {
 const alexJohnson: FullClientData = {
   clientId: 'demo-client-001',
   name: 'Alex Johnson',
+  pronouns: 'they/them',
   phone: '4842384838',
   displayPhone: '(484) 238-4838',
   email: 'alex.johnson@email.com',
@@ -323,6 +325,7 @@ const alexJohnson: FullClientData = {
 const mariaChen: FullClientData = {
   clientId: 'demo-client-002',
   name: 'Maria Chen',
+  pronouns: 'she/her',
   phone: '6175550192',
   displayPhone: '(617) 555-0192',
   email: 'maria.chen@email.com',
@@ -430,6 +433,7 @@ const mariaChen: FullClientData = {
 const jordanWilliams: FullClientData = {
   clientId: 'demo-client-003',
   name: 'Jordan Williams',
+  pronouns: 'they/them',
   phone: '5035550847',
   displayPhone: '(503) 555-0847',
   email: 'jordan.williams@email.com',
@@ -517,6 +521,7 @@ const jordanWilliams: FullClientData = {
 const robertMartinez: FullClientData = {
   clientId: 'demo-client-004',
   name: 'Robert Martinez',
+  pronouns: 'he/him',
   phone: '7135550234',
   displayPhone: '(713) 555-0234',
   email: 'robert.martinez@email.com',

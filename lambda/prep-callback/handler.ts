@@ -92,12 +92,14 @@ async function generateOriginTranscript(channel: OriginChannel, clientName: stri
   }
 }
 
-function researchPrompt(clientName: string, accountsSummary: string, ask: string, kb: { title: string; url: string }[]): string {
+function researchPrompt(clientName: string, pronouns: string, accountsSummary: string, ask: string, kb: { title: string; url: string }[]): string {
   const kbList = kb.length ? kb.map(r => `- ${r.title} (${r.url})`).join('\n') : '(none matched)';
   return `You are a senior research analyst at Bob's Mutual Funds preparing a HUMAN phone agent for a scheduled callback. Use the gap before the call to do the homework so the agent walks in ready.
 
-CLIENT: ${clientName}. Accounts: ${accountsSummary}.
+CLIENT: ${clientName} (uses ${pronouns} pronouns). Accounts: ${accountsSummary}.
 THE CLIENT'S ASK (reason for the callback): "${ask}"
+
+Use the client's stated pronouns (${pronouns}) for every third-person reference to them, in EVERY field you write (intent.headline, research, coaching, script). NEVER infer gender from the name.
 
 You have tools that return THIS CLIENT'S OWN real data (accounts, balance history, holdings, transactions, beneficiaries, auto-invest, RMD, recent chat history, contact info) and the FULL fund lineup. Call whatever tools you need and ground every fact in their output. Never state a figure or fact you did not get from a tool or that is not given above — if you cannot determine something, put it in openItems.
 
@@ -159,13 +161,14 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
   const accounts = (client.accounts as Account[] | undefined) ?? [];
   const accountsSummary = accounts.length ? summarizeAccounts(accounts) : 'No accounts on file';
   const clientName = String(cb.clientName || client.name || 'the client');
+  const pronouns = String(client.pronouns || 'they/them');
   const resources = matchResources(ask).map(r => ({ id: r.id, title: r.title, url: r.url }));
 
   let out: ResearchOut | null = null;
   try {
     const executor = createToolExecutor(clientId, {});
     const result = await invokeWithTools(
-      researchPrompt(clientName, accountsSummary, ask, resources),
+      researchPrompt(clientName, pronouns, accountsSummary, ask, resources),
       [{ role: 'user', content: `Research the client's ask thoroughly and prepare the agent. Ask: "${ask}"` }],
       ALL_CLIENT_TOOLS,
       executor,
