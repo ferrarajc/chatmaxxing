@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
 import { useNow, fmtCountdown, fmtScheduled, fmtMoney, initials } from '../util';
 import { theme } from '../theme';
 import { card, Chip, Button, Avatar, SectionLabel, h2Style } from './ui';
 import { IntentHeader, GuidedScript } from './GuidedScript';
+import { TranscriptButton, TranscriptPanel } from './TranscriptFlipper';
 import type { Dossier } from '../types';
 
 function Empty({ text }: { text: string }) {
@@ -20,6 +21,7 @@ export function DossierView() {
   const selectedId = useStore(s => s.selectedId);
   const ring = useStore(s => s.ring);
   const now = useNow(1000);
+  const [showTx, setShowTx] = useState(false);
 
   if (!selectedId) return <Empty text="Select a call from the board to open its dossier." />;
   if (loading && !selected) return <Empty text="Loading dossier…" />;
@@ -27,6 +29,7 @@ export function DossierView() {
 
   const d = selected.dossier;
   const researching = !d || selected.dossierStatus !== 'ready';
+  const transcript = d?.originTranscript;
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', paddingRight: 6 }}>
@@ -43,12 +46,15 @@ export function DossierView() {
             </div>
           </div>
         </div>
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <Button onClick={() => void ring(selected)} big>▶ Simulate this call</Button>
+          {transcript && !showTx && <TranscriptButton transcript={transcript} onClick={() => setShowTx(true)} />}
         </div>
       </div>
 
-      {researching ? (
+      {showTx && transcript ? (
+        <TranscriptPanel transcript={transcript} onBack={() => setShowTx(false)} />
+      ) : researching ? (
         <div style={{ ...card, padding: '30px 20px', textAlign: 'center', color: theme.color.textMuted }}>
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>⏳ Researching the client's ask…</div>
           <div style={{ fontSize: 13 }}>Bob's AI is pulling the account data and working out the answer — it'll be ready before the call.</div>

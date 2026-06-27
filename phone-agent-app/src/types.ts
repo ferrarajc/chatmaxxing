@@ -3,6 +3,16 @@
 export interface Finding { point: string; detail: string; source?: string }
 export interface OpenItem { question: string; why: string }
 
+/** The interaction that precipitated the callback, reviewable via the cockpit's flipper. */
+export type TranscriptChannel = 'chatbot' | 'escalated' | 'ivr';
+export type TranscriptSpeaker = 'client' | 'bob' | 'agent' | 'ivr' | 'system';
+export interface TranscriptMessage { speaker: TranscriptSpeaker; text: string }
+export interface OriginTranscript {
+  channel: TranscriptChannel;
+  title: string;                 // e.g. "Web chat with Bob · earlier today"
+  messages: TranscriptMessage[];
+}
+
 /** The client's objective, shown large at the very top of the cockpit. */
 export interface IntentBrief {
   headline: string;        // ≤18 words, single sentence, MUST start with the client's first name
@@ -38,6 +48,7 @@ export interface Dossier {
   };
   coaching: string[];
   guidedScript: GuidedScript;
+  originTranscript?: OriginTranscript;   // the chat / escalation / IVR that led to this callback
   /** Legacy flat script — kept optional so records prepped before the guided-script upgrade still type-check. */
   script?: { opening: string; talkingPoints: string[] };
   resources: { id: string; title: string; url: string }[];

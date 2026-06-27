@@ -45,6 +45,14 @@ const DEMO_ASKS: Record<string, string> = {
   'demo-client-003': 'Asked which of his funds has the lowest expense ratio and whether he should consolidate positions.',
   'demo-client-004': 'Wants to review his SEP-IRA contributions so far this year and confirm his beneficiary designations.',
 };
+// Spread the demo personas across all three originating channels so the transcript flipper
+// showcases each: a chatbot session, a chat escalated to a live rep, and a phone-IVR call.
+const DEMO_CHANNELS: Record<string, string> = {
+  'demo-client-001': 'chatbot',
+  'demo-client-002': 'escalated',
+  'demo-client-003': 'ivr',
+  'demo-client-004': 'chatbot',
+};
 const DEMO_IDS = Object.keys(DEMO_ASKS);
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
@@ -124,6 +132,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
             phoneNumber: ((clItem.displayPhone as string) ?? '').replace(/\D/g, '') || '4842384838',
             scheduledTime: new Date(Date.now() + minutesOut * 60 * 1000).toISOString(),
             intentSummary: ask,
+            originChannel: DEMO_CHANNELS[clientId] ?? 'chatbot',
             status: 'scheduled', dossierStatus: 'researching',
             createdAt: new Date().toISOString(), demo: true,
           },

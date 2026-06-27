@@ -1,6 +1,6 @@
 import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
-import { invokeWithTools, parseJsonFromBedrock } from '../shared/bedrock-client';
+import { invokeWithTools, invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import { matchResources, summarizeAccounts, Account } from '../shared/types';
 
@@ -34,6 +34,57 @@ interface ResearchOut {
 const CALLBACKS_TABLE = () => process.env.CALLBACKS_TABLE!;
 const CLIENTS_TABLE = () => process.env.CLIENTS_TABLE!;
 
+// ---- Originating transcript -------------------------------------------------
+// A short, believable record of the interaction that led to the callback, so the agent can flip
+// back and see exactly what was said. Channel-aware: a chatbot session, a chat escalated to a live
+// rep, or a phone-IVR call. Simulation-first like the rest of the cockpit (no real source store yet).
+
+type OriginChannel = 'chatbot' | 'escalated' | 'ivr';
+const ORIGIN_CHANNELS: OriginChannel[] = ['chatbot', 'escalated', 'ivr'];
+
+interface TranscriptOut { title: string; messages: { speaker: string; text: string }[] }
+
+const CHANNEL_GUIDE: Record<OriginChannel, string> = {
+  chatbot: `The client was chatting with "Bob", Bob's automated web assistant. Speakers: "bob" and "client". Bob greets, the client asks their question in their own words, Bob acknowledges briefly but explains a specialist can go through it properly, then OFFERS to schedule a phone callback. The client agrees and picks a time. End once the callback is booked.`,
+  escalated: `The client started with "Bob" (the web assistant) but the question needed a human, so Bob handed off to a licensed representative. Speakers: "bob", "client", "system" (handoff notes like "Connected to Dana R., licensed representative"), and "agent". Bob greets, the client asks, Bob says this needs a licensed specialist and transfers, a "system" line notes the handoff, then the agent picks it up, talks briefly, and — needing research or a better time — OFFERS a scheduled phone callback. The client agrees and picks a time.`,
+  ivr: `The client phoned Bob's main line and reached the automated phone system. Speakers: "ivr" (the automated voice) and "client" (their spoken responses). The IVR greets and offers options, the client says what they need, and because of call volume / after hours / needing a specialist, the IVR OFFERS a scheduled callback so they don't wait on hold. The client accepts and confirms a time.`,
+};
+
+function transcriptPrompt(channel: OriginChannel, clientName: string, ask: string): string {
+  return `Write the ORIGINATING interaction that led ${clientName} to schedule a phone callback with Bob's Mutual Funds.
+
+THE CLIENT'S ASK (what they wanted): "${ask}"
+CHANNEL: ${CHANNEL_GUIDE[channel]}
+
+Rules:
+- 6 to 12 short, natural messages. Specific, real phrasing — the client speaks in the FIRST person ("my", "I").
+- Do NOT resolve the question or quote specific account figures; the whole point is that a specialist calls back with the answer. Keep it to the ask plus the callback being offered and accepted.
+- "title": a short label, e.g. "Web chat with Bob - earlier today" / "Call to Bob's 1-800 line" / "Web chat escalated to a representative".
+
+Return ONLY JSON: {"title":"...","messages":[{"speaker":"...","text":"..."}]}`;
+}
+
+async function generateOriginTranscript(channel: OriginChannel, clientName: string, ask: string, clientId: string) {
+  try {
+    const raw = await invokeNovaMicro(
+      transcriptPrompt(channel, clientName, ask),
+      'You write short, realistic customer-service transcripts as strict JSON.',
+      900,
+      { fn: 'prep-callback', clientId, scope: 'origin-transcript' },
+      true,
+    );
+    const out = parseJsonFromBedrock<TranscriptOut>(raw);
+    const messages = (out.messages ?? [])
+      .filter(m => m && typeof m.text === 'string' && m.text.trim())
+      .map(m => ({ speaker: String(m.speaker || 'system'), text: m.text.trim() }));
+    if (!messages.length) return undefined;
+    return { channel, title: out.title?.trim() || 'How this callback started', messages };
+  } catch (e) {
+    console.error('origin-transcript generation failed', e);
+    return undefined;
+  }
+}
+
 function researchPrompt(clientName: string, accountsSummary: string, ask: string, kb: { title: string; url: string }[]): string {
   const kbList = kb.length ? kb.map(r => `- ${r.title} (${r.url})`).join('\n') : '(none matched)';
   return `You are a senior research analyst at Bob's Mutual Funds preparing a HUMAN phone agent for a scheduled callback. Use the gap before the call to do the homework so the agent walks in ready.
@@ -53,7 +104,7 @@ Reference articles you may cite as sources:
 ${kbList}
 
 THE GUIDED SCRIPT — this is what the human agent reads on the call. The UI already speaks a fixed opening: "This is <agent> at Bob's Mutual Funds, speaking on a recorded line — and I understand that you want <confirmAsk>. Is that correct?" You provide:
-- "confirmAsk": the second-person clause that completes "…you want ___". Specific and natural. E.g. ask "wants their 2026 RMD deadline" -> "to know the last day you can take your 2026 RMD without a penalty". No leading "to want"; usually starts with "to".
+- "confirmAsk": the second-person clause that completes "…you want ___". Specific and natural, written TO the client in the SECOND person (you/your) — never he/she/they/their. E.g. ask "wants their 2026 RMD deadline" -> "to know the last day you can take your 2026 RMD without a penalty". No leading "to want"; usually starts with "to".
 - "steps": what the agent does AFTER the client confirms. Each step is one of:
     { "kind": "say", "text": "<a first-person line the agent says to the client>" }
     { "kind": "ask", "text": "<a question the agent asks>", "options": [ { "label": "<the client's answer, short, fits a button>", "then": [ <steps for that answer> ] } ] }
@@ -121,6 +172,11 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
     console.error('prep-callback research failed', e);
   }
 
+  const channel: OriginChannel = ORIGIN_CHANNELS.includes(cb.originChannel as OriginChannel)
+    ? (cb.originChannel as OriginChannel)
+    : 'chatbot';
+  const originTranscript = await generateOriginTranscript(channel, clientName, ask, clientId);
+
   const firstName = clientName.split(' ')[0] || clientName;
   const generatedAt = new Date().toISOString();
   const dossier = {
@@ -138,6 +194,7 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
     guidedScript: out?.guidedScript?.confirmAsk
       ? { confirmAsk: out.guidedScript.confirmAsk, steps: out.guidedScript.steps ?? [], points: (out.guidedScript.points ?? []).filter(Boolean) }
       : { confirmAsk: `to talk through ${ask}`, steps: [], points: [] },
+    originTranscript,
     resources,
     clientSnapshot: {
       name: clientName,

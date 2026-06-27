@@ -10,6 +10,7 @@ import { startRinging, stopRinging } from '../ringtone';
 import { useVoiceSettings } from '../voiceSettings';
 import { DossierBody } from './DossierView';
 import { IntentHeader, GuidedScript } from './GuidedScript';
+import { TranscriptPanel } from './TranscriptFlipper';
 import * as flow from '../callFlow';
 
 interface Line { who: 'system' | 'bob' | 'client'; text: string }
@@ -25,11 +26,14 @@ export function LiveCallConsole() {
   const micOn = useStore(s => s.micOn);
   const setMicOn = useStore(s => s.setMicOn);
   const openVoicePanel = useVoiceSettings(s => s.openPanel);
+  const [showTx, setShowTx] = useState(false);
 
   useEffect(() => () => { stopSpeaking(); stopListening(); stopRinging(); }, []);
+  useEffect(() => { if (phase !== 'live') setShowTx(false); }, [phase]);
 
   if (!call || !phase || phase === 'ringing') return null;
   const name = call.item.clientName || 'the client';
+  const transcript = call.dossier?.originTranscript;
 
   return (
     <Overlay>
@@ -50,10 +54,17 @@ export function LiveCallConsole() {
               <button onClick={() => void endWithOutcome('☎️ Agent ended the call')} title="Hang up" style={{ ...hdrBtn(false), background: 'rgba(180,60,50,0.5)' }}>Hang up</button>
             </>
           )}
+          {phase === 'live' && transcript && (
+            <button onClick={() => setShowTx(v => !v)} title="See the chat / call that led to this callback" style={hdrBtn(showTx)}>
+              {showTx ? '‹ Back to call' : '📄 How this started'}
+            </button>
+          )}
         </div>
 
         {phase === 'connecting' && <CallSim name={name} />}
-        {phase === 'live' && <LiveBody name={name} onEnd={() => void endCall()} />}
+        {phase === 'live' && (showTx && transcript
+          ? <TranscriptPanel transcript={transcript} fill onBack={() => setShowTx(false)} />
+          : <LiveBody name={name} onEnd={() => void endCall()} />)}
         {phase === 'wrapup' && <WrapUp name={name} onDone={dismissCall} />}
       </div>
     </Overlay>
