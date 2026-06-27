@@ -220,7 +220,7 @@ export const FUND_PRICES: Record<string, { name: string; price: number }> = {
 const alexJohnson: FullClientData = {
   clientId: 'demo-client-001',
   name: 'Alex Johnson',
-  pronouns: 'they/them',
+  pronouns: 'he/him',
   phone: '4842384838',
   displayPhone: '(484) 238-4838',
   email: 'alex.johnson@email.com',
