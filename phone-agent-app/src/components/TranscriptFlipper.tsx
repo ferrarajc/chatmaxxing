@@ -123,7 +123,7 @@ export function OriginalTranscriptCard({ transcript }: { transcript: OriginTrans
   const [open, setOpen] = useState(false);
   const m = CHANNEL_META[transcript.channel];
   return (
-    <div style={{ background: theme.color.surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.color.border}`, boxShadow: theme.shadow.sm, overflow: 'hidden' }}>
+    <div style={{ flexShrink: 0, background: theme.color.surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.color.border}`, boxShadow: theme.shadow.sm, overflow: 'hidden' }}>
       <button onClick={() => setOpen(o => !o)} style={{
         width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
         background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',

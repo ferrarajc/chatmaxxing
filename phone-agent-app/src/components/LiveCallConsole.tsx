@@ -374,9 +374,9 @@ function LiveBody({ name }: { name: string }) {
           {dossier && <LiveScript gs={dossier.guidedScript} verified={verified} clientName={name} />}
         </div>
       </div>
-      {/* RIGHT — background & context */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px', background: theme.color.bg, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {transcript && <OriginalTranscriptCard transcript={transcript} />}
+      {/* RIGHT — background & context (plain scroll block; a flex column would shrink the card) */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px', background: theme.color.bg }}>
+        {transcript && <div style={{ marginBottom: 14 }}><OriginalTranscriptCard transcript={transcript} /></div>}
         {dossier && <DossierBody d={dossier} compact />}
       </div>
     </div>
@@ -400,15 +400,21 @@ function LiveScript({ gs, verified, clientName }: { gs: GuidedScriptT; verified:
   const [stage, setStage] = useState<ScriptStage>(verified ? 'greeting' : 'verify');
   const [activeSteps, setActiveSteps] = useState<ScriptStep[]>(gs.steps);
   const [si, setSi] = useState(0);
+  // TEMP: which party the single mic is voicing, so one person can role-play both sides. A real
+  // phone call has two audio channels, so each party is transcribed separately with no toggle.
+  const [sttSpeaker, setSttSpeaker] = useState<'agent' | 'client'>('agent');
+  const speakerRef = useRef<'agent' | 'client'>('agent');
+  const setSpeaker = (s: 'agent' | 'client') => { speakerRef.current = s; setSttSpeaker(s); };
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [feed, interim, stage, si]);
 
-  // Free, continuous transcription of the agent's microphone → feed bubbles.
+  // Free, continuous transcription of the microphone → feed bubbles, attributed to whichever party
+  // is currently selected (speakerRef, so the long-lived recognizer reads the latest value).
   useEffect(() => {
     if (!micOn || !sttSupported) return;
     const stop = startLiveTranscription(
-      (final) => setFeed(f => [...f, { kind: 'stt', speaker: 'agent', text: final }]),
+      (final) => setFeed(f => [...f, { kind: 'stt', speaker: speakerRef.current, text: final }]),
       (txt) => setInterim(txt),
     );
     return () => { stop(); setInterim(''); };
@@ -437,24 +443,49 @@ function LiveScript({ gs, verified, clientName }: { gs: GuidedScriptT; verified:
   };
 
   return (
-    <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {!verified && stage !== 'done' && (
-        <div style={{ fontSize: 12, color: theme.color.danger, fontWeight: 600 }}>Identity not verified — confirm it before discussing the account.</div>
-      )}
-      {feed.map((it, i) => it.kind === 'said'
-        ? <SaidLine key={i} text={it.text} />
-        : <SttBubble key={i} speaker={it.speaker} text={it.text} />)}
-      {interim && <SttBubble speaker="agent" text={interim} interim />}
-      {current && <SuggestionCard step={current} onSaid={() => advanceSay(current.text)} onPick={(opt) => pickOption(current.text, opt)} />}
-      {stage === 'done' && (
-        <div style={{ textAlign: 'center', fontSize: 12.5, color: theme.color.textSubtle, padding: '8px 0' }}>
-          — End of script. Wrap up and end the call when you're done. —
+    <div>
+      {micOn && sttSupported && (
+        <div style={{ position: 'sticky', top: 0, zIndex: 2, background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: theme.color.textMuted }}>🎤 Mic speaks as</span>
+          <SpeakerToggle value={sttSpeaker} onChange={setSpeaker} />
+          <span style={{ fontSize: 10.5, color: theme.color.textSubtle }}>temporary — a real call splits the two channels automatically</span>
         </div>
       )}
-      {micOn && sttSupported && feed.length === 0 && !interim && (
-        <div style={{ fontSize: 11.5, color: theme.color.textSubtle, fontStyle: 'italic' }}>🎤 Live transcription on — your words will appear here as you speak.</div>
-      )}
-      <div ref={endRef} />
+      <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {!verified && stage !== 'done' && (
+          <div style={{ fontSize: 12, color: theme.color.danger, fontWeight: 600 }}>Identity not verified — confirm it before discussing the account.</div>
+        )}
+        {feed.map((it, i) => it.kind === 'said'
+          ? <SaidLine key={i} text={it.text} />
+          : <SttBubble key={i} speaker={it.speaker} text={it.text} />)}
+        {interim && <SttBubble speaker={sttSpeaker} text={interim} interim />}
+        {current && <SuggestionCard step={current} onSaid={() => advanceSay(current.text)} onPick={(opt) => pickOption(current.text, opt)} />}
+        {stage === 'done' && (
+          <div style={{ textAlign: 'center', fontSize: 12.5, color: theme.color.textSubtle, padding: '8px 0' }}>
+            — End of script. Wrap up and end the call when you're done. —
+          </div>
+        )}
+        {micOn && sttSupported && feed.length === 0 && !interim && (
+          <div style={{ fontSize: 11.5, color: theme.color.textSubtle, fontStyle: 'italic' }}>🎤 Live transcription on — your words will appear here as you speak.</div>
+        )}
+        <div ref={endRef} />
+      </div>
+    </div>
+  );
+}
+
+function SpeakerToggle({ value, onChange }: { value: 'agent' | 'client'; onChange: (s: 'agent' | 'client') => void }) {
+  const opt = (s: 'agent' | 'client', label: string) => (
+    <button onClick={() => onChange(s)} style={{
+      background: value === s ? (s === 'agent' ? theme.color.accent : theme.color.primary) : theme.color.surface,
+      color: value === s ? '#fff' : theme.color.text, border: 'none', padding: '5px 12px',
+      fontSize: 12, fontWeight: 700, cursor: 'pointer',
+    }}>{label}</button>
+  );
+  return (
+    <div style={{ display: 'inline-flex', border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.md, overflow: 'hidden' }}>
+      {opt('agent', 'You = Agent')}
+      {opt('client', 'You = Client')}
     </div>
   );
 }
