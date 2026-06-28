@@ -513,6 +513,12 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
   };
 
   useEffect(() => {
+    // Reset the planner BEFORE producing the first card — these refs persist across React
+    // StrictMode's double-mount, so without this the second run would advance past the greeting
+    // and drop it. (This is why the standard greeting had disappeared.)
+    pStage.current = verified ? 'greeting' : 'verify';
+    pSteps.current = gs.steps;
+    pSi.current = 0;
     const first = nextPlanned();
     setCards(first ? [first] : []);
     setCursor(0);
@@ -677,7 +683,7 @@ function Teleprompter({ card, progress, generating, rightMode, canBack, autoAdva
         <SayText text={card.text} progress={progress} />
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14, marginTop: 12 }}>
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: theme.color.textMuted, cursor: 'pointer' }}>
           <input type="checkbox" checked={autoAdvance} onChange={onToggleAuto} />
           Auto ›
@@ -693,7 +699,7 @@ function SayText({ text, progress }: { text: string; progress: number }) {
   return (
     <div style={{ fontSize: 15, lineHeight: 1.5, fontWeight: 500 }}>
       “{words.map((w, i) => (
-        <span key={i} style={{ color: i < progress ? theme.color.textMuted : theme.color.text }}>{w}{i < words.length - 1 ? ' ' : ''}</span>
+        <span key={i} style={{ color: i < progress ? '#C2BBAF' : theme.color.text }}>{w}{i < words.length - 1 ? ' ' : ''}</span>
       ))}”
     </div>
   );
@@ -702,22 +708,26 @@ function SayText({ text, progress }: { text: string; progress: number }) {
 function Pager({ canBack, rightMode, disabled, onBack, onForward }: {
   canBack: boolean; rightMode: 'chevron' | 'triangle' | 'none'; disabled: boolean; onBack: () => void; onForward: () => void;
 }) {
-  const rightShown = rightMode !== 'none';
-  const btn: React.CSSProperties = { background: theme.color.surface, border: 'none', padding: '5px 13px', fontSize: 15, fontWeight: 700, lineHeight: 1, cursor: 'pointer' };
+  // Both buttons are ALWAYS rendered. An inapplicable direction (no earlier card / can't go forward
+  // yet) is shown light-gray and inert rather than removed. Left = one card earlier, right = later.
+  const btn: React.CSSProperties = { border: 'none', padding: '5px 13px', fontSize: 15, fontWeight: 700, lineHeight: 1 };
+  const rightInert = disabled || rightMode === 'none';
   return (
     <div style={{ display: 'inline-flex', borderRadius: theme.radius.md, overflow: 'hidden', border: `1px solid ${theme.color.borderStrong}` }}>
-      <button onClick={onBack} disabled={!canBack} title="Previous" style={{
+      <button onClick={canBack ? onBack : undefined} disabled={!canBack} title="Earlier card" style={{
         ...btn,
-        borderRight: rightShown ? `1px solid ${theme.color.borderStrong}` : 'none',
+        borderRight: `1px solid ${theme.color.borderStrong}`,
         color: canBack ? theme.color.text : theme.color.textSubtle,
         background: canBack ? theme.color.surface : theme.color.surfaceMuted,
         cursor: canBack ? 'pointer' : 'default',
       }}>‹</button>
-      {rightShown && (
-        <button onClick={onForward} disabled={disabled} title={rightMode === 'triangle' ? 'Generate the next line' : 'Next'} style={{
-          ...btn, color: rightMode === 'triangle' ? theme.color.success : theme.color.text, opacity: disabled ? 0.5 : 1,
-        }}>{rightMode === 'triangle' ? '▶' : '›'}</button>
-      )}
+      <button onClick={rightInert ? undefined : onForward} disabled={rightInert}
+        title={rightMode === 'triangle' ? 'Generate the next line' : rightMode === 'none' ? '' : 'Later card'} style={{
+        ...btn,
+        color: rightInert ? theme.color.textSubtle : (rightMode === 'triangle' ? theme.color.success : theme.color.text),
+        background: rightInert ? theme.color.surfaceMuted : theme.color.surface,
+        cursor: rightInert ? 'default' : 'pointer',
+      }}>{rightMode === 'triangle' ? '▶' : '›'}</button>
     </div>
   );
 }
