@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { theme } from '../theme';
+import { ACTOR, actorOf } from '../actors';
 import type { OriginTranscript, TranscriptChannel, TranscriptMessage, TranscriptSpeaker } from '../types';
 
 const chipStyle: CSSProperties = {
@@ -17,12 +18,12 @@ const CHANNEL_META: Record<TranscriptChannel, { icon: string; label: string; ver
   ivr:       { icon: '☎️', label: 'Phone line (IVR)',   verb: 'View originating call' },
 };
 
-const SPEAKER_META: Record<TranscriptSpeaker, { name: string; side: 'l' | 'r' | 'c'; bg: string; fg: string }> = {
-  client: { name: 'Client',          side: 'r', bg: theme.color.accentSoft,  fg: theme.color.accent },
-  bob:    { name: 'Bob (assistant)', side: 'l', bg: theme.color.primarySoft, fg: theme.color.primary },
-  agent:  { name: 'Licensed rep',    side: 'l', bg: theme.color.successSoft, fg: theme.color.success },
-  ivr:    { name: 'Automated line',  side: 'l', bg: theme.color.surfaceMuted, fg: theme.color.textMuted },
-  system: { name: '',                side: 'c', bg: '', fg: '' },
+const SPEAKER_LABEL: Record<TranscriptSpeaker, string> = {
+  client: 'Client',
+  bob:    'Bob (assistant)',
+  agent:  'Licensed rep',
+  ivr:    'Automated line',
+  system: '',
 };
 
 /** The small button that opens the flipper. */
@@ -72,14 +73,14 @@ export function TranscriptPanel({ transcript, onBack, fill }: { transcript: Orig
 }
 
 function TxBubble({ msg }: { msg: TranscriptMessage }) {
-  const s = SPEAKER_META[msg.speaker] ?? SPEAKER_META.system;
-  if (s.side === 'c') {
+  const a = ACTOR[actorOf(msg.speaker)];
+  if (a.side === 'center') {
     return <div style={{ textAlign: 'center', fontSize: 12, color: theme.color.textSubtle, fontStyle: 'italic' }}>{msg.text}</div>;
   }
   return (
-    <div style={{ display: 'flex', justifyContent: s.side === 'r' ? 'flex-end' : 'flex-start' }}>
-      <div style={{ maxWidth: '82%', padding: '9px 13px', borderRadius: theme.radius.lg, background: s.bg, color: theme.color.text }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, color: s.fg, marginBottom: 2 }}>{s.name}</div>
+    <div style={{ display: 'flex', justifyContent: a.side === 'right' ? 'flex-end' : 'flex-start' }}>
+      <div style={{ maxWidth: '82%', padding: '9px 13px', borderRadius: theme.radius.lg, background: a.bg, color: theme.color.text }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: a.fg, marginBottom: 2 }}>{SPEAKER_LABEL[msg.speaker]}</div>
         <div style={{ fontSize: 13.5, lineHeight: 1.45 }}>{highlightText(msg.text, msg.highlights)}</div>
       </div>
     </div>

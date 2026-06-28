@@ -2,6 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { ScanCommand, GetCommand, UpdateCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { docClient } from '../shared/dynamo-client';
+import { invokeNovaMicro } from '../shared/bedrock-client';
 import { jsonResponse } from '../shared/types';
 import { randomUUID } from 'crypto';
 
@@ -59,6 +60,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   try {
     const body = JSON.parse(event.body ?? '{}') as {
       action?: string; callbackId?: string; clientId?: string; minutesOut?: number;
+      conversation?: { role: string; content: string }[];
     };
     const action = body.action ?? 'list';
 
@@ -139,6 +141,34 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
         }));
         await triggerPrep(callbackId);
         return jsonResponse(200, { callbackId });
+      }
+
+      case 'suggest': {
+        // The teleprompter's "generate the next line" button: given the prep + the conversation so
+        // far, write the single next thing the agent should say. Best-effort (returns '' on failure).
+        if (!body.callbackId) return jsonResponse(400, { error: 'callbackId required' });
+        const res = await docClient.send(new GetCommand({ TableName: CALLBACKS_TABLE(), Key: { callbackId: body.callbackId } }));
+        const cb = res.Item;
+        if (!cb) return jsonResponse(404, { error: 'not found' });
+        const dossier = (cb.dossier ?? {}) as { research?: { summary?: string; findings?: { point: string; detail: string }[] } };
+        const clientName = String(cb.clientName ?? 'the client');
+        let pronouns = 'they/them';
+        try {
+          const cl = await docClient.send(new GetCommand({ TableName: CLIENTS_TABLE(), Key: { clientId: String(cb.clientId) }, ProjectionExpression: 'pronouns' }));
+          pronouns = String((cl.Item as { pronouns?: string } | undefined)?.pronouns ?? 'they/them');
+        } catch { /* default pronouns */ }
+        const findings = (dossier.research?.findings ?? []).map(f => `- ${f.point}: ${f.detail}`).join('\n');
+        const convo = (body.conversation ?? []).slice(-14).map(m => `${m.role}: ${m.content}`).join('\n');
+        const system = `You are coaching a live phone agent at Bob's Mutual Funds. Write the SINGLE next thing the agent should SAY to the client right now — one short, natural spoken line in the agent's first-person voice, addressed to the client in the second person. Use the client's pronouns (${pronouns}) for any third-person reference; never infer gender from the name. Ground it in what was prepared and do not repeat what was already said. If the ask seems resolved, suggest a brief, warm closing line. Return ONLY the line — no quotation marks, no preamble.`;
+        const user = `CLIENT: ${clientName}\nTHE CLIENT'S ASK: ${cb.intentSummary ?? ''}\nWHAT WE WORKED OUT: ${dossier.research?.summary ?? ''}\n${findings}\n\nCONVERSATION SO FAR:\n${convo || '(the call just connected)'}\n\nThe next thing the agent should say:`;
+        try {
+          const raw = await invokeNovaMicro(user, system, 140, { fn: 'agent-callbacks', scope: 'suggest-next' });
+          const text = raw.trim().replace(/^["'“”]+|["'“”]+$/g, '').trim();
+          return jsonResponse(200, { text });
+        } catch (e) {
+          console.error('suggest failed', e);
+          return jsonResponse(200, { text: '' });
+        }
       }
 
       default:

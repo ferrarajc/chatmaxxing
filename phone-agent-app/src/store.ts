@@ -32,6 +32,8 @@ interface Store {
   setMicOn: (v: boolean) => void;
   liveMic: LiveMic;           // live-call transcription: who's talking (or off)
   setLiveMic: (v: LiveMic) => void;
+  autoAdvance: boolean;       // teleprompter auto-advance — a sticky per-agent preference
+  setAutoAdvance: (v: boolean) => void;
   transcriptLog: LogEntry[];  // running record of the call, saved for post-hoc review on end
   logLine: (role: LogRole, content: string) => void;
   ring: (item: CallbackListItem) => Promise<void>;
@@ -73,6 +75,8 @@ export const useStore = create<Store>((set, get) => ({
   setMicOn: (v) => set({ micOn: v }),
   liveMic: 'agent',
   setLiveMic: (v) => set({ liveMic: v }),
+  autoAdvance: (() => { try { return localStorage.getItem('phoneAutoAdvance') !== 'off'; } catch { return true; } })(),
+  setAutoAdvance: (v) => { try { localStorage.setItem('phoneAutoAdvance', v ? 'on' : 'off'); } catch { /* ignore */ } set({ autoAdvance: v }); },
   transcriptLog: [],
   logLine: (role, content) => {
     const c = content.trim();
