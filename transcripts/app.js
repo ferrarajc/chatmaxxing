@@ -1,5 +1,12 @@
 /* ── Config ──────────────────────────────────────────────────────────────── */
-const API_BASE = 'https://0y3s5vq2v5.execute-api.us-east-1.amazonaws.com';
+// Default reads the prod API; `?env=dev` points at the dev backend so phone transcripts
+// recorded while testing the cockpit locally can be reviewed before the cockpit ships to prod.
+const _params0 = new URLSearchParams(location.search);
+const IS_DEV   = _params0.get('env') === 'dev';
+const ENV_QS   = IS_DEV ? 'env=dev' : '';
+const API_BASE = IS_DEV
+  ? 'https://1cppcq9q57.execute-api.us-east-1.amazonaws.com'
+  : 'https://0y3s5vq2v5.execute-api.us-east-1.amazonaws.com';
 
 /* ── DOM refs ────────────────────────────────────────────────────────────── */
 const viewList     = document.getElementById('view-list');
@@ -34,6 +41,10 @@ let sortKey = 'startTime';
 let sortDir = -1; // -1 = descending
 
 /* ── Boot ────────────────────────────────────────────────────────────────── */
+if (IS_DEV) {
+  const eb = document.querySelector('.site-header__eyebrow');
+  if (eb) eb.textContent = "Bob’s Mutual Funds · DEV";
+}
 loadList();
 // Deep link: /transcripts/?id=<conversationId> opens that conversation directly
 // (used by hyperlinks in the transcript-review-notes spreadsheet).
@@ -43,7 +54,7 @@ refreshBtn.addEventListener('click', () => { searchInput.value = ''; wrapupFilte
 
 /* ── List loading ────────────────────────────────────────────────────────── */
 async function loadList() {
-  listBody.innerHTML = `<tr class="list-row list-row--loading"><td colspan="6">Loading…</td></tr>`;
+  listBody.innerHTML = `<tr class="list-row list-row--loading"><td colspan="8">Loading…</td></tr>`;
   listCount.textContent = '';
   try {
     const res  = await fetch(`${API_BASE}/get-transcripts`);
@@ -52,7 +63,7 @@ async function loadList() {
     populateWrapupFilter();
     applyFilters();
   } catch (err) {
-    listBody.innerHTML = `<tr class="list-row list-row--empty"><td colspan="6">Failed to load transcripts.</td></tr>`;
+    listBody.innerHTML = `<tr class="list-row list-row--empty"><td colspan="8">Failed to load transcripts.</td></tr>`;
     console.error(err);
   }
 }
@@ -96,7 +107,7 @@ function applyFilters() {
 
 function renderList(items) {
   if (!items.length) {
-    listBody.innerHTML = `<tr class="list-row list-row--empty"><td colspan="6">No transcripts found.</td></tr>`;
+    listBody.innerHTML = `<tr class="list-row list-row--empty"><td colspan="8">No transcripts found.</td></tr>`;
     return;
   }
   listBody.innerHTML = items.map(t => {
@@ -108,10 +119,17 @@ function renderList(items) {
       : `<span class="list-no-wrap-up">—</span>`;
     const intent   = mdLite(t.intentSummary ?? '—');
     const client   = esc(t.clientName ?? t.clientId ?? '—');
+    const agent    = esc(t.agentName ?? '—');
     const hover    = esc(t.summary ?? t.acwSummary ?? '');
+    const isPhone  = (t.transcriptType ?? 'chat') === 'phone';
+    const typeIcon = isPhone
+      ? `<span class="list-type" title="Phone call" aria-label="Phone call">📞</span>`
+      : `<span class="list-type" title="Web chat" aria-label="Web chat">💬</span>`;
     return `<tr class="list-row" data-id="${esc(t.transcriptId)}" tabindex="0">
+      <td class="col-type">${typeIcon}</td>
       <td class="col-date"><span class="list-date">${date}</span></td>
       <td class="col-client"><span class="list-client">${client}</span></td>
+      <td class="col-agent"><span class="list-agent">${agent}</span></td>
       <td class="col-intent"${hover ? ` title="${hover}"` : ''}>${intent}</td>
       <td class="col-wrap-up">${wrapUp}</td>
       <td class="col-duration">${duration}</td>
@@ -151,7 +169,7 @@ document.querySelector(`.th-sort[data-sort="${sortKey}"]`)?.setAttribute('data-d
 /* ── Detail view ─────────────────────────────────────────────────────────── */
 async function openDetail(transcriptId, pushUrl = true) {
   currentId = transcriptId;
-  if (pushUrl) history.pushState({ id: transcriptId }, '', `?id=${encodeURIComponent(transcriptId)}`);
+  if (pushUrl) history.pushState({ id: transcriptId }, '', `?id=${encodeURIComponent(transcriptId)}${ENV_QS ? '&' + ENV_QS : ''}`);
   showView('detail');
   transcriptBody.innerHTML = '<div class="convo-note">Loading…</div>';
   transcriptAcw.hidden = true;
@@ -259,7 +277,7 @@ copyIdBtn.addEventListener('click', async () => {
 
 /* ── Navigation ──────────────────────────────────────────────────────────── */
 backBtn.addEventListener('click', () => {
-  history.pushState({}, '', location.pathname);
+  history.pushState({}, '', location.pathname + (ENV_QS ? '?' + ENV_QS : ''));
   showView('list');
 });
 
