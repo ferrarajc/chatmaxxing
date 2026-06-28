@@ -60,7 +60,7 @@ Rules:
 - 6 to 12 short, natural messages. Specific, real phrasing — the client speaks in the FIRST person ("my", "I").
 - Do NOT resolve the question or quote specific account figures; the whole point is that a specialist calls back with the answer. Keep it to the ask plus the callback being offered and accepted.
 - "title": a short label, e.g. "Web chat with Bob - earlier today" / "Call to Bob's 1-800 line" / "Web chat escalated to a representative".
-- "highlights" (per message, optional): the 1-2 EXACT substrings in that message's text that a human agent must not miss — the words that carry the client's intent or a material parameter (an account, an amount, a date, a constraint). Copy them verbatim from the text. Omit on messages that carry no such span.
+- "highlights" (per message): the EXACT substrings in that message's text that a human agent must not miss — the words that carry the client's intent or a material parameter (an account, an amount, a date, a constraint). ALWAYS populate highlights for every CLIENT message that states what they want or gives a specific detail — mark the key phrase(s), e.g. "year-to-date return", "beneficiary designations", "remaining RMD", "lowest expense ratio". Copy each substring VERBATIM from the message text — identical characters, case, and punctuation — so it can be located. Use [] only for purely conversational lines (greetings, "yes please", handoff acknowledgements).
 
 Return ONLY JSON: {"title":"...","messages":[{"speaker":"...","text":"...","highlights":["..."]}]}`;
 }

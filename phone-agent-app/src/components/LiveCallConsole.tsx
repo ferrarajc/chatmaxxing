@@ -127,7 +127,7 @@ function CallSim({ name }: { name: string }) {
   const L = {
     greeting: `Hello! This is a scheduled callback from Bob's Mutual Funds. Am I speaking with ${name}?`,
     verify: `Great. For security, please confirm your identity by repeating this phrase: "At Bob's, my voice is my password."`,
-    goodTime: `Thank you, ${firstName} — your identity is confirmed. And is now still a good time to talk?`,
+    goodTime: `Thank you ${firstName}! Your identity is confirmed. And is now still a good time to talk?`,
     connect: `Wonderful — connecting you with a specialist now.`,
   };
 
@@ -211,7 +211,7 @@ function CallSim({ name }: { name: string }) {
     }
 
     async function wrongParty() {
-      await sayBob(`My apologies for the confusion. Is ${name} available?`);
+      await sayBob(`OK, well is ${firstName} available to talk right now?`);
       let tries = 0;
       while (alive) {
         const { text, heard } = await listen();
@@ -225,7 +225,7 @@ function CallSim({ name }: { name: string }) {
     }
 
     async function waitForClient() {
-      await sayBob(`Thank you — I'll hold while you put ${firstName} on the line.`);
+      await sayBob(`I'll hold, thank you!`);
       if (!alive) return;
       setWaitPutOn(true);
       await new Promise<void>(res => { putOnResolve.current = res; });
