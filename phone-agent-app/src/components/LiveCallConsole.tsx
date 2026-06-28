@@ -155,13 +155,14 @@ function CallSim({ name }: { name: string }) {
 
     const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
     const push = (who: Line['who'], text: string) => setLines(l => [...l, { who, text }]);
-    const sysLine = (text: string) => push('system', text);
+    const sysLine = (text: string) => { push('system', text); useStore.getState().logLine('SYSTEM', text); };
 
     const sayBob = async (text: string) => {
       if (!alive) return;
       await wait(250); // a brief, natural beat before speaking
       if (!alive) return;
       push('bob', text);
+      useStore.getState().logLine('BOT', text);
       if (useStore.getState().audioOn) await speak(text);
       else await wait(Math.min(2600, 700 + text.length * 22));
     };
@@ -173,7 +174,7 @@ function CallSim({ name }: { name: string }) {
       setListening(true);
       const r = await listenForSpeech();
       setListening(false);
-      if (r.heard && r.transcript) push('client', `“${r.transcript}”`);
+      if (r.heard && r.transcript) { push('client', `“${r.transcript}”`); useStore.getState().logLine('CUSTOMER', r.transcript); }
       return { text: r.transcript, heard: r.heard };
     };
 
@@ -462,7 +463,10 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
   useEffect(() => {
     if (micOff || !sttSupported) return;
     const stop = startLiveTranscription(
-      (final) => setFeed(f => [...f, { speaker: speakerRef.current, text: final }]),
+      (final) => {
+        setFeed(f => [...f, { speaker: speakerRef.current, text: final }]);
+        useStore.getState().logLine(speakerRef.current === 'agent' ? 'AGENT' : 'CUSTOMER', final);
+      },
       (txt) => setInterim(txt),
     );
     return () => { stop(); setInterim(''); };
