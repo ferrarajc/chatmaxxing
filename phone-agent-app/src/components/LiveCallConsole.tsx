@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useStore } from '../store';
 import { theme } from '../theme';
-import { Avatar, Button, Overlay, panel, h2Style, card } from './ui';
+import { Avatar, Button, Overlay, panel, h2Style } from './ui';
 import { initials } from '../util';
 import { speak, stopSpeaking, prefetch } from '../voiceTts';
 import { listenForSpeech, stopListening, speechSupported, startLiveTranscription } from '../speech';
@@ -26,6 +26,8 @@ export function LiveCallConsole() {
   const setAudioOn = useStore(s => s.setAudioOn);
   const micOn = useStore(s => s.micOn);
   const setMicOn = useStore(s => s.setMicOn);
+  const liveMic = useStore(s => s.liveMic);
+  const setLiveMic = useStore(s => s.setLiveMic);
   const openVoicePanel = useVoiceSettings(s => s.openPanel);
 
   useEffect(() => () => { stopSpeaking(); stopListening(); stopRinging(); }, []);
@@ -55,7 +57,7 @@ export function LiveCallConsole() {
           )}
           {phase === 'live' && (
             <>
-              <button onClick={() => setMicOn(!micOn)} title="Live transcription of your mic" style={hdrBtn(micOn)}>{micOn ? '🎤 Live' : '🎤 Off'}</button>
+              <MicSegmented value={liveMic} onChange={setLiveMic} />
               <button onClick={() => void endCall()} style={{ background: theme.color.danger, color: '#fff', border: 'none', borderRadius: theme.radius.md, padding: '9px 18px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>End call</button>
             </>
           )}
@@ -66,6 +68,28 @@ export function LiveCallConsole() {
         {phase === 'wrapup' && <WrapUp name={name} onDone={dismissCall} />}
       </div>
     </Overlay>
+  );
+}
+
+function MicSegmented({ value, onChange }: { value: 'agent' | 'client' | 'off'; onChange: (v: 'agent' | 'client' | 'off') => void }) {
+  const seg = (v: 'agent' | 'client' | 'off', label: string) => {
+    const active = value === v;
+    return (
+      <button onClick={() => onChange(v)} title={`Mic input is the ${v === 'off' ? 'muted' : v}`} style={{
+        background: active ? (v === 'off' ? 'rgba(255,255,255,0.28)' : v === 'client' ? theme.color.accent : 'rgba(34,160,94,0.95)') : 'rgba(255,255,255,0.12)',
+        color: '#fff', border: 'none', padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+      }}>{label}</button>
+    );
+  };
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <span aria-hidden style={{ fontSize: 15 }}>🎤</span>
+      <div style={{ display: 'inline-flex', borderRadius: theme.radius.md, overflow: 'hidden' }}>
+        {seg('client', 'Client')}
+        {seg('agent', 'Agent')}
+        {seg('off', 'Off')}
+      </div>
+    </div>
   );
 }
 
@@ -361,7 +385,7 @@ function LiveBody({ name }: { name: string }) {
 
   return (
     <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-      {/* LEFT — drive the call: fixed summary, then a scrolling teleprompter + live transcription */}
+      {/* LEFT — drive the call: fixed summary, scrolling transcript, pinned teleprompter */}
       <div style={{ flex: 1.15, display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: `1px solid ${theme.color.border}` }}>
         {dossier && (
           <div style={{ padding: '15px 20px 13px', borderBottom: `1px solid ${theme.color.border}`, flexShrink: 0 }}>
@@ -370,9 +394,7 @@ function LiveBody({ name }: { name: string }) {
             </div>
           </div>
         )}
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          {dossier && <LiveScript gs={dossier.guidedScript} verified={verified} clientName={name} />}
-        </div>
+        {dossier && <LiveScript gs={dossier.guidedScript} verified={verified} />}
       </div>
       {/* RIGHT — background & context (plain scroll block; a flex column would shrink the card) */}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px', background: theme.color.bg }}>
@@ -383,42 +405,68 @@ function LiveBody({ name }: { name: string }) {
   );
 }
 
-type FeedItem = { kind: 'said'; text: string } | { kind: 'stt'; speaker: 'agent' | 'client'; text: string };
+type FeedItem = { speaker: 'agent' | 'client'; text: string };
 type ScriptStage = 'verify' | 'greeting' | 'steps' | 'done';
 
+const STOP = new Set(['the', 'a', 'an', 'and', 'or', 'to', 'of', 'your', 'you', 'is', 'it', 'this', 'i', 'at', 'on', 'for', 'that', 'my', 'me', 'we', 'are', 'be', 'in', 'with', 'so', 'do', 'can', 'if', 'as', 'am', 'was', 'will', 'would', 'about', 'have', 'has', 'how', 'what', 'our', 'us', 'they', 'their', 'just', 'now', 'any']);
+function sigWords(s: string): string[] {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
+}
+/** Fraction of the target line's significant words present in the spoken text. */
+function coverage(spoken: string, target: string): number {
+  const t = sigWords(target);
+  if (!t.length) return 1;
+  const sp = new Set(sigWords(spoken));
+  return t.filter(w => sp.has(w)).length / t.length;
+}
+/** Best-effort branch pick from the client's spoken answer (keyword overlap + a yes/no shortcut). */
+function bestOption(options: ScriptBranch[], spoken: string): ScriptBranch | null {
+  const yes = /\b(yes|yeah|yep|correct|sure|i have|i did|already)\b/i.test(spoken);
+  const no = /\b(no|nope|nah|haven'?t|didn'?t|none|never|nothing)\b/i.test(spoken);
+  let best: ScriptBranch | null = null, score = 0;
+  for (const op of options) {
+    let sc = coverage(spoken, op.label);
+    const lab = op.label.toLowerCase();
+    if (no && /^(no|none|not)\b/.test(lab)) sc = Math.max(sc, 0.6);
+    if (yes && /^(yes|yeah|sure|i have|i did)\b/.test(lab)) sc = Math.max(sc, 0.6);
+    if (sc > score) { score = sc; best = op; }
+  }
+  return score >= 0.45 ? best : null;
+}
+
 /**
- * The live teleprompter. Shows ONE "say/ask next" suggestion at a time, advancing as the agent
- * marks each line said (or picks a branch), while free browser speech-to-text streams the agent's
- * actual words into the feed as bubbles. If identity isn't verified, it leads with a verify step.
+ * The live left column: a scrolling speech-to-text transcript on top, and a PINNED "Teleprompter"
+ * at the bottom showing the one next thing to say/ask. The script is planned ahead from the dossier,
+ * but the teleprompter auto-advances off the live transcription — when the agent has said enough of
+ * the current line it moves on, and on an ask step the client's spoken answer picks the branch — so
+ * the agent rarely needs to touch a button. If identity isn't verified, it leads with a verify step.
  */
-function LiveScript({ gs, verified, clientName }: { gs: GuidedScriptT; verified: boolean; clientName: string }) {
-  void clientName;
-  const micOn = useStore(s => s.micOn);
+function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) {
+  const liveMic = useStore(s => s.liveMic);
   const sttSupported = speechSupported();
+  const micOff = liveMic === 'off';
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [interim, setInterim] = useState('');
   const [stage, setStage] = useState<ScriptStage>(verified ? 'greeting' : 'verify');
   const [activeSteps, setActiveSteps] = useState<ScriptStep[]>(gs.steps);
   const [si, setSi] = useState(0);
-  // TEMP: which party the single mic is voicing, so one person can role-play both sides. A real
-  // phone call has two audio channels, so each party is transcribed separately with no toggle.
-  const [sttSpeaker, setSttSpeaker] = useState<'agent' | 'client'>('agent');
-  const speakerRef = useRef<'agent' | 'client'>('agent');
-  const setSpeaker = (s: 'agent' | 'client') => { speakerRef.current = s; setSttSpeaker(s); };
-  const endRef = useRef<HTMLDivElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const speakerRef = useRef<'agent' | 'client'>(liveMic === 'client' ? 'client' : 'agent');
+  const agentBuf = useRef('');   // agent speech accumulated toward the current say line
+  const clientBuf = useRef('');  // client speech accumulated toward the current ask branch
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [feed, interim, stage, si]);
+  useEffect(() => { if (liveMic !== 'off') speakerRef.current = liveMic; }, [liveMic]);
+  useEffect(() => { feedRef.current?.scrollTo({ top: 1e9, behavior: 'smooth' }); }, [feed, interim]);
 
-  // Free, continuous transcription of the microphone → feed bubbles, attributed to whichever party
-  // is currently selected (speakerRef, so the long-lived recognizer reads the latest value).
+  // Continuous transcription while the mic isn't off; attribute to the selected party.
   useEffect(() => {
-    if (!micOn || !sttSupported) return;
+    if (micOff || !sttSupported) return;
     const stop = startLiveTranscription(
-      (final) => setFeed(f => [...f, { kind: 'stt', speaker: speakerRef.current, text: final }]),
+      (final) => setFeed(f => [...f, { speaker: speakerRef.current, text: final }]),
       (txt) => setInterim(txt),
     );
     return () => { stop(); setInterim(''); };
-  }, [micOn, sttSupported]);
+  }, [micOff, sttSupported]);
 
   const greetingText = `This is ${AGENT_NAME} at Bob's Mutual Funds, speaking on a recorded line — and I understand that you want ${gs.confirmAsk}. Is that correct?`;
   const verifyText = `Before we go further, I need to confirm your identity. Could you please verify your full name and the date of birth on your account?`;
@@ -429,78 +477,83 @@ function LiveScript({ gs, verified, clientName }: { gs: GuidedScriptT; verified:
     : stage === 'steps' && si < activeSteps.length ? activeSteps[si]
     : null;
 
-  const advanceSay = (text: string) => {
-    setFeed(f => [...f, { kind: 'said', text }]);
+  const advance = () => {
+    agentBuf.current = ''; clientBuf.current = '';
     if (stage === 'verify') setStage('greeting');
     else if (stage === 'greeting') { setStage('steps'); setSi(0); }
     else { const next = si + 1; setSi(next); if (next >= activeSteps.length) setStage('done'); }
   };
-
-  const pickOption = (question: string, opt: ScriptBranch) => {
-    setFeed(f => [...f, { kind: 'said', text: `${question} — ${opt.label}` }]);
+  const pickOption = (opt: ScriptBranch) => {
+    agentBuf.current = ''; clientBuf.current = '';
     if (opt.then.length) { setActiveSteps(opt.then); setSi(0); setStage('steps'); }
     else setStage('done');
   };
 
+  // Auto-advance off the live transcription. On a say step, advance once the agent has covered
+  // ~enough of the line; on an ask step, the client's answer selects the branch.
+  useEffect(() => {
+    if (!feed.length || !current) return;
+    const last = feed[feed.length - 1];
+    if (current.kind === 'ask') {
+      if (last.speaker === 'client') {
+        clientBuf.current = (clientBuf.current + ' ' + last.text).slice(-220);
+        const pick = bestOption(current.options, clientBuf.current);
+        if (pick) pickOption(pick);
+      }
+    } else if (last.speaker === 'agent') {
+      agentBuf.current = (agentBuf.current + ' ' + last.text).slice(-400);
+      if (coverage(agentBuf.current, current.text) >= 0.55) advance();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feed]);
+
+  const autoAdvancing = !micOff && sttSupported;
+
   return (
-    <div>
-      {micOn && sttSupported && (
-        <div style={{ position: 'sticky', top: 0, zIndex: 2, background: theme.color.surface, borderBottom: `1px solid ${theme.color.border}`, padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: theme.color.textMuted }}>🎤 Mic speaks as</span>
-          <SpeakerToggle value={sttSpeaker} onChange={setSpeaker} />
-          <span style={{ fontSize: 10.5, color: theme.color.textSubtle }}>temporary — a real call splits the two channels automatically</span>
-        </div>
-      )}
-      <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {!verified && stage !== 'done' && (
-          <div style={{ fontSize: 12, color: theme.color.danger, fontWeight: 600 }}>Identity not verified — confirm it before discussing the account.</div>
-        )}
-        {feed.map((it, i) => it.kind === 'said'
-          ? <SaidLine key={i} text={it.text} />
-          : <SttBubble key={i} speaker={it.speaker} text={it.text} />)}
-        {interim && <SttBubble speaker={sttSpeaker} text={interim} interim />}
-        {current && <SuggestionCard step={current} onSaid={() => advanceSay(current.text)} onPick={(opt) => pickOption(current.text, opt)} />}
-        {stage === 'done' && (
-          <div style={{ textAlign: 'center', fontSize: 12.5, color: theme.color.textSubtle, padding: '8px 0' }}>
-            — End of script. Wrap up and end the call when you're done. —
+    <>
+      {/* scrolling transcription */}
+      <div ref={feedRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {feed.length === 0 && !interim && (
+          <div style={{ fontSize: 11.5, color: theme.color.textSubtle, fontStyle: 'italic' }}>
+            {autoAdvancing
+              ? "🎤 Listening — pick who's speaking in the header; the transcript builds here and the teleprompter advances on its own."
+              : 'Mic is off — choose 🎤 Client or Agent in the header to transcribe and auto-advance.'}
           </div>
         )}
-        {micOn && sttSupported && feed.length === 0 && !interim && (
-          <div style={{ fontSize: 11.5, color: theme.color.textSubtle, fontStyle: 'italic' }}>🎤 Live transcription on — your words will appear here as you speak.</div>
+        {feed.map((it, i) => <SttBubble key={i} speaker={it.speaker} text={it.text} />)}
+        {interim && <SttBubble speaker={speakerRef.current} text={interim} interim />}
+      </div>
+      {/* pinned teleprompter */}
+      <div style={{ flexShrink: 0, borderTop: `1px solid ${theme.color.border}`, background: theme.color.primarySoft, padding: '12px 18px' }}>
+        {!verified && stage !== 'done' && (
+          <div style={{ fontSize: 11.5, color: theme.color.danger, fontWeight: 600, marginBottom: 8 }}>Identity not verified — confirm it before discussing the account.</div>
         )}
-        <div ref={endRef} />
+        <Teleprompter current={current} stage={stage} autoAdvancing={autoAdvancing} onSaid={advance} onPick={pickOption} />
       </div>
-    </div>
+    </>
   );
 }
 
-function SpeakerToggle({ value, onChange }: { value: 'agent' | 'client'; onChange: (s: 'agent' | 'client') => void }) {
-  const opt = (s: 'agent' | 'client', label: string) => (
-    <button onClick={() => onChange(s)} style={{
-      background: value === s ? (s === 'agent' ? theme.color.accent : theme.color.primary) : theme.color.surface,
-      color: value === s ? '#fff' : theme.color.text, border: 'none', padding: '5px 12px',
-      fontSize: 12, fontWeight: 700, cursor: 'pointer',
-    }}>{label}</button>
-  );
+function Teleprompter({ current, stage, autoAdvancing, onSaid, onPick }: {
+  current: ScriptStep | null; stage: ScriptStage; autoAdvancing: boolean;
+  onSaid: () => void; onPick: (opt: ScriptBranch) => void;
+}) {
+  if (stage === 'done' || !current) {
+    return <div style={{ textAlign: 'center', fontSize: 12.5, color: theme.color.textMuted, padding: '4px 0' }}>— End of script. Wrap up and end the call when you're done. —</div>;
+  }
+  const isAsk = current.kind === 'ask';
   return (
-    <div style={{ display: 'inline-flex', border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.md, overflow: 'hidden' }}>
-      {opt('agent', 'You = Agent')}
-      {opt('client', 'You = Client')}
-    </div>
-  );
-}
-
-function SuggestionCard({ step, onSaid, onPick }: { step: ScriptStep; onSaid: () => void; onPick: (opt: ScriptBranch) => void }) {
-  const isAsk = step.kind === 'ask';
-  return (
-    <div style={{ ...card, borderLeft: `3px solid ${theme.color.primary}`, background: theme.color.primarySoft, padding: '12px 14px' }}>
-      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase', color: theme.color.primary, marginBottom: 6 }}>
-        {isAsk ? 'Ask next' : 'Say next'}
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: theme.color.primary }}>
+          📣 Teleprompter · {isAsk ? 'ask this' : 'say this'}
+        </span>
+        <span style={{ fontSize: 10.5, color: theme.color.textSubtle }}>{autoAdvancing ? 'auto-advancing as you speak' : 'mic off — advance manually'}</span>
       </div>
-      <div style={{ fontSize: 14.5, lineHeight: 1.5, color: theme.color.text }}>{isAsk ? step.text : `“${step.text}”`}</div>
+      <div style={{ fontSize: 15, lineHeight: 1.5, color: theme.color.text, fontWeight: 500 }}>{isAsk ? current.text : `“${current.text}”`}</div>
       {isAsk ? (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-          {step.options.map((op, i) => (
+          {current.options.map((op, i) => (
             <button key={i} onClick={() => onPick(op)} style={{
               background: theme.color.surface, color: theme.color.text, border: `1px solid ${theme.color.borderStrong}`,
               borderRadius: theme.radius.md, padding: '7px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
@@ -509,21 +562,12 @@ function SuggestionCard({ step, onSaid, onPick }: { step: ScriptStep; onSaid: ()
         </div>
       ) : (
         <div style={{ marginTop: 10 }}>
-          <button onClick={onSaid} style={{
-            background: theme.color.primary, color: '#fff', border: 'none', borderRadius: theme.radius.md,
-            padding: '7px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-          }}>Said it ›</button>
+          <button onClick={onSaid} title="Advance manually if transcription misses it" style={{
+            background: 'none', color: theme.color.textMuted, border: `1px solid ${theme.color.borderStrong}`,
+            borderRadius: theme.radius.md, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          }}>Next ›</button>
         </div>
       )}
-    </div>
-  );
-}
-
-function SaidLine({ text }: { text: string }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, opacity: 0.65, fontSize: 12.5, lineHeight: 1.45, color: theme.color.textMuted }}>
-      <span style={{ color: theme.color.success }}>✓</span>
-      <span>{text}</span>
     </div>
   );
 }
