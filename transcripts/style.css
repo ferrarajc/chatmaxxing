@@ -230,13 +230,21 @@ body {
 .list-row--loading td,
 .list-row--empty td { color: var(--color-text-muted); font-style: italic; cursor: default; }
 
+.col-type     { width: 60px;  text-align: center; }
 .col-date     { width: 150px; white-space: nowrap; }
 .col-client   { width: 150px; }
+.col-agent    { width: 140px; white-space: nowrap; }
 .col-intent   { }
 .col-intent strong { color: var(--navy); }
 .col-wrap-up  { width: 170px; }
 .col-duration { width: 90px;  text-align: right; white-space: nowrap; }
 .col-msgs     { width: 90px;  text-align: right; }
+
+/* Headers must match their column's data alignment — the base `thead th` rule forces left,
+   which beats the lower-specificity `.col-*` rules on the header cells, so re-assert here. */
+.transcript-list thead th.col-type { text-align: center; }
+.transcript-list thead th.col-duration,
+.transcript-list thead th.col-msgs { text-align: right; }
 
 .list-client  { font-weight: 600; color: var(--navy); }
 .list-date    { color: var(--color-text-muted); font-size: 12px; }
