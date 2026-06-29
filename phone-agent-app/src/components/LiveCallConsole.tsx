@@ -4,7 +4,7 @@ import { useStore } from '../store';
 import { post } from '../api/client';
 import { theme } from '../theme';
 import { ACTOR } from '../actors';
-import { Avatar, Button, Overlay, panel, h2Style } from './ui';
+import { Avatar, Button, Overlay, panel, h2Style, card } from './ui';
 import { initials } from '../util';
 import { speak, stopSpeaking, prefetch } from '../voiceTts';
 import { listenForSpeech, stopListening, speechSupported, startLiveTranscription } from '../speech';
@@ -388,20 +388,25 @@ function LiveBody({ name }: { name: string }) {
 
   return (
     <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-      {/* LEFT — drive the call: fixed summary, scrolling transcript, pinned teleprompter */}
+      {/* LEFT — drive the call: scrolling transcript + pinned teleprompter */}
       <div style={{ flex: 1.15, display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: `1px solid ${theme.color.border}` }}>
-        {dossier && (
-          <div style={{ padding: '15px 20px 13px', borderBottom: `1px solid ${theme.color.border}`, flexShrink: 0 }}>
-            <div style={{ fontFamily: theme.font.serif, fontSize: 18, fontWeight: 800, lineHeight: 1.3, color: theme.color.text, letterSpacing: '-0.01em' }}>
-              {dossier.intent.headline}
-            </div>
-          </div>
-        )}
         {dossier && <LiveScript gs={dossier.guidedScript} verified={verified} />}
       </div>
-      {/* RIGHT — background & context (plain scroll block; a flex column would shrink the card) */}
+      {/* RIGHT — context (plain scroll block; a flex column would shrink the card) */}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px', background: theme.color.bg }}>
-        {transcript && <div style={{ marginBottom: 14 }}><OriginalTranscriptCard transcript={transcript} /></div>}
+        {dossier && (
+          <div style={{ ...card, padding: '15px 18px', marginBottom: 14 }}>
+            <div style={{ fontFamily: theme.font.serif, fontSize: 17, fontWeight: 800, lineHeight: 1.32, color: theme.color.text, letterSpacing: '-0.01em' }}>
+              {dossier.intent.headline}
+            </div>
+            {transcript && (
+              <>
+                <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '13px -18px 0' }} />
+                <OriginalTranscriptCard transcript={transcript} embedded />
+              </>
+            )}
+          </div>
+        )}
         {dossier && <DossierBody d={dossier} compact />}
       </div>
     </div>

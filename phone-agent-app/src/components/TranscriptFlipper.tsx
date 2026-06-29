@@ -120,13 +120,18 @@ function highlightText(text: string, highlights?: string[]): ReactNode {
  * label stays visible — and when open it scrolls internally within a capped height so the context
  * cards below stay in view.
  */
-export function OriginalTranscriptCard({ transcript }: { transcript: OriginTranscript }) {
+export function OriginalTranscriptCard({ transcript, embedded }: { transcript: OriginTranscript; embedded?: boolean }) {
   const [open, setOpen] = useState(false);
   const m = CHANNEL_META[transcript.channel];
+  // `embedded` drops the own card chrome (border/bg/shadow) and horizontal padding so it can sit
+  // inside a parent card with the channel chip aligned to that card's content.
+  const outer: CSSProperties = embedded
+    ? {}
+    : { flexShrink: 0, background: theme.color.surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.color.border}`, boxShadow: theme.shadow.sm, overflow: 'hidden' };
   return (
-    <div style={{ flexShrink: 0, background: theme.color.surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.color.border}`, boxShadow: theme.shadow.sm, overflow: 'hidden' }}>
+    <div style={outer}>
       <button onClick={() => setOpen(o => !o)} style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
+        width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: embedded ? '10px 0 2px' : '11px 14px',
         background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
       }}>
         <span style={{ fontSize: 11, color: theme.color.textMuted, width: 12 }}>{open ? '▾' : '▸'}</span>
@@ -136,9 +141,9 @@ export function OriginalTranscriptCard({ transcript }: { transcript: OriginTrans
         <span style={{ ...chipStyle, background: theme.color.surfaceMuted, color: theme.color.textMuted }}>{m.icon} {m.label}</span>
       </button>
       {open && (
-        <div style={{ borderTop: `1px solid ${theme.color.border}` }}>
-          <div style={{ padding: '8px 14px 4px', fontSize: 12, color: theme.color.textSubtle }}>{transcript.title}</div>
-          <div style={{ maxHeight: 260, overflowY: 'auto', padding: '6px 14px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+        <div style={embedded ? {} : { borderTop: `1px solid ${theme.color.border}` }}>
+          <div style={{ padding: embedded ? '4px 0 2px' : '8px 14px 4px', fontSize: 12, color: theme.color.textSubtle }}>{transcript.title}</div>
+          <div style={{ maxHeight: 260, overflowY: 'auto', padding: embedded ? '4px 0 2px' : '6px 14px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
             {transcript.messages.map((msg, i) => <TxBubble key={i} msg={msg} />)}
           </div>
         </div>

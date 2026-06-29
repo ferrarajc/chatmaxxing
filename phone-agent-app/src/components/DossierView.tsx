@@ -77,7 +77,7 @@ export function DossierBody({ d, compact }: { d: Dossier; compact?: boolean }) {
       {/* What we worked out */}
       <div style={{ ...card, padding: '16px 18px', borderLeft: `3px solid ${theme.color.success}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <SectionLabel>What we worked out</SectionLabel>
+          <SectionLabel>What I found for you</SectionLabel>
           <Chip tone={d.research.answeredFully ? 'success' : 'warning'}>
             {d.research.answeredFully ? '✓ Fully answered' : 'Partially answered'}
           </Chip>
