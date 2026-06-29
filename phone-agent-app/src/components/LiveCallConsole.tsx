@@ -482,6 +482,7 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
   const feedRef = useRef<HTMLDivElement>(null);
   const speakerRef = useRef<'agent' | 'client'>(liveMic === 'client' ? 'client' : 'agent');
   const clientBuf = useRef('');
+  const feedLen = useRef(0);          // running feed length (synchronous; feed only ever grows)
   const cardStartLen = useRef(0);     // feed length when the active card became current
   const advancedRef = useRef(-1);     // cursor we already auto-advanced from (no double-fire)
 
@@ -527,8 +528,9 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
 
   useEffect(() => { if (liveMic !== 'off') speakerRef.current = liveMic; }, [liveMic]);
   useEffect(() => { feedRef.current?.scrollTo({ top: 1e9, behavior: 'smooth' }); }, [feed, interim]);
-  // Reset per-card tracking whenever the active card changes.
-  useEffect(() => { cardStartLen.current = feed.length; clientBuf.current = ''; advancedRef.current = -1;
+  // Reset the per-card auto-advance guard when the active card changes. (cardStartLen is set
+  // synchronously the moment each new latest card is created, so it isn't reset here.)
+  useEffect(() => { clientBuf.current = ''; advancedRef.current = -1;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cursor]);
 
@@ -536,6 +538,7 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
     if (micOff || !sttSupported) return;
     const stop = startLiveTranscription(
       (final) => {
+        feedLen.current += 1;
         setFeed(f => [...f, { speaker: speakerRef.current, text: final }]);
         useStore.getState().logLine(speakerRef.current === 'agent' ? 'AGENT' : 'CUSTOMER', final);
       },
@@ -548,13 +551,16 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
   const atEnd = cursor >= cards.length - 1;
   const isUnansweredAsk = card?.kind === 'ask' && card.chosen == null;
 
-  const agentSpoken = (withInterim: boolean): string => {
-    const parts = feed.slice(cardStartLen.current).filter(f => f.speaker === 'agent').map(f => f.text);
-    if (withInterim && interim && speakerRef.current === 'agent') parts.push(interim);
+  // On a teleprompter card it's the agent reading aloud — so count ALL speech since this card
+  // became active, regardless of which party the mic toggle is attributing bubbles to. (Otherwise
+  // the gray-out and auto-advance silently stop working whenever the mic is set to "Client".)
+  const spokenForCard = (withInterim: boolean): string => {
+    const parts = feed.slice(cardStartLen.current).map(f => f.text);
+    if (withInterim && interim) parts.push(interim);
     return parts.join(' ');
   };
   // Words of the active say card already spoken (for the live gray-out).
-  const progress = (card && atEnd && card.kind === 'say') ? spokenWordCount(card.text, agentSpoken(true)) : 0;
+  const progress = (card && atEnd && card.kind === 'say') ? spokenWordCount(card.text, spokenForCard(true)) : 0;
 
   const generateNext = async () => {
     if (generating) return;
@@ -567,14 +573,14 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
         const res = await post<{ text: string }>('/agent-callbacks', { action: 'suggest', callbackId: c?.item.callbackId, conversation });
         text = (res.text || '').trim();
       } catch { /* ignore */ }
-      if (text) { setCards(cs => [...cs, { kind: 'say', text, generated: true }]); setCursor(i => i + 1); }
+      if (text) { cardStartLen.current = feedLen.current; setCards(cs => [...cs, { kind: 'say', text, generated: true }]); setCursor(i => i + 1); }
     } finally { setGenerating(false); }
   };
 
   const goForward = async () => {
     if (cursor < cards.length - 1) { setCursor(c => c + 1); return; }
     if (isUnansweredAsk || generating) return;
-    if (hasNextPlanned()) { const next = nextPlanned(); if (next) { setCards(c => [...c, next]); setCursor(c => c + 1); return; } }
+    if (hasNextPlanned()) { const next = nextPlanned(); if (next) { cardStartLen.current = feedLen.current; setCards(c => [...c, next]); setCursor(c => c + 1); return; } }
     await generateNext();
   };
   const goBack = () => { if (cursor > 0) setCursor(c => c - 1); };
@@ -584,6 +590,7 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
     const opt = cur.options[k];
     pSteps.current = opt.then; pSi.current = 0; pStage.current = 'steps';
     const next = nextPlanned();
+    if (next) cardStartLen.current = feedLen.current;
     setCards(cs => {
       const marked = cs.map((cd, i) => (i === cursor && cd.kind === 'ask') ? { ...cd, chosen: k } : cd);
       return next ? [...marked, next] : marked;
@@ -603,8 +610,9 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
         const pick = bestOption(cur.options, clientBuf.current);
         if (pick) { const k = cur.options.indexOf(pick); if (k >= 0) pickOption(k); }
       }
-    } else if (last.speaker === 'agent' && advancedRef.current !== cursor) {
-      if (coverage(agentSpoken(false), cur.text) >= 0.8) { advancedRef.current = cursor; void goForward(); }
+    } else if (advancedRef.current !== cursor) {
+      // Say card: the agent is reading it — count all speech since the card (mic-toggle agnostic).
+      if (coverage(spokenForCard(false), cur.text) >= 0.8) { advancedRef.current = cursor; void goForward(); }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feed]);
@@ -657,7 +665,7 @@ function Teleprompter({ card, progress, generating, rightMode, canBack, autoAdva
       </div>
 
       {generating ? (
-        <div className="pa-speaking" style={{ fontSize: 14, color: theme.color.textMuted, fontStyle: 'italic', padding: '4px 0' }}>✍️ Writing the next thing to say…</div>
+        <div className="pa-speaking" style={{ fontSize: 15, color: theme.color.textMuted, fontStyle: 'italic', padding: '4px 0' }}>✍️ Writing the next thing to say…</div>
       ) : !card ? (
         <div style={{ textAlign: 'center', fontSize: 12.5, color: theme.color.textMuted, padding: '4px 0' }}>— End of script. Wrap up and end the call when you're done. —</div>
       ) : isAsk ? (
