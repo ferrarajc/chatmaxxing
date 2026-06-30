@@ -73,7 +73,7 @@ export function DossierView() {
         </div>
 
         {!researching && dossier && (
-          <div style={{ marginTop: 12, borderTop: `1px solid ${theme.color.border}`, paddingTop: 4 }}>
+          <div style={{ marginTop: 14, borderTop: `1px solid ${theme.color.border}`, paddingTop: 14 }}>
             <FlipperRow label="Client snapshot" embedded right={<span style={{ fontSize: 12, color: theme.color.textMuted }}>{fmtMoney(dossier.clientSnapshot.totalBalance)}</span>}>
               <SnapshotBody snap={dossier.clientSnapshot} />
             </FlipperRow>
@@ -107,9 +107,9 @@ function SimulateButton({ due, onClick }: { due: boolean; onClick: () => void })
       title={due ? 'Start the call' : 'In production this unlocks when the call is due — enabled now for the demo'}
       style={{
         flexShrink: 0, whiteSpace: 'nowrap',
-        background: due ? theme.color.primary : theme.color.surfaceMuted,
-        color: due ? '#fff' : theme.color.textSubtle,
-        border: due ? 'none' : `1px solid ${theme.color.border}`,
+        background: due ? theme.color.primary : '#DCDCDC',
+        color: due ? '#fff' : '#AEAEAE',
+        border: due ? 'none' : '1px solid #D2D2D2',
         borderRadius: theme.radius.md, padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
       }}
     >▶ Simulate this call</button>
@@ -132,73 +132,47 @@ function IntentTranscriptCard({ intent, transcript }: { intent: IntentBrief; tra
       )}
       {transcript && (
         <>
-          <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '13px -18px 0' }} />
-          <OriginalTranscriptCard transcript={transcript} embedded />
+          <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '14px -18px 0' }} />
+          <div style={{ paddingTop: 12 }}>
+            <OriginalTranscriptCard transcript={transcript} embedded />
+          </div>
         </>
       )}
     </div>
   );
 }
 
-/** The research brief — summary + findings, then a two-column Coaching / Recommended resources row. */
+/**
+ * The research brief, all in one card: summary + findings, then "Still open" (a card-in-card), then
+ * Recommended resources laid out horizontally, a divider, and finally Coaching.
+ */
 export function DossierBody({ d }: { d: Dossier }) {
-  const hasBelow = d.coaching.length > 0 || d.resources.length > 0;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ ...card, padding: '16px 18px', borderLeft: `3px solid ${theme.color.success}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <SectionLabel>What I found for you</SectionLabel>
-          <Chip tone={d.research.answeredFully ? 'success' : 'warning'}>
-            {d.research.answeredFully ? '✓ Fully answered' : 'Partially answered'}
-          </Chip>
-        </div>
-        <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: 1.55, color: theme.color.text }}>{d.research.summary}</p>
-        {d.research.findings.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {d.research.findings.map((f, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                <span style={{ color: theme.color.success, fontSize: 13, lineHeight: 1.5 }}>●</span>
-                <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>
-                  <span style={{ fontWeight: 700 }}>{f.point}:</span> {f.detail}
-                  {f.source && <span style={{ marginLeft: 6, fontSize: 11, color: theme.color.textSubtle, fontFamily: theme.font.mono }}>[{f.source}]</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {hasBelow && (
-          <>
-            <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '14px -18px 12px' }} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 300px) 1fr', gap: 22, alignItems: 'start' }}>
-              <div>
-                {d.resources.length > 0 && (
-                  <>
-                    <SectionLabel>Recommended resources</SectionLabel>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {d.resources.map(r => <ResourceTile key={r.id} title={r.title} url={r.url} />)}
-                    </div>
-                  </>
-                )}
-              </div>
-              <div>
-                {d.coaching.length > 0 && (
-                  <>
-                    <SectionLabel>Coaching for this call</SectionLabel>
-                    <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {d.coaching.map((c, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5, color: theme.color.text }}>{c}</li>)}
-                    </ul>
-                  </>
-                )}
+    <div style={{ ...card, padding: '16px 18px', borderLeft: `3px solid ${theme.color.success}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: theme.color.textMuted }}>What I found for you</span>
+        <Chip tone={d.research.answeredFully ? 'success' : 'warning'}>
+          {d.research.answeredFully ? '✓ Fully answered' : 'Partially answered'}
+        </Chip>
+      </div>
+      <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: 1.55, color: theme.color.text }}>{d.research.summary}</p>
+      {d.research.findings.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {d.research.findings.map((f, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+              <span style={{ color: theme.color.success, fontSize: 13, lineHeight: 1.5 }}>●</span>
+              <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>
+                <span style={{ fontWeight: 700 }}>{f.point}:</span> {f.detail}
+                {f.source && <span style={{ marginLeft: 6, fontSize: 11, color: theme.color.textSubtle, fontFamily: theme.font.mono }}>[{f.source}]</span>}
               </div>
             </div>
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Still open / needs you */}
+      {/* Still open — a card within the card */}
       {d.research.openItems.length > 0 && (
-        <div style={{ ...card, padding: '16px 18px', background: theme.color.warningSoft, borderColor: theme.color.warningBorder }}>
+        <div style={{ marginTop: 14, background: theme.color.warningSoft, border: `1px solid ${theme.color.warningBorder}`, borderRadius: theme.radius.md, padding: '12px 14px' }}>
           <SectionLabel>Still open · needs you</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 2 }}>
             {d.research.openItems.map((o, i) => (
@@ -209,6 +183,31 @@ export function DossierBody({ d }: { d: Dossier }) {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Recommended resources — horizontal, wrapping */}
+      {d.resources.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <SectionLabel>Recommended resources</SectionLabel>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {d.resources.map(r => (
+              <div key={r.id} style={{ flex: '1 1 210px', maxWidth: 320, minWidth: 0 }}>
+                <ResourceTile title={r.title} url={r.url} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Coaching */}
+      {d.coaching.length > 0 && (
+        <>
+          <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '16px -18px 12px' }} />
+          <SectionLabel>Coaching for this call</SectionLabel>
+          <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {d.coaching.map((c, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5, color: theme.color.text }}>{c}</li>)}
+          </ul>
+        </>
       )}
     </div>
   );
@@ -239,7 +238,7 @@ function ResourceTile({ title, url }: { title: string; url: string }) {
       href={url} target="_blank" rel="noreferrer"
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none',
+        display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', width: '100%', boxSizing: 'border-box',
         background: hover ? theme.color.primarySoft : theme.color.surfaceWell,
         border: `1px solid ${hover ? theme.color.primarySoftBorder : theme.color.border}`,
         borderRadius: theme.radius.md, padding: '10px 12px',
