@@ -45,6 +45,7 @@ interface Store {
   connect: () => void;
   endWithOutcome: (outcome: string) => Promise<void>;
   endCall: () => Promise<void>;
+  saveCallTranscript: (acw: { wrapUpCode: string; summary: string }) => Promise<void>;
   dismissCall: () => void;
 }
 
@@ -99,30 +100,38 @@ export const useStore = create<Store>((set, get) => ({
   decline: () => set({ call: null }),
   connect: () => set(s => (s.call ? { call: { ...s.call, phase: 'live', identityVerified: true } } : {})),
   endWithOutcome: async (outcome) => {
+    // Move into after-call work; the transcript is saved (with the final wrap-up code + edited
+    // summary) when the agent completes ACW. The callback leaves the board now.
     const c = get().call;
-    const log = get().transcriptLog;
     set(s => (s.call ? { call: { ...s.call, phase: 'wrapup' }, callOutcome: outcome } : {}));
     if (!c) return;
     try { await post('/agent-callbacks', { action: 'complete', callbackId: c.item.callbackId }); } catch { /* ignore */ }
-    // Record the call for post-hoc review (only if something was actually said).
-    if (log.length) {
-      const entries: LogEntry[] = outcome ? [...log, { role: 'SYSTEM', content: `Call outcome: ${outcome}`, ts: Date.now() }] : log;
-      const messages = entries.map((m, i) => ({ id: String(i), ts: m.ts, role: m.role, content: m.content }));
-      try {
-        await post('/save-transcript', {
-          transcriptId: crypto.randomUUID?.() ?? `phone-${c.item.callbackId}-${Date.now()}`,
-          clientId: c.item.clientId,
-          clientName: c.item.clientName,
-          agentName: AGENT_NAME,
-          transcriptType: 'phone',
-          intentSummary: c.item.intentSummary,
-          startTime: log[0]?.ts ?? Date.now(),
-          endTime: Date.now(),
-          messages,
-        });
-      } catch { /* ignore — review record is best-effort */ }
-    }
   },
   endCall: async () => { await get().endWithOutcome('✅ Completed — handled by agent'); },
-  dismissCall: () => set({ call: null, callOutcome: '' }),
+  // After-call work is done — persist the reviewed transcript, then clear the call AND the stale
+  // board selection (so the completed call's dossier can't linger / be re-simulated).
+  saveCallTranscript: async ({ wrapUpCode, summary }) => {
+    const c = get().call;
+    const log = get().transcriptLog;
+    const outcome = get().callOutcome;
+    if (!c || !log.length) return;
+    const entries: LogEntry[] = outcome ? [...log, { role: 'SYSTEM', content: `Call outcome: ${outcome}`, ts: Date.now() }] : log;
+    const messages = entries.map((m, i) => ({ id: String(i), ts: m.ts, role: m.role, content: m.content }));
+    try {
+      await post('/save-transcript', {
+        transcriptId: crypto.randomUUID?.() ?? `phone-${c.item.callbackId}-${Date.now()}`,
+        clientId: c.item.clientId,
+        clientName: c.item.clientName,
+        agentName: AGENT_NAME,
+        transcriptType: 'phone',
+        intentSummary: c.item.intentSummary,
+        wrapUpCode: wrapUpCode || null,
+        acwSummary: summary || null,
+        startTime: log[0]?.ts ?? Date.now(),
+        endTime: Date.now(),
+        messages,
+      });
+    } catch { /* ignore — review record is best-effort */ }
+  },
+  dismissCall: () => set({ call: null, callOutcome: '', transcriptLog: [], selectedId: null, selected: null }),
 }));

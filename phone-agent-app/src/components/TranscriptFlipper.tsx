@@ -115,39 +115,70 @@ function highlightText(text: string, highlights?: string[]): ReactNode {
   return nodes;
 }
 
+/** A flip triangle drawn with CSS borders so it reads clearly at any size (right → down on open). */
+function Triangle({ open, color }: { open: boolean; color: string }) {
+  return (
+    <span style={{ width: 15, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={open
+        ? { width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `11px solid ${color}` }
+        : { width: 0, height: 0, borderTop: '11px solid transparent', borderBottom: '11px solid transparent', borderLeft: `12px solid ${color}` }} />
+    </span>
+  );
+}
+
 /**
- * Collapsible "Original transcript" card for the live-call right column. Closed by default — the
- * label stays visible — and when open it scrolls internally within a capped height so the context
- * cards below stay in view.
+ * A reusable collapsible "flipper" row — the global pattern for show/hide sections (Original
+ * transcript, Client snapshot, …). Closed by default; the label stays visible. A large flip
+ * triangle and a hover highlight give it a clear (but quiet) clickable affordance, distinct from
+ * the static SectionLabel headers. `embedded` drops the own-card chrome so it can sit inside a
+ * parent card.
  */
-export function OriginalTranscriptCard({ transcript, embedded }: { transcript: OriginTranscript; embedded?: boolean }) {
-  const [open, setOpen] = useState(false);
-  const m = CHANNEL_META[transcript.channel];
-  // `embedded` drops the own card chrome (border/bg/shadow) and horizontal padding so it can sit
-  // inside a parent card with the channel chip aligned to that card's content.
+export function FlipperRow({ label, right, embedded, defaultOpen, bodyPad, children }: {
+  label: string; right?: ReactNode; embedded?: boolean; defaultOpen?: boolean; bodyPad?: string; children: ReactNode;
+}) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  const [hover, setHover] = useState(false);
   const outer: CSSProperties = embedded
     ? {}
     : { flexShrink: 0, background: theme.color.surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.color.border}`, boxShadow: theme.shadow.sm, overflow: 'hidden' };
+  const triColor = hover || open ? theme.color.primary : theme.color.textMuted;
   return (
     <div style={outer}>
-      <button onClick={() => setOpen(o => !o)} style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: embedded ? '10px 0 2px' : '11px 14px',
-        background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-      }}>
-        <span style={{ fontSize: 11, color: theme.color.textMuted, width: 12 }}>{open ? '▾' : '▸'}</span>
-        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: theme.color.textMuted, flex: 1 }}>
-          Original transcript
+      <button
+        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left',
+          padding: embedded ? '8px 8px' : '10px 12px', margin: embedded ? '0 -8px' : 0, borderRadius: theme.radius.md,
+          background: hover ? theme.color.surfaceWell : 'transparent', border: 'none', cursor: 'pointer',
+          transition: 'background .12s',
+        }}
+      >
+        <Triangle open={open} color={triColor} />
+        <span style={{ flex: 1, fontSize: 11.5, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: hover || open ? theme.color.primary : theme.color.text }}>
+          {label}
         </span>
-        <span style={{ ...chipStyle, background: theme.color.surfaceMuted, color: theme.color.textMuted }}>{m.icon} {m.label}</span>
+        {right}
       </button>
-      {open && (
-        <div style={embedded ? {} : { borderTop: `1px solid ${theme.color.border}` }}>
-          <div style={{ padding: embedded ? '4px 0 2px' : '8px 14px 4px', fontSize: 12, color: theme.color.textSubtle }}>{transcript.title}</div>
-          <div style={{ maxHeight: 260, overflowY: 'auto', padding: embedded ? '4px 0 2px' : '6px 14px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-            {transcript.messages.map((msg, i) => <TxBubble key={i} msg={msg} />)}
-          </div>
-        </div>
-      )}
+      {open && <div style={{ padding: bodyPad ?? (embedded ? '6px 0 2px' : '4px 14px 12px') }}>{children}</div>}
     </div>
+  );
+}
+
+/** Collapsible "Original transcript" flipper — its body scrolls internally within a capped height. */
+export function OriginalTranscriptCard({ transcript, embedded }: { transcript: OriginTranscript; embedded?: boolean }) {
+  const m = CHANNEL_META[transcript.channel];
+  return (
+    <FlipperRow
+      label="Original transcript"
+      embedded={embedded}
+      bodyPad={embedded ? '4px 0 2px' : '0 14px 12px'}
+      right={<span style={{ ...chipStyle, background: theme.color.surfaceMuted, color: theme.color.textMuted }}>{m.icon} {m.label}</span>}
+    >
+      <div style={{ fontSize: 12, color: theme.color.textSubtle, marginBottom: 4 }}>{transcript.title}</div>
+      <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {transcript.messages.map((msg, i) => <TxBubble key={i} msg={msg} />)}
+      </div>
+    </FlipperRow>
   );
 }

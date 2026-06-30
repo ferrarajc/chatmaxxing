@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import { useNow, fmtCountdown, fmtScheduled, fmtMoney, initials } from '../util';
 import { theme } from '../theme';
-import { card, Chip, Button, Avatar, SectionLabel, h2Style } from './ui';
+import { card, Chip, Avatar, SectionLabel, h2Style } from './ui';
 import { ScriptPreview } from './GuidedScript';
-import { OriginalTranscriptCard } from './TranscriptFlipper';
+import { OriginalTranscriptCard, FlipperRow } from './TranscriptFlipper';
+import { AfterCallWork } from './AfterCallWork';
 import type { Dossier, IntentBrief, OriginTranscript } from '../types';
 
 function Empty({ text }: { text: string }) {
@@ -23,6 +24,10 @@ export function DossierView() {
   const ring = useStore(s => s.ring);
   const now = useNow(1000);
 
+  // A finished call shows after-call work in the dossier (not the prep view, which would let you
+  // re-simulate a completed call).
+  if (call?.phase === 'wrapup') return <AfterCallWork />;
+
   // During a live call the board is gone, so the right column tracks the active call's dossier;
   // otherwise it tracks the board selection being prepped.
   const live = call?.phase === 'live';
@@ -38,35 +43,40 @@ export function DossierView() {
   if (!item) return <Empty text="Loading…" />;
 
   const researching = !dossier || (!live && selected!.dossierStatus !== 'ready');
+  const due = new Date(item.scheduledTime).getTime() - now < 1000;
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', paddingRight: 6 }}>
-      {/* Top card — name + countdown + Simulate (prep) / On-call indicator (live) */}
-      <div style={{ ...card, padding: '18px 20px', marginBottom: 16 }}>
+      {/* Top card — name; countdown + Simulate top-right; Client snapshot flipper below */}
+      <div style={{ ...card, padding: '16px 20px', marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
           <Avatar initials={initials(item.clientName || '?')} size={48} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ ...h2Style(), fontSize: 20 }}>{item.clientName}</div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            {live ? (
-              <div style={{ fontSize: 13.5, fontWeight: 800, color: theme.color.success, display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span className="pa-speaking" style={{ width: 9, height: 9, borderRadius: '50%', background: theme.color.success, display: 'inline-block' }} />
-                On call now
-              </div>
-            ) : (
-              <>
+          {live ? (
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: theme.color.success, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span className="pa-speaking" style={{ width: 9, height: 9, borderRadius: '50%', background: theme.color.success, display: 'inline-block' }} />
+              On call now
+            </div>
+          ) : (
+            <>
+              <div style={{ textAlign: 'right', lineHeight: 1.3 }}>
                 <div style={{ fontSize: 12, color: theme.color.textSubtle }}>{fmtScheduled(item.scheduledTime)}</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: theme.color.accent, fontVariantNumeric: 'tabular-nums' }}>
-                  {fmtCountdown(item.scheduledTime, now)}
+                <div style={{ fontSize: 18, fontWeight: 800, color: due ? theme.color.accent : theme.color.textMuted, fontVariantNumeric: 'tabular-nums' }}>
+                  {due ? 'Now' : `rings in ${fmtCountdown(item.scheduledTime, now)}`}
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+              <SimulateButton due={due} onClick={() => void ring(selected!)} />
+            </>
+          )}
         </div>
-        {!live && (
-          <div style={{ marginTop: 14 }}>
-            <Button onClick={() => void ring(selected!)} big>▶ Simulate this call</Button>
+
+        {!researching && dossier && (
+          <div style={{ marginTop: 12, borderTop: `1px solid ${theme.color.border}`, paddingTop: 4 }}>
+            <FlipperRow label="Client snapshot" embedded right={<span style={{ fontSize: 12, color: theme.color.textMuted }}>{fmtMoney(dossier.clientSnapshot.totalBalance)}</span>}>
+              <SnapshotBody snap={dossier.clientSnapshot} />
+            </FlipperRow>
           </div>
         )}
       </div>
@@ -89,17 +99,34 @@ export function DossierView() {
   );
 }
 
+/** Looks disabled until the call is due, but stays clickable so demos can simulate at will. */
+function SimulateButton({ due, onClick }: { due: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={due ? 'Start the call' : 'In production this unlocks when the call is due — enabled now for the demo'}
+      style={{
+        flexShrink: 0, whiteSpace: 'nowrap',
+        background: due ? theme.color.primary : theme.color.surfaceMuted,
+        color: due ? '#fff' : theme.color.textSubtle,
+        border: due ? 'none' : `1px solid ${theme.color.border}`,
+        borderRadius: theme.radius.md, padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+      }}
+    >▶ Simulate this call</button>
+  );
+}
+
 /** The client's objective with the originating transcript flipper attached below a divider. */
 function IntentTranscriptCard({ intent, transcript }: { intent: IntentBrief; transcript?: OriginTranscript }) {
   const detail = (intent.detail ?? []).filter(Boolean);
   return (
     <div style={{ ...card, padding: '16px 18px', marginBottom: 16 }}>
-      <div style={{ fontFamily: theme.font.serif, fontSize: 18, fontWeight: 800, lineHeight: 1.32, color: theme.color.text, letterSpacing: '-0.01em' }}>
+      <div style={{ fontFamily: theme.font.serif, fontSize: 22.5, fontWeight: 800, lineHeight: 1.3, color: theme.color.text, letterSpacing: '-0.01em' }}>
         {intent.headline}
       </div>
-      {detail.length === 1 && <p style={{ margin: '9px 0 0', fontSize: 13.5, lineHeight: 1.55, color: theme.color.textMuted }}>{detail[0]}</p>}
+      {detail.length === 1 && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.55, color: theme.color.textMuted }}>{detail[0]}</p>}
       {detail.length > 1 && (
-        <ul style={{ margin: '9px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <ul style={{ margin: '10px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5 }}>
           {detail.map((d, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5, color: theme.color.textMuted }}>{d}</li>)}
         </ul>
       )}
@@ -113,12 +140,11 @@ function IntentTranscriptCard({ intent, transcript }: { intent: IntentBrief; tra
   );
 }
 
-/** The research brief (with resources), gap list, snapshot, and coaching. */
+/** The research brief — summary + findings, then a two-column Coaching / Recommended resources row. */
 export function DossierBody({ d }: { d: Dossier }) {
-  const snap = d.clientSnapshot;
+  const hasBelow = d.coaching.length > 0 || d.resources.length > 0;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* What I found for you (+ recommended resources) */}
       <div style={{ ...card, padding: '16px 18px', borderLeft: `3px solid ${theme.color.success}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <SectionLabel>What I found for you</SectionLabel>
@@ -140,12 +166,31 @@ export function DossierBody({ d }: { d: Dossier }) {
             ))}
           </div>
         )}
-        {d.resources.length > 0 && (
+
+        {hasBelow && (
           <>
             <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '14px -18px 12px' }} />
-            <SectionLabel>Recommended resources</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {d.resources.map(r => <ResourceTile key={r.id} title={r.title} url={r.url} />)}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'start' }}>
+              <div>
+                {d.coaching.length > 0 && (
+                  <>
+                    <SectionLabel>Coaching for this call</SectionLabel>
+                    <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {d.coaching.map((c, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5, color: theme.color.text }}>{c}</li>)}
+                    </ul>
+                  </>
+                )}
+              </div>
+              <div>
+                {d.resources.length > 0 && (
+                  <>
+                    <SectionLabel>Recommended resources</SectionLabel>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 340 }}>
+                      {d.resources.map(r => <ResourceTile key={r.id} title={r.title} url={r.url} />)}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -165,31 +210,23 @@ export function DossierBody({ d }: { d: Dossier }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Client snapshot — roomy stat grid */}
-      <div style={{ ...card, padding: '18px 20px' }}>
-        <SectionLabel>Client snapshot</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px 16px', marginTop: 4 }}>
-          <Stat label="Total portfolio" value={fmtMoney(snap.totalBalance)} />
-          {snap.accountCount != null && <Stat label="Accounts" value={String(snap.accountCount)} />}
-          {snap.riskProfile && <Stat label="Risk profile" value={snap.riskProfile} />}
-          {snap.timeHorizon && <Stat label="Time horizon" value={snap.timeHorizon} />}
-          {snap.investmentExperience && <Stat label="Experience" value={snap.investmentExperience} />}
-          {snap.memberSince && <Stat label="Member since" value={snap.memberSince.slice(0, 4)} />}
-        </div>
-        <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '16px -20px 0' }} />
-        <div style={{ fontSize: 13, color: theme.color.textMuted, marginTop: 12 }}>{snap.accountsSummary}</div>
+/** Roomy stat grid + accounts line — used inside the Client snapshot flipper. */
+function SnapshotBody({ snap }: { snap: Dossier['clientSnapshot'] }) {
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px 16px' }}>
+        <Stat label="Total portfolio" value={fmtMoney(snap.totalBalance)} />
+        {snap.accountCount != null && <Stat label="Accounts" value={String(snap.accountCount)} />}
+        {snap.riskProfile && <Stat label="Risk profile" value={snap.riskProfile} />}
+        {snap.timeHorizon && <Stat label="Time horizon" value={snap.timeHorizon} />}
+        {snap.investmentExperience && <Stat label="Experience" value={snap.investmentExperience} />}
+        {snap.memberSince && <Stat label="Member since" value={snap.memberSince.slice(0, 4)} />}
       </div>
-
-      {/* Coaching */}
-      {d.coaching.length > 0 && (
-        <div style={{ ...card, padding: '16px 18px' }}>
-          <SectionLabel>Coaching for this call</SectionLabel>
-          <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {d.coaching.map((c, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5, color: theme.color.text }}>{c}</li>)}
-          </ul>
-        </div>
-      )}
+      <div style={{ fontSize: 13, color: theme.color.textMuted, marginTop: 12 }}>{snap.accountsSummary}</div>
     </div>
   );
 }
@@ -202,23 +239,23 @@ function ResourceTile({ title, url }: { title: string; url: string }) {
       href={url} target="_blank" rel="noreferrer"
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
+        display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none',
         background: hover ? theme.color.primarySoft : theme.color.surfaceWell,
         border: `1px solid ${hover ? theme.color.primarySoftBorder : theme.color.border}`,
-        borderRadius: theme.radius.md, padding: '11px 13px',
+        borderRadius: theme.radius.md, padding: '10px 12px',
         boxShadow: hover ? theme.shadow.md : 'none', transform: hover ? 'translateY(-1px)' : 'none',
         transition: 'transform .12s, box-shadow .12s, background .12s',
       }}
     >
       <div style={{
-        width: 34, height: 34, flexShrink: 0, borderRadius: theme.radius.md, background: theme.color.primary, color: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+        width: 30, height: 30, flexShrink: 0, borderRadius: theme.radius.md, background: theme.color.primary, color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
       }}>📄</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.color.text }}>{title}</div>
-        <div style={{ fontSize: 11.5, color: theme.color.textMuted }}>Reference article · opens in a new tab</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: theme.color.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
+        <div style={{ fontSize: 11, color: theme.color.textMuted }}>Reference · new tab</div>
       </div>
-      <span style={{ fontSize: 15, color: theme.color.primary, fontWeight: 700 }}>↗</span>
+      <span style={{ fontSize: 14, color: theme.color.primary, fontWeight: 700 }}>↗</span>
     </a>
   );
 }
@@ -227,7 +264,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div style={{ fontSize: 11, color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: theme.color.text, marginTop: 3 }}>{value}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: theme.color.text, marginTop: 3 }}>{value}</div>
     </div>
   );
 }

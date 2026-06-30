@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useStore } from '../store';
 import { theme } from '../theme';
-import { Avatar, Button, Overlay, panel, h2Style } from './ui';
+import { Avatar, Button, Overlay, panel } from './ui';
 import { initials } from '../util';
 import { speak, stopSpeaking, prefetch } from '../voiceTts';
 import { listenForSpeech, stopListening, speechSupported } from '../speech';
@@ -21,7 +21,6 @@ export function LiveCallConsole() {
   const call = useStore(s => s.call);
   const phase = call?.phase;
   const endWithOutcome = useStore(s => s.endWithOutcome);
-  const dismissCall = useStore(s => s.dismissCall);
   const audioOn = useStore(s => s.audioOn);
   const setAudioOn = useStore(s => s.setAudioOn);
   const micOn = useStore(s => s.micOn);
@@ -30,8 +29,9 @@ export function LiveCallConsole() {
 
   useEffect(() => () => { stopSpeaking(); stopListening(); stopRinging(); }, []);
 
-  // ringing → IncomingCallOverlay; live → LiveCallPanel (base page). Only connecting/wrapup overlay here.
-  if (!call || !phase || phase === 'ringing' || phase === 'live') return null;
+  // Only the outbound voicebot call (connecting) is an overlay. ringing → IncomingCallOverlay;
+  // live → LiveCallPanel (base page); wrapup → after-call work in the dossier (right column).
+  if (!call || phase !== 'connecting') return null;
   const name = call.item.clientName || 'the client';
 
   return (
@@ -41,20 +41,15 @@ export function LiveCallConsole() {
           <Avatar initials={initials(name)} size={40} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 16, fontFamily: theme.font.serif }}>{name}</div>
-            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>{phase === 'connecting' ? 'Automated callback in progress…' : 'Call ended'}</div>
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>Automated callback in progress…</div>
           </div>
-          {phase === 'connecting' && (
-            <>
-              <button onClick={() => openVoicePanel(true)} title="Voice settings" style={hdrBtn(false)}>⚙</button>
-              <button onClick={() => setAudioOn(!audioOn)} title="Toggle Bob's spoken lines" style={hdrBtn(false)}>{audioOn ? '🔊 Voice on' : '🔇 Voice off'}</button>
-              <button onClick={() => setMicOn(!micOn)} title="Wait for your microphone on the client's turns" style={hdrBtn(micOn)}>{micOn ? '🎤 Mic on' : '🎤 Mic off'}</button>
-              <button onClick={() => void endWithOutcome('☎️ Agent ended the call')} title="Hang up" style={{ ...hdrBtn(false), background: 'rgba(180,60,50,0.5)' }}>Hang up</button>
-            </>
-          )}
+          <button onClick={() => openVoicePanel(true)} title="Voice settings" style={hdrBtn(false)}>⚙</button>
+          <button onClick={() => setAudioOn(!audioOn)} title="Toggle Bob's spoken lines" style={hdrBtn(false)}>{audioOn ? '🔊 Voice on' : '🔇 Voice off'}</button>
+          <button onClick={() => setMicOn(!micOn)} title="Wait for your microphone on the client's turns" style={hdrBtn(micOn)}>{micOn ? '🎤 Mic on' : '🎤 Mic off'}</button>
+          <button onClick={() => void endWithOutcome('☎️ Agent ended the call')} title="Hang up" style={{ ...hdrBtn(false), background: 'rgba(180,60,50,0.5)' }}>Hang up</button>
         </div>
 
-        {phase === 'connecting' && <CallSim name={name} />}
-        {phase === 'wrapup' && <WrapUp name={name} onDone={dismissCall} />}
+        <CallSim name={name} />
       </div>
     </Overlay>
   );
@@ -334,24 +329,3 @@ function Bubble({ isBob, children }: { isBob: boolean; children: ReactNode }) {
   );
 }
 
-function WrapUp({ name, onDone }: { name: string; onDone: () => void }) {
-  const outcome = useStore(s => s.callOutcome);
-  const connected = outcome.startsWith('✅');
-  return (
-    <div style={{ padding: '34px 26px', textAlign: 'center' }}>
-      <div style={{ fontSize: 40, color: connected ? theme.color.success : theme.color.primary }}>{connected ? '✓' : '📞'}</div>
-      <div style={{ ...h2Style(), fontSize: 20, marginTop: 6 }}>Call ended</div>
-      {outcome && (
-        <div style={{ display: 'inline-block', marginTop: 12, background: theme.color.surfaceMuted, border: `1px solid ${theme.color.border}`, borderRadius: theme.radius.pill, padding: '7px 18px', fontSize: 13.5, fontWeight: 600 }}>
-          {outcome}
-        </div>
-      )}
-      <div style={{ fontSize: 14, color: theme.color.textMuted, margin: '16px 0 20px' }}>
-        {connected
-          ? `Your call with ${name} is wrapped up and removed from the board.`
-          : `This callback has been logged and removed from the board.`}
-      </div>
-      <Button onClick={onDone} big>Back to board</Button>
-    </div>
-  );
-}
