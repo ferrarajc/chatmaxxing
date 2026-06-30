@@ -121,7 +121,7 @@ function IntentTranscriptCard({ intent, transcript }: { intent: IntentBrief; tra
   const detail = (intent.detail ?? []).filter(Boolean);
   return (
     <div style={{ ...card, padding: '16px 18px', marginBottom: 16 }}>
-      <div style={{ fontFamily: theme.font.serif, fontSize: 22.5, fontWeight: 800, lineHeight: 1.3, color: theme.color.text, letterSpacing: '-0.01em' }}>
+      <div style={{ fontFamily: theme.font.serif, fontSize: 27, fontWeight: 800, lineHeight: 1.25, color: theme.color.text, letterSpacing: '-0.01em' }}>
         {intent.headline}
       </div>
       {detail.length === 1 && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.55, color: theme.color.textMuted }}>{detail[0]}</p>}
@@ -170,7 +170,17 @@ export function DossierBody({ d }: { d: Dossier }) {
         {hasBelow && (
           <>
             <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '14px -18px 12px' }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 300px) 1fr', gap: 22, alignItems: 'start' }}>
+              <div>
+                {d.resources.length > 0 && (
+                  <>
+                    <SectionLabel>Recommended resources</SectionLabel>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {d.resources.map(r => <ResourceTile key={r.id} title={r.title} url={r.url} />)}
+                    </div>
+                  </>
+                )}
+              </div>
               <div>
                 {d.coaching.length > 0 && (
                   <>
@@ -178,16 +188,6 @@ export function DossierBody({ d }: { d: Dossier }) {
                     <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {d.coaching.map((c, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5, color: theme.color.text }}>{c}</li>)}
                     </ul>
-                  </>
-                )}
-              </div>
-              <div>
-                {d.resources.length > 0 && (
-                  <>
-                    <SectionLabel>Recommended resources</SectionLabel>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 340 }}>
-                      {d.resources.map(r => <ResourceTile key={r.id} title={r.title} url={r.url} />)}
-                    </div>
                   </>
                 )}
               </div>

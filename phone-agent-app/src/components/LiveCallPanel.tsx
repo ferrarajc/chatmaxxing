@@ -26,7 +26,10 @@ export function LiveCallPanel() {
 
   useEffect(() => () => { stopSpeaking(); stopListening(); }, []);
 
-  if (!call || call.phase !== 'live' || !call.dossier) return null;
+  // Stays mounted through after-call work (frozen) so the transcript persists for reference while
+  // the agent fills out ACW on the right; it only unmounts when the call is dismissed.
+  if (!call || (call.phase !== 'live' && call.phase !== 'wrapup') || !call.dossier) return null;
+  const frozen = call.phase === 'wrapup';
   const name = call.item.clientName || 'the client';
   const verified = call.identityVerified !== false;
   const gs = draft ?? call.dossier.guidedScript;
@@ -38,18 +41,24 @@ export function LiveCallPanel() {
           <Avatar initials={initials(name)} size={36} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 15, fontFamily: theme.font.serif }}>{name}</div>
-            <IdentityChip verified={verified} />
+            {frozen
+              ? <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 3 }}>Call ended — complete after-call work →</div>
+              : <IdentityChip verified={verified} />}
           </div>
-          <button onClick={() => void endCall()} style={{ background: theme.color.danger, color: '#fff', border: 'none', borderRadius: theme.radius.md, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-            End call
-          </button>
+          {!frozen && (
+            <button onClick={() => void endCall()} style={{ background: theme.color.danger, color: '#fff', border: 'none', borderRadius: theme.radius.md, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              End call
+            </button>
+          )}
         </div>
-        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-          <MicSegmented value={liveMic} onChange={setLiveMic} />
-        </div>
+        {!frozen && (
+          <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+            <MicSegmented value={liveMic} onChange={setLiveMic} />
+          </div>
+        )}
       </div>
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        <LiveScript gs={gs} verified={verified} />
+        <LiveScript gs={gs} verified={verified} frozen={frozen} />
       </div>
     </div>
   );
@@ -146,7 +155,7 @@ function bestOption(options: ScriptBranch[], spoken: string): ScriptBranch | nul
  * with the prev/next control, and (when Auto is on) it advances off the live transcription — graying
  * out each word as spoken, and on an ask card the client's answer picks the branch.
  */
-function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) {
+function LiveScript({ gs, verified, frozen }: { gs: GuidedScriptT; verified: boolean; frozen: boolean }) {
   const liveMic = useStore(s => s.liveMic);
   const autoAdvance = useStore(s => s.autoAdvance);
   const setAutoAdvance = useStore(s => s.setAutoAdvance);
@@ -214,7 +223,7 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
   }, [cursor]);
 
   useEffect(() => {
-    if (micOff || !sttSupported) return;
+    if (frozen || micOff || !sttSupported) return;   // ACW: stop listening, keep the transcript
     const stop = startLiveTranscription(
       (final) => {
         feedLen.current += 1;
@@ -224,7 +233,7 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
       (txt) => setInterim(txt),
     );
     return () => { stop(); setInterim(''); };
-  }, [micOff, sttSupported]);
+  }, [frozen, micOff, sttSupported]);
 
   const card = cards[cursor] ?? null;
   const atEnd = cursor >= cards.length - 1;
@@ -304,25 +313,33 @@ function LiveScript({ gs, verified }: { gs: GuidedScriptT; verified: boolean }) 
       <div ref={feedRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {feed.length === 0 && !interim && (
           <div style={{ fontSize: 11.5, color: theme.color.textSubtle, fontStyle: 'italic' }}>
-            {!micOff && sttSupported
-              ? "🎤 Listening — pick who's speaking in the header; the transcript builds here."
-              : 'Mic is off — choose 🎤 Client or Agent in the header to transcribe.'}
+            {frozen
+              ? 'No live transcript was captured during this call.'
+              : !micOff && sttSupported
+                ? "🎤 Listening — pick who's speaking in the header; the transcript builds here."
+                : 'Mic is off — choose 🎤 Client or Agent in the header to transcribe.'}
           </div>
         )}
         {feed.map((it, i) => <SttBubble key={i} actor={it.speaker} text={it.text} />)}
-        {interim && <SttBubble actor={speakerRef.current} text={interim} interim />}
+        {interim && !frozen && <SttBubble actor={speakerRef.current} text={interim} interim />}
       </div>
-      <div style={{ flexShrink: 0, borderTop: `1px solid ${theme.color.border}`, background: ACTOR.agent.bg, padding: '11px 14px 12px' }}>
-        {!verified && (
-          <div style={{ fontSize: 11.5, color: theme.color.danger, fontWeight: 600, marginBottom: 8 }}>Identity not verified — confirm it before discussing the account.</div>
-        )}
-        <Teleprompter
-          card={card} progress={progress} generating={generating}
-          rightMode={rightMode} canBack={cursor > 0}
-          autoAdvance={autoAdvance} onToggleAuto={() => setAutoAdvance(!autoAdvance)}
-          onBack={goBack} onForward={() => void goForward()} onPick={pickOption}
-        />
-      </div>
+      {frozen ? (
+        <div style={{ flexShrink: 0, borderTop: `1px solid ${theme.color.border}`, background: theme.color.surfaceWell, padding: '12px 14px', textAlign: 'center', fontSize: 12, color: theme.color.textMuted }}>
+          Call transcript · kept for your after-call work
+        </div>
+      ) : (
+        <div style={{ flexShrink: 0, borderTop: `1px solid ${theme.color.border}`, background: ACTOR.agent.bg, padding: '11px 14px 12px' }}>
+          {!verified && (
+            <div style={{ fontSize: 11.5, color: theme.color.danger, fontWeight: 600, marginBottom: 8 }}>Identity not verified — confirm it before discussing the account.</div>
+          )}
+          <Teleprompter
+            card={card} progress={progress} generating={generating}
+            rightMode={rightMode} canBack={cursor > 0}
+            autoAdvance={autoAdvance} onToggleAuto={() => setAutoAdvance(!autoAdvance)}
+            onBack={goBack} onForward={() => void goForward()} onPick={pickOption}
+          />
+        </div>
+      )}
     </>
   );
 }

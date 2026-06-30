@@ -118,10 +118,10 @@ function highlightText(text: string, highlights?: string[]): ReactNode {
 /** A flip triangle drawn with CSS borders so it reads clearly at any size (right → down on open). */
 function Triangle({ open, color }: { open: boolean; color: string }) {
   return (
-    <span style={{ width: 15, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <span style={{ width: 10, height: 15, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       <span style={open
-        ? { width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `11px solid ${color}` }
-        : { width: 0, height: 0, borderTop: '11px solid transparent', borderBottom: '11px solid transparent', borderLeft: `12px solid ${color}` }} />
+        ? { width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: `7px solid ${color}` }
+        : { width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderLeft: `8px solid ${color}` }} />
     </span>
   );
 }
