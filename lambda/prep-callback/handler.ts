@@ -211,8 +211,11 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
       name: clientName,
       totalBalance: Number(client.totalBalance ?? 0),
       accountsSummary,
+      accountCount: accounts.length,
       riskProfile: (client.investorProfile as { riskProfile?: string } | undefined)?.riskProfile,
       memberSince: (client.personal as { memberSince?: string } | undefined)?.memberSince,
+      timeHorizon: (client.investorProfile as { timeHorizon?: string } | undefined)?.timeHorizon,
+      investmentExperience: (client.investorProfile as { investmentExperience?: string } | undefined)?.investmentExperience,
     },
     generatedAt,
   };

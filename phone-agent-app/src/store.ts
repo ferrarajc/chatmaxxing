@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { post } from './api/client';
 import { normalizeDossier, AGENT_NAME } from './dossier';
-import type { CallbackListItem, CallbackFull, Dossier } from './types';
+import type { CallbackListItem, CallbackFull, Dossier, GuidedScript } from './types';
 
 export type CallPhase = 'ringing' | 'connecting' | 'live' | 'wrapup';
 export type LiveMic = 'agent' | 'client' | 'off';   // who the single mic is voicing in the live call
@@ -36,6 +36,9 @@ interface Store {
   setAutoAdvance: (v: boolean) => void;
   transcriptLog: LogEntry[];  // running record of the call, saved for post-hoc review on end
   logLine: (role: LogRole, content: string) => void;
+  // The agent's edited script, keyed by callbackId — the live teleprompter executes this if present.
+  scriptDrafts: Record<string, GuidedScript>;
+  setScriptDraft: (callbackId: string, gs: GuidedScript) => void;
   ring: (item: CallbackListItem) => Promise<void>;
   accept: () => void;
   decline: () => void;
@@ -82,6 +85,8 @@ export const useStore = create<Store>((set, get) => ({
     const c = content.trim();
     if (c) set(s => ({ transcriptLog: [...s.transcriptLog, { role, content: c, ts: Date.now() }] }));
   },
+  scriptDrafts: {},
+  setScriptDraft: (callbackId, gs) => set(s => ({ scriptDrafts: { ...s.scriptDrafts, [callbackId]: gs } })),
 
   ring: async (item) => {
     set({ call: { item, phase: 'ringing' }, callOutcome: '', transcriptLog: [] });

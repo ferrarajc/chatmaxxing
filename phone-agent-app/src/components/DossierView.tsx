@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
 import { useNow, fmtCountdown, fmtScheduled, fmtMoney, initials } from '../util';
 import { theme } from '../theme';
 import { card, Chip, Button, Avatar, SectionLabel, h2Style } from './ui';
-import { IntentHeader, GuidedScript } from './GuidedScript';
+import { ScriptPreview } from './GuidedScript';
 import { OriginalTranscriptCard } from './TranscriptFlipper';
-import type { Dossier } from '../types';
+import type { Dossier, IntentBrief, OriginTranscript } from '../types';
 
 function Empty({ text }: { text: string }) {
   return (
@@ -19,35 +19,56 @@ export function DossierView() {
   const selected = useStore(s => s.selected);
   const loading = useStore(s => s.selectedLoading);
   const selectedId = useStore(s => s.selectedId);
+  const call = useStore(s => s.call);
   const ring = useStore(s => s.ring);
   const now = useNow(1000);
 
-  if (!selectedId) return <Empty text="Select a call from the board to open its dossier." />;
-  if (loading && !selected) return <Empty text="Loading dossier…" />;
-  if (!selected) return <Empty text="Could not load this call." />;
+  // During a live call the board is gone, so the right column tracks the active call's dossier;
+  // otherwise it tracks the board selection being prepped.
+  const live = call?.phase === 'live';
+  const item = live ? call!.item : selected;
+  const dossier = live ? call!.dossier : selected?.dossier;
+  const callbackId = item?.callbackId ?? '';
 
-  const d = selected.dossier;
-  const researching = !d || selected.dossierStatus !== 'ready';
-  const transcript = d?.originTranscript;
+  if (!live) {
+    if (!selectedId) return <Empty text="Select a call from the board to open its dossier." />;
+    if (loading && !selected) return <Empty text="Loading dossier…" />;
+    if (!selected) return <Empty text="Could not load this call." />;
+  }
+  if (!item) return <Empty text="Loading…" />;
+
+  const researching = !dossier || (!live && selected!.dossierStatus !== 'ready');
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', paddingRight: 6 }}>
+      {/* Top card — name + countdown + Simulate (prep) / On-call indicator (live) */}
       <div style={{ ...card, padding: '18px 20px', marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <Avatar initials={initials(selected.clientName || '?')} size={48} />
+          <Avatar initials={initials(item.clientName || '?')} size={48} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ ...h2Style(), fontSize: 20 }}>{selected.clientName}</div>
+            <div style={{ ...h2Style(), fontSize: 20 }}>{item.clientName}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 12, color: theme.color.textSubtle }}>{fmtScheduled(selected.scheduledTime)}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: theme.color.accent, fontVariantNumeric: 'tabular-nums' }}>
-              {fmtCountdown(selected.scheduledTime, now)}
-            </div>
+            {live ? (
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: theme.color.success, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span className="pa-speaking" style={{ width: 9, height: 9, borderRadius: '50%', background: theme.color.success, display: 'inline-block' }} />
+                On call now
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 12, color: theme.color.textSubtle }}>{fmtScheduled(item.scheduledTime)}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: theme.color.accent, fontVariantNumeric: 'tabular-nums' }}>
+                  {fmtCountdown(item.scheduledTime, now)}
+                </div>
+              </>
+            )}
           </div>
         </div>
-        <div style={{ marginTop: 14 }}>
-          <Button onClick={() => void ring(selected)} big>▶ Simulate this call</Button>
-        </div>
+        {!live && (
+          <div style={{ marginTop: 14 }}>
+            <Button onClick={() => void ring(selected!)} big>▶ Simulate this call</Button>
+          </div>
+        )}
       </div>
 
       {researching ? (
@@ -57,11 +78,10 @@ export function DossierView() {
         </div>
       ) : (
         <>
-          <IntentHeader intent={d!.intent} />
-          {transcript && <div style={{ marginBottom: 16 }}><OriginalTranscriptCard transcript={transcript} /></div>}
-          <DossierBody d={d!} />
+          <IntentTranscriptCard intent={dossier!.intent} transcript={dossier!.originTranscript} />
+          <DossierBody d={dossier!} />
           <div style={{ marginTop: 16 }}>
-            <GuidedScript gs={d!.guidedScript} />
+            <ScriptPreview callbackId={callbackId} gs={dossier!.guidedScript} />
           </div>
         </>
       )}
@@ -69,12 +89,36 @@ export function DossierView() {
   );
 }
 
-/** The dossier content — reused on the dossier pane and inside the live-call console. */
-export function DossierBody({ d, compact }: { d: Dossier; compact?: boolean }) {
+/** The client's objective with the originating transcript flipper attached below a divider. */
+function IntentTranscriptCard({ intent, transcript }: { intent: IntentBrief; transcript?: OriginTranscript }) {
+  const detail = (intent.detail ?? []).filter(Boolean);
+  return (
+    <div style={{ ...card, padding: '16px 18px', marginBottom: 16 }}>
+      <div style={{ fontFamily: theme.font.serif, fontSize: 18, fontWeight: 800, lineHeight: 1.32, color: theme.color.text, letterSpacing: '-0.01em' }}>
+        {intent.headline}
+      </div>
+      {detail.length === 1 && <p style={{ margin: '9px 0 0', fontSize: 13.5, lineHeight: 1.55, color: theme.color.textMuted }}>{detail[0]}</p>}
+      {detail.length > 1 && (
+        <ul style={{ margin: '9px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {detail.map((d, i) => <li key={i} style={{ fontSize: 13.5, lineHeight: 1.5, color: theme.color.textMuted }}>{d}</li>)}
+        </ul>
+      )}
+      {transcript && (
+        <>
+          <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '13px -18px 0' }} />
+          <OriginalTranscriptCard transcript={transcript} embedded />
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The research brief (with resources), gap list, snapshot, and coaching. */
+export function DossierBody({ d }: { d: Dossier }) {
   const snap = d.clientSnapshot;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* What we worked out */}
+      {/* What I found for you (+ recommended resources) */}
       <div style={{ ...card, padding: '16px 18px', borderLeft: `3px solid ${theme.color.success}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <SectionLabel>What I found for you</SectionLabel>
@@ -96,6 +140,15 @@ export function DossierBody({ d, compact }: { d: Dossier; compact?: boolean }) {
             ))}
           </div>
         )}
+        {d.resources.length > 0 && (
+          <>
+            <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '14px -18px 12px' }} />
+            <SectionLabel>Recommended resources</SectionLabel>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {d.resources.map(r => <ResourceTile key={r.id} title={r.title} url={r.url} />)}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Still open / needs you */}
@@ -113,15 +166,19 @@ export function DossierBody({ d, compact }: { d: Dossier; compact?: boolean }) {
         </div>
       )}
 
-      {/* Client snapshot */}
-      <div style={{ ...card, padding: '16px 18px' }}>
+      {/* Client snapshot — roomy stat grid */}
+      <div style={{ ...card, padding: '18px 20px' }}>
         <SectionLabel>Client snapshot</SectionLabel>
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px 16px', marginTop: 4 }}>
           <Stat label="Total portfolio" value={fmtMoney(snap.totalBalance)} />
+          {snap.accountCount != null && <Stat label="Accounts" value={String(snap.accountCount)} />}
           {snap.riskProfile && <Stat label="Risk profile" value={snap.riskProfile} />}
+          {snap.timeHorizon && <Stat label="Time horizon" value={snap.timeHorizon} />}
+          {snap.investmentExperience && <Stat label="Experience" value={snap.investmentExperience} />}
           {snap.memberSince && <Stat label="Member since" value={snap.memberSince.slice(0, 4)} />}
         </div>
-        <div style={{ fontSize: 13, color: theme.color.textMuted, marginTop: 10 }}>{snap.accountsSummary}</div>
+        <div style={{ borderTop: `1px solid ${theme.color.border}`, margin: '16px -20px 0' }} />
+        <div style={{ fontSize: 13, color: theme.color.textMuted, marginTop: 12 }}>{snap.accountsSummary}</div>
       </div>
 
       {/* Coaching */}
@@ -133,21 +190,36 @@ export function DossierBody({ d, compact }: { d: Dossier; compact?: boolean }) {
           </ul>
         </div>
       )}
-
-      {/* Resources */}
-      {!compact && d.resources.length > 0 && (
-        <div style={{ ...card, padding: '16px 18px' }}>
-          <SectionLabel>Resources on hand</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {d.resources.map(r => (
-              <a key={r.id} href={r.url} target="_blank" rel="noreferrer" style={{ fontSize: 13.5, color: theme.color.primary, textDecoration: 'none' }}>
-                ↗ {r.title}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
+
+/** A tactile, obviously-clickable resource tile (whole row links out in a new tab). */
+function ResourceTile({ title, url }: { title: string; url: string }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <a
+      href={url} target="_blank" rel="noreferrer"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
+        background: hover ? theme.color.primarySoft : theme.color.surfaceWell,
+        border: `1px solid ${hover ? theme.color.primarySoftBorder : theme.color.border}`,
+        borderRadius: theme.radius.md, padding: '11px 13px',
+        boxShadow: hover ? theme.shadow.md : 'none', transform: hover ? 'translateY(-1px)' : 'none',
+        transition: 'transform .12s, box-shadow .12s, background .12s',
+      }}
+    >
+      <div style={{
+        width: 34, height: 34, flexShrink: 0, borderRadius: theme.radius.md, background: theme.color.primary, color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+      }}>📄</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: theme.color.text }}>{title}</div>
+        <div style={{ fontSize: 11.5, color: theme.color.textMuted }}>Reference article · opens in a new tab</div>
+      </div>
+      <span style={{ fontSize: 15, color: theme.color.primary, fontWeight: 700 }}>↗</span>
+    </a>
   );
 }
 
@@ -155,7 +227,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div style={{ fontSize: 11, color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: theme.color.text }}>{value}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: theme.color.text, marginTop: 3 }}>{value}</div>
     </div>
   );
 }

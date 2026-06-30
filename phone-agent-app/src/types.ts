@@ -62,6 +62,9 @@ export interface Dossier {
     accountsSummary: string;
     riskProfile?: string;
     memberSince?: string;
+    accountCount?: number;
+    timeHorizon?: string;
+    investmentExperience?: string;
   };
   generatedAt: string;
 }
