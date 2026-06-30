@@ -446,6 +446,45 @@ export class LambdaStack extends cdk.Stack {
     verifyFn.addToRolePolicy(new iam.PolicyStatement({ actions: ['ses:SendEmail'], resources: ['*'] }));
     verifyFn.addToRolePolicy(new iam.PolicyStatement({ actions: ['sms-voice:SendTextMessage'], resources: ['*'] }));
 
+    // ── prep-callback (agentic AI call-prep research) ──
+    // Invoked async (no API route) the moment a callback is booked; uses the client-data tools
+    // to research the ask and write a dossier onto the callback record. Generous timeout — the
+    // tool-using research is deeper than real-time turns and not user-facing.
+    const prepCallbackFn = new NodejsFunction(this, 'PrepCallbackFn', {
+      functionName: `bobs-prep-callback${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'prep-callback/handler.ts'),
+      timeout: cdk.Duration.seconds(120),
+      memorySize: 512,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    callbacksTable.grantReadWriteData(prepCallbackFn);
+    clientsTable.grantReadData(prepCallbackFn);
+    transactionsTable.grantReadData(prepCallbackFn);
+    fundsTable.grantReadData(prepCallbackFn);
+    // schedule-callback fires prep the moment a callback is booked.
+    prepCallbackFn.grantInvoke(scheduleCallbackFn);
+    scheduleCallbackFn.addEnvironment('PREP_CALLBACK_FN_ARN', prepCallbackFn.functionArn);
+
+    // ── agent-callbacks (phone-agent cockpit data API: list/get/complete/seed-demo) ──
+    const agentCallbacksFn = new NodejsFunction(this, 'AgentCallbacksFn', {
+      functionName: `bobs-agent-callbacks${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'agent-callbacks/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: { ...baseEnv, PREP_CALLBACK_FN_ARN: prepCallbackFn.functionArn },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    callbacksTable.grantReadWriteData(agentCallbacksFn);
+    clientsTable.grantReadData(agentCallbacksFn);
+    prepCallbackFn.grantInvoke(agentCallbacksFn);
+
     // ── HTTP API Gateway ───────────────────────────────────────────
     const api = new apigwv2.HttpApi(this, 'BobsApi', {
       apiName: `bobs-api${sfx}`,
@@ -482,6 +521,10 @@ export class LambdaStack extends cdk.Stack {
         ...baseEnv,
         OPENAI_TTS_MODEL: process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts',
         OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE ?? 'onyx',
+        // ElevenLabs alternate TTS engine — resolved from SSM at deploy (set via
+        // aws ssm put-parameter --name bobs-elevenlabs-api-key --value <key> --type String --overwrite).
+        // Seeded "unset" ⇒ the handler returns a clean "not configured".
+        ELEVENLABS_API_KEY: ssm.StringParameter.valueForStringParameter(this, 'bobs-elevenlabs-api-key'),
       },
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
@@ -494,6 +537,7 @@ export class LambdaStack extends cdk.Stack {
       ['/predict-questions', predictQuestionsFn],
       ['/next-best-response', nextBestResponseFn],
       ['/schedule-callback', scheduleCallbackFn],
+      ['/agent-callbacks', agentCallbacksFn],
       ['/autopilot-turn', autopilotTurnFn],
       ['/generate-acw', generateAcwFn],
       ['/agent-connection', agentConnectionFn],

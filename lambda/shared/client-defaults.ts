@@ -22,8 +22,11 @@ export interface AccountEntry {
   type: string;
   balance: number;
   id: string;
-  change: number;
+  change: number;                  // daily % change ("today")
+  balanceHistory?: BalancePoint[]; // month-end market values, so returns can be DERIVED from real data
 }
+
+export interface BalancePoint { asOf: string; balance: number }
 
 export interface BeneficiaryEntry {
   accountId: string;
@@ -176,6 +179,7 @@ export interface AgreementEntry {
 export interface FullClientData {
   clientId: string;
   name: string;
+  pronouns: string;                // e.g. 'she/her', 'he/him', 'they/them' — honored, never inferred from the name
   phone: string;
   displayPhone: string;
   email: string;
@@ -216,6 +220,7 @@ export const FUND_PRICES: Record<string, { name: string; price: number }> = {
 const alexJohnson: FullClientData = {
   clientId: 'demo-client-001',
   name: 'Alex Johnson',
+  pronouns: 'he/him',
   phone: '4842384838',
   displayPhone: '(484) 238-4838',
   email: 'alex.johnson@email.com',
@@ -320,6 +325,7 @@ const alexJohnson: FullClientData = {
 const mariaChen: FullClientData = {
   clientId: 'demo-client-002',
   name: 'Maria Chen',
+  pronouns: 'she/her',
   phone: '6175550192',
   displayPhone: '(617) 555-0192',
   email: 'maria.chen@email.com',
@@ -427,6 +433,7 @@ const mariaChen: FullClientData = {
 const jordanWilliams: FullClientData = {
   clientId: 'demo-client-003',
   name: 'Jordan Williams',
+  pronouns: 'they/them',
   phone: '5035550847',
   displayPhone: '(503) 555-0847',
   email: 'jordan.williams@email.com',
@@ -514,6 +521,7 @@ const jordanWilliams: FullClientData = {
 const robertMartinez: FullClientData = {
   clientId: 'demo-client-004',
   name: 'Robert Martinez',
+  pronouns: 'he/him',
   phone: '7135550234',
   displayPhone: '(713) 555-0234',
   email: 'robert.martinez@email.com',
@@ -614,3 +622,65 @@ export const DEFAULT_CLIENT_DATA: Record<string, FullClientData> = {
 };
 
 export const ALL_CLIENT_IDS = Object.keys(DEFAULT_CLIENT_DATA);
+
+// ── Synthetic balance history ────────────────────────────────────────────────
+// Real accounts accrue a market-value history; our seed profiles only had a single current
+// balance, so the AI couldn't compute returns (YTD, trailing) and had to declare them
+// "unavailable". We synthesize a deterministic month-end series per account, anchored to a
+// realistic start-of-year value and prior-year-start value, so the AI can DERIVE those metrics
+// from real underlying data. The tool surfaces the series; the AI does the math.
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const monthEndDay = (y: number, m: number) =>
+  [31, (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
+
+/**
+ * Month-end balances from 2023-12-31 through 2025-03-31, hitting the prior-year-start and
+ * current-year-start anchors exactly (so a YTD/1-yr return is cleanly recoverable), ending just
+ * shy of the live balance (which is "today"). A seeded wobble on interior months keeps it lifelike
+ * without disturbing the anchors.
+ */
+function genBalanceHistory(current: number, ytdPct: number, priorYearPct: number, seedKey: string): BalancePoint[] {
+  const startOfYear = current / (1 + ytdPct);      // 2024-12-31
+  const startOfPrior = startOfYear / (1 + priorYearPct); // 2023-12-31
+  let seed = 0;
+  for (const ch of seedKey) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const wobble = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return ((seed % 1000) / 1000 - 0.5) * 0.012; }; // ±0.6%
+
+  const pts: BalancePoint[] = [{ asOf: '2023-12-31', balance: round2(startOfPrior) }];
+  const rPrior = Math.pow(1 + priorYearPct, 1 / 12) - 1;
+  let b = startOfPrior;
+  for (let m = 1; m <= 12; m++) {
+    b *= 1 + rPrior;
+    const value = m === 12 ? startOfYear : b * (1 + wobble());     // force Dec '24 = start-of-year anchor
+    pts.push({ asOf: `2024-${String(m).padStart(2, '0')}-${monthEndDay(2024, m)}`, balance: round2(value) });
+  }
+  const rYtd = Math.pow(1 + ytdPct, 1 / 4) - 1;                    // ~4 steps from start-of-year to "now"
+  b = startOfYear;
+  for (let m = 1; m <= 3; m++) {
+    b *= 1 + rYtd;
+    pts.push({ asOf: `2025-${String(m).padStart(2, '0')}-${monthEndDay(2025, m)}`, balance: round2(b * (1 + wobble())) });
+  }
+  return pts;
+}
+
+// Illustrative-but-realistic per-account returns (start-of-year -> now, and the prior full year).
+const ACCOUNT_RETURNS: Record<string, { ytd: number; prior: number }> = {
+  'acc-001': { ytd: 0.095, prior: 0.182 }, // Alex — Roth IRA (equity-heavy)
+  'acc-002': { ytd: 0.062, prior: 0.121 }, // Alex — Traditional IRA (balanced)
+  'acc-003': { ytd: 0.018, prior: 0.069 }, // Alex — Taxable (treasury/ESG)
+  'acc-201': { ytd: 0.031, prior: 0.065 }, // Maria — Traditional IRA (conservative)
+  'acc-202': { ytd: 0.024, prior: 0.052 }, // Maria — Taxable
+  'acc-301': { ytd: 0.112, prior: 0.214 }, // Jordan — Roth IRA (growth)
+  'acc-302': { ytd: 0.055, prior: 0.091 }, // Jordan — Taxable
+  'acc-401': { ytd: 0.058, prior: 0.110 }, // Robert — SEP-IRA
+  'acc-402': { ytd: 0.104, prior: 0.190 }, // Robert — Roth IRA
+  'acc-403': { ytd: 0.021, prior: 0.061 }, // Robert — Taxable
+};
+
+for (const client of Object.values(DEFAULT_CLIENT_DATA)) {
+  for (const account of client.accounts) {
+    const r = ACCOUNT_RETURNS[account.id];
+    if (r) account.balanceHistory = genBalanceHistory(account.balance, r.ytd, r.prior, account.id);
+  }
+}

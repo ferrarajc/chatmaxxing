@@ -156,6 +156,9 @@ export async function invokeWithTools(
   ctx: LlmCallContext & { clientId: string },
   jsonMode = false,
   model = OPENAI_MODEL,
+  // Real-time callers keep the default cap; the async call-prep research pass passes a
+  // higher value to gather more thoroughly (latency isn't a concern there).
+  maxIterations = MAX_TOOL_ITERATIONS,
 ): Promise<InvokeWithToolsResult> {
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set');
 
@@ -164,7 +167,7 @@ export async function invokeWithTools(
 
   // Phase 1: tool-calling loop — gather data
   // response_format is intentionally omitted; incompatible with tools in OpenAI API.
-  for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
     const { choice } = await openAiCall({
       model,
       messages: [{ role: 'system', content: systemPrompt }, ...current],
@@ -223,7 +226,7 @@ export async function invokeWithTools(
     max_tokens: maxTokens,
     temperature: 0.3,
     ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
-  }, ctx, MAX_TOOL_ITERATIONS);
+  }, ctx, maxIterations);
 
   const text = finalChoice.message.content ?? '';
   if (MONEY_RE.test(text) && jsonMode && toolsUsed.length === 0) {

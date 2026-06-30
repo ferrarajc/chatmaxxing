@@ -25,6 +25,8 @@ export interface SaveTranscriptRequest {
   agentUsername?: string;
   /** Display name of the agent who handled this chat. */
   agentName?: string;
+  /** 'chat' (default) or 'phone' — phone transcripts skip the chat-continuation side effects. */
+  transcriptType?: 'chat' | 'phone';
   messages: TranscriptMessage[];
 }
 
@@ -35,7 +37,7 @@ const RECAP_FALLBACK = 'you connected with our team about your account';
  * A single second-person, past-tense clause completing "In your last chat, ___",
  * summarizing what actually happened (from the transcript) — not just the opening ask.
  */
-async function generateRetrospectiveSummary(body: SaveTranscriptRequest): Promise<string> {
+async function generateRetrospectiveSummary(body: SaveTranscriptRequest, isPhone = false): Promise<string> {
   const convo = (body.messages ?? [])
     .filter(m => m.role === 'CUSTOMER' || m.role === 'AGENT' || m.role === 'BOT')
     .map(m => `${m.role}: ${m.content}`)
@@ -43,12 +45,14 @@ async function generateRetrospectiveSummary(body: SaveTranscriptRequest): Promis
     .slice(0, 6000);
   if (!convo.trim()) return RECAP_FALLBACK;
 
+  const channelWord = isPhone ? 'phone call with an agent' : 'support chat';
+  const lastWord = isPhone ? 'call' : 'chat';
   try {
     const raw = await invokeNovaMicro(
       convo,
-      `You are writing a one-line retrospective recap of ${body.clientName ?? 'a customer'}'s most recent support chat, shown to them when they return.
+      `You are writing a one-line retrospective recap of ${body.clientName ?? 'a customer'}'s most recent ${channelWord}, shown when reviewing it.
 The transcript is formatted as "ROLE: message" lines (CUSTOMER = the client, AGENT = the human representative, BOT = the assistant).
-Write a SINGLE clause in the SECOND PERSON ("you"), PAST TENSE, that completes the sentence: "In your last chat, ___".
+Write a SINGLE clause in the SECOND PERSON ("you"), PAST TENSE, that completes the sentence: "In your last ${lastWord}, ___".
 - Summarize what actually happened or was accomplished across the chat — not just the opening request.
 - Begin the clause with "you" (lowercase). Be specific and natural. One complete thought, max 25 words.
 - Do NOT add a trailing period. Do NOT use quotation marks. Return only the clause.
@@ -78,11 +82,12 @@ export const handler = async (
 
     const table = process.env.TRANSCRIPTS_TABLE!;
     const now = Date.now();
+    const isPhone = body.transcriptType === 'phone';
     const endTime = body.endTime ?? (messages[messages.length - 1]?.ts ?? now);
 
     // Generated before the Put so it's stored on the transcript row too — the
     // customer chat-history list shows it on each past-chat card.
-    const summary = await generateRetrospectiveSummary(body);
+    const summary = await generateRetrospectiveSummary(body, isPhone);
 
     await docClient.send(new PutCommand({
       TableName: table,
@@ -90,6 +95,7 @@ export const handler = async (
         transcriptId,
         clientId,
         clientName: clientName ?? 'Unknown',
+        transcriptType: body.transcriptType ?? 'chat',
         intentSummary: body.intentSummary ?? '',
         summary,
         startTime: body.startTime ?? (messages[0]?.ts ?? now),
@@ -104,6 +110,12 @@ export const handler = async (
         savedAt: now,
       },
     }));
+
+    // Phone transcripts are a post-hoc review record only — skip the chat-continuation side
+    // effects (the customer "Continue this chat" memory and the chat-session status update).
+    if (isPhone) {
+      return jsonResponse(200, { ok: true, transcriptId });
+    }
 
     // Record this as the client's most-recent agent chat so the customer app can
     // offer "Continue this chat" on their next visit. This lives on the Clients

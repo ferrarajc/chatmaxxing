@@ -6,6 +6,7 @@ import {
   FlexibleTimeWindowMode,
   ActionAfterCompletion,
 } from '@aws-sdk/client-scheduler';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
@@ -15,6 +16,7 @@ import { randomUUID } from 'crypto';
 const schedulerClient = new SchedulerClient({
   region: process.env.AWS_REGION ?? 'us-east-1',
 });
+const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION ?? 'us-east-1' });
 
 const ET_ZONE = 'America/New_York';
 const BUSINESS_START_HOUR = 8;    // 8:00 AM ET
@@ -96,6 +98,7 @@ export const handler = async (
           scheduledTime: fireTime.toISOString(),
           intentSummary: intentSummary ?? '',
           status: 'scheduled',
+          dossierStatus: 'researching',
           createdAt: new Date().toISOString(),
         },
       }),
@@ -118,6 +121,21 @@ export const handler = async (
         ActionAfterCompletion: ActionAfterCompletion.DELETE,
       }),
     );
+
+    // Kick off AI call-prep research now (fire-and-forget, 'Event' invocation) so the dossier
+    // is ready well before the call. The chat's confirmation latency is unaffected.
+    const prepFn = process.env.PREP_CALLBACK_FN_ARN;
+    if (prepFn) {
+      try {
+        await lambdaClient.send(new InvokeCommand({
+          FunctionName: prepFn,
+          InvocationType: 'Event',
+          Payload: Buffer.from(JSON.stringify({ callbackId })),
+        }));
+      } catch (e) {
+        console.error('prep-callback invoke failed', e);
+      }
+    }
 
     return jsonResponse(200, {
       callbackId,

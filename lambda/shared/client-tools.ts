@@ -32,6 +32,14 @@ export const ALL_CLIENT_TOOLS: OpenAITool[] = [
   {
     type: 'function',
     function: {
+      name: 'get_balance_history',
+      description: "Fetch month-end MARKET-VALUE history for each of the client's accounts (roughly the last 16 months), including the start-of-year and current values. Use this to COMPUTE returns the client asks about — year-to-date, trailing 1-year, etc. — by combining it with contributions/withdrawals from get_transactions. This tool returns the raw balances; you do the math.",
+      parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_holdings',
       description: "Fetch the client's investment holdings: fund name, ticker, shares, price, market value, and DRIP status for each position.",
       parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
@@ -150,6 +158,27 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
       );
       lines.push(`Total portfolio value: $${fmt((item.totalBalance as number | undefined) ?? 0)}`);
       return cap(lines.join('\n'));
+    }
+
+    case 'get_balance_history': {
+      const item = await fetchField(clientId, 'accounts');
+      const accounts = (item.accounts as Array<{ type: string; id: string; balance: number; balanceHistory?: Array<{ asOf: string; balance: number }> }> | undefined) ?? [];
+      if (!accounts.length) return 'No accounts found.';
+      // Anchor + summary block first (survives truncation), then the monthly detail.
+      const summary: string[] = ['Month-end account balances (market value) — DERIVE returns from these; do the math yourself.'];
+      const detail: string[] = ['', 'Monthly detail:'];
+      let totalStart = 0, totalNow = 0, yearStartLabel = '';
+      for (const a of accounts) {
+        const hist = (a.balanceHistory ?? []).slice().sort((x, y) => x.asOf.localeCompare(y.asOf));
+        const yearStart = hist.filter(h => h.asOf.endsWith('-12-31')).pop() ?? hist[0];
+        const now = a.balance;
+        if (yearStart) { totalStart += yearStart.balance; totalNow += now; yearStartLabel = yearStart.asOf; }
+        summary.push(`${a.type} (${a.id}): start of year (${yearStart ? yearStart.asOf : 'n/a'}) $${fmt(yearStart ? yearStart.balance : now)} → current $${fmt(now)}`);
+        if (hist.length) detail.push(`  ${a.type}: ` + hist.map(h => `${h.asOf.slice(0, 7)} $${fmt(h.balance)}`).join(', ') + `, now $${fmt(now)}`);
+      }
+      summary.push(`Portfolio: start of year (${yearStartLabel || 'n/a'}) $${fmt(totalStart)} → current $${fmt(totalNow)}.`);
+      summary.push("To get a contribution-adjusted return, net out this year's contributions/withdrawals (from get_transactions) before dividing by the start-of-year value.");
+      return cap([...summary, ...detail].join('\n'));
     }
 
     case 'get_holdings': {
