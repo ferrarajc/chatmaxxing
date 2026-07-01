@@ -188,6 +188,39 @@ Agents review and submit; they never write ACW by hand.
 
 ---
 
+### 9. Phone-Agent Callback Console (shipped 2026-06-30)
+
+A dedicated cockpit for **phone** agents — a distinct role from the chat agent — living at its own URL
+(`/chatmaxxing/phone`). It turns a scheduled callback into a call the agent can walk into fully prepared.
+It is **simulation-first**: the entire experience is demoable in a browser with no telephony, and is
+built so real Amazon Connect outbound voice drops in later without reworking the UI.
+
+**The prep is the star.** The moment a callback is scheduled, an AI research pass ("`prep-callback`")
+uses the same account/holdings/transaction/fund/knowledge tools the chat bot uses to actually *work the
+client's question* — drafting a complete answer where it can, and honestly listing what it couldn't
+resolve and why. By call time the agent's homework is done; their job shifts from researching to
+verifying and delivering.
+
+The experience:
+- **Upcoming Calls board** — scheduled callbacks with a live countdown; open any to prep early.
+- **The dossier** — a ready briefing: the client's objective; **"What I found for you"** (the worked
+  answer, the facts behind it, and an honest "Still open" list); the originating chat/IVR transcript
+  (with the meaningful phrases highlighted); a client snapshot; coaching; recommended reference
+  articles; and an **editable script preview** the agent can tailor before the call.
+- **The call** — a simulated automated outbound call rings the client, greets them, runs a
+  (mock) voice-identity check, and connects. Non-happy paths are handled (wrong party, opt-out,
+  bad time, no answer). Once connected, the console becomes a **teleprompter**: it shows the next
+  thing to say one line at a time, follows along with a live transcript of the conversation, and
+  advances on its own as the agent speaks — improvising the next line on request when the call goes
+  off script.
+- **After-call work** — the same wrap-up-code + summary flow as chat, auto-drafted from the call and
+  editable; completing it files the call transcript into the Transcript Review tool alongside chats.
+
+The client-side automated script is exactly what becomes a real Amazon Connect outbound IVR flow when
+phone numbers are approved — the cockpit does not change.
+
+---
+
 ## Technology Stack
 
 | Layer | Technology |
@@ -204,7 +237,7 @@ Agents review and submit; they never write ACW by hand.
 | Scheduling | Amazon EventBridge Scheduler |
 | Infrastructure | AWS CDK (two stacks: BobsDataStack, BobsLambdaStack) |
 | Observability | AWS CloudWatch Logs; Arize AI integration (optional, in `lambda/shared/arize.ts`) |
-| CI/CD | GitHub Actions (deploys customer-app and agent-app to gh-pages on push to main) |
+| CI/CD | GitHub Actions (path-filtered: deploys customer-app, agent-app, and phone-agent-app to gh-pages, and the CDK backend, on push to main) |
 
 ---
 
