@@ -33,6 +33,7 @@ interface ResearchOut {
 
 const CALLBACKS_TABLE = () => process.env.CALLBACKS_TABLE!;
 const CLIENTS_TABLE = () => process.env.CLIENTS_TABLE!;
+const TRANSCRIPTS_TABLE = () => process.env.TRANSCRIPTS_TABLE!;
 
 // ---- Originating transcript -------------------------------------------------
 // A short, believable record of the interaction that led to the callback, so the agent can flip
@@ -90,6 +91,107 @@ async function generateOriginTranscript(channel: OriginChannel, clientName: stri
     console.error('origin-transcript generation failed', e);
     return undefined;
   }
+}
+
+// ---- REAL originating transcript --------------------------------------------
+// When the callback came from a genuine conversation we show THAT conversation, not a fabricated
+// stand-in. The messages are captured at scheduling time (originMessages) or, for older records,
+// fetched from the transcripts table by conversation id (originTranscriptId). We map the stored
+// {role, content} to the cockpit's speaker model, stop at the point the callback was booked, and
+// run ONE Nova Micro pass to mark the significant spans (verbatim, so the UI can locate them).
+
+type RawMsg = { role?: string; content?: string };
+type OutMsg = { speaker: string; text: string; highlights?: string[] };
+
+function roleToSpeaker(role: string): string {
+  switch ((role || '').toUpperCase()) {
+    case 'CUSTOMER': return 'client';
+    case 'BOT':      return 'bob';
+    case 'AGENT':    return 'agent';
+    default:         return 'system';
+  }
+}
+
+// The conversation that LED to the callback ends when the callback is booked; drop everything from
+// the [CALLBACK_SCHEDULED] marker onward (e.g. a later continued chat), and hide internal markers.
+function realMessagesFromRaw(raw: RawMsg[]): OutMsg[] {
+  const out: OutMsg[] = [];
+  for (const m of raw) {
+    const text = String(m?.content ?? '').trim();
+    if (!text) continue;
+    if (/^\[CALLBACK_SCHEDULED\]/.test(text)) break;      // callback booked — stop here
+    if (/^\[TASK:/.test(text)) continue;                   // internal task marker — not shown
+    out.push({ speaker: roleToSpeaker(String(m?.role ?? '')), text });
+  }
+  return out;
+}
+
+function highlightPrompt(messages: OutMsg[]): string {
+  const numbered = messages.map((m, i) => `${i}. [${m.speaker}] ${m.text}`).join('\n');
+  return `Below is a real customer-service transcript that led ${''}a client to schedule a phone callback with Bob's Mutual Funds. For EACH message, mark every significant substring a human agent would want their eye drawn to — be thorough, not minimal. Across all messages (client, Bob, and agent) highlight: the client's intent/what they want, and every material parameter — a specific amount, percentage, date or deadline, account type or name, fund or ticker, constraint, preference, life event, named person, or commitment made. A message may have several highlights; mark them ALL. Copy each substring VERBATIM from that message's text — identical characters, case, and punctuation. Skip pure filler (bare greetings, "yes please", a plain "thank you") — those get no highlights.
+
+TRANSCRIPT (each line is "<index>. [<speaker>] <text>"):
+${numbered}
+
+Return ONLY JSON of the form {"highlights":[{"i":<message index>,"spans":["verbatim substring", ...]}]} — include an entry only for messages that have at least one highlight.`;
+}
+
+async function addHighlights(messages: OutMsg[], clientId: string): Promise<OutMsg[]> {
+  if (!messages.length) return messages;
+  try {
+    const raw = await invokeNovaMicro(
+      highlightPrompt(messages),
+      'You mark the significant spans in customer-service transcripts and reply with strict JSON only.',
+      1100,
+      { fn: 'prep-callback', clientId, scope: 'origin-highlights' },
+      true,
+    );
+    const parsed = parseJsonFromBedrock<{ highlights?: { i?: number; spans?: string[] }[] }>(raw);
+    const byIndex = new Map<number, string[]>();
+    for (const h of parsed.highlights ?? []) {
+      if (typeof h?.i !== 'number') continue;
+      const spans = (h.spans ?? []).filter(s => typeof s === 'string' && s.trim()).map(s => s.trim());
+      if (spans.length) byIndex.set(h.i, spans);
+    }
+    return messages.map((m, i) => {
+      // Verbatim guard: only keep spans that actually occur in the text (UI matches case-insensitively).
+      const spans = (byIndex.get(i) ?? []).filter(s => m.text.toLowerCase().includes(s.toLowerCase()));
+      return spans.length ? { ...m, highlights: spans } : m;
+    });
+  } catch (e) {
+    console.error('origin highlight pass failed', e);
+    return messages;  // still the real transcript, just without marks
+  }
+}
+
+// Resolve the originating transcript: prefer the REAL conversation (captured inline, else fetched by
+// id); fall back to a fabricated stand-in only for demo/seed callbacks that have no real source.
+async function resolveOriginTranscript(cb: Record<string, unknown>, clientName: string, ask: string, clientId: string) {
+  let raw: RawMsg[] | undefined = Array.isArray(cb.originMessages) ? (cb.originMessages as RawMsg[]) : undefined;
+  if ((!raw || !raw.length) && cb.originTranscriptId) {
+    try {
+      const tr = await docClient.send(new GetCommand({
+        TableName: TRANSCRIPTS_TABLE(), Key: { transcriptId: String(cb.originTranscriptId) },
+      }));
+      const msgs = tr.Item?.messages;
+      if (Array.isArray(msgs)) raw = msgs as RawMsg[];
+    } catch (e) {
+      console.error('origin transcript fetch failed', e);
+    }
+  }
+  if (raw && raw.length) {
+    const messages = realMessagesFromRaw(raw);
+    if (messages.length) {
+      const channel: OriginChannel = messages.some(m => m.speaker === 'agent') ? 'escalated' : 'chatbot';
+      const title = channel === 'escalated' ? "Web chat with a Bob's representative" : 'Web chat with Bob';
+      return { channel, title, messages: await addHighlights(messages, clientId) };
+    }
+  }
+  // No real source — fabricate a believable one (demo/seed callbacks).
+  const channel: OriginChannel = ORIGIN_CHANNELS.includes(cb.originChannel as OriginChannel)
+    ? (cb.originChannel as OriginChannel)
+    : 'chatbot';
+  return generateOriginTranscript(channel, clientName, ask, clientId);
 }
 
 function researchPrompt(clientName: string, pronouns: string, accountsSummary: string, ask: string, kb: { title: string; url: string }[]): string {
@@ -183,10 +285,7 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
     console.error('prep-callback research failed', e);
   }
 
-  const channel: OriginChannel = ORIGIN_CHANNELS.includes(cb.originChannel as OriginChannel)
-    ? (cb.originChannel as OriginChannel)
-    : 'chatbot';
-  const originTranscript = await generateOriginTranscript(channel, clientName, ask, clientId);
+  const originTranscript = await resolveOriginTranscript(cb, clientName, ask, clientId);
 
   const firstName = clientName.split(' ')[0] || clientName;
   const generatedAt = new Date().toISOString();
