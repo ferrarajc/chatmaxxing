@@ -31,6 +31,16 @@ chatmaxxing/
 │       ├── store/         agentStore.ts
 │       └── types.ts       ContactSlot, ProposedAction, ProposedActionField
 │
+├── phone-agent-app/       React SPA — phone-agent "Callback Console" cockpit (/chatmaxxing/phone)
+│   └── src/
+│       ├── components/    DossierView, LiveCallConsole (voicebot overlay), LiveCallPanel (live
+│       │                  transcript + Teleprompter), GuidedScript (editable ScriptPreview),
+│       │                  TranscriptFlipper (FlipperRow), AfterCallWork, UpcomingCallsBoard
+│       ├── store.ts       Zustand: call state machine (ring→connecting→live→wrapup), scriptDrafts
+│       ├── actors.ts      Universal actor colours (client/agent/bot/system)
+│       ├── speech.ts      Web Speech API (listen + continuous live transcription)
+│       └── dossier.ts     normalizeDossier + AGENT_NAME (John Ferrara placeholder)
+│
 ├── lambda/
 │   ├── autopilot-turn/    Core AI engine (~1900 lines) — see LAMBDA_MAP below
 │   ├── start-chat/        Creates Connect session; generates intentLabel + intentGreeting
@@ -45,8 +55,10 @@ chatmaxxing/
 │   ├── client-data/       Reads/writes client profile data
 │   ├── client-log/        Logs client-side events
 │   ├── agent-connection/  Manages agent Connect connection tokens
-│   ├── schedule-callback/ Creates EventBridge scheduled callback
+│   ├── schedule-callback/ Creates EventBridge scheduled callback; fire-and-forget invokes prep-callback
 │   ├── execute-callback/  Fires when callback time arrives
+│   ├── prep-callback/     Agentic AI call-prep: researches the ask → writes the cockpit dossier
+│   ├── agent-callbacks/   Phone-cockpit data API (list/get/complete/seed-demo/suggest)
 │   └── reset-beneficiaries/ Dev utility — resets test client beneficiary data
 │   └── shared/
 │       ├── tasks.ts        TASKS array (19 tasks), matchTaskByIntent, filterFields
@@ -85,8 +97,10 @@ chatmaxxing/
 | `client-data` | Read/write client profile | No |
 | `client-log` | Log client-side events; on `context:'access-code-entered'` also sends an `urgent` Pager Doodie push (customer-site signin alert) | No |
 | `agent-connection` | Manage agent Connect tokens | No |
-| `schedule-callback` | Create EventBridge callback event | No |
+| `schedule-callback` | Create EventBridge callback event; fire-and-forget invoke `prep-callback` | No |
 | `execute-callback` | Fire on scheduled callback time | No |
+| `prep-callback` | **Agentic call-prep** for the phone cockpit: runs `invokeWithTools` over `client-tools.ts` (deeper iteration cap, latency-insensitive) to research the client's ask and write the `dossier` onto the callbacks-table item — worked answer + findings + gap list, coaching, a branching **editable** guided script, an originating-transcript reconstruction (with highlight spans), resources, client snapshot. Derives YTD returns from `balanceHistory`; honors client `pronouns`. | Yes — OpenAI |
+| `agent-callbacks` | Phone-cockpit data API. POST `/agent-callbacks` action-based: `list` / `get` (lazy-preps if missing) / `complete` / `seed-demo` / `suggest` (LLM writes the teleprompter's next line) | Yes — OpenAI (`suggest`) |
 | `reset-beneficiaries` | Dev: reset test client beneficiary data | No |
 | `reset-all-data` | Dev: reset ALL fields for all 4 clients to defaults | No |
 | `get-funds` | Read the static fund catalog (all 36 funds) from `bobs-funds`; GET `/funds`, module-cached 60 min | No |
@@ -284,7 +298,9 @@ read only by the `verify` Lambda; rows auto-expire via the `expiresAt` TTL so co
 
 - Client app: `https://ferrarajc.github.io/chatmaxxing/`
 - Agent app: `https://ferrarajc.github.io/chatmaxxing/agent`
-- API: `https://0y3s5vq2v5.execute-api.us-east-1.amazonaws.com`
+- Phone-agent cockpit: `https://ferrarajc.github.io/chatmaxxing/phone`
+- API: `https://0y3s5vq2v5.execute-api.us-east-1.amazonaws.com` (prod) · dev `https://1cppcq9q57.execute-api.us-east-1.amazonaws.com`
+- Transcript Review: `https://ferrarajc.github.io/chatmaxxing/transcripts/` (append `?env=dev` to review dev/phone transcripts)
 - Region: `us-east-1`
 - Demo access code: `BOBS2025`
 
@@ -312,6 +328,41 @@ Lives in `heqya/` (npm-extractable package). The Bob's implementation uses it vi
 | `scripts/quality-loop/server.mjs` | Dashboard server with CRUD for heuristics, scenarios, app profile |
 
 The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are **legacy/deprecated** — kept for reference but no longer imported by active scripts.
+
+---
+
+## Active Branch / Current State (as of 2026-06-30)
+
+**Shipped (PR #106, merged + deployed to prod 2026-06-30): Phone-Agent "Callback Console" cockpit.**
+A standalone, **simulation-first** SPA at `/chatmaxxing/phone` where a phone agent preps for and runs
+AI-prepped scheduled callbacks — no telephony required, with a clean seam for real Amazon Connect
+voice when DID numbers land (still blocked; see the DID saga). **The prep is the star:**
+`prep-callback` runs an agentic research pass at scheduling time and writes a grounded `dossier`.
+
+- **Backend (additive; reuses the existing callbacks/transcripts/clients tables):** new `prep-callback`
+  + `agent-callbacks` Lambdas (see Lambda Map). `schedule-callback` now fire-and-forget invokes
+  `prep-callback`. `save-transcript` accepts `transcriptType:'phone'` (phone calls recorded to the
+  Transcript Review UI, which gained channel 💬/📞 + agent columns). Client profiles gained
+  **`pronouns`** (honored, never inferred from name) and per-account **`balanceHistory`** (so the AI
+  can *derive* metrics like YTD return); `clientSnapshot` gained accountCount / timeHorizon /
+  investmentExperience. All in `lambda/shared/client-defaults.ts`, written via `reset-all-data`.
+- **Frontend UI model:** base page = fixed-width Upcoming-Calls board (left) + relative-width dossier
+  (right). Simulate → ringing (IncomingCallOverlay) → connecting (voicebot overlay: ringback,
+  wait-for-hello, branching non-happy paths, mock voice verification, TTS) → **live**: the left column
+  swaps the board for the live speech-to-text transcript + a pinned auto-advancing **Teleprompter**
+  (executes the agent's edited script); right column stays the dossier. End call → **after-call work**
+  in the dossier (wrap-up code + editable summary via `generate-acw`) → Complete & close records the
+  transcript and returns to the board. One client at a time.
+- **Dossier:** intent headline + originating-transcript flipper; "What I found for you" (answer +
+  findings, "Still open" card-in-card, horizontal Recommended-resources tiles, coaching); Client
+  snapshot flipper; editable **Script preview** (edits persist in `store.scriptDrafts`, executed live).
+- **⚠ Prod-data gotcha:** the pronoun + YTD-derivation fidelity needs prod client data to carry
+  `pronouns` + `balanceHistory`, which only land via **`GET /reset-client-data?key=bobs-reset-2025`**
+  (run after this deploy). The cockpit still functions without it (pronouns default to they/them,
+  YTD asks land in "Still open").
+- **Simulation caveat:** free browser STT covers only the local mic, so the sim has a temporary
+  Client/Agent/Off mic toggle to role-play both parties; a real Connect call splits two channels
+  (Phase-4 transcription-engine decision deferred — Contact Lens vs self-hosted).
 
 ---
 
