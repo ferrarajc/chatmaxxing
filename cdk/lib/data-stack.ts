@@ -26,6 +26,7 @@ export class DataStack extends cdk.Stack {
       tableName: `bobs-clients${sfx}`,
       partitionKey: { name: 'clientId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -34,6 +35,7 @@ export class DataStack extends cdk.Stack {
       tableName: `bobs-chat-sessions${sfx}`,
       partitionKey: { name: 'contactId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       timeToLiveAttribute: 'expiresAt',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
@@ -43,6 +45,7 @@ export class DataStack extends cdk.Stack {
       tableName: `bobs-callbacks${sfx}`,
       partitionKey: { name: 'callbackId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
     this.callbacksTable.addGlobalSecondaryIndex({
@@ -67,6 +70,7 @@ export class DataStack extends cdk.Stack {
       partitionKey: { name: 'clientId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'txnSort', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
     this.transactionsTable.addGlobalSecondaryIndex({
@@ -80,6 +84,7 @@ export class DataStack extends cdk.Stack {
       tableName: `bobs-transcripts${sfx}`,
       partitionKey: { name: 'transcriptId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.RETAIN,  // never auto-delete transcript data
     });
     this.transcriptsTable.addGlobalSecondaryIndex({
@@ -99,6 +104,7 @@ export class DataStack extends cdk.Stack {
       tableName: `bobs-funds${sfx}`,
       partitionKey: { name: 'ticker', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -110,6 +116,7 @@ export class DataStack extends cdk.Stack {
       tableName: `bobs-verification-codes${sfx}`,
       partitionKey: { name: 'codeId', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       timeToLiveAttribute: 'expiresAt',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
