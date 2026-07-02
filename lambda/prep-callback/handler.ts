@@ -2,6 +2,7 @@ import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { invokeWithTools, invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
+import { summarizeChatIntent } from '../shared/intent-summary';
 import { matchResources, summarizeAccounts, Account } from '../shared/types';
 
 // Agentic call-prep research engine. Invoked async (fire-and-forget) the moment a callback
@@ -164,9 +165,9 @@ async function addHighlights(messages: OutMsg[], clientId: string): Promise<OutM
   }
 }
 
-// Resolve the originating transcript: prefer the REAL conversation (captured inline, else fetched by
-// id); fall back to a fabricated stand-in only for demo/seed callbacks that have no real source.
-async function resolveOriginTranscript(cb: Record<string, unknown>, clientName: string, ask: string, clientId: string) {
+// Load the REAL originating conversation for this callback: captured inline at scheduling time
+// (originMessages), else fetched from the transcripts table by id. Undefined for demo/seed callbacks.
+async function loadOriginRaw(cb: Record<string, unknown>): Promise<RawMsg[] | undefined> {
   let raw: RawMsg[] | undefined = Array.isArray(cb.originMessages) ? (cb.originMessages as RawMsg[]) : undefined;
   if ((!raw || !raw.length) && cb.originTranscriptId) {
     try {
@@ -179,7 +180,13 @@ async function resolveOriginTranscript(cb: Record<string, unknown>, clientName: 
       console.error('origin transcript fetch failed', e);
     }
   }
-  if (raw && raw.length) {
+  return raw && raw.length ? raw : undefined;
+}
+
+// Build the cockpit's originating transcript: the REAL conversation with highlight spans when we
+// have it, else a fabricated stand-in (demo/seed callbacks only).
+async function buildOriginTranscript(raw: RawMsg[] | undefined, cb: Record<string, unknown>, clientName: string, ask: string, clientId: string) {
+  if (raw) {
     const messages = realMessagesFromRaw(raw);
     if (messages.length) {
       const channel: OriginChannel = messages.some(m => m.speaker === 'agent') ? 'escalated' : 'chatbot';
@@ -187,11 +194,28 @@ async function resolveOriginTranscript(cb: Record<string, unknown>, clientName: 
       return { channel, title, messages: await addHighlights(messages, clientId) };
     }
   }
-  // No real source — fabricate a believable one (demo/seed callbacks).
   const channel: OriginChannel = ORIGIN_CHANNELS.includes(cb.originChannel as OriginChannel)
     ? (cb.originChannel as OriginChannel)
     : 'chatbot';
   return generateOriginTranscript(channel, clientName, ask, clientId);
+}
+
+// The client's real intent for this callback, summarized from the ACTUAL conversation with the
+// SAME summarizer the live-agent escalation uses (start-chat's intentLabel), so the cockpit's
+// headline/board reflect the underlying goal — not the client's last throwaway line. Plain text
+// (the ** markers the shared summarizer adds are stripped, since the cockpit renders plain).
+async function deriveIntentFromConversation(raw: RawMsg[], clientName: string, clientId: string): Promise<string | undefined> {
+  const clean = realMessagesFromRaw(raw);
+  if (!clean.length) return undefined;
+  const transcriptText = clean.map(m => `${m.speaker}: ${m.text}`).join(' | ').slice(0, 2000);
+  try {
+    const summary = await summarizeChatIntent(transcriptText, clientName, { fn: 'prep-callback', clientId, scope: 'intent-summary' });
+    const plain = summary.replace(/\*\*/g, '').trim().slice(0, 200);
+    return plain || undefined;
+  } catch (e) {
+    console.error('intent summary failed', e);
+    return undefined;
+  }
 }
 
 function researchPrompt(clientName: string, pronouns: string, accountsSummary: string, ask: string, kb: { title: string; url: string }[]): string {
@@ -256,7 +280,6 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
   if (!cb) { console.error('prep-callback: callback not found', callbackId); return { ok: false }; }
 
   const clientId = String(cb.clientId);
-  const ask = String(cb.intentSummary || 'The client requested a callback.');
 
   const clRes = await docClient.send(new GetCommand({ TableName: CLIENTS_TABLE(), Key: { clientId } }));
   const client = (clRes.Item ?? {}) as Record<string, unknown>;
@@ -264,6 +287,13 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
   const accountsSummary = accounts.length ? summarizeAccounts(accounts) : 'No accounts on file';
   const clientName = String(cb.clientName || client.name || 'the client');
   const pronouns = String(client.pronouns || 'they/them');
+
+  // Load the real originating conversation once — used for BOTH the intent summary and the transcript.
+  const originRaw = await loadOriginRaw(cb);
+  // The ask that drives research + the cockpit headline: a chat-quality summary of what the client
+  // actually wanted (from the real conversation), falling back to whatever was passed at scheduling.
+  const chatIntent = originRaw ? await deriveIntentFromConversation(originRaw, clientName, clientId) : undefined;
+  const ask = chatIntent || String(cb.intentSummary || 'The client requested a callback.');
   const resources = matchResources(ask).map(r => ({ id: r.id, title: r.title, url: r.url }));
 
   let out: ResearchOut | null = null;
@@ -285,15 +315,20 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
     console.error('prep-callback research failed', e);
   }
 
-  const originTranscript = await resolveOriginTranscript(cb, clientName, ask, clientId);
+  const originTranscript = await buildOriginTranscript(originRaw, cb, clientName, ask, clientId);
 
   const firstName = clientName.split(' ')[0] || clientName;
   const generatedAt = new Date().toISOString();
   const dossier = {
     topic: ask,
-    intent: out?.intent?.headline
-      ? { headline: out.intent.headline, detail: (out.intent.detail ?? []).filter(Boolean) }
-      : { headline: `${firstName} requested a callback: ${ask}`.split(/\s+/).slice(0, 18).join(' '), detail: [] },
+    // Prefer the chat-quality intent (from the real conversation) as the headline; else the
+    // research model's headline; else a last-resort restatement of the ask.
+    intent: {
+      headline: chatIntent
+        || out?.intent?.headline
+        || `${firstName} requested a callback: ${ask}`.split(/\s+/).slice(0, 18).join(' '),
+      detail: (out?.intent?.detail ?? []).filter(Boolean),
+    },
     research: out?.research ?? {
       summary: 'Automated pre-call research was unavailable — please review the client snapshot and the ask below.',
       findings: [],
@@ -322,8 +357,15 @@ export const handler = async (event: PrepEvent): Promise<{ ok: boolean }> => {
   await docClient.send(new UpdateCommand({
     TableName: CALLBACKS_TABLE(),
     Key: { callbackId },
-    UpdateExpression: 'SET dossier = :d, dossierStatus = :s, dossierGeneratedAt = :t',
-    ExpressionAttributeValues: { ':d': dossier, ':s': 'ready', ':t': generatedAt },
+    // Also write the chat-quality intent back to intentSummary so the Upcoming-Calls board card
+    // (which reads intentSummary, not the dossier) shows the real intent, not the raw last message.
+    UpdateExpression: chatIntent
+      ? 'SET dossier = :d, dossierStatus = :s, dossierGeneratedAt = :t, intentSummary = :i'
+      : 'SET dossier = :d, dossierStatus = :s, dossierGeneratedAt = :t',
+    ExpressionAttributeValues: {
+      ':d': dossier, ':s': 'ready', ':t': generatedAt,
+      ...(chatIntent ? { ':i': chatIntent } : {}),
+    },
   }));
 
   console.log(JSON.stringify({
