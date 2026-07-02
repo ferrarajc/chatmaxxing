@@ -3,6 +3,7 @@ import { ConnectClient, StartChatContactCommand } from '@aws-sdk/client-connect'
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { invokeNovaMicro } from '../shared/bedrock-client';
+import { summarizeChatIntent } from '../shared/intent-summary';
 import { jsonResponse } from '../shared/types';
 
 const connectClient = new ConnectClient({ region: process.env.AWS_REGION });
@@ -50,26 +51,14 @@ Write in first person as the agent. Do not include any reference to "connecting 
     if (escalate && intentSummary) {
       try {
         const [labelRaw, greetingRaw] = await Promise.all([
-          invokeNovaMicro(
-            intentSummary,
-            `You are summarizing a full customer support chat transcript for a financial services agent.
-The transcript is formatted as "ROLE: message | ROLE: message | ...".
-The customer's name is ${clientName}. Other names that appear in the transcript (beneficiaries, fund names, etc.) are NOT the customer.
-Write a single concise sentence (max 20 words) capturing what ${clientName}'s core need or question is.
-Start the sentence with their first name, e.g. "Robert wants to **update** the **beneficiaries** on his SEP-IRA".
-Focus on the customer's underlying goal — not just the last message.
-Do not mention that the customer asked to speak to an agent or requested escalation — that is implied and wastes space.
-Pick 1 or 2 words in your sentence that most distinguish the intent — typically the action and/or the account type or subject — and wrap them in **double asterisks** like **word**. Leave all other words unmarked.
-Return only the plain text sentence with those markers — no quotes, no JSON, no punctuation at the end.`,
-            90,
-          ),
+          summarizeChatIntent(intentSummary, clientName),
           invokeNovaMicro(
             intentSummary,
             greetingSystemPrompt,
             120,
           ),
         ]);
-        intentLabel = labelRaw.trim().replace(/^["']|["']$/g, '').replace(/\.$/, '').slice(0, 150);
+        intentLabel = labelRaw.slice(0, 150);
         intentGreeting = greetingRaw.trim().replace(/^["']|["']$/g, '');
       } catch (e) {
         console.warn('Intent label/greeting generation failed', e);
