@@ -465,6 +465,7 @@ export class LambdaStack extends cdk.Stack {
     clientsTable.grantReadData(prepCallbackFn);
     transactionsTable.grantReadData(prepCallbackFn);
     fundsTable.grantReadData(prepCallbackFn);
+    transcriptsTable.grantReadData(prepCallbackFn);  // fetch the real originating transcript by conversation id
     // schedule-callback fires prep the moment a callback is booked.
     prepCallbackFn.grantInvoke(scheduleCallbackFn);
     scheduleCallbackFn.addEnvironment('PREP_CALLBACK_FN_ARN', prepCallbackFn.functionArn);

@@ -60,12 +60,19 @@ export const handler = async (
       phoneNumber,
       scheduledTime,
       intentSummary,
+      originTranscriptId,
+      originMessages,
     }: {
       clientId: string;
       clientName?: string;
       phoneNumber: string;
       scheduledTime: string | 'ASAP';
       intentSummary?: string;
+      // Link back to the originating conversation so the cockpit shows the REAL transcript,
+      // not a fabricated one. originMessages is the conversation captured at scheduling time
+      // (present go-forward); originTranscriptId lets prep-callback fetch a saved transcript.
+      originTranscriptId?: string;
+      originMessages?: { role: string; content: string }[];
     } = JSON.parse(event.body ?? '{}');
 
     if (!clientId || !phoneNumber) {
@@ -100,6 +107,10 @@ export const handler = async (
           status: 'scheduled',
           dossierStatus: 'researching',
           createdAt: new Date().toISOString(),
+          ...(originTranscriptId ? { originTranscriptId } : {}),
+          ...(Array.isArray(originMessages) && originMessages.length
+            ? { originMessages: originMessages.map(m => ({ role: String(m.role), content: String(m.content) })) }
+            : {}),
         },
       }),
     );

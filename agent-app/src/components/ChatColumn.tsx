@@ -395,6 +395,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           phoneNumber: result.scheduleCallback.phoneNumber,
           scheduledTime: result.scheduleCallback.scheduledTimeISO,
           intentSummary: result.scheduleCallback.intentSummary,
+          // Link the callback to THIS conversation so the phone cockpit shows the real
+          // originating transcript (not a fabricated one). Captured here because the messages
+          // exist now, before the transcript is persisted at chat end.
+          originTranscriptId: contactId,
+          originMessages: currentSlot.messages.map(m => ({ role: m.role, content: m.content })),
         });
         // Append system note so next Lambda turn (triggered by customer reply) knows callback was scheduled
         store.appendMessage(contactId, {

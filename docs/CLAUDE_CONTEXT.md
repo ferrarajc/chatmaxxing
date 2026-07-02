@@ -97,9 +97,9 @@ chatmaxxing/
 | `client-data` | Read/write client profile | No |
 | `client-log` | Log client-side events; on `context:'access-code-entered'` also sends an `urgent` Pager Doodie push (customer-site signin alert) | No |
 | `agent-connection` | Manage agent Connect tokens | No |
-| `schedule-callback` | Create EventBridge callback event; fire-and-forget invoke `prep-callback` | No |
+| `schedule-callback` | Create EventBridge callback event; fire-and-forget invoke `prep-callback`. Also persists a link to the originating conversation — `originMessages` (the chat captured at scheduling time, since the transcript isn't saved until chat end) + `originTranscriptId` — so `prep-callback` can show the REAL transcript in the cockpit instead of a fabricated one. | No |
 | `execute-callback` | Fire on scheduled callback time | No |
-| `prep-callback` | **Agentic call-prep** for the phone cockpit: runs `invokeWithTools` over `client-tools.ts` (deeper iteration cap, latency-insensitive) to research the client's ask and write the `dossier` onto the callbacks-table item — worked answer + findings + gap list, coaching, a branching **editable** guided script, an originating-transcript reconstruction (with highlight spans), resources, client snapshot. Derives YTD returns from `balanceHistory`; honors client `pronouns`. | Yes — OpenAI |
+| `prep-callback` | **Agentic call-prep** for the phone cockpit: runs `invokeWithTools` over `client-tools.ts` (deeper iteration cap, latency-insensitive) to research the client's ask and write the `dossier` onto the callbacks-table item — worked answer + findings + gap list, coaching, a branching **editable** guided script, the **originating transcript** (the REAL conversation that led to the callback — see below — with LLM-marked highlight spans; falls back to a fabricated stand-in only for demo/seed callbacks with no real source), resources, client snapshot. Derives YTD returns from `balanceHistory`; honors client `pronouns`. | Yes — OpenAI |
 | `agent-callbacks` | Phone-cockpit data API. POST `/agent-callbacks` action-based: `list` / `get` (lazy-preps if missing) / `complete` / `seed-demo` / `suggest` (LLM writes the teleprompter's next line) | Yes — OpenAI (`suggest`) |
 | `reset-beneficiaries` | Dev: reset test client beneficiary data | No |
 | `reset-all-data` | Dev: reset ALL fields for all 4 clients to defaults | No |
