@@ -59,6 +59,7 @@ export const handler = async (
       clientName,
       phoneNumber,
       scheduledTime,
+      scheduledTimeET,
       intentSummary,
       originTranscriptId,
       originMessages,
@@ -67,6 +68,10 @@ export const handler = async (
       clientName?: string;
       phoneNumber: string;
       scheduledTime: string | 'ASAP';
+      // An Eastern-Time wall-clock ('YYYY-MM-DDTHH:mm') the server resolves to the true UTC
+      // instant (DST-safe). Preferred over `scheduledTime` for time-slot pickers so the client
+      // never has to do timezone math. Ignored when scheduledTime === 'ASAP'.
+      scheduledTimeET?: string;
       intentSummary?: string;
       // Link back to the originating conversation so the cockpit shows the REAL transcript,
       // not a fabricated one. originMessages is the conversation captured at scheduling time
@@ -83,6 +88,13 @@ export const handler = async (
     let fireTime: Date;
     if (scheduledTime === 'ASAP') {
       fireTime = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes from now
+    } else if (scheduledTimeET) {
+      // Interpret the wall-clock as Eastern Time and resolve to the true UTC instant (DST-safe).
+      fireTime = fromZonedTime(scheduledTimeET, ET_ZONE);
+      if (isNaN(fireTime.getTime())) {
+        return jsonResponse(400, { error: 'Invalid scheduledTimeET format' });
+      }
+      validateBusinessHours(fireTime);
     } else {
       fireTime = new Date(scheduledTime);
       if (isNaN(fireTime.getTime())) {
