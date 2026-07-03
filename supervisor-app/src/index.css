@@ -1,0 +1,22 @@
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #FBF9F4;
+  color: #1A1814;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; }
+
+@keyframes sup-shimmer {
+  0% { opacity: 0.55; }
+  50% { opacity: 1; }
+  100% { opacity: 0.55; }
+}
+.sup-shimmer { animation: sup-shimmer 1.4s ease-in-out infinite; }
