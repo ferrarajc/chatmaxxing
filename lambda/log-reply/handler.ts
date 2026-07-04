@@ -34,8 +34,9 @@ export const handler = async (
       // How the message was produced: 'suggested-send' | 'composer-send' | 'autopilot-send'
       path: body.path ?? 'unknown',
       // Suggestion provenance (when applicable)
-      source: body.source ?? null,                 // 'greeting' | 'nbr' | 'change-to'
+      source: body.source ?? null,                 // 'greeting' | 'nbr' | 'change-to' | 'magic'
       changeDirection: body.changeDirection ?? null,
+      magicStyle: body.magicStyle ?? null,
       originalText: body.originalText ?? null,      // the AI-authored text
       suggestionShownText: body.suggestionShownText ?? null, // freehand: the suggestion that was ignored
       sentText: body.sentText ?? null,              // what actually went to the client

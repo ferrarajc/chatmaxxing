@@ -123,6 +123,32 @@ Write the reply along that direction — honor the agent's choice while staying 
   }
 }
 
+// ── "Magic" mode: restyle the current reply WITHOUT changing its meaning ──────────────────
+// Same substance, different presentation (per a canned or free-text style). No tools — it only
+// rephrases the given text. Falls back to the original reply on any failure.
+const MAGIC_REWRITE_SYSTEM =
+  `You rewrite a chat reply's STYLE for a live support agent, WITHOUT changing its meaning.
+Keep every fact, number, offer, question, and piece of information EXACTLY the same — do not add,
+remove, soften, or change any substance. Only change how it is phrased/presented per the requested
+style. Return ONLY the rewritten reply text: no quotes, no preamble, no explanation.`;
+
+async function magicRewrite(currentSuggestion: string, style: string): Promise<APIGatewayProxyResultV2> {
+  const original = currentSuggestion.trim();
+  if (!original || !style.trim()) return jsonResponse(200, { suggestedText: original });
+  try {
+    const user = `Requested style: ${style}\n\nReply to rewrite (keep the meaning identical):\n"${original}"`;
+    const raw = await invokeNovaMicro(
+      user, MAGIC_REWRITE_SYSTEM, 400,
+      { fn: 'next-best-response', scope: 'magic-rewrite' },
+    );
+    const text = raw.trim().replace(/^["'“”]+|["'“”]+$/g, '').trim();
+    return jsonResponse(200, { suggestedText: text || original });
+  } catch (e) {
+    console.warn('NBR magic-rewrite failed', e);
+    return jsonResponse(200, { suggestedText: original });
+  }
+}
+
 export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyResultV2> => {
@@ -133,12 +159,14 @@ export const handler = async (
       clientProfile,
       currentSuggestion = '',
       direction = '',
+      style = '',
     }: {
       mode?: string;
       transcript: ChatMessage[];
       clientProfile: ClientProfile;
       currentSuggestion?: string;
       direction?: string;
+      style?: string;
     } = JSON.parse(event.body ?? '{}');
 
     if (!transcript?.length) {
@@ -163,6 +191,7 @@ export const handler = async (
     // "Change to" modes — fire strictly after the normal suggestion is already shown client-side.
     if (mode === 'change-options') return changeOptions(transcript, profile, currentSuggestion);
     if (mode === 'change-reply') return changeReply(transcript, profile, direction, kbIndex);
+    if (mode === 'magic-rewrite') return magicRewrite(currentSuggestion, style);
 
     let suggestedText = '';
     let suggestedScope: string | null = null;

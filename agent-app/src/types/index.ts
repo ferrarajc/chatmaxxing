@@ -30,9 +30,11 @@ export interface Suggestion {
   /** The text as first authored — for edit detection in telemetry. */
   originalText: string;
   /** How this entry was produced. */
-  source: 'greeting' | 'nbr' | 'change-to';
+  source: 'greeting' | 'nbr' | 'change-to' | 'magic';
   /** If source === 'change-to', the "Change to" direction the agent picked. */
   changeDirection?: string;
+  /** If source === 'magic', the restyle direction the agent picked (canned or custom). */
+  magicStyle?: string;
   /** Cached "Change to" alternatives; null = not generated yet. */
   changeOptions: string[] | null;
   /** True while this entry's "Change to" options are being generated. */

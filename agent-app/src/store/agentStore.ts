@@ -45,6 +45,8 @@ interface AgentStore {
   setChangeOptionsLoading: (contactId: string, entryId: string, loading: boolean) => void;
   /** Append a "Change to" reply and jump straight to it (shows immediately). */
   addChangeToReply: (contactId: string, text: string, direction: string) => void;
+  /** Append a "Magic" (restyled, same-meaning) reply and jump straight to it. */
+  addMagicReply: (contactId: string, text: string, style: string) => void;
   clearSlot: (contactId: string) => void;
   insertSuggestion: (contactId: string) => void;
   pendingInserts: Set<string>;
@@ -199,6 +201,26 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       const history = [...s.suggestionHistory, entry];
       // Always jump to the freshly-authored reply — the agent explicitly asked for it.
       return {
+        ...s,
+        suggestionHistory: history,
+        suggestionIndex: history.length - 1,
+        suggestedText: text,
+        suggestionAutoAdvance: true,
+        suggestionNewBadge: false,
+      };
+    }) as Slots;
+    set({ slots });
+  },
+
+  addMagicReply: (contactId, text, style) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const entry: Suggestion = {
+        id: nanoid(), text, originalText: text, source: 'magic',
+        magicStyle: style, changeOptions: null, changeOptionsLoading: false,
+      };
+      const history = [...s.suggestionHistory, entry];
+      return {  // jump to the restyled reply immediately
         ...s,
         suggestionHistory: history,
         suggestionIndex: history.length - 1,

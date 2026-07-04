@@ -12,8 +12,9 @@ export interface ReplyEvent {
   /** How the message was produced. */
   path: 'suggested-send' | 'composer-send' | 'autopilot-send';
   /** Provenance of the suggestion involved (when applicable). */
-  source?: 'greeting' | 'nbr' | 'change-to';
+  source?: 'greeting' | 'nbr' | 'change-to' | 'magic';
   changeDirection?: string;
+  magicStyle?: string;
   /** The AI-authored text. */
   originalText?: string;
   /** For a freehand composer send: the suggestion that was on screen but ignored. */
