@@ -47,13 +47,24 @@ Return ONLY valid JSON: {"suggestedText": "...", "suggestedScope": "get-intent" 
 // ── "Change to" mode: propose a few fundamentally-different alternative directions ────────
 // Assumes the drafted reply was the WRONG thing to send. Cheap, no tools (directions are
 // about stance/angle, not client data). Best-effort → [] on any failure.
-const CHANGE_OPTIONS_SYSTEM = (profile: ClientProfile) =>
-  `You help a live chat agent at Bob's Mutual Funds decide what to send next to ${profile.name}.
-We drafted a reply for the agent to send, but ASSUME IT IS THE WRONG THING TO SEND.
-Propose 3-4 genuinely DIFFERENT directions the agent might want instead — each a short imperative
-label, MAX 10 words (aim for ~5), fundamentally different from our draft and from one another.
-These are directions/angles, NOT full replies. Plain text, no numbering, no quotes.
+const CHANGE_OPTIONS_SYSTEM = (profile: ClientProfile) => {
+  const firstName = (profile.name || '').trim().split(/\s+/)[0] || 'the client';
+  return `You help a live chat agent at Bob's Mutual Funds pick a better next move with ${profile.name}.
+We drafted a reply for the agent to send, but assume it may be the wrong move for THIS moment.
+Propose 3-4 alternative moves the agent could make instead — each a short imperative label, max 10
+words (aim for ~5).
+
+STAY TIGHTLY ON THE CURRENT TOPIC AND MOMENT of this exact conversation. Do NOT change the subject or
+drift to tangential topics, products, or goals. Each option must be a genuinely different WAY TO HANDLE
+THIS SAME POINT — for example:
+- a pointed clarifying question about what ${firstName} just said (e.g. "Ask ${firstName} where the fee shows up")
+- acknowledge or empathize with ${firstName}'s concern
+- tell ${firstName} you need a moment to research it
+- give a materially different answer to ${firstName}'s actual question
+Name the client "${firstName}" rather than a pronoun like "they". Keep the options distinct from our
+draft and from one another. Plain text, no numbering, no quotes.
 Return ONLY valid JSON: {"options": ["...", "..."]}`;
+};
 
 async function changeOptions(
   transcript: ChatMessage[], profile: ClientProfile, currentSuggestion: string,

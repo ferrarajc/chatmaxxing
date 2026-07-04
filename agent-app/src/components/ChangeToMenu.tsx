@@ -79,14 +79,6 @@ export function ChangeToMenu({ anchorRef, options, loading, onSelect, onClose }:
         zIndex: 9999,
       }}
     >
-      <div style={{
-        padding: '8px 12px 7px', borderBottom: '1px solid #f3f4f6',
-        fontWeight: 700, fontSize: 11, color: '#0f172a',
-        letterSpacing: '.4px', textTransform: 'uppercase',
-        position: 'sticky', top: 0, background: '#fff',
-      }}>
-        Change to…
-      </div>
       {notReady ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 12, color: '#6b7280', fontSize: 13 }}>
           <span style={{
