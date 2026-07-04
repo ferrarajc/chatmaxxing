@@ -3,25 +3,32 @@ import { ContactSlot, AutopilotScope, AUTOPILOT_SCOPE_LABELS } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { AutopilotMenu } from './AutopilotMenu';
 import { AutopilotCountdown } from './AutopilotCountdown';
+import { EditableReply } from './EditableReply';
 import { ProposedActionCard } from './ProposedActionCard';
 
 interface Props {
   slot: ContactSlot;
-  onSendResource: (message: string) => void;
+  onSend: (message: string) => void;
   onActivateAutopilot: (scope: AutopilotScope) => void;
 }
 
-export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) {
+export function AISupport({ slot, onSend, onActivateAutopilot }: Props) {
   const store = useAgentStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [editingSuggestion, setEditingSuggestion] = useState(false);
   const autopilotBtnRef = useRef<HTMLButtonElement>(null);
 
-  const handleInsert = () => {
-    if (slot.suggestedText) store.insertSuggestion(slot.contactId);
+  // The suggested reply currently on screen (history entry at the paged index).
+  const currentSuggestion = slot.suggestionHistory[slot.suggestionIndex] ?? '';
+  const suggestionAtStart = slot.suggestionIndex <= 0;
+  const suggestionAtEnd = slot.suggestionIndex >= slot.suggestionHistory.length - 1;
+
+  const handleSendSuggestion = () => {
+    if (currentSuggestion.trim()) onSend(currentSuggestion);
   };
 
   const handleSendResource = (resource: { title: string; url: string }) => {
-    onSendResource(`Here's a helpful resource:\n[${resource.title}](${resource.url})`);
+    onSend(`Here's a helpful resource:\n[${resource.title}](${resource.url})`);
   };
 
   const exitAutopilot = () => {
@@ -77,7 +84,7 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
           🤖 AI
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2 }}>
           {displayScope && (
             <>
               <style>{`
@@ -152,6 +159,8 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
           <div style={{
             background: '#f0fdf4', borderRadius: 8, padding: '8px 10px',
             marginBottom: 8, border: '1px solid #bbf7d0',
+            // Lifted above the column's green autopilot overlay so it reads as actionable.
+            position: 'relative', zIndex: 2,
           }}>
             <div style={{ fontSize: 14, color: '#15803d', fontWeight: 600, marginBottom: 4 }}>
               ⏳ Autopilot sending…
@@ -162,37 +171,68 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
                 fontSize={14}
               />
             </div>
-            <div style={{ color: '#166534', lineHeight: 1.5, fontSize: 15 }}>
-              {slot.autopilotPending}
-            </div>
+            {/* Editable — clicking in pauses autopilot; the edited text is what sends. */}
+            <EditableReply
+              value={slot.autopilotPending}
+              onChange={t => store.patchSlot(slot.contactId, { autopilotPending: t })}
+              onFocus={() => store.patchSlot(slot.contactId, { autopilotPaused: true })}
+              style={{ color: '#166534', lineHeight: 1.5, fontSize: 15 }}
+            />
           </div>
         )}
 
-        {/* Suggested reply (only shown when autopilot is off and no proposed action pending) */}
-        {!slot.autopilotScope && !slot.proposedAction && slot.suggestedText && (
+        {/* Suggested reply — editable, with a per-conversation history + pagination.
+            Shown when autopilot is off and no proposed action pending. */}
+        {!slot.autopilotScope && !slot.proposedAction && slot.suggestionHistory.length > 0 && (
           <div style={{
-            background: '#eff6ff', borderRadius: 8, padding: '8px 10px',
-            marginBottom: 8, border: '1px solid #bfdbfe',
+            background: editingSuggestion ? '#f5f9ff' : '#eff6ff',
+            borderRadius: 8, padding: '8px 10px', marginBottom: 8,
+            border: editingSuggestion ? '1.5px solid #3b82f6' : '1px solid #bfdbfe',
           }}>
-            <div style={{ fontSize: 14, color: '#1d4ed8', fontWeight: 600, marginBottom: 4 }}>
-              Suggested reply
+            {/* Header row: label + loading spinner (left), pager chevrons (right) */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 14, color: '#1d4ed8', fontWeight: 600 }}>Suggested reply</span>
+                {slot.suggestionLoading && (
+                  <span style={{
+                    width: 12, height: 12, borderRadius: '50%',
+                    border: '2px solid #bfdbfe', borderTopColor: '#1d4ed8',
+                    display: 'inline-block', animation: 'spin .7s linear infinite',
+                  }} />
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <PagerChevron dir="left" disabled={suggestionAtStart}
+                  onClick={() => store.paginateSuggestion(slot.contactId, -1)} />
+                <PagerChevron dir="right" disabled={suggestionAtEnd} badge={slot.suggestionNewBadge}
+                  onClick={() => store.paginateSuggestion(slot.contactId, 1)} />
+              </div>
             </div>
-            <div style={{ color: '#1e40af', lineHeight: 1.5, marginBottom: 6, fontSize: 15 }}>
-              {slot.suggestedText}
-            </div>
+            <EditableReply
+              value={currentSuggestion}
+              onChange={t => store.editCurrentSuggestion(slot.contactId, t)}
+              onFocus={() => {
+                setEditingSuggestion(true);
+                store.patchSlot(slot.contactId, { suggestionAutoAdvance: false });
+              }}
+              onBlur={() => setEditingSuggestion(false)}
+              style={{ color: '#1e40af', lineHeight: 1.5, marginBottom: 6, fontSize: 15 }}
+            />
             <button
-              onClick={handleInsert}
+              onClick={handleSendSuggestion}
               style={{
                 fontSize: 14, padding: '3px 10px', borderRadius: 6, border: 'none',
                 background: '#1a56db', color: '#fff', cursor: 'pointer', fontWeight: 600,
               }}
-            >Insert ↑</button>
+            >Send</button>
           </div>
         )}
 
         {/* Relevant resources (hidden when proposed action is pending) */}
         {!slot.proposedAction && slot.suggestedResources.length > 0 && (
-          <div>
+          <div style={{ position: 'relative', zIndex: 2 }}>
             <div style={{
               fontSize: 14, color: '#6b7280', fontWeight: 600, marginBottom: 4,
             }}>
@@ -219,5 +259,40 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
         )}
       </div>
     </div>
+  );
+}
+
+// Left/right pager chevron for stepping through the suggested-reply history. Grays out
+// when disabled; the right one shows a small red dot when a newer suggestion is unseen.
+function PagerChevron({ dir, disabled, badge, onClick }: {
+  dir: 'left' | 'right';
+  disabled: boolean;
+  badge?: boolean;
+  onClick: () => void;
+}) {
+  const points = dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6';
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === 'left' ? 'Earlier suggestion' : 'Later suggestion'}
+      style={{
+        position: 'relative', width: 22, height: 22, padding: 0, border: 'none',
+        background: 'transparent', cursor: disabled ? 'default' : 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: disabled ? '#cbd5e1' : '#1d4ed8',
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polyline points={points} />
+      </svg>
+      {badge && (
+        <span style={{
+          position: 'absolute', top: 1, right: 1, width: 8, height: 8,
+          borderRadius: '50%', background: '#ef4444',
+        }} />
+      )}
+    </button>
   );
 }
