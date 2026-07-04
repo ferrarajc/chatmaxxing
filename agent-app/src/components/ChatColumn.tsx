@@ -195,7 +195,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const sendText = (text: string) => {
     if (!slot) return;
     store.appendMessage(slot.contactId, { role: 'AGENT', content: text });
-    store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now() });
+    // A manual send re-enables suggestion auto-advance (so the next suggestion leapfrogs to newest).
+    store.patchSlot(slot.contactId, { lastAgentMessageAt: Date.now(), suggestionAutoAdvance: true });
 
     // Start 3-min idle-check timer when agent poses a question; cancel on any non-question send
     if (agentQuestionIdleRef.current) clearTimeout(agentQuestionIdleRef.current);
@@ -339,13 +340,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
     // Read fresh connectionToken at send time
     const token = fresh.connectionToken;
-    store.appendMessage(contactId, { role: 'AGENT', content: text });
+    // Send the live staged text so an agent edit to the pending reply is what goes out
+    // (falls back to the original if the box was cleared to empty).
+    const outgoing = fresh.autopilotPending && fresh.autopilotPending.trim() ? fresh.autopilotPending : text;
+    store.appendMessage(contactId, { role: 'AGENT', content: outgoing });
     store.patchSlot(contactId, {
       lastAgentMessageAt: Date.now(),
       autopilotPending: null, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
     if (token) {
-      post<{ ok: boolean }>('/send-agent-message', { connectionToken: token, message: text })
+      post<{ ok: boolean }>('/send-agent-message', { connectionToken: token, message: outgoing })
         .catch((e: unknown) => {
           log.error('ChatColumn:autopilot:sendFailed', e);
           store.appendMessage(contactId, {
@@ -521,10 +525,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     greetedContacts.current.add(slot.contactId);
     const firstName = slot.clientName.split(' ')[0];
     const close = slot.intentGreeting || 'How can I assist you today?';
-    store.patchSlot(slot.contactId, {
-      suggestedText: `Hi ${firstName}, my name is ${store.agentName} with Bob's Mutual Funds. ${close}`,
-      suggestedScope: 'get-intent',
-    });
+    store.addSuggestion(slot.contactId, `Hi ${firstName}, my name is ${store.agentName} with Bob's Mutual Funds. ${close}`);
+    store.patchSlot(slot.contactId, { suggestedScope: 'get-intent' });
   }, [connectionToken, slot?.contactId]);
 
   // ── Effect: Autopilot scope activation ────────────────────────────────
@@ -619,10 +621,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       // callback always uses Lambda
       runAutopilotTurn(cid, scope);
     } else {
-      // get-intent / full-auto: use existing suggestedText if available, else call Lambda
+      // get-intent / full-auto: use the currently-shown suggestion if available, else call Lambda
       const existingSuggestion = slot.suggestedText?.trim();
       if (existingSuggestion) {
-        store.patchSlot(cid, { suggestedText: '' });
         autopilotSend(existingSuggestion, cid, scope);
       } else {
         runAutopilotTurn(cid, scope);
@@ -642,21 +643,26 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (agentQuestionIdleRef.current) { clearTimeout(agentQuestionIdleRef.current); agentQuestionIdleRef.current = null; }
 
     // NBR (always, even when autopilot is on — keeps suggestions fresh)
+    store.patchSlot(cid, { suggestionLoading: true });
     post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null }>(
       '/next-best-response',
       { transcript: slot.messages, clientProfile },
     )
       .then(result => {
+        // Append the new suggestion to the history (auto-advance / new-badge handled in the store).
+        if (result.suggestedText && result.suggestedText.trim()) {
+          store.addSuggestion(cid, result.suggestedText);
+        }
         const patch: Partial<ContactSlot> = {
-          suggestedText: result.suggestedText,
           suggestedResources: result.resources,
+          suggestionLoading: false,
         };
         if (result.suggestedScope !== undefined && !store.getSlot(cid)?.autopilotScope) {
           patch.suggestedScope = result.suggestedScope as AutopilotScope | null;
         }
         store.patchSlot(cid, patch);
       })
-      .catch(e => console.warn('NBR fetch failed', e));
+      .catch(e => { console.warn('NBR fetch failed', e); store.patchSlot(cid, { suggestionLoading: false }); });
 
     // Reactive autopilot turn
     const scope = slot.autopilotScope;
@@ -986,7 +992,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             ) : (
               <AISupport
                 slot={slot}
-                onSendResource={text => sendText(text)}
+                onSend={text => sendText(text)}
                 onActivateAutopilot={handleActivateAutopilot}
               />
             )}

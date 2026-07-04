@@ -53,8 +53,23 @@ export interface ContactSlot {
   autopilotPausedRemainingMs: number | null;
   /** Human-readable reason for last autopilot exit; null while autopilot is active or never ran */
   autopilotExitMessage: string | null;
+  /** Currently DISPLAYED suggested reply — a mirror of suggestionHistory[suggestionIndex]
+   *  (kept in sync by the suggestion store actions), read by FocusingDesktop, autopilot
+   *  reuse, and the insert flow. */
   suggestedText: string;
   suggestedResources: Resource[];
+  /** Every suggested reply produced this conversation, in order; edited entries are stored
+   *  in their edited state. */
+  suggestionHistory: string[];
+  /** Index into suggestionHistory of the entry currently shown in the Suggested reply box. */
+  suggestionIndex: number;
+  /** When true, a newly-arrived suggestion snaps the view to newest; turned off by editing
+   *  or paging off-newest, back on by sending or paging to newest. */
+  suggestionAutoAdvance: boolean;
+  /** True while a next-best-response fetch is in flight (drives the header spinner). */
+  suggestionLoading: boolean;
+  /** True when a newer suggestion arrived while the agent was paged back (red dot on ›). */
+  suggestionNewBadge: boolean;
   lastAgentMessageAt: number | null;
   lastCustomerMessageAt: number | null;
   connectionToken: string | null;

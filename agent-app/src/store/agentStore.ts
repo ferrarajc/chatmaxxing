@@ -24,6 +24,8 @@ interface AgentStore {
       | 'messages' | 'autopilotScope' | 'suggestedScope' | 'autopilotFlash'
       | 'autopilotPending' | 'autopilotPaused' | 'autopilotSendAt' | 'autopilotPausedRemainingMs'
       | 'autopilotExitMessage' | 'suggestedText' | 'suggestedResources'
+      | 'suggestionHistory' | 'suggestionIndex' | 'suggestionAutoAdvance'
+      | 'suggestionLoading' | 'suggestionNewBadge'
       | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'
       | 'bonusEligible' | 'acwData' | 'proposedAction'>,
     initialMessages?: ChatMessage[]
@@ -31,6 +33,12 @@ interface AgentStore {
 
   patchSlot: (contactId: string, patch: Partial<ContactSlot>) => void;
   appendMessage: (contactId: string, msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  /** Append a new suggested reply to the history; honors auto-advance / sets the new-badge. */
+  addSuggestion: (contactId: string, text: string) => void;
+  /** Step the displayed suggestion by delta (clamped); toggles auto-advance/new-badge at ends. */
+  paginateSuggestion: (contactId: string, delta: number) => void;
+  /** Edit the currently-displayed suggestion in place (retained in history); parks auto-advance. */
+  editCurrentSuggestion: (contactId: string, text: string) => void;
   clearSlot: (contactId: string) => void;
   insertSuggestion: (contactId: string) => void;
   pendingInserts: Set<string>;
@@ -71,6 +79,11 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       autopilotExitMessage: null,
       suggestedText: '',
       suggestedResources: [],
+      suggestionHistory: [],
+      suggestionIndex: 0,
+      suggestionAutoAdvance: true,
+      suggestionLoading: false,
+      suggestionNewBadge: false,
       lastAgentMessageAt: null,
       lastCustomerMessageAt: null,
       connectionToken: null,
@@ -96,6 +109,49 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         ...s,
         messages: [...s.messages, { ...msg, id: nanoid(), timestamp: Date.now() }],
       };
+    }) as Slots;
+    set({ slots });
+  },
+
+  addSuggestion: (contactId, text) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const history = [...s.suggestionHistory, text];
+      const lastIdx = history.length - 1;
+      // First ever, or currently auto-advancing → snap the view to the newest.
+      const advance = s.suggestionHistory.length === 0 || s.suggestionAutoAdvance;
+      return advance
+        ? { ...s, suggestionHistory: history, suggestionIndex: lastIdx, suggestedText: text, suggestionNewBadge: false }
+        : { ...s, suggestionHistory: history, suggestionNewBadge: true }; // paged back → flag a new one
+    }) as Slots;
+    set({ slots });
+  },
+
+  paginateSuggestion: (contactId, delta) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const len = s.suggestionHistory.length;
+      if (len === 0) return s;
+      const newIndex = Math.max(0, Math.min(len - 1, s.suggestionIndex + delta));
+      const atNewest = newIndex === len - 1;
+      return {
+        ...s,
+        suggestionIndex: newIndex,
+        suggestedText: s.suggestionHistory[newIndex],
+        suggestionAutoAdvance: atNewest,                        // re-enable only at newest
+        suggestionNewBadge: atNewest ? false : s.suggestionNewBadge,
+      };
+    }) as Slots;
+    set({ slots });
+  },
+
+  editCurrentSuggestion: (contactId, text) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      if (s.suggestionIndex < 0 || s.suggestionIndex >= s.suggestionHistory.length) return s;
+      const history = s.suggestionHistory.slice();
+      history[s.suggestionIndex] = text;                        // retained in its edited state
+      return { ...s, suggestionHistory: history, suggestedText: text };
     }) as Slots;
     set({ slots });
   },
