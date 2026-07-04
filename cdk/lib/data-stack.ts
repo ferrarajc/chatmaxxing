@@ -14,6 +14,7 @@ export class DataStack extends cdk.Stack {
   public readonly transactionsTable: dynamodb.Table;
   public readonly fundsTable: dynamodb.Table;
   public readonly verificationTable: dynamodb.Table;
+  public readonly replyEventsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: DataStackProps) {
     super(scope, id, props);
@@ -121,6 +122,20 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // ── Reply-events table ─────────────────────────────────────────
+    // Agent-response telemetry: one item per agent send recording how they arrived at it
+    // (AI suggestion sent as-is / edited / "Change to" / freehanded / autopilot edit) with the
+    // original vs. what was actually sent — for later analysis of how well suggestions land.
+    // Append-only; keep records (RETAIN). PK contactId + SK eventSort = `${ISO}#${rand}`.
+    this.replyEventsTable = new dynamodb.Table(this, 'ReplyEventsTable', {
+      tableName: `bobs-reply-events${sfx}`,
+      partitionKey: { name: 'contactId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'eventSort', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ClientsTableName', { value: this.clientsTable.tableName });
     new cdk.CfnOutput(this, 'ChatSessionsTableName', { value: this.chatSessionsTable.tableName });
@@ -129,5 +144,6 @@ export class DataStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'TransactionsTableName', { value: this.transactionsTable.tableName });
     new cdk.CfnOutput(this, 'FundsTableName', { value: this.fundsTable.tableName });
     new cdk.CfnOutput(this, 'VerificationTableName', { value: this.verificationTable.tableName });
+    new cdk.CfnOutput(this, 'ReplyEventsTableName', { value: this.replyEventsTable.tableName });
   }
 }

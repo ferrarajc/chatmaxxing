@@ -21,6 +21,24 @@ export interface Resource {
   url: string;
 }
 
+/** One entry in the per-conversation suggested-reply history. */
+export interface Suggestion {
+  /** Stable id — used to attach async "Change to" options and to find the entry after paging. */
+  id: string;
+  /** Current (possibly edited) text — what's shown in the box. */
+  text: string;
+  /** The text as first authored — for edit detection in telemetry. */
+  originalText: string;
+  /** How this entry was produced. */
+  source: 'greeting' | 'nbr' | 'change-to';
+  /** If source === 'change-to', the "Change to" direction the agent picked. */
+  changeDirection?: string;
+  /** Cached "Change to" alternatives; null = not generated yet. */
+  changeOptions: string[] | null;
+  /** True while this entry's "Change to" options are being generated. */
+  changeOptionsLoading: boolean;
+}
+
 export interface ACWData {
   wrapUpCode: string;
   coaching: { positive: string; bullets: string[] };
@@ -58,9 +76,9 @@ export interface ContactSlot {
    *  reuse, and the insert flow. */
   suggestedText: string;
   suggestedResources: Resource[];
-  /** Every suggested reply produced this conversation, in order; edited entries are stored
-   *  in their edited state. */
-  suggestionHistory: string[];
+  /** Every suggested reply produced this conversation, in order (as `Suggestion` objects);
+   *  edited entries are stored in their edited state. */
+  suggestionHistory: Suggestion[];
   /** Index into suggestionHistory of the entry currently shown in the Suggested reply box. */
   suggestionIndex: number;
   /** When true, a newly-arrived suggestion snaps the view to newest; turned off by editing

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ContactSlot, AgentStatus, ChatMessage, AutopilotScope, ProposedActionData } from '../types';
+import { ContactSlot, AgentStatus, ChatMessage, AutopilotScope, ProposedActionData, Suggestion } from '../types';
 
 const nanoid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -34,11 +34,17 @@ interface AgentStore {
   patchSlot: (contactId: string, patch: Partial<ContactSlot>) => void;
   appendMessage: (contactId: string, msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   /** Append a new suggested reply to the history; honors auto-advance / sets the new-badge. */
-  addSuggestion: (contactId: string, text: string) => void;
+  addSuggestion: (contactId: string, text: string, source: Suggestion['source']) => void;
   /** Step the displayed suggestion by delta (clamped); toggles auto-advance/new-badge at ends. */
   paginateSuggestion: (contactId: string, delta: number) => void;
   /** Edit the currently-displayed suggestion in place (retained in history); parks auto-advance. */
   editCurrentSuggestion: (contactId: string, text: string) => void;
+  /** Attach generated "Change to" options to the history entry with the given id. */
+  setChangeOptions: (contactId: string, entryId: string, options: string[]) => void;
+  /** Mark the given history entry's "Change to" options as generating (or done). */
+  setChangeOptionsLoading: (contactId: string, entryId: string, loading: boolean) => void;
+  /** Append a "Change to" reply and jump straight to it (shows immediately). */
+  addChangeToReply: (contactId: string, text: string, direction: string) => void;
   clearSlot: (contactId: string) => void;
   insertSuggestion: (contactId: string) => void;
   pendingInserts: Set<string>;
@@ -113,10 +119,14 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     set({ slots });
   },
 
-  addSuggestion: (contactId, text) => {
+  addSuggestion: (contactId, text, source) => {
     const slots = get().slots.map(s => {
       if (s?.contactId !== contactId) return s;
-      const history = [...s.suggestionHistory, text];
+      const entry: Suggestion = {
+        id: nanoid(), text, originalText: text, source,
+        changeOptions: null, changeOptionsLoading: false,
+      };
+      const history = [...s.suggestionHistory, entry];
       const lastIdx = history.length - 1;
       // First ever, or currently auto-advancing → snap the view to the newest.
       const advance = s.suggestionHistory.length === 0 || s.suggestionAutoAdvance;
@@ -137,7 +147,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       return {
         ...s,
         suggestionIndex: newIndex,
-        suggestedText: s.suggestionHistory[newIndex],
+        suggestedText: s.suggestionHistory[newIndex].text,
         suggestionAutoAdvance: atNewest,                        // re-enable only at newest
         suggestionNewBadge: atNewest ? false : s.suggestionNewBadge,
       };
@@ -150,8 +160,52 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       if (s?.contactId !== contactId) return s;
       if (s.suggestionIndex < 0 || s.suggestionIndex >= s.suggestionHistory.length) return s;
       const history = s.suggestionHistory.slice();
-      history[s.suggestionIndex] = text;                        // retained in its edited state
+      // Keep id / originalText / source / options; just update the shown text.
+      history[s.suggestionIndex] = { ...history[s.suggestionIndex], text };
       return { ...s, suggestionHistory: history, suggestedText: text };
+    }) as Slots;
+    set({ slots });
+  },
+
+  setChangeOptions: (contactId, entryId, options) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const history = s.suggestionHistory.map(e =>
+        e.id === entryId ? { ...e, changeOptions: options, changeOptionsLoading: false } : e,
+      );
+      return { ...s, suggestionHistory: history };
+    }) as Slots;
+    set({ slots });
+  },
+
+  setChangeOptionsLoading: (contactId, entryId, loading) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const history = s.suggestionHistory.map(e =>
+        e.id === entryId ? { ...e, changeOptionsLoading: loading } : e,
+      );
+      return { ...s, suggestionHistory: history };
+    }) as Slots;
+    set({ slots });
+  },
+
+  addChangeToReply: (contactId, text, direction) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const entry: Suggestion = {
+        id: nanoid(), text, originalText: text, source: 'change-to',
+        changeDirection: direction, changeOptions: null, changeOptionsLoading: false,
+      };
+      const history = [...s.suggestionHistory, entry];
+      // Always jump to the freshly-authored reply — the agent explicitly asked for it.
+      return {
+        ...s,
+        suggestionHistory: history,
+        suggestionIndex: history.length - 1,
+        suggestedText: text,
+        suggestionAutoAdvance: true,
+        suggestionNewBadge: false,
+      };
     }) as Slots;
     set({ slots });
   },

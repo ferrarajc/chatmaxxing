@@ -17,6 +17,7 @@ interface LambdaStackProps extends cdk.StackProps {
   transactionsTable: dynamodb.Table;
   fundsTable: dynamodb.Table;
   verificationTable: dynamodb.Table;
+  replyEventsTable: dynamodb.Table;
   stage?: string;
 }
 
@@ -28,7 +29,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, verificationTable, stage } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, verificationTable, replyEventsTable, stage } = props;
 
     // '' for prod (names unchanged), '-<stage>' otherwise. Applied to every physical
     // resource name (Lambda functionName, role name, API name) so dev is fully isolated.
@@ -42,6 +43,7 @@ export class LambdaStack extends cdk.Stack {
       TRANSCRIPTS_TABLE: transcriptsTable.tableName,
       TRANSACTIONS_TABLE: transactionsTable.tableName,
       FUNDS_TABLE: fundsTable.tableName,
+      REPLY_EVENTS_TABLE: replyEventsTable.tableName,
       BEDROCK_MODEL_ID: 'us.amazon.nova-micro-v1:0',
       BEDROCK_REGION: this.region,
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
@@ -384,6 +386,20 @@ export class LambdaStack extends cdk.Stack {
     // Writes lastAgentChat (continuation memory) onto the client record at chat end.
     clientsTable.grantWriteData(saveTranscriptFn);
 
+    // ── log-reply (agent-response telemetry) ───────────────────────
+    const logReplyFn = new NodejsFunction(this, 'LogReplyFn', {
+      functionName: `bobs-log-reply${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'log-reply/handler.ts'),
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+      environment: baseEnv,
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    replyEventsTable.grantWriteData(logReplyFn);
+
     // ── get-transcripts ────────────────────────────────────────────
     const getTranscriptsFn = new NodejsFunction(this, 'GetTranscriptsFn', {
       functionName: `bobs-get-transcripts${sfx}`,
@@ -548,6 +564,7 @@ export class LambdaStack extends cdk.Stack {
       ['/client-data', clientDataFn],
       ['/execute-task', executeTaskFn],
       ['/save-transcript', saveTranscriptFn],
+      ['/log-reply', logReplyFn],
       ['/pin-transcript', pinTranscriptFn],
       ['/verify', verifyFn],
     ];
