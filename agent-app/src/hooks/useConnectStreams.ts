@@ -523,6 +523,9 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
                   // Nobody is listening anymore — stop autopilot and pending sends.
                   autopilotScope: null,
                   autopilotPending: null,
+                  autopilotPaused: false,
+                  autopilotSendAt: null,
+                  autopilotPausedRemainingMs: null,
                   suggestedScope: null,
                   // A Type 3 action sent to the client can no longer be submitted.
                   ...(leftSlot.awaitingClientApproval ? { awaitingClientApproval: false } : {}),

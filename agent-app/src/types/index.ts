@@ -44,6 +44,13 @@ export interface ContactSlot {
   autopilotFlash: boolean;
   /** Message staged for send during autopilot delay — shown in AI panel */
   autopilotPending: string | null;
+  /** True while autopilot progression is paused (send countdown frozen, not exited). */
+  autopilotPaused: boolean;
+  /** Absolute epoch-ms deadline the current pending send counts down to; null when
+   *  no send is pending or while paused. Drives the visible countdown timer. */
+  autopilotSendAt: number | null;
+  /** Remaining ms captured at the moment of pause, frozen until resume; null while running. */
+  autopilotPausedRemainingMs: number | null;
   /** Human-readable reason for last autopilot exit; null while autopilot is active or never ran */
   autopilotExitMessage: string | null;
   suggestedText: string;

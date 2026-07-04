@@ -233,33 +233,67 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   };
 
   // ── Autopilot: human-like wait helper ──────────────────────────────────
-  // Waits `ms` while autopilot is composing, in chunks so cancellation is detected
-  // promptly. When showEllipsis is true the customer's typing ellipsis is kept alive
-  // via heartbeats and cleared immediately if autopilot is cancelled. Returns false
-  // if the wait was aborted (scope cancelled or chat ended).
+  // Waits `ms` while autopilot is composing, polling frequently so cancellation and
+  // pause are detected promptly. When showEllipsis is true the customer's typing
+  // ellipsis is kept alive via heartbeats (throttled) and cleared immediately if
+  // autopilot is cancelled. Honors slot.autopilotPaused: while paused the countdown
+  // freezes (the send deadline does not advance); on resume both the internal deadline
+  // and the display deadline (autopilotSendAt) shift forward by the paused span, so the
+  // total wait time is preserved exactly. Returns false if the wait was aborted (scope
+  // cancelled or chat ended).
   const autopilotDelay = async (
     ms: number, contactId: string, scope: AutopilotScope, showEllipsis: boolean,
   ): Promise<boolean> => {
+    const POLL_MS = 250;
+    const TYPING_HEARTBEAT_MS = 8000;
     const startToken = store.getSlot(contactId)?.connectionToken;
-    let remaining = ms;
-    const CHUNK_MS = 8000;
-    while (remaining > 0) {
-      const wait = Math.min(CHUNK_MS, remaining);
-      await sleep(wait);
-      remaining -= wait;
+    let deadline = Date.now() + ms;
+    let pauseStart = 0;               // 0 = running; else Date.now() when the pause began
+    let lastHeartbeat = Date.now();   // autopilotSend already emitted one before phase 2
+    for (;;) {
+      await sleep(POLL_MS);
       const cur = store.getSlot(contactId);
-      // Abort if scope was cancelled while waiting, or if the chat already ended
+      // Abort if scope was cancelled while waiting, or if the chat already ended.
+      // (Checked before the pause branch so Exit-while-paused aborts immediately.)
       if (!cur || cur.autopilotScope !== scope || cur.status === 'acw') {
-        store.patchSlot(contactId, { autopilotPending: null });
+        store.patchSlot(contactId, {
+          autopilotPending: null, autopilotSendAt: null, autopilotPausedRemainingMs: null,
+        });
         // Cancelled (not ended) → tell the customer to drop the ellipsis immediately.
         const stopToken = cur?.connectionToken ?? startToken;
         if (showEllipsis && cur && cur.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
         return false;
       }
-      // Still composing — keep the customer's ellipsis alive.
-      if (showEllipsis && remaining > 0 && cur.connectionToken) sendCustomerTypingEvent(cur.connectionToken);
+      // Paused — freeze the countdown; capture the remaining time once.
+      if (cur.autopilotPaused) {
+        if (pauseStart === 0) {
+          pauseStart = Date.now();
+          store.patchSlot(contactId, {
+            autopilotPausedRemainingMs: Math.max(0, (cur.autopilotSendAt ?? deadline) - Date.now()),
+          });
+        }
+        continue;
+      }
+      // Just resumed — shift both deadlines forward by however long we were paused.
+      // Leave lastHeartbeat untouched: if the pause outlasted the heartbeat interval the
+      // customer's typing ellipsis has expired, so the check below re-sends one promptly.
+      if (pauseStart !== 0) {
+        const pausedFor = Date.now() - pauseStart;
+        pauseStart = 0;
+        deadline += pausedFor;
+        const running = store.getSlot(contactId);
+        store.patchSlot(contactId, {
+          autopilotSendAt: (running?.autopilotSendAt ?? deadline) + pausedFor,
+          autopilotPausedRemainingMs: null,
+        });
+      }
+      if (Date.now() >= deadline) return true;
+      // Still composing — keep the customer's ellipsis alive (throttled).
+      if (showEllipsis && cur.connectionToken && Date.now() - lastHeartbeat >= TYPING_HEARTBEAT_MS) {
+        sendCustomerTypingEvent(cur.connectionToken);
+        lastHeartbeat = Date.now();
+      }
     }
-    return true;
   };
 
   // ── Autopilot: send with human-like delay ──────────────────────────────
@@ -277,17 +311,28 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const lastClientMsg = slotForRead?.messages.slice().reverse().find(m => m.role === 'CUSTOMER');
     const clientLen = lastClientMsg?.content.length ?? 0;
     const readingDelayMs = clientLen > 0 ? 2000 + Math.max(0, clientLen - 200) * 10 : 0;
+    // Phase 2 typing delay (chars/15 s) — computed up front so the visible countdown can
+    // show the full time until send. The delay timing itself is unchanged.
+    const delaySecs = Math.max(1, Math.floor(text.length / 15));
+    // Total time-until-send drives the countdown. Deliberately does NOT touch
+    // autopilotPaused: if the agent paused before this turn resolved, the staged send
+    // starts frozen (autopilotDelay freezes it on its first poll).
+    store.patchSlot(contactId, {
+      autopilotSendAt: Date.now() + readingDelayMs + delaySecs * 1000,
+      autopilotPausedRemainingMs: null,
+    });
     if (!(await autopilotDelay(readingDelayMs, contactId, scope, false))) return false;
 
     // Phase 2 — typing delay. Show the ellipsis now and keep it alive until send.
-    const delaySecs = Math.max(1, Math.floor(text.length / 15));
     const typingToken = store.getSlot(contactId)?.connectionToken;
     if (typingToken) sendCustomerTypingEvent(typingToken);
     if (!(await autopilotDelay(delaySecs * 1000, contactId, scope, true))) return false;
 
     const fresh = store.getSlot(contactId);
     if (!fresh || fresh.autopilotScope !== scope || fresh.status === 'acw') {
-      store.patchSlot(contactId, { autopilotPending: null });
+      store.patchSlot(contactId, {
+        autopilotPending: null, autopilotSendAt: null, autopilotPausedRemainingMs: null,
+      });
       const stopToken = fresh?.connectionToken ?? typingToken;
       if (fresh && fresh.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
       return false;
@@ -295,7 +340,10 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     // Read fresh connectionToken at send time
     const token = fresh.connectionToken;
     store.appendMessage(contactId, { role: 'AGENT', content: text });
-    store.patchSlot(contactId, { lastAgentMessageAt: Date.now(), autopilotPending: null });
+    store.patchSlot(contactId, {
+      lastAgentMessageAt: Date.now(),
+      autopilotPending: null, autopilotSendAt: null, autopilotPausedRemainingMs: null,
+    });
     if (token) {
       post<{ ok: boolean }>('/send-agent-message', { connectionToken: token, message: text })
         .catch((e: unknown) => {
@@ -331,6 +379,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       autopilotScope: null,
       autopilotFlash: true,
       autopilotPending: null,
+      autopilotPaused: false,
+      autopilotSendAt: null,
+      autopilotPausedRemainingMs: null,
       autopilotExitMessage: message ?? null,
     });
     setTimeout(() => store.patchSlot(contactId, { autopilotFlash: false }), 100);
@@ -435,6 +486,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         autopilotScope: null,
         autopilotFlash: true,
         autopilotPending: null,
+        autopilotPaused: false,
+        autopilotSendAt: null,
+        autopilotPausedRemainingMs: null,
         autopilotExitMessage: result.exitMessage ?? 'All fields collected — proposed action is ready for review.',
       });
       setTimeout(() => store.patchSlot(contactId, { autopilotFlash: false }), 100);
@@ -687,14 +741,20 @@ export function ChatColumn({ slotIndex, slot }: Props) {
 
   const handleActivateAutopilot = (scope: AutopilotScope) => {
     if (!slot) return;
-    // Keep suggestedText — the scope activation effect will consume it for get-intent/full-auto
-    store.patchSlot(slot.contactId, { autopilotScope: scope, suggestedScope: null });
+    // Keep suggestedText — the scope activation effect will consume it for get-intent/full-auto.
+    // Reset any stale pause/countdown state so a fresh activation starts clean & unpaused.
+    store.patchSlot(slot.contactId, {
+      autopilotScope: scope, suggestedScope: null,
+      autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
+    });
   };
 
-  const handleColumnClick = () => {
-    if (slot !== null && slot.autopilotScope !== null) {
-      exitAutopilot(slot.contactId);
-    }
+  const handlePauseAutopilot = () => {
+    if (slot) store.patchSlot(slot.contactId, { autopilotPaused: true });
+  };
+
+  const handleResumeAutopilot = () => {
+    if (slot) store.patchSlot(slot.contactId, { autopilotPaused: false });
   };
 
   const handleEndChat = () => {
@@ -725,8 +785,10 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const overlayColor = isFlashing ? 'rgba(234,179,8,0.15)' : isAutopilot ? 'rgba(34,197,94,0.12)' : 'transparent';
 
   return (
+    // No column-level click handler: autopilot is controlled only by the explicit
+    // Pause/Exit/Resume buttons (and the AI-panel ✈ toggle). Clicking anywhere else —
+    // header, transcript, the resize handle — no longer exits autopilot.
     <div
-      onClick={handleColumnClick}
       style={{
         background: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column',
         border: `${borderWidth} solid ${borderColor}`,
@@ -824,33 +886,65 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Type area */}
-          <div style={{ borderTop: '1px solid #e5e7eb', padding: '8px 10px', flexShrink: 0 }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <textarea
-                value={inputText}
-                onChange={e => handleInputTyping(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                onClick={e => e.stopPropagation()} // prevent column click-to-exit on textarea focus
-                placeholder={slot.customerDisconnected ? 'Client closed the chat' : 'Type a reply…'}
-                disabled={slot.customerDisconnected}
-                rows={2}
-                style={{
-                  flex: 1, resize: 'none', border: '1.5px solid #d1d5db', borderRadius: 8,
-                  padding: '6px 10px', fontSize: 16, outline: 'none', fontFamily: 'inherit',
-                  opacity: slot.customerDisconnected ? 0.5 : 1,
-                }}
-              />
-              <button
-                onClick={e => { e.stopPropagation(); handleSend(); }}
-                disabled={!inputText.trim() || slot.customerDisconnected}
-                style={{
-                  width: 34, borderRadius: 8, border: 'none',
-                  background: inputText.trim() && !slot.customerDisconnected ? '#1a56db' : '#e5e7eb',
-                  color: '#fff', cursor: inputText.trim() && !slot.customerDisconnected ? 'pointer' : 'default', fontSize: 20,
-                }}
-              >➤</button>
-            </div>
+          {/* Type area — during autopilot the (unused) composer is replaced by the
+              pause/exit/resume controls, lifted above the green overlay via zIndex. */}
+          <div style={{ borderTop: '1px solid #e5e7eb', padding: '8px 10px', flexShrink: 0, position: 'relative', zIndex: 2 }}>
+            {isAutopilot ? (
+              slot.autopilotPaused ? (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => exitAutopilot(slot.contactId)}
+                    style={{
+                      flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
+                      background: '#dc2626', color: '#fff', fontSize: 15, fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >Exit</button>
+                  <button
+                    onClick={handleResumeAutopilot}
+                    style={{
+                      flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
+                      background: '#16a34a', color: '#fff', fontSize: 15, fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >Resume ▶</button>
+                </div>
+              ) : (
+                <button
+                  onClick={handlePauseAutopilot}
+                  style={{
+                    width: '100%', padding: '16px 0', borderRadius: 8, border: 'none',
+                    background: '#1a56db', color: '#fff', fontSize: 17, fontWeight: 700,
+                    cursor: 'pointer', letterSpacing: '.3px',
+                  }}
+                >Pause Autopilot</button>
+              )
+            ) : (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <textarea
+                  value={inputText}
+                  onChange={e => handleInputTyping(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  placeholder={slot.customerDisconnected ? 'Client closed the chat' : 'Type a reply…'}
+                  disabled={slot.customerDisconnected}
+                  rows={2}
+                  style={{
+                    flex: 1, resize: 'none', border: '1.5px solid #d1d5db', borderRadius: 8,
+                    padding: '6px 10px', fontSize: 16, outline: 'none', fontFamily: 'inherit',
+                    opacity: slot.customerDisconnected ? 0.5 : 1,
+                  }}
+                />
+                <button
+                  onClick={() => handleSend()}
+                  disabled={!inputText.trim() || slot.customerDisconnected}
+                  style={{
+                    width: 34, borderRadius: 8, border: 'none',
+                    background: inputText.trim() && !slot.customerDisconnected ? '#1a56db' : '#e5e7eb',
+                    color: '#fff', cursor: inputText.trim() && !slot.customerDisconnected ? 'pointer' : 'default', fontSize: 20,
+                  }}
+                >➤</button>
+              </div>
+            )}
           </div>
 
           {/* Drag handle — resize AI section independently per column */}

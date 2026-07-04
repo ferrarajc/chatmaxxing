@@ -22,7 +22,8 @@ interface AgentStore {
   addContact: (
     contact: Omit<ContactSlot,
       | 'messages' | 'autopilotScope' | 'suggestedScope' | 'autopilotFlash'
-      | 'autopilotPending' | 'autopilotExitMessage' | 'suggestedText' | 'suggestedResources'
+      | 'autopilotPending' | 'autopilotPaused' | 'autopilotSendAt' | 'autopilotPausedRemainingMs'
+      | 'autopilotExitMessage' | 'suggestedText' | 'suggestedResources'
       | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'
       | 'bonusEligible' | 'acwData' | 'proposedAction'>,
     initialMessages?: ChatMessage[]
@@ -64,6 +65,9 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       suggestedScope: null,
       autopilotFlash: false,
       autopilotPending: null,
+      autopilotPaused: false,
+      autopilotSendAt: null,
+      autopilotPausedRemainingMs: null,
       autopilotExitMessage: null,
       suggestedText: '',
       suggestedResources: [],
