@@ -1,0 +1,47 @@
+name: Deploy Supervisor App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supervisor-app/**'
+      - '.github/workflows/deploy-supervisor-app.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --workspace supervisor-app
+
+      - name: Build
+        run: npm run build
+        working-directory: supervisor-app
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_AWS_REGION: ${{ secrets.VITE_AWS_REGION }}
+          VITE_DEMO_CODE: ${{ secrets.VITE_DEMO_CODE }}   # the console shows aggregate client data → gate it
+          VITE_GIT_SHA: ${{ github.sha }}   # stamps the live build so you can verify what's deployed
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: supervisor-app/dist
+          destination_dir: supervisor
+          keep_files: true   # keeps customer-app (root), agent-app (/agent), phone cockpit (/phone)

@@ -15,6 +15,7 @@ export class DataStack extends cdk.Stack {
   public readonly fundsTable: dynamodb.Table;
   public readonly verificationTable: dynamodb.Table;
   public readonly replyEventsTable: dynamodb.Table;
+  public readonly agentsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: DataStackProps) {
     super(scope, id, props);
@@ -136,6 +137,19 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    // ── Agents table ───────────────────────────────────────────────
+    // Supervisor Dashboard workforce roster: ~82 agents (the real Connect users plus a
+    // fictional population) each carrying a deterministic weekly performance history.
+    // Demo aggregates ONLY — real conversations stay in bobs-transcripts and are blended
+    // at read time by supervisor-stats. Seeded via the /reset-agents Lambda; fully
+    // reseedable, so no PITR/RETAIN needed.
+    this.agentsTable = new dynamodb.Table(this, 'AgentsTable', {
+      tableName: `bobs-agents${sfx}`,
+      partitionKey: { name: 'agentUsername', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ClientsTableName', { value: this.clientsTable.tableName });
     new cdk.CfnOutput(this, 'ChatSessionsTableName', { value: this.chatSessionsTable.tableName });
@@ -145,5 +159,6 @@ export class DataStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'FundsTableName', { value: this.fundsTable.tableName });
     new cdk.CfnOutput(this, 'VerificationTableName', { value: this.verificationTable.tableName });
     new cdk.CfnOutput(this, 'ReplyEventsTableName', { value: this.replyEventsTable.tableName });
+    new cdk.CfnOutput(this, 'AgentsTableName', { value: this.agentsTable.tableName });
   }
 }

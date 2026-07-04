@@ -7,7 +7,8 @@
     "lambda",
     "customer-app",
     "agent-app",
-    "phone-agent-app"
+    "phone-agent-app",
+    "supervisor-app"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",

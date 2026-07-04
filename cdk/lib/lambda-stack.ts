@@ -18,6 +18,7 @@ interface LambdaStackProps extends cdk.StackProps {
   fundsTable: dynamodb.Table;
   verificationTable: dynamodb.Table;
   replyEventsTable: dynamodb.Table;
+  agentsTable: dynamodb.Table;
   stage?: string;
 }
 
@@ -29,7 +30,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, verificationTable, replyEventsTable, stage } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, verificationTable, replyEventsTable, agentsTable, stage } = props;
 
     // '' for prod (names unchanged), '-<stage>' otherwise. Applied to every physical
     // resource name (Lambda functionName, role name, API name) so dev is fully isolated.
@@ -635,6 +636,50 @@ export class LambdaStack extends cdk.Stack {
       path: '/reset-funds',
       methods: [apigwv2.HttpMethod.GET],
       integration: new HttpLambdaIntegration('ResetFundsIntegration', resetFundsFn),
+    });
+
+    // ── supervisor-stats (Supervisor Dashboard aggregates + AI insights) ─
+    // AGENTS_TABLE is set per-function (not in baseEnv) so existing lambdas' deployed
+    // config is untouched — this whole feature is additive.
+    const supervisorStatsFn = new NodejsFunction(this, 'SupervisorStatsFn', {
+      functionName: `bobs-supervisor-stats${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'supervisor-stats/handler.ts'),
+      timeout: cdk.Duration.seconds(45), // insights view makes 2 LLM calls
+      memorySize: 512,
+      environment: { ...baseEnv, AGENTS_TABLE: agentsTable.tableName },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    agentsTable.grantReadData(supervisorStatsFn);
+    transcriptsTable.grantReadData(supervisorStatsFn);
+    callbacksTable.grantReadData(supervisorStatsFn);
+
+    api.addRoutes({
+      path: '/supervisor-stats',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('SupervisorStatsIntegration', supervisorStatsFn),
+    });
+
+    // ── reset-agents (seed bobs-agents from the bundled roster + generator) ─
+    const resetAgentsFn = new NodejsFunction(this, 'ResetAgentsFn', {
+      functionName: `bobs-reset-agents${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'reset-agents/handler.ts'),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: { ...baseEnv, AGENTS_TABLE: agentsTable.tableName },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    agentsTable.grantReadWriteData(resetAgentsFn);
+
+    api.addRoutes({
+      path: '/reset-agents',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('ResetAgentsIntegration', resetAgentsFn),
     });
 
     // GET routes for browser-accessible reset endpoints

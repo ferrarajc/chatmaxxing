@@ -223,6 +223,50 @@ phone numbers are approved — the cockpit does not change.
 
 ---
 
+### 10. Supervisor Console (Operations Dashboard)
+
+The management layer of the platform: a dedicated dashboard at its own URL
+(`/chatmaxxing/supervisor`, access-code gated) that turns the platform's operational data into the
+KPIs a contact-center leader actually runs on. It completes the persona set — client, chat agent,
+phone agent, and now **supervisor**.
+
+To make the metrics meaningful at real-world scale, the console is backed by a **demonstration
+workforce of 82 agents** — the platform's real registered agents plus a fictional population —
+organized into seven wealth-management-realistic divisions (Client Services, Retirement & IRA
+Services, Private Client Group, Trading & Brokerage Services, Advice & Planning, Onboarding &
+Transfers, Phone & Callback Desk). Agents carry realistic titles, locations, tenure, and FINRA
+licenses (SIE, Series 7/63/65/66, CFP) or non-licensed service roles — the licensed/non-licensed
+split that the platform's task-permission model (Type 2, licensed-agent tasks) is designed around.
+Each agent has ~18 months of deterministic weekly performance history. Live conversations recorded
+by the platform are **layered on top of** the demonstration history in real time, attributed to the
+actual agent who handled them; fictional data never touches the real transcript store.
+
+What the supervisor sees, for a selectable window (today / 7 days / 30 days / all time), optionally
+scoped to one division:
+
+- **KPI header** — conversation volume by channel, average/median handle time, active agents,
+  escalations, and upcoming scheduled callbacks (with the next one previewed).
+- **Division rollups** — headcount, licensed count, volume, and handle time per division; click to
+  filter the whole console.
+- **Charts** — stacked chat/phone volume by day (or by week for all-time), wrap-up-code mix, and
+  channel mix, using the same wrap-up taxonomy the after-chat-work AI assigns.
+- **Agent roster** — all 82 agents, sortable, with license badges and blended volume/handle/QA
+  figures; agents with live recorded conversations carry a LIVE badge. Clicking a row opens a
+  detail drawer: KPI tiles, a 12-week volume trend, top wrap-ups, and a one-sentence
+  **AI-observed theme** for the supervisor.
+- **AI operations digest** — a short narrative in an operations-analyst voice quoting the window's
+  real numbers, plus **emerging topics** clustered from actual recorded conversation intents. The
+  digest loads after the numbers and degrades gracefully — if the AI is unavailable the dashboard
+  simply shows its figures.
+- **Recent conversations** — the newest live recordings, each deep-linking into the existing
+  Transcript Review tool.
+
+Honesty is built in: bot-contained chats are never saved as transcripts, so the console states
+plainly that its conversation figures cover escalated chats and phone calls, and that workforce
+history is demonstration-seeded.
+
+---
+
 ## Technology Stack
 
 | Layer | Technology |
