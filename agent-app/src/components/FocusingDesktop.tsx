@@ -8,6 +8,7 @@ import { ProposedActionCard } from './ProposedActionCard';
 import { AfterCallWork } from './AfterCallWork';
 import { renderHighlighted } from '../utils/evidenceHighlight';
 import { AutopilotMenu } from './AutopilotMenu';
+import { AutopilotCountdown } from './AutopilotCountdown';
 import { ResponseTimer } from './ResponseTimer';
 import { IntentLabel, stripIntentMarkers } from './IntentLabel';
 
@@ -156,13 +157,17 @@ export function FocusingDesktop() {
   const handleActivateAutopilot = (scope: AutopilotScope) => {
     if (!selectedSlot) return;
     setAutopilotMenuOpen(false);
-    store.patchSlot(selectedSlot.contactId, { autopilotScope: scope, suggestedScope: null });
+    store.patchSlot(selectedSlot.contactId, {
+      autopilotScope: scope, suggestedScope: null,
+      autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
+    });
   };
 
   const handleExitAutopilot = () => {
     if (!selectedSlot) return;
     store.patchSlot(selectedSlot.contactId, {
       autopilotScope: null, autopilotFlash: true, autopilotPending: null,
+      autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
     setTimeout(() => store.patchSlot(selectedSlot.contactId, { autopilotFlash: false }), 100);
   };
@@ -496,6 +501,12 @@ export function FocusingDesktop() {
                   }}>
                     <div style={{ fontSize: 10, color: '#15803d', fontWeight: 700, marginBottom: 3 }}>
                       ⏳ Sending…
+                      <AutopilotCountdown
+                        sendAt={selectedSlot.autopilotSendAt}
+                        pausedRemainingMs={selectedSlot.autopilotPausedRemainingMs}
+                        paused={selectedSlot.autopilotPaused}
+                        fontSize={10}
+                      />
                     </div>
                     <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.5 }}>
                       {selectedSlot.autopilotPending}

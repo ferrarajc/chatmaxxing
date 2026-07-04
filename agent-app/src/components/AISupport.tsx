@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ContactSlot, AutopilotScope, AUTOPILOT_SCOPE_LABELS } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { AutopilotMenu } from './AutopilotMenu';
+import { AutopilotCountdown } from './AutopilotCountdown';
 import { ProposedActionCard } from './ProposedActionCard';
 
 interface Props {
@@ -26,6 +27,7 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
   const exitAutopilot = () => {
     store.patchSlot(slot.contactId, {
       autopilotScope: null, autopilotFlash: true, autopilotPending: null,
+      autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
     setTimeout(() => store.patchSlot(slot.contactId, { autopilotFlash: false }), 100);
   };
@@ -153,6 +155,12 @@ export function AISupport({ slot, onSendResource, onActivateAutopilot }: Props) 
           }}>
             <div style={{ fontSize: 14, color: '#15803d', fontWeight: 600, marginBottom: 4 }}>
               ⏳ Autopilot sending…
+              <AutopilotCountdown
+                sendAt={slot.autopilotSendAt}
+                pausedRemainingMs={slot.autopilotPausedRemainingMs}
+                paused={slot.autopilotPaused}
+                fontSize={14}
+              />
             </div>
             <div style={{ color: '#166534', lineHeight: 1.5, fontSize: 15 }}>
               {slot.autopilotPending}
