@@ -11,13 +11,14 @@ interface Props {
   fontSize?: number;
 }
 
-// Live countdown shown after the "Autopilot sending…" ellipsis. Counts down to the send
-// deadline, freezes when paused, and flashes red in the final 10 seconds to pull the
-// agent's eye. Purely presentational — the real send timing lives in ChatColumn.
+// Countdown for the "Autopilot sending…" box, shown top-right (right-aligned with the
+// heading). Format is m:ss so the digit width stays steady (0:04 / 0:53 / 1:30). In the
+// final 10 seconds the ⏳ hourglass flashes on/off — via opacity, so the digits never
+// shift — and the time turns bold, bright red. Purely presentational; timing lives in
+// ChatColumn.
 export function AutopilotCountdown({ sendAt, pausedRemainingMs, paused, fontSize = 13 }: Props) {
   const [now, setNow] = useState(() => Date.now());
 
-  // Tick 4×/second: fine enough for a smooth flash without a second interval.
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
@@ -27,27 +28,23 @@ export function AutopilotCountdown({ sendAt, pausedRemainingMs, paused, fontSize
   const remainingMs = paused ? (pausedRemainingMs ?? fromDeadline) : fromDeadline;
   if (remainingMs == null) return null;
 
-  const secs = Math.ceil(remainingMs / 1000);
-  const urgent = remainingMs <= 10000;
+  const totalSecs = Math.ceil(remainingMs / 1000);
+  const label = `${Math.floor(totalSecs / 60)}:${String(totalSecs % 60).padStart(2, '0')}`; // m:ss
+
+  const urgent = !paused && remainingMs <= 10000;
   // Flash on/off at ~2 Hz derived straight from the clock (no extra interval needed).
   const flashOn = Math.floor(now / 500) % 2 === 0;
 
-  let color = '#15803d';   // steady green, matches the "sending…" label
-  let opacity = 1;
-  if (paused) {
-    color = '#6b7280';     // frozen — steady gray
-  } else if (urgent) {
-    color = '#dc2626';     // final 10 s — flashing red
-    opacity = flashOn ? 1 : 0.15;
-  }
+  const textColor = paused ? '#6b7280' : urgent ? '#f31111' : '#15803d';
 
   return (
-    <span style={{
-      marginLeft: 6, fontSize, fontWeight: 700, color, opacity,
-      fontVariantNumeric: 'tabular-nums',
-      transition: 'opacity .15s, color .2s',
-    }}>
-      {paused ? `⏸ ${secs}s` : `${secs}s`}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize, flexShrink: 0 }}>
+      {/* ⏳ blinks only when urgent; opacity (not display) so the time never shifts. */}
+      <span style={{ opacity: urgent && !flashOn ? 0 : 1, transition: 'opacity .1s' }} aria-hidden="true">⏳</span>
+      <span style={{
+        color: textColor, fontWeight: urgent ? 800 : 600,
+        fontVariantNumeric: 'tabular-nums', transition: 'color .2s',
+      }}>{label}</span>
     </span>
   );
 }

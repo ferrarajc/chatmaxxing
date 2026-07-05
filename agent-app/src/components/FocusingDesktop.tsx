@@ -499,8 +499,11 @@ export function FocusingDesktop() {
                     background: '#f0fdf4', borderRadius: 8, padding: '7px 10px',
                     marginTop: 8, border: '1px solid #bbf7d0',
                   }}>
-                    <div style={{ fontSize: 10, color: '#15803d', fontWeight: 700, marginBottom: 3 }}>
-                      ⏳ Sending…
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      fontSize: 10, color: '#15803d', fontWeight: 700, marginBottom: 3,
+                    }}>
+                      <span>Sending…</span>
                       <AutopilotCountdown
                         sendAt={selectedSlot.autopilotSendAt}
                         pausedRemainingMs={selectedSlot.autopilotPausedRemainingMs}
