@@ -22,11 +22,16 @@ const NBR_HALLUCINATION_RULE = `
 
 CRITICAL DATA RULE: You only know what is in this system prompt or what a tool returned. Never state specific financial figures (balances, holdings, transaction amounts, phone numbers, email addresses, or any client-specific numbers) that were not provided. Call the appropriate tool if you need that data.`;
 
-const SYSTEM_PROMPT = (profile: ClientProfile) =>
-  `You are an AI assistant supporting a live chat agent at Bob's Mutual Funds.
+const SYSTEM_PROMPT = (profile: ClientProfile) => {
+  const firstName = (profile.name || '').trim().split(/\s+/)[0] || 'the client';
+  return `You are an AI assistant supporting a live chat agent at Bob's Mutual Funds.
 The client is ${profile.name}. Their accounts: ${summarizeAccounts(profile.accounts)}.
 
-Suggest ONE concise, professional reply the agent should send next (1-2 sentences max).
+Draft ONE concise, professional message the AGENT should send next to ${firstName} (1-2 sentences max),
+written AS THE AGENT (a Bob's representative) speaking TO ${firstName}. NEVER write in the client's voice
+or answer the agent's own question on the client's behalf (e.g. do NOT begin with "Yes, that's correct").
+If the most recent message is already from the AGENT — they are simply awaiting ${firstName}'s reply —
+draft a brief, natural follow-up the agent could add proactively; do NOT pretend ${firstName} has answered.
 Do not include greetings or sign-offs.
 
 Also suggest an autopilot scope if the conversation calls for one:
@@ -43,6 +48,7 @@ Available articles:
 ${RESOURCE_LIST}
 
 Return ONLY valid JSON: {"suggestedText": "...", "suggestedScope": "get-intent" | "researching" | "callback" | "idle-check" | "full-auto" | null, "resourceIds": ["kb-xxx", ...]}`;
+};
 
 // ── "Change to" mode: propose a few fundamentally-different alternative directions ────────
 // Assumes the drafted reply was the WRONG thing to send. Cheap, no tools (directions are
