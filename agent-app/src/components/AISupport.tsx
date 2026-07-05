@@ -191,13 +191,18 @@ export function AISupport({ slot, onSend, onSendResource, onActivateAutopilot, o
         {/* Autopilot pending send */}
         {slot.autopilotPending && (
           <div style={{
-            background: '#f0fdf4', borderRadius: 8, padding: '8px 10px',
-            marginBottom: 8, border: '1px solid #bbf7d0',
-            // Lifted above the column's green autopilot overlay so it reads as actionable.
+            background: '#fff', borderRadius: 8, padding: '8px 10px',
+            marginBottom: 8, border: '1px solid #86efac',
+            // A white card + shadow so it clearly floats ABOVE the column's green autopilot
+            // overlay (a green fill blended in and read as "underneath").
             position: 'relative', zIndex: 2,
+            boxShadow: '0 3px 12px rgba(0,0,0,0.15)',
           }}>
-            <div style={{ fontSize: 14, color: '#15803d', fontWeight: 600, marginBottom: 4 }}>
-              ⏳ Autopilot sending…
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              fontSize: 14, color: '#15803d', fontWeight: 600, marginBottom: 4,
+            }}>
+              <span>Autopilot sending…</span>
               <AutopilotCountdown
                 sendAt={slot.autopilotSendAt}
                 pausedRemainingMs={slot.autopilotPausedRemainingMs}
