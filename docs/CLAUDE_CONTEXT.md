@@ -41,6 +41,11 @@ chatmaxxing/
 │       ├── speech.ts      Web Speech API (listen + continuous live transcription)
 │       └── dossier.ts     normalizeDossier + AGENT_NAME (John Ferrara placeholder)
 │
+├── supervisor-app/        React SPA — Supervisor Console ops dashboard (/chatmaxxing/supervisor)
+│   └── src/               AccessGate (own storage key, no pager), hooks/useStats+useInsights,
+│                          components/ (KpiHeader, DivisionBoard, MixCharts [recharts],
+│                          AgentRoster+AgentDrawer, InsightsPanel, RecentTable)
+│
 ├── lambda/
 │   ├── autopilot-turn/    Core AI engine (~1900 lines) — see LAMBDA_MAP below
 │   ├── start-chat/        Creates Connect session; generates intentLabel + intentGreeting
@@ -59,6 +64,8 @@ chatmaxxing/
 │   ├── execute-callback/  Fires when callback time arrives
 │   ├── prep-callback/     Agentic AI call-prep: researches the ask → writes the cockpit dossier
 │   ├── agent-callbacks/   Phone-cockpit data API (list/get/complete/seed-demo/suggest)
+│   ├── supervisor-stats/  Supervisor Dashboard read API (aggregates + AI insights)
+│   ├── reset-agents/      Seed bobs-agents (roster + generated performance history)
 │   └── reset-beneficiaries/ Dev utility — resets test client beneficiary data
 │   └── shared/
 │       ├── tasks.ts        TASKS array (19 tasks), matchTaskByIntent, filterFields
@@ -67,6 +74,8 @@ chatmaxxing/
 │       ├── bedrock-client.ts invokeNovaMicro + parseJsonFromBedrock
 │       ├── dynamo-client.ts  DynamoDB DocumentClient
 │       ├── beneficiary-defaults.ts  BeneficiaryEntry type + demo data
+│       ├── agent-roster.ts   Supervisor Dashboard workforce: 82 agents, 7 divisions, licenses
+│       ├── agent-history.ts  Deterministic weekly performance-bucket generator
 │       └── arize.ts        Optional Arize AI observability
 │
 ├── cdk/                   AWS CDK — BobsDataStack + BobsLambdaStack
@@ -106,6 +115,8 @@ chatmaxxing/
 | `get-funds` | Read the static fund catalog (all 36 funds) from `bobs-funds`; GET `/funds`, module-cached 60 min | No |
 | `reset-funds` | Seed `bobs-funds` from the bundled catalog; GET `/reset-funds?key=bobs-reset-2025` | No |
 | `tts` | OpenAI text-to-speech for the "Talk to Bob" voice feature (POST `/tts` `{text,voice,instructions}` → base64 mp3) | No (OpenAI audio API) |
+| `supervisor-stats` | **Supervisor Dashboard read API.** GET `/supervisor-stats?window=today\|7d\|30d\|all[&division=][&view=insights][&refresh=1]`. Stats view (no LLM, <1s): scans `bobs-agents` + metadata-only `bobs-transcripts` + `bobs-callbacks` (60s module cache), **blends** the seeded fictional weekly buckets with REAL transcript rows attributed by `agentUsername`, returns totals/divisions/wrapUpMix/volume/agents/recent. Insights view: 2 LLM calls (digest+topics over the window's real rows + precomputed metrics; agent themes for the top 15 by volume), module-cached 10 min per window+division, each call independently try/caught so failures degrade to partial payloads (dashboard numbers never wait on or break from the LLM). No containment metric — bot-only chats are never saved (honesty footnote in payload `note`). | Yes — 2 calls via `invokeNovaMicro` (gpt-4o-mini) |
+| `reset-agents` | Seed `bobs-agents` from `shared/agent-roster.ts` (82 agents: 9 REAL Connect users by their real usernames + 73 fictional, across 7 wealth-management divisions with FINRA licenses) + `shared/agent-history.ts` (deterministic ~78 weekly buckets/agent, anchored to the CURRENT week — re-run before demos so today/7d windows stay populated). GET `/reset-agents?key=bobs-reset-2025`, idempotent. | No |
 | `verify` | Real email/SMS verification for the My Account hub. POST `/verify` `{action,clientId,target,code?}`; `send-*-code` stores a hashed 6-digit code (TTL 10 min, `bobs-verification-codes`) and sends via **Amazon SES** (email) / **AWS End User Messaging SMS** (text); `confirm-*-code` flips `emailVerified` or the matching `phones[].verified`. Sender identity via SSM `bobs-ses-sender` / `bobs-sms-origination` (resolved at deploy like the OpenAI key; value `unset`/blank ⇒ graceful "not configured") | No |
 
 ---
@@ -167,6 +178,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Agent chat rendering | `agent-app/src/components/ChatColumn.tsx` |
 | Autopilot controls (agent app) | `ChatColumn.tsx` — during autopilot the (unused) composer is replaced by a big **Pause Autopilot** button lifted above the green overlay (`zIndex:2`); paused → red **Exit** + green **Resume ▶** (resumes from the remaining time at pause). **There is no column click-to-exit** — autopilot is changed only by these buttons + the `AISupport` ✈ toggle, so clicking/resizing elsewhere never exits it. A live **send countdown** (flashes red in the final 10s, frozen `⏸` while paused) renders via `AutopilotCountdown.tsx` inside the "Autopilot sending…" box in `AISupport.tsx` (grid) + `FocusingDesktop.tsx` (focusing). State on `ContactSlot`: `autopilotPaused` / `autopilotSendAt` / `autopilotPausedRemainingMs`, reset at every autopilot clear/activate site. The `autopilotDelay` waiter is a 250 ms **pause-aware poll loop** (freezes on pause, shifts the deadline on resume) — the two-phase reading+typing delay durations are unchanged. |
 | AI-panel replies — editable + suggestion history (agent app) | `AISupport.tsx` (grid) — both AI reply boxes are editable in place via `EditableReply.tsx` (a transparent auto-grow `<textarea>`; plain text, faithful newlines). The green **autopilot pending** reply: clicking in auto-**pauses** autopilot (`onFocus`→`autopilotPaused`), and `autopilotSend` sends the live edited `autopilotPending`. The blue **Suggested reply** box keeps a per-conversation **history** with ‹ › pagination, a header **spinner** while `/next-best-response` is in flight, **auto-advance** to newest (off on edit / paging back, on again on send / paging to newest), a red-dot **new** badge on ›, a lighter-blue **editing** state, and **Insert→Send** (sends the shown suggestion straight to the client via `sendText`). State on `ContactSlot`: `suggestionHistory`/`suggestionIndex`/`suggestionAutoAdvance`/`suggestionLoading`/`suggestionNewBadge` (with `suggestedText` a **mirror** of the shown entry, kept for `FocusingDesktop`/autopilot-reuse); store actions `addSuggestion`/`paginateSuggestion`/`editCurrentSuggestion`. Suggestions are produced in `ChatColumn.tsx` (greeting + NBR, run in all modes); `FocusingDesktop.tsx` still renders read-only suggestions (its pagination/edit UI is a deferred follow-up). |
+| Suggested reply — "Change to" / "Magic" / auto-refresh / telemetry (agent app) | Two dropdowns on the Suggested reply box (both portal + space-aware up/down): **Change to ▼** (`ChangeToMenu.tsx`) alters the reply's MEANING; **🪄 Magic ▼** (`MagicMenu.tsx`) keeps the meaning and restyles it (presets concise/detailed/casual/formal + a custom field). Change-to options are pre-generated AFTER a suggestion shows (zero added latency; cached per entry). Backend: `next-best-response` gained a `mode` — `change-options` (short, tightly on-topic direction labels; names the client), `change-reply` (author a new reply along a direction, tools like NBR), `magic-rewrite` (cheap restyle, substance unchanged); the default suggest path is unchanged but its prompt now writes **as the agent, never the client's voice**. History entries are `Suggestion` objects (`{id,text,originalText,source,changeDirection?,magicStyle?,changeOptions...}`); store actions `addChangeToReply`/`addMagicReply`/`setChangeOptions(Loading)`. **Auto-refresh:** a manual send (suggested Send OR composer Send, NOT resource links) fires `runNbrRefresh` immediately since the shown suggestion is stale. **Telemetry:** every agent send is recorded to the **`bobs-reply-events`** table via the **`log-reply`** Lambda + `agent-app/src/api/replyLog.ts` (how it was produced: suggestion as-is / edited / change-to / magic / composer freehand / autopilot). |
 | Typing indicators (both directions) | Customer→agent: `useChatSession.ts` (`notifyTyping`, `onTyping`) + `ChatInput.tsx`; agent shows it in `useConnectStreams.ts` (`chatSession.onTyping` → `slot.customerTyping`) + `ChatColumn.tsx` (`TypingDots`, 30s expiry). Agent→customer: `ChatColumn.tsx` (manual keystrokes + autopilot `autopilotSend` → `/send-agent-message` `event:'typing'`); customer shows it via `agentTyping` (60s expiry) in `ChatBody.tsx`. Autopilot cancel sends the `__BOBS_TYPING_STOP__` sentinel to clear it promptly. `autopilotSend` runs two phases via `autopilotDelay`: a **reading delay** (ellipsis hidden; `2000ms + 10ms×(clientMsgLen−200)`, min 2000ms, based on the client's most recent message) then the existing **typing delay** (`chars/15`s, ellipsis shown). Chat avatar: bot turns show **"B"** (navy); once a live agent is connected, agent bubbles + the typing ellipsis show the **agent's initials** (accent color) via `chatStore.agentName` (`initialsFromName` in `utils/initials.ts`). The agent sends its **full name** (first + last) on connect as a `__BOBS_AGENT_NAME__` control message (`useConnectStreams.ts`, intercepted/not rendered) because Connect's chat `DisplayName` is only the agent's first name; a multi-word `DisplayName` is a fallback. |
 | Customer chat history (hamburger ☰ in chat header) | `ChatPanel.tsx` (view state chat/history/transcript; ☰ replaced the "B" logo, ← goes back), `ChatHistoryView.tsx` (90-day card list via `GET /get-transcripts?clientId=` + read-only transcript via `?transcriptId=` + Download; **only rows with the second-person `summary` recap are listed** — no fallback; **pin/unpin button** on each card → `POST /pin-transcript`; pinned cards sorted first + `primarySoft` bg section), `lambda/save-transcript` (stores `summary` on the row), `lambda/get-transcripts` (list projection incl. `summary, acwSummary, agentName, pinned`), `lambda/pin-transcript` (sets `pinned` on transcript row) |
 | Chat end-of-life (minimize/close/persist; customer-left detection) | Customer: `ChatPanel.tsx` (minimize btn + close-confirm dialog), `chatStore.ts` (sessionStorage `persist`, `minimized`/`unreadCount`/`chatEnded`), `useChatSession.ts` (reconnect-on-load + `endChat()` real disconnect + stale-session guard on `onEnded`), `ChatBody.tsx` + `utils/transcriptDownload.ts` (Download transcript on chat end). Agent: `useConnectStreams.ts` (`participant.left` EVENT in `chatSession.onMessage` → `slot.customerDisconnected`; chatjs routes unmapped event types to onMessage), `ChatColumn.tsx` + `FocusingDesktop.tsx` ("Client closed the chat." notice + End chat → `bobs:endChat` → ACW; composer disabled) |
@@ -182,6 +194,7 @@ update-contact-info, update-beneficiaries, add-account-access, open-account, pla
 | Transaction tables + history + status | Data: `bobs-transactions` table (`cdk/lib/data-stack.ts`), generator `lambda/shared/transaction-history.ts`, statuses `lambda/shared/transaction-status.ts`. API: `lambda/client-data/handler.ts` (`get-recent-transactions`/`get-transactions-page`/`append-transaction`). Frontend: `customer-app/src/data/transactionStatus.ts` (display copy), `components-v2/common/StatusCell.tsx` (dotted-underline popover), `hooks/useRecentTransactions.ts`, recent tables in `PortfolioPage.tsx` + `account/AccountDetailPage.tsx`, full page `components-v2/pages/transactions/TransactionHistoryPage.tsx` (route `/transactions`). Writes: `execute-task/handler.ts` (`appendTransactionRows`). Seed/clear: `reset-all-data/handler.ts`. |
 | Research fund lineup (36 funds) | **Canonical source: `customer-app/src/data/funds.ts`** (`FUNDS: FundDef[]`, pure data — keep it React-free). It is the single edit point, the **seed** for the `bobs-funds` DynamoDB table, and the frontend **offline fallback**. At runtime the table is the source of truth: served by `GET /funds` (`lambda/get-funds`, module-cached) and consumed via the **`useFunds()` hook** (`customer-app/src/hooks/useFunds.ts`, localStorage TTL + bundled fallback). Seed/refresh per-env with `GET /reset-funds?key=bobs-reset-2025` (`lambda/reset-funds`). The backend reaches `funds.ts` through the **only** cross-package bridge, `lambda/shared/fund-catalog.ts` (re-exports `FUNDS` + `FUND_PICKLIST`). AI access: the **`get_funds`** tool in `lambda/shared/client-tools.ts` (reads `bobs-funds`, available to bot + NBR + task experts), and task-expert prompts inject `FUND_PICKLIST`. Live prices/returns still come from `lambda/market-data/handler.ts` → `FUND_MAP` (ticker→Vanguard realSymbol, Yahoo quotes), which is now **derived from the catalog** (`FUNDS.map(...)` via `fund-catalog.ts`) — no longer hand-maintained, so it can't drift from the lineup. Pages that show fund data (`/help/fees`, `/help/fund-performance`, `/help/prospectus`, `/resources/tax-efficient-investing`, `OpenAccountPage`, plus Research/`FundProfilePage`) all read via `useFunds()`. |
 | Content-page ordering rule | When a page mixes general explanatory content with a long, growing, data-driven list, put the general content **first** so list growth never buries it (e.g. FeesPage: Account Fees above the 36-row expense-ratio table). Long tables get a `maxHeight`+scroll. |
+| Supervisor Dashboard (ops cockpit at `/chatmaxxing/supervisor`) | **Purely additive feature — touches no existing flow.** Backend: `lambda/supervisor-stats/handler.ts` (aggregation + insights; see Lambda Map), seeded by `lambda/reset-agents/handler.ts` from `lambda/shared/agent-roster.ts` (edit here to add/move agents, divisions, licenses) + `lambda/shared/agent-history.ts` (division volume/handle/wrap-up shapes live in its `PROFILES`; real Connect agents get damped baselines via `REAL_AGENT_DAMPING` so live rows blend in). Frontend: `supervisor-app/` workspace (own recharts dep; state = window pills + division filter in `App.tsx`; deep links to the Transcript Review tool via `util.ts` `transcriptUrl`, auto-`&env=dev` when pointed at the dev API). Fictional data lives ONLY in `bobs-agents` — never write fake rows to `bobs-transcripts`. New env checklist: deploy → `GET /reset-agents?key=bobs-reset-2025` → dashboard. Deploys via `.github/workflows/deploy-supervisor-app.yml` (gh-pages `destination_dir: supervisor`). |
 | Intent summary label | `lambda/start-chat/handler.ts` → intentLabel prompt |
 | Agent greeting | `lambda/start-chat/handler.ts` → intentGreeting prompt |
 | ACW generation | `lambda/generate-acw/handler.ts` |
@@ -289,6 +302,15 @@ annualReturns, etc.). Runtime source of truth for content pages and AI; seeded f
 change < once/day → read with a single Scan, module-cached in `get-funds` and the `get_funds` tool.
 Live prices/returns are NOT stored here (those come from the `market-data` Lambda).
 
+Agents Table (`bobs-agents`): Supervisor Dashboard workforce roster — one item per agent
+(PK `agentUsername`, matching the real Connect login for the 9 real agents). Item =
+`{ agentUsername, name, division, title, licenses[], licensed, hireDate, location, status,
+history: WeekBucket[], seededAt }` where `WeekBucket = { weekStart, chats, calls, avgHandleMs,
+medianHandleMs, wrapUpMix, escalations, qaScore }` (~78 weeks, deterministic). **Demo aggregates
+only** — real conversations stay in `bobs-transcripts` and are blended at read time by
+`supervisor-stats`. Reseedable via `GET /reset-agents?key=bobs-reset-2025` (no PITR needed;
+re-run before demos to re-anchor buckets to the current week).
+
 Verification Codes Table (`bobs-verification-codes`): short-lived one-time codes for real
 email/SMS verification on the My Account hub. `{ codeId (PK) = "<clientId>#<channel>#<target>",
 codeHash (sha256), expiresAt (TTL, ~10 min), createdAt, attempts, channel, target }`. Written +
@@ -301,6 +323,7 @@ read only by the `verify` Lambda; rows auto-expire via the `expiresAt` TTL so co
 - Client app: `https://ferrarajc.github.io/chatmaxxing/`
 - Agent app: `https://ferrarajc.github.io/chatmaxxing/agent`
 - Phone-agent cockpit: `https://ferrarajc.github.io/chatmaxxing/phone`
+- Supervisor Console: `https://ferrarajc.github.io/chatmaxxing/supervisor`
 - API: `https://0y3s5vq2v5.execute-api.us-east-1.amazonaws.com` (prod) · dev `https://1cppcq9q57.execute-api.us-east-1.amazonaws.com`
 - Transcript Review: `https://ferrarajc.github.io/chatmaxxing/transcripts/` (append `?env=dev` to review dev/phone transcripts)
 - Region: `us-east-1`
@@ -330,6 +353,21 @@ Lives in `heqya/` (npm-extractable package). The Bob's implementation uses it vi
 | `scripts/quality-loop/server.mjs` | Dashboard server with CRUD for heuristics, scenarios, app profile |
 
 The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are **legacy/deprecated** — kept for reference but no longer imported by active scripts.
+
+---
+
+## Active Branch / Current State (as of 2026-07-02)
+
+**In flight (`feature/supervisor-dashboard`, PR pending): Supervisor Console.**
+A fourth SPA at `/chatmaxxing/supervisor` — the management layer of the platform. Window-selectable
+(today/7d/30d/all) KPIs, division rollups + filter, recharts mix/volume charts, an 82-agent roster
+(9 real Connect agents + 73 fictional, across 7 wealth-management divisions with license badges)
+with per-agent drawers, an LLM operations digest + emerging-topic chips + per-agent AI-observed
+themes, and a Recent-conversations list deep-linking into the existing Transcript Review tool.
+**Purely additive:** new `bobs-agents` table (fictional weekly aggregates ONLY — `bobs-transcripts`
+untouched; real rows blend at read time by `agentUsername`), new `supervisor-stats` + `reset-agents`
+lambdas, new workspace + deploy workflow. Verified on dev (API windows/division/insights + full
+Playwright UI pass). **Post-merge:** seed prod via `GET /reset-agents?key=bobs-reset-2025`.
 
 ---
 

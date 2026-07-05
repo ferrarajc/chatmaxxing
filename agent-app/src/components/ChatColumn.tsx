@@ -3,6 +3,7 @@ import { ContactSlot, ChatMessage, AutopilotScope, ACWData, EvidenceSpan } from 
 import { useAgentStore } from '../store/agentStore';
 import { renderHighlighted } from '../utils/evidenceHighlight';
 import { post } from '../api/client';
+import { logReplyEvent } from '../api/replyLog';
 import { log } from '../api/logger';
 import { IntentLabel } from './IntentLabel';
 import { IncomingAlert } from './IncomingAlert';
@@ -344,6 +345,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     // (falls back to the original if the box was cleared to empty).
     const outgoing = fresh.autopilotPending && fresh.autopilotPending.trim() ? fresh.autopilotPending : text;
     store.appendMessage(contactId, { role: 'AGENT', content: outgoing });
+    logReplyEvent({
+      contactId, clientId: fresh.clientId,
+      agentUsername: store.agentUsername, agentName: store.agentName,
+      path: 'autopilot-send', originalText: text, sentText: outgoing, wasEdited: outgoing !== text,
+    });
     store.patchSlot(contactId, {
       lastAgentMessageAt: Date.now(),
       autopilotPending: null, autopilotSendAt: null, autopilotPausedRemainingMs: null,
@@ -516,6 +522,105 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
   };
 
+  // ── "Change to": pre-generate alternative directions AFTER a suggestion is shown ───────
+  // Fired after addSuggestion so it never delays the suggestion display. Attaches options to
+  // the just-added entry by id; failure → [] (menu then shows "no alternatives").
+  const generateChangeOptions = (contactId: string) => {
+    const s = store.getSlot(contactId);
+    const entry = s?.suggestionHistory[s.suggestionHistory.length - 1];
+    if (!s || !entry) return;
+    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    store.setChangeOptionsLoading(contactId, entry.id, true);
+    post<{ options: string[] }>('/next-best-response', {
+      mode: 'change-options',
+      transcript: s.messages,
+      clientProfile,
+      currentSuggestion: entry.text,
+    })
+      .then(r => store.setChangeOptions(contactId, entry.id, r.options ?? []))
+      .catch(() => store.setChangeOptions(contactId, entry.id, []));
+  };
+
+  // ── "Change to": author a fresh reply along the agent's chosen direction (on select) ───
+  const handleChangeTo = (direction: string) => {
+    if (!slot) return;
+    const contactId = slot.contactId;
+    const s = store.getSlot(contactId);
+    if (!s) return;
+    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    store.patchSlot(contactId, { suggestionLoading: true });   // reuse the header spinner
+    post<{ suggestedText: string; resources?: { id: string; title: string; url: string }[] }>(
+      '/next-best-response',
+      { mode: 'change-reply', transcript: s.messages, clientProfile, direction },
+    )
+      .then(r => {
+        if (r.suggestedText && r.suggestedText.trim()) {
+          store.addChangeToReply(contactId, r.suggestedText, direction);
+          generateChangeOptions(contactId);                    // the new entry gets its own menu
+        }
+        store.patchSlot(contactId, {
+          suggestionLoading: false,
+          ...(r.resources ? { suggestedResources: r.resources } : {}),
+        });
+      })
+      .catch(() => store.patchSlot(contactId, { suggestionLoading: false }));
+  };
+
+  // ── NBR: fetch a fresh suggested reply. Fires on customer reply AND right after the agent
+  // sends (the shown suggestion is then stale). Reads the LIVE transcript so it includes the
+  // latest message; pre-generates the new entry's "Change to" options after display. ────────
+  const runNbrRefresh = (contactId: string) => {
+    const s = store.getSlot(contactId);
+    if (!s || s.status !== 'active') return;
+    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    store.patchSlot(contactId, { suggestionLoading: true });
+    post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null }>(
+      '/next-best-response',
+      { transcript: s.messages, clientProfile },
+    )
+      .then(result => {
+        if (result.suggestedText && result.suggestedText.trim()) {
+          store.addSuggestion(contactId, result.suggestedText, 'nbr');
+          generateChangeOptions(contactId);
+        }
+        const patch: Partial<ContactSlot> = {
+          suggestedResources: result.resources,
+          suggestionLoading: false,
+        };
+        if (result.suggestedScope !== undefined && !store.getSlot(contactId)?.autopilotScope) {
+          patch.suggestedScope = result.suggestedScope as AutopilotScope | null;
+        }
+        store.patchSlot(contactId, patch);
+      })
+      .catch(e => { console.warn('NBR fetch failed', e); store.patchSlot(contactId, { suggestionLoading: false }); });
+  };
+
+  // ── "Magic": restyle the currently-shown reply — same meaning, new presentation ──────────
+  const handleMagic = (style: string) => {
+    if (!slot) return;
+    const contactId = slot.contactId;
+    const s = store.getSlot(contactId);
+    const entry = s?.suggestionHistory[s.suggestionIndex];
+    if (!s || !entry) return;
+    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    store.patchSlot(contactId, { suggestionLoading: true });
+    post<{ suggestedText: string }>('/next-best-response', {
+      mode: 'magic-rewrite',
+      transcript: s.messages,
+      clientProfile,
+      currentSuggestion: entry.text,
+      style,
+    })
+      .then(r => {
+        if (r.suggestedText && r.suggestedText.trim()) {
+          store.addMagicReply(contactId, r.suggestedText, style);
+          generateChangeOptions(contactId);
+        }
+        store.patchSlot(contactId, { suggestionLoading: false });
+      })
+      .catch(() => store.patchSlot(contactId, { suggestionLoading: false }));
+  };
+
   // ── Effect: Greeting suggestion on first connection ────────────────────
   const connectionToken = slot?.connectionToken;
   useEffect(() => {
@@ -525,8 +630,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     greetedContacts.current.add(slot.contactId);
     const firstName = slot.clientName.split(' ')[0];
     const close = slot.intentGreeting || 'How can I assist you today?';
-    store.addSuggestion(slot.contactId, `Hi ${firstName}, my name is ${store.agentName} with Bob's Mutual Funds. ${close}`);
+    store.addSuggestion(slot.contactId, `Hi ${firstName}, my name is ${store.agentName} with Bob's Mutual Funds. ${close}`, 'greeting');
     store.patchSlot(slot.contactId, { suggestedScope: 'get-intent' });
+    generateChangeOptions(slot.contactId);
   }, [connectionToken, slot?.contactId]);
 
   // ── Effect: Autopilot scope activation ────────────────────────────────
@@ -643,26 +749,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (agentQuestionIdleRef.current) { clearTimeout(agentQuestionIdleRef.current); agentQuestionIdleRef.current = null; }
 
     // NBR (always, even when autopilot is on — keeps suggestions fresh)
-    store.patchSlot(cid, { suggestionLoading: true });
-    post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null }>(
-      '/next-best-response',
-      { transcript: slot.messages, clientProfile },
-    )
-      .then(result => {
-        // Append the new suggestion to the history (auto-advance / new-badge handled in the store).
-        if (result.suggestedText && result.suggestedText.trim()) {
-          store.addSuggestion(cid, result.suggestedText);
-        }
-        const patch: Partial<ContactSlot> = {
-          suggestedResources: result.resources,
-          suggestionLoading: false,
-        };
-        if (result.suggestedScope !== undefined && !store.getSlot(cid)?.autopilotScope) {
-          patch.suggestedScope = result.suggestedScope as AutopilotScope | null;
-        }
-        store.patchSlot(cid, patch);
-      })
-      .catch(e => { console.warn('NBR fetch failed', e); store.patchSlot(cid, { suggestionLoading: false }); });
+    runNbrRefresh(cid);
 
     // Reactive autopilot turn
     const scope = slot.autopilotScope;
@@ -738,7 +825,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (!inputText.trim() || !slot) return;
     const text = inputText.trim();
     setInputText('');
+    // Telemetry: composer send — freehand (records any suggestion that was shown but ignored).
+    const shown = slot.suggestionHistory[slot.suggestionIndex];
+    logReplyEvent({
+      contactId: slot.contactId, clientId: slot.clientId,
+      agentUsername: store.agentUsername, agentName: store.agentName,
+      path: 'composer-send', suggestionShownText: shown?.text, sentText: text,
+    });
     sendText(text);
+    // The shown suggestion is now stale — fetch a fresh one immediately.
+    runNbrRefresh(slot.contactId);
     // Re-evaluate suggested scope after agent sends; clear any stale exit message
     if (slot.autopilotScope === null) {
       store.patchSlot(slot.contactId, { suggestedScope: null, autopilotExitMessage: null });
@@ -992,8 +1088,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             ) : (
               <AISupport
                 slot={slot}
-                onSend={text => sendText(text)}
+                onSend={text => { sendText(text); runNbrRefresh(slot.contactId); }}
+                onSendResource={text => sendText(text)}
                 onActivateAutopilot={handleActivateAutopilot}
+                onChangeTo={handleChangeTo}
+                onMagic={handleMagic}
               />
             )}
           </div>

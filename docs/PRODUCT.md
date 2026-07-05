@@ -70,6 +70,7 @@ A Bob's Mutual Funds service representative managing up to four simultaneous cli
 - **AI support panel:** Next-best-response suggestions, predicted topic buttons, recommended KB articles, and autopilot controls
 - **Autopilot controls:** While a column is running on autopilot, the message composer is replaced by a large **Pause Autopilot** button. Pausing *freezes* the countdown to the next auto-send without exiting — the paused state offers **Exit** (end autopilot for that column) and **Resume ▶** (continue from exactly where it left off). Clicking elsewhere in the column, or dragging the AI-panel resize handle to read a longer draft, no longer exits autopilot — only these controls do. The pending auto-send shows a live countdown that flashes red in its final 10 seconds so the agent can intervene in time.
 - **Editable AI replies & suggestion history:** Both AI-drafted replies in the agent panel are editable in place — the agent clicks into the text and edits it like any text box. Editing the pending autopilot reply automatically pauses autopilot, and the edited version is what sends. The **Suggested reply** box keeps a browsable history of every suggestion in the conversation — ‹ › chevrons step through it, a spinner shows while the next one is being written, and a small "new" dot appears when a fresher suggestion arrives while the agent is reading an earlier one. Its button is **Send**, which delivers the shown (optionally edited) reply to the client immediately.
+- **"Change to" and "Magic" the suggestion:** Two dropdowns on the Suggested reply let the agent quickly reshape it. **Change to** offers a few tightly on-topic alternative directions (a clarifying question, empathy, a different answer) and, when picked, writes a brand-new reply along that direction — it changes the *meaning*. **🪄 Magic** keeps the meaning and just restyles the current reply (More concise / detailed / casual / formal, or a custom instruction). Sending a reply also refreshes the suggestion for the agent's next turn. Behind the scenes, the platform records how each agent message was produced (suggestion sent as-is, edited, restyled, replaced, or freehanded) to help improve suggestions over time.
 - **Proposed Action card:** When the autopilot has collected all fields for a task, a structured card appears showing every collected value. The agent can edit any field before submitting. On approval, the action executes and a confirmation is sent to the client.
 - **Who may submit (task types):** Every task carries a submission type. Most are **Type 1** — any agent may submit on the client's behalf (the standard "Submit Action" button). **Type 2** (reserved) will require a licensed agent. **Type 3** tasks may only be submitted by the **client themselves**: the agent's button reads **"Send to client"**, and clicking it places a **"Your approval is required"** card directly in the client's chat (with the same fields, editable, but no evidence buttons) while the agent's panel shows a "Waiting for client to submit…" note. When the client clicks **Submit action** (or **Decline**), the action executes and the client receives the exact same confirmation as Type 1. **Adding an authorized account user** is the first Type 3 task — granting account access is a decision only the account owner can authorize.
 - **Evidence highlighting:** While the Proposed Action card is showing, the transcript highlights the exact span where each collected value was established — the client's own statement, or the agent recap the client confirmed (not later echoes). Each card field has a locate button (⌖) that scrolls the transcript to its span and flashes it; a field whose value can't be traced to the transcript shows a "not located in transcript" hint so the agent knows to scrutinize it. Spans are found by a dedicated post-hoc LLM call and validated server-side against the actual message text; if the lookup fails, the card simply renders without highlights.
@@ -220,6 +221,50 @@ The experience:
 
 The client-side automated script is exactly what becomes a real Amazon Connect outbound IVR flow when
 phone numbers are approved — the cockpit does not change.
+
+---
+
+### 10. Supervisor Console (Operations Dashboard)
+
+The management layer of the platform: a dedicated dashboard at its own URL
+(`/chatmaxxing/supervisor`, access-code gated) that turns the platform's operational data into the
+KPIs a contact-center leader actually runs on. It completes the persona set — client, chat agent,
+phone agent, and now **supervisor**.
+
+To make the metrics meaningful at real-world scale, the console is backed by a **demonstration
+workforce of 82 agents** — the platform's real registered agents plus a fictional population —
+organized into seven wealth-management-realistic divisions (Client Services, Retirement & IRA
+Services, Private Client Group, Trading & Brokerage Services, Advice & Planning, Onboarding &
+Transfers, Phone & Callback Desk). Agents carry realistic titles, locations, tenure, and FINRA
+licenses (SIE, Series 7/63/65/66, CFP) or non-licensed service roles — the licensed/non-licensed
+split that the platform's task-permission model (Type 2, licensed-agent tasks) is designed around.
+Each agent has ~18 months of deterministic weekly performance history. Live conversations recorded
+by the platform are **layered on top of** the demonstration history in real time, attributed to the
+actual agent who handled them; fictional data never touches the real transcript store.
+
+What the supervisor sees, for a selectable window (today / 7 days / 30 days / all time), optionally
+scoped to one division:
+
+- **KPI header** — conversation volume by channel, average/median handle time, active agents,
+  escalations, and upcoming scheduled callbacks (with the next one previewed).
+- **Division rollups** — headcount, licensed count, volume, and handle time per division; click to
+  filter the whole console.
+- **Charts** — stacked chat/phone volume by day (or by week for all-time), wrap-up-code mix, and
+  channel mix, using the same wrap-up taxonomy the after-chat-work AI assigns.
+- **Agent roster** — all 82 agents, sortable, with license badges and blended volume/handle/QA
+  figures; agents with live recorded conversations carry a LIVE badge. Clicking a row opens a
+  detail drawer: KPI tiles, a 12-week volume trend, top wrap-ups, and a one-sentence
+  **AI-observed theme** for the supervisor.
+- **AI operations digest** — a short narrative in an operations-analyst voice quoting the window's
+  real numbers, plus **emerging topics** clustered from actual recorded conversation intents. The
+  digest loads after the numbers and degrades gracefully — if the AI is unavailable the dashboard
+  simply shows its figures.
+- **Recent conversations** — the newest live recordings, each deep-linking into the existing
+  Transcript Review tool.
+
+Honesty is built in: bot-contained chats are never saved as transcripts, so the console states
+plainly that its conversation figures cover escalated chats and phone calls, and that workforce
+history is demonstration-seeded.
 
 ---
 

@@ -3,32 +3,66 @@ import { ContactSlot, AutopilotScope, AUTOPILOT_SCOPE_LABELS } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { AutopilotMenu } from './AutopilotMenu';
 import { AutopilotCountdown } from './AutopilotCountdown';
+import { ChangeToMenu } from './ChangeToMenu';
+import { MagicMenu } from './MagicMenu';
 import { EditableReply } from './EditableReply';
 import { ProposedActionCard } from './ProposedActionCard';
+import { logReplyEvent } from '../api/replyLog';
 
 interface Props {
   slot: ContactSlot;
+  /** Send the suggested reply (triggers a fresh suggestion afterward). */
   onSend: (message: string) => void;
+  /** Send a resource link (does NOT refresh the suggestion). */
+  onSendResource: (message: string) => void;
   onActivateAutopilot: (scope: AutopilotScope) => void;
+  /** Author a brand-new suggested reply along the chosen "Change to" direction (new meaning). */
+  onChangeTo: (direction: string) => void;
+  /** Restyle the current suggested reply per a "Magic" preset/custom style (same meaning). */
+  onMagic: (style: string) => void;
 }
 
-export function AISupport({ slot, onSend, onActivateAutopilot }: Props) {
+export function AISupport({ slot, onSend, onSendResource, onActivateAutopilot, onChangeTo, onMagic }: Props) {
   const store = useAgentStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingSuggestion, setEditingSuggestion] = useState(false);
+  const [changeMenuOpen, setChangeMenuOpen] = useState(false);
+  const [magicMenuOpen, setMagicMenuOpen] = useState(false);
   const autopilotBtnRef = useRef<HTMLButtonElement>(null);
+  const changeBtnRef = useRef<HTMLButtonElement>(null);
+  const magicBtnRef = useRef<HTMLButtonElement>(null);
 
-  // The suggested reply currently on screen (history entry at the paged index).
-  const currentSuggestion = slot.suggestionHistory[slot.suggestionIndex] ?? '';
+  // The suggested reply entry currently on screen (at the paged index).
+  const currentEntry = slot.suggestionHistory[slot.suggestionIndex];
+  const currentSuggestion = currentEntry?.text ?? '';
   const suggestionAtStart = slot.suggestionIndex <= 0;
   const suggestionAtEnd = slot.suggestionIndex >= slot.suggestionHistory.length - 1;
 
   const handleSendSuggestion = () => {
-    if (currentSuggestion.trim()) onSend(currentSuggestion);
+    if (!currentSuggestion.trim() || !currentEntry) return;
+    logReplyEvent({
+      contactId: slot.contactId, clientId: slot.clientId,
+      agentUsername: store.agentUsername, agentName: store.agentName,
+      path: 'suggested-send', source: currentEntry.source,
+      changeDirection: currentEntry.changeDirection, magicStyle: currentEntry.magicStyle,
+      originalText: currentEntry.originalText, sentText: currentEntry.text,
+      wasEdited: currentEntry.text !== currentEntry.originalText,
+    });
+    onSend(currentSuggestion);
+  };
+
+  const handleChangeSelect = (direction: string) => {
+    setChangeMenuOpen(false);
+    onChangeTo(direction);
+  };
+
+  const handleMagicSelect = (style: string) => {
+    setMagicMenuOpen(false);
+    onMagic(style);
   };
 
   const handleSendResource = (resource: { title: string; url: string }) => {
-    onSend(`Here's a helpful resource:\n[${resource.title}](${resource.url})`);
+    onSendResource(`Here's a helpful resource:\n[${resource.title}](${resource.url})`);
   };
 
   const exitAutopilot = () => {
@@ -220,13 +254,56 @@ export function AISupport({ slot, onSend, onActivateAutopilot }: Props) {
               onBlur={() => setEditingSuggestion(false)}
               style={{ color: '#1e40af', lineHeight: 1.5, marginBottom: 6, fontSize: 15 }}
             />
-            <button
-              onClick={handleSendSuggestion}
-              style={{
-                fontSize: 14, padding: '3px 10px', borderRadius: 6, border: 'none',
-                background: '#1a56db', color: '#fff', cursor: 'pointer', fontWeight: 600,
-              }}
-            >Send</button>
+            {/* Bottom row: Send (left) + Magic ▼ + Change to ▼ (bottom-right). */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                onClick={handleSendSuggestion}
+                style={{
+                  fontSize: 14, padding: '3px 10px', borderRadius: 6, border: 'none',
+                  background: '#1a56db', color: '#fff', cursor: 'pointer', fontWeight: 600,
+                }}
+              >Send</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  ref={magicBtnRef}
+                  onClick={() => setMagicMenuOpen(o => !o)}
+                  title="Restyle this suggestion — same meaning, new presentation"
+                  style={{
+                    fontSize: 13, padding: '3px 8px', borderRadius: 6,
+                    border: '1px solid #ddd6fe', background: '#fff', color: '#7c3aed',
+                    cursor: 'pointer', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                ><span aria-hidden="true">🪄</span>Magic <span style={{ fontSize: 9 }}>▼</span></button>
+                <button
+                  ref={changeBtnRef}
+                  onClick={() => setChangeMenuOpen(o => !o)}
+                  title="Change this suggestion to something else"
+                  style={{
+                    fontSize: 13, padding: '3px 8px', borderRadius: 6,
+                    border: '1px solid #bfdbfe', background: '#fff', color: '#1d4ed8',
+                    cursor: 'pointer', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >Change to <span style={{ fontSize: 9 }}>▼</span></button>
+              </div>
+              {magicMenuOpen && (
+                <MagicMenu
+                  anchorRef={magicBtnRef}
+                  onSelect={handleMagicSelect}
+                  onClose={() => setMagicMenuOpen(false)}
+                />
+              )}
+              {changeMenuOpen && (
+                <ChangeToMenu
+                  anchorRef={changeBtnRef}
+                  options={currentEntry?.changeOptions ?? null}
+                  loading={currentEntry?.changeOptionsLoading ?? false}
+                  onSelect={handleChangeSelect}
+                  onClose={() => setChangeMenuOpen(false)}
+                />
+              )}
+            </div>
           </div>
         )}
 
