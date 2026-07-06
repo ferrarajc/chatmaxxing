@@ -8,6 +8,7 @@ export function useStats(windowKey: WindowKey, division: string | null) {
   const [stats, setStats] = useState<StatsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
   const reqSeq = useRef(0);
 
   useEffect(() => {
@@ -30,7 +31,10 @@ export function useStats(windowKey: WindowKey, division: string | null) {
     void load(true);
     const timer = setInterval(() => void load(false), POLL_MS);
     return () => { cancelled = true; clearInterval(timer); };
-  }, [windowKey, division]);
+  }, [windowKey, division, nonce]);
 
-  return { stats, loading, error };
+  // Force an immediate refetch (keeps the current dashboard visible while it reloads).
+  const refresh = () => setNonce(n => n + 1);
+
+  return { stats, loading, error, refresh };
 }
