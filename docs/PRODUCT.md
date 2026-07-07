@@ -346,6 +346,16 @@ Suggested Reply, and Autopilot) via a fund-lookup capability. Updating a fund on
 everywhere, so pages and the AI can never disagree about what funds exist or what they cost. (Live,
 intraday prices and returns are sourced separately from a market-data service.)
 
+### DynamoDB — Fund Market Table
+Keyed by `ticker` + `section`. Holds **real market data** for every fund, mirrored nightly from each
+fund's real-world Vanguard equivalent: current price, trailing and calendar-year total returns,
+top-10 holdings, sector weightings, portfolio characteristics (P/E, beta, duration, yield), real
+distribution history, and daily share-price history back to the fund's true inception. A nightly
+job refreshes this table and publishes a static cache to the website, so the Research profile pages
+show genuine, current market data (under Bob's fictional branding) with instant page loads. Every
+figure a client sees on a fund page — the price chart, the annual-returns bars, the holdings list,
+the distributions table — reflects the real market as of the previous close.
+
 ---
 
 ## Infrastructure (CDK)

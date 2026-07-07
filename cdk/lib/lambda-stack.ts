@@ -5,6 +5,7 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as path from 'path';
 import { Construct } from 'constructs';
@@ -19,6 +20,7 @@ interface LambdaStackProps extends cdk.StackProps {
   verificationTable: dynamodb.Table;
   replyEventsTable: dynamodb.Table;
   agentsTable: dynamodb.Table;
+  fundMarketTable: dynamodb.Table;
   stage?: string;
 }
 
@@ -30,7 +32,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, verificationTable, replyEventsTable, agentsTable, stage } = props;
+    const { clientsTable, chatSessionsTable, callbacksTable, transcriptsTable, transactionsTable, fundsTable, verificationTable, replyEventsTable, agentsTable, fundMarketTable, stage } = props;
 
     // '' for prod (names unchanged), '-<stage>' otherwise. Applied to every physical
     // resource name (Lambda functionName, role name, API name) so dev is fully isolated.
@@ -636,6 +638,82 @@ export class LambdaStack extends cdk.Stack {
       path: '/reset-funds',
       methods: [apigwv2.HttpMethod.GET],
       integration: new HttpLambdaIntegration('ResetFundsIntegration', resetFundsFn),
+    });
+
+    // ── fund-data-refresh (nightly Yahoo → bobs-fund-market) ───────────
+    // Mirrors REAL market data from each fund's Vanguard proxy into the
+    // fund-market table (see data-stack.ts). Runs nightly via the EventBridge
+    // schedule below; also exposed as GET /refresh-fund-data?key=... which
+    // async-invokes this same function and returns 202 (API Gateway caps sync
+    // responses at 29s; a full run takes ~1-2 min). FUND_MARKET_TABLE is set
+    // per-function (not in baseEnv) so existing lambdas' config is untouched.
+    const fundDataRefreshFn = new NodejsFunction(this, 'FundDataRefreshFn', {
+      functionName: `bobs-fund-data-refresh${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'fund-data-refresh/handler.ts'),
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 512,
+      environment: { FUND_MARKET_TABLE: fundMarketTable.tableName },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    fundMarketTable.grantReadWriteData(fundDataRefreshFn);
+    // Self-invoke permission via literal ARN — fn.grantInvoke(fn) would create a
+    // circular CloudFormation dependency; the functionName is deterministic.
+    fundDataRefreshFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [`arn:aws:lambda:${this.region}:${this.account}:function:bobs-fund-data-refresh${sfx}`],
+    }));
+
+    api.addRoutes({
+      path: '/refresh-fund-data',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('FundDataRefreshIntegration', fundDataRefreshFn),
+    });
+
+    // Nightly refresh, 07:10 UTC (~3:10am ET) — hours after the US close, ahead
+    // of the 07:30 UTC GitHub workflow that exports the static /fund-data files.
+    // Deployed ENABLED in BOTH stages so dev proves the exact prod wiring (cost:
+    // ~30 invocations/mo against a 14M-invocation free tier). Reuses the existing
+    // EventBridge Scheduler execution role.
+    schedulerRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [fundDataRefreshFn.functionArn],
+    }));
+    new scheduler.CfnSchedule(this, 'FundDataRefreshSchedule', {
+      name: `bobs-fund-data-refresh-nightly${sfx}`,
+      scheduleExpression: 'cron(10 7 * * ? *)',
+      flexibleTimeWindow: { mode: 'OFF' },
+      state: 'ENABLED',
+      target: {
+        arn: fundDataRefreshFn.functionArn,
+        roleArn: schedulerRole.roleArn,
+        input: JSON.stringify({ mode: 'refresh', trigger: 'scheduled' }),
+      },
+    });
+
+    // ── fund-market (read API for the refreshed market data) ───────────
+    // Separate read-only function so the public read path never holds write
+    // permissions. Serves ?ticker= / ?summary=1 / ?status=1; consumed by the
+    // static-file exporter and as the frontend's live fallback.
+    const fundMarketFn = new NodejsFunction(this, 'FundMarketFn', {
+      functionName: `bobs-fund-market${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'fund-market/handler.ts'),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: { FUND_MARKET_TABLE: fundMarketTable.tableName },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    fundMarketTable.grantReadData(fundMarketFn);
+
+    api.addRoutes({
+      path: '/fund-market',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new HttpLambdaIntegration('FundMarketIntegration', fundMarketFn),
     });
 
     // ── supervisor-stats (Supervisor Dashboard aggregates + AI insights) ─
