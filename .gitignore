@@ -15,3 +15,8 @@ scripts/quality-loop/results/
 # has no .gitmodules URL and breaks `git submodule` cleanup on every checkout).
 .claude/worktrees/
 /.gh-pages-deploy
+
+# Generated fund market-data cache (npm run fund-data). Local-dev convenience only —
+# committing it would ship a stale copy inside dist/ and stomp the nightly-published
+# gh-pages /fund-data files on every app deploy.
+customer-app/public/fund-data/

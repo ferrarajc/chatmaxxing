@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "deploy": "cd cdk && npm run deploy:lambda"
+    "deploy": "cd cdk && npm run deploy:lambda",
+    "fund-data": "node scripts/fund-data/export.mjs --out customer-app/public/fund-data"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1"

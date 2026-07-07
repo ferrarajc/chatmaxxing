@@ -63,6 +63,24 @@ Seed/reset demo data (per environment): `GET <api-url>/reset-client-data?key=bob
 Rarely-changed prod stacks (`BobsLexStack`, `BobsConnectStack`, `BobsBudgetStack`, `BobsCicdStack`)
 are deployed manually when they change; CI only deploys `BobsDataStack` + `BobsLambdaStack`.
 
+## Nightly fund-data refresh (automated)
+
+The fund pages' real market data refreshes itself every night — no human in the loop:
+
+1. **07:10 UTC** — EventBridge Scheduler runs the `bobs-fund-data-refresh` Lambda (Yahoo →
+   `bobs-fund-market` table). This is the authoritative refresh; it keeps the DATABASE current.
+2. **07:30 UTC** — the **Refresh Fund Data** GitHub workflow re-triggers only if that run is
+   missing/stale (`ifStaleMinutes` guard), then exports the payloads to static JSON and publishes
+   them to gh-pages `/fund-data/` (same-origin, zero-latency reads for the customer app).
+
+Manual controls: run the workflow from the Actions tab (`workflow_dispatch`), or refresh just the
+DB with `GET <api-url>/refresh-fund-data?key=bobs-reset-2025` (202 → poll
+`GET /fund-market?status=1`). **A failed night is safe:** the exporter validates every payload
+before writing anything, so the previously published files stay live, and the frontend falls back
+to the live `/fund-market` API → then to static bundled data. Note GitHub disables cron workflows
+after 60 days without repo activity — if the repo goes dormant, re-enable it from the Actions tab
+(the EventBridge half never stops).
+
 ## Rollback
 
 Revert the merge commit on `main` (`git revert -m 1 <merge-sha>` or the "Revert" button) and merge

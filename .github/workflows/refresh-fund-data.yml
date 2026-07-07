@@ -1,0 +1,54 @@
+# Nightly fund-data cache refresh.
+#
+# The authoritative data refresh is the EventBridge schedule (07:10 UTC) that runs
+# the bobs-fund-data-refresh Lambda. This workflow runs shortly after it, re-triggers
+# only if that run is missing/stale (ifStaleMinutes guard), then exports the page-ready
+# payloads to static JSON and publishes them to gh-pages /fund-data — where the
+# customer app reads them same-origin with zero latency.
+#
+# Failure semantics: the exporter validates every payload before writing anything and
+# exits non-zero on any problem, so a bad night leaves the previously published files
+# untouched (keep_files: true).
+#
+# NOTE: GitHub cron can slip 15-60 min and is auto-disabled after 60 days without repo
+# activity — the EventBridge side keeps the DATABASE fresh regardless; this only delays
+# the static-file mirror, and the frontend falls back to the live /fund-market API.
+
+name: Refresh Fund Data
+
+on:
+  schedule:
+    - cron: '30 7 * * *'   # 07:30 UTC, after the 07:10 UTC EventBridge refresh
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+# Same group as the four app deploys — serializes gh-pages pushes so peaceiris
+# never races another publish into a non-fast-forward failure.
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Refresh (no-op if already fresh) and export fund data
+        run: node scripts/fund-data/export.mjs --trigger --out fund-data-out
+        env:
+          API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: fund-data-out
+          destination_dir: fund-data
+          keep_files: true   # keeps the app frontends (root, /agent, /phone, /supervisor)

@@ -4,6 +4,8 @@ import { theme } from '../../../theme';
 import { AllocationSlice, Distribution, FundDef } from '../../../data/funds';
 import { useFunds } from '../../../hooks/useFunds';
 import { useMarketData, FundQuote } from '../../../hooks/useMarketData';
+import { useFundMarket } from '../../../hooks/useFundMarket';
+import { PriceHistoryChart } from './PriceHistoryChart';
 import { useClientStore } from '../../../store/clientStore';
 
 // ── Formatters ─────────────────────────────────────────────────────────────
@@ -24,6 +26,13 @@ function pctColor(n: number): string {
 }
 function pctSign(n: number): string {
   return n > 0 ? `+${n.toFixed(2)}%` : `${n.toFixed(2)}%`;
+}
+// 'YYYY-MM-DD' → 'Sep 7, 2010'. Parsed and formatted in UTC so the date can't
+// shift a day in US timezones.
+function fmtDateISO(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+  });
 }
 
 // ── Card style (no marginBottom — callers handle spacing) ──────────────────
@@ -91,17 +100,25 @@ function AnnualReturnsChart({ data }: { data: { year: number; pct: number }[] })
 // ── Performance vs Benchmark Table ────────────────────────────────────────
 
 function PerformanceTable({
-  dayChange, ytd, oneYear, threeYear, fiveYear, expRatio, benchmark,
+  dayChange, ytd, oneYear, threeYear, fiveYear, tenYear, sinceInception, expRatio, benchmark,
 }: {
-  dayChange: number; ytd: number; oneYear: number; threeYear: number; fiveYear: number;
+  dayChange: number; ytd: number;
+  // null = fund younger than the window (rendered as '—')
+  oneYear: number | null; threeYear: number | null; fiveYear: number | null;
+  tenYear?: number | null; sinceInception?: number | null;
   expRatio: number; benchmark: string;
 }) {
+  const bmOf = (v: number | null) => (v === null ? null : parseFloat((v + expRatio).toFixed(2)));
   const rows = [
-    { label: 'Day Change', fund: dayChange,  bm: null,                               note: '' },
-    { label: 'YTD',        fund: ytd,        bm: parseFloat((ytd + expRatio).toFixed(2)),       note: '' },
-    { label: '1-Year',     fund: oneYear,    bm: parseFloat((oneYear + expRatio).toFixed(2)),   note: '' },
-    { label: '3-Year',     fund: threeYear,  bm: parseFloat((threeYear + expRatio).toFixed(2)), note: 'ann.' },
-    { label: '5-Year',     fund: fiveYear,   bm: parseFloat((fiveYear + expRatio).toFixed(2)),  note: 'ann.' },
+    { label: 'Day Change', fund: dayChange as number | null, bm: null as number | null, note: '' },
+    { label: 'YTD',        fund: ytd,        bm: bmOf(ytd),       note: '' },
+    { label: '1-Year',     fund: oneYear,    bm: bmOf(oneYear),   note: '' },
+    { label: '3-Year',     fund: threeYear,  bm: bmOf(threeYear), note: 'ann.' },
+    { label: '5-Year',     fund: fiveYear,   bm: bmOf(fiveYear),  note: 'ann.' },
+    ...(tenYear !== undefined && tenYear !== null
+      ? [{ label: '10-Year', fund: tenYear as number | null, bm: bmOf(tenYear), note: 'ann.' }] : []),
+    ...(sinceInception !== undefined && sinceInception !== null
+      ? [{ label: 'Since Inception', fund: sinceInception as number | null, bm: null as number | null, note: 'ann.' }] : []),
   ];
   const thStyle: React.CSSProperties = { padding: '6px 0', fontSize: 11, fontWeight: 600, color: theme.color.textSubtle, textTransform: 'uppercase', letterSpacing: '0.06em' };
   return (
@@ -120,8 +137,8 @@ function PerformanceTable({
               {row.label}
               {row.note && <span style={{ fontSize: 10, marginLeft: 4, color: theme.color.textSubtle }}>{row.note}</span>}
             </td>
-            <td style={{ padding: '9px 0', borderBottom: `1px solid ${theme.color.border}`, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 14, color: pctColor(row.fund) }}>
-              {pctSign(row.fund)}
+            <td style={{ padding: '9px 0', borderBottom: `1px solid ${theme.color.border}`, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 14, color: row.fund === null ? theme.color.textSubtle : pctColor(row.fund) }}>
+              {row.fund === null ? '—' : pctSign(row.fund)}
             </td>
             <td style={{ padding: '9px 0', borderBottom: `1px solid ${theme.color.border}`, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 13, color: theme.color.textSubtle }}>
               {row.bm !== null ? pctSign(row.bm) : '—'}
@@ -228,13 +245,16 @@ function TopHoldings({ holdings }: { holdings: { name: string; pct: number }[] }
 
 // ── Portfolio Characteristics ──────────────────────────────────────────────
 
-function PortfolioChars({ fund }: { fund: FundDef }) {
+function PortfolioChars({ peRatio, pbRatio, yieldTtm, medianMarketCapB, avgDuration }: {
+  peRatio: number | null; pbRatio: number | null; yieldTtm: number;
+  medianMarketCapB: number | null; avgDuration: number | null;
+}) {
   const stats: { label: string; value: string; sub?: string }[] = [];
-  if (fund.peRatio !== null)          stats.push({ label: 'P/E Ratio',      value: fund.peRatio.toFixed(1) });
-  if (fund.pbRatio !== null)          stats.push({ label: 'P/B Ratio',      value: fund.pbRatio.toFixed(1) });
-  stats.push({ label: 'Yield (TTM)',  value: `${fund.yield.toFixed(2)}%` });
-  if (fund.medianMarketCapB !== null) stats.push({ label: 'Median Mkt Cap', value: `$${fund.medianMarketCapB.toFixed(1)}B` });
-  if (fund.avgDuration !== null)      stats.push({ label: 'Avg Duration',   value: `${fund.avgDuration.toFixed(1)} yr` });
+  if (peRatio !== null)          stats.push({ label: 'P/E Ratio',      value: peRatio.toFixed(1) });
+  if (pbRatio !== null)          stats.push({ label: 'P/B Ratio',      value: pbRatio.toFixed(1) });
+  stats.push({ label: 'Yield (TTM)',  value: `${yieldTtm.toFixed(2)}%` });
+  if (medianMarketCapB !== null) stats.push({ label: 'Median Mkt Cap', value: `$${medianMarketCapB.toFixed(1)}B` });
+  if (avgDuration !== null)      stats.push({ label: 'Avg Duration',   value: `${avgDuration.toFixed(1)} yr` });
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px 48px' }}>
       {stats.map(s => (
@@ -480,6 +500,7 @@ export function FundProfilePage() {
   const { byTicker } = useFunds();
   const fundDef = byTicker.get(ticker ?? '');
   const { fundQuote, loading } = useMarketData();
+  const fm = useFundMarket(ticker ?? '');
   const watchlist = useClientStore(s => s.activePersona.watchlist) ?? [];
   const toggleWatchlist = useClientStore(s => s.toggleWatchlist);
   const isWatching = watchlist.some(w => w.ticker === (ticker ?? ''));
@@ -494,18 +515,33 @@ export function FundProfilePage() {
   }
 
   const live: FundQuote | undefined = fundQuote(fundDef.ticker);
-  const price      = live?.price        ?? 0;
-  const dayChange  = live?.dayChange    ?? 0;
-  const ytd        = live?.ytd          ?? 0;
-  const oneYear    = live?.oneYear      ?? 0;
-  const threeYear  = live?.threeYear    ?? 0;
-  const fiveYear   = live?.fiveYear     ?? 0;
-  const aum        = live?.totalAssets  ?? null;
-  const inception  = live?.inceptionDate ?? null;
-  const topH       = live?.topHoldings  ?? [];
+  // Merge rule — intraday quantities prefer LIVE (freshest), everything
+  // historical/derived prefers the nightly real payload (fm), and both fall
+  // back to today's behavior (live quote + static catalog) so a missing cache
+  // renders the page exactly as before.
+  const price      = live?.price     ?? fm?.price     ?? 0;
+  const dayChange  = live?.dayChange ?? fm?.dayChange ?? 0;
+  const ytd        = fm?.ytd        ?? live?.ytd       ?? 0;
+  const oneYear    = fm ? fm.oneYear   : live?.oneYear   ?? null;
+  const threeYear  = fm ? fm.threeYear : live?.threeYear ?? null;
+  const fiveYear   = fm ? fm.fiveYear  : live?.fiveYear  ?? null;
+  const aum        = fm?.totalAssets ?? live?.totalAssets ?? null;
+  const inception  = fm?.inceptionDate ? fmtDateISO(fm.inceptionDate) : live?.inceptionDate ?? null;
+  const topH       = (fm?.topHoldings?.length ? fm.topHoldings : live?.topHoldings) ?? [];
   const expRatio   = live?.expenseRatio ?? fundDef.expenseRatio;
+  const yieldTtm   = fm?.yieldTtm ?? fundDef.yield;
+  const sectorAlloc = fm?.sectorAllocation ?? fundDef.sectorAllocation;
+  const allocLabel  = fm?.sectorAllocation ? 'Sector Allocation' : fundDef.allocationLabel;
+  const annualReturns = (fm?.annualReturns?.length ? fm.annualReturns : fundDef.annualReturns).slice(0, 10);
+  const distributions = fm?.distributions?.length ? fm.distributions : fundDef.distributions;
+  const beta        = fm?.beta3Y      ?? fundDef.beta;
+  const stdDev      = fm?.stdDev3Y    ?? fundDef.stdDev;
+  const avgDuration = fm?.avgDuration ?? fundDef.avgDuration;
+  const peRatio     = fm?.peRatio     ?? fundDef.peRatio;
+  const pbRatio     = fm?.pbRatio     ?? fundDef.pbRatio;
   const hasPrice   = price > 0;
   const today      = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const asOfLabel  = live ? today : fm ? fmtDateISO(fm.asOf) : today;
 
   return (
     <div style={{ fontFamily: theme.font.sans }}>
@@ -555,7 +591,7 @@ export function FundProfilePage() {
                   {dayChange >= 0 ? '▲' : '▼'} {Math.abs(dayChange).toFixed(2)}% today
                 </span>
                 <span style={{ fontSize: 12, color: 'rgba(251,249,244,0.4)' }}>
-                  as of {today}{loading && ' · updating…'}
+                  as of {asOfLabel}{loading && ' · updating…'}
                 </span>
               </div>
             ) : (
@@ -594,7 +630,7 @@ export function FundProfilePage() {
             {[
               { label: 'Expense Ratio',       val: `${expRatio}%` },
               ...(aum      ? [{ label: 'Fund Assets',     val: fmtAum(aum) }] : []),
-              { label: 'Distribution Yield',  val: `${fundDef.yield.toFixed(2)}%` },
+              { label: 'Distribution Yield',  val: `${yieldTtm.toFixed(2)}%` },
               { label: 'Min. Investment',     val: `$${fundDef.minInvestment}` },
               ...(inception ? [{ label: 'Inception',     val: inception }] : []),
               { label: 'Holdings',            val: fundDef.numHoldings.toLocaleString() },
@@ -617,18 +653,27 @@ export function FundProfilePage() {
       {/* ── Cards (beige background from App) ───────────────────────────── */}
       <div style={{ maxWidth: 1160, margin: '0 auto', padding: '32px 48px 56px' }}>
 
+        {/* Price History — real daily data back to inception (renders only when
+            the nightly market payload is available; purely additive) */}
+        {fm?.chart && (
+          <div style={{ ...card, marginBottom: 20 }}>
+            <CardTitle>Price History</CardTitle>
+            <PriceHistoryChart chart={fm.chart} />
+          </div>
+        )}
+
         {/* Performance */}
         <div style={{ ...card, marginBottom: 20 }}>
           <CardTitle>Performance</CardTitle>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'start' }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, color: theme.color.textMuted, marginBottom: 14 }}>Annual Returns — Calendar Year</div>
-              <AnnualReturnsChart data={fundDef.annualReturns} />
+              <AnnualReturnsChart data={annualReturns} />
             </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, color: theme.color.textMuted, marginBottom: 14 }}>Returns vs. {fundDef.benchmark}</div>
               {hasPrice
-                ? <PerformanceTable dayChange={dayChange} ytd={ytd} oneYear={oneYear} threeYear={threeYear} fiveYear={fiveYear} expRatio={expRatio} benchmark={fundDef.benchmark} />
+                ? <PerformanceTable dayChange={dayChange} ytd={ytd} oneYear={oneYear} threeYear={threeYear} fiveYear={fiveYear} tenYear={fm?.tenYear} sinceInception={fm?.sinceInception} expRatio={expRatio} benchmark={fundDef.benchmark} />
                 : <p style={{ fontSize: 13, color: theme.color.textSubtle }}>Loading…</p>}
             </div>
           </div>
@@ -638,17 +683,17 @@ export function FundProfilePage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
           <div style={card}>
             <CardTitle>Portfolio Composition</CardTitle>
-            <AllocationDonut data={fundDef.sectorAllocation} label={fundDef.allocationLabel} />
+            <AllocationDonut data={sectorAlloc} label={allocLabel} />
             <TopHoldings holdings={topH} />
           </div>
           <div style={card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <CardTitle>Distribution History</CardTitle>
               <span style={{ fontSize: 13, color: theme.color.textMuted, marginBottom: 20, display: 'inline-block' }}>
-                TTM Yield: <strong style={{ color: theme.color.text }}>{fundDef.yield.toFixed(2)}%</strong>
+                TTM Yield: <strong style={{ color: theme.color.text }}>{yieldTtm.toFixed(2)}%</strong>
               </span>
             </div>
-            <DistributionTable distributions={fundDef.distributions} frequency={fundDef.distributionFrequency} />
+            <DistributionTable distributions={distributions} frequency={fundDef.distributionFrequency} />
           </div>
         </div>
 
@@ -659,7 +704,7 @@ export function FundProfilePage() {
           <div style={{ display: 'flex', gap: 40, alignItems: 'stretch' }}>
             {/* Left rail — metrics + risk */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <PortfolioChars fund={fundDef} />
+              <PortfolioChars peRatio={peRatio} pbRatio={pbRatio} yieldTtm={yieldTtm} medianMarketCapB={fundDef.medianMarketCapB} avgDuration={avgDuration} />
 
               {/* ── Risk Profile ── */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '28px 0 18px' }}>
@@ -670,9 +715,9 @@ export function FundProfilePage() {
               <div style={{ display: 'flex', gap: '20px 48px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <RiskMeter level={fundDef.riskLevel} />
                 {([
-                  fundDef.beta        !== null && { label: 'Beta',          val: fundDef.beta.toFixed(2),                sub: 'vs. S&P 500'        },
-                  fundDef.stdDev      !== null && { label: 'Std Deviation', val: `${fundDef.stdDev.toFixed(1)}%`,        sub: '3-yr annualized'    },
-                  fundDef.avgDuration !== null && { label: 'Avg Duration',  val: `${fundDef.avgDuration.toFixed(1)} yr`, sub: 'interest rate risk' },
+                  beta        !== null && { label: 'Beta',          val: beta.toFixed(2),                sub: 'vs. S&P 500'        },
+                  stdDev      !== null && { label: 'Std Deviation', val: `${stdDev.toFixed(1)}%`,        sub: '3-yr annualized'    },
+                  avgDuration !== null && { label: 'Avg Duration',  val: `${avgDuration.toFixed(1)} yr`, sub: 'interest rate risk' },
                 ] as (false | { label: string; val: string; sub: string })[])
                   .filter((x): x is { label: string; val: string; sub: string } => x !== false)
                   .map(s => <Metric key={s.label} label={s.label} value={s.val} sub={s.sub} />)}
@@ -680,7 +725,7 @@ export function FundProfilePage() {
 
               <p style={{ margin: '18px 0 0', maxWidth: 560, fontSize: 12, color: theme.color.textSubtle, lineHeight: 1.6 }}>
                 Risk is assessed relative to the fund's asset class and investment universe.
-                {fundDef.beta !== null && ' Beta measures sensitivity to broad market movements (S&P 500).'}
+                {beta !== null && ' Beta measures sensitivity to broad market movements (S&P 500).'}
               </p>
             </div>
 

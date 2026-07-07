@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { theme } from '../../../theme';
 import { FUND_BY_TICKER } from '../../../data/funds';
 import { useMarketData } from '../../../hooks/useMarketData';
+import { useFundMarketSummary } from '../../../hooks/useFundMarket';
 import { useClientStore } from '../../../store/clientStore';
 import { AutoInvestSchedule } from '../../../data/personas';
 import { post } from '../../../api/client';
@@ -161,6 +162,7 @@ export function BuyPage() {
   const { ticker } = useParams<{ ticker: string }>();
   const fundDef = FUND_BY_TICKER.get(ticker ?? '');
   const { fundQuote, loading: priceLoading } = useMarketData();
+  const summary = useFundMarketSummary();
   const { activePersona, buyFund, setAutoInvestSchedules } = useClientStore();
 
   const today = new Date();
@@ -185,7 +187,10 @@ export function BuyPage() {
   }
 
   const live = fundQuote(fundDef.ticker);
-  const price = live?.price ?? 0;
+  // Live intraday quote first; the nightly real-data cache covers the gap while
+  // market-data is still loading (kills the "Loading price…" dead state).
+  const cachedRow = summary?.funds.find(f => f.ticker === fundDef.ticker);
+  const price = live?.price ?? cachedRow?.price ?? 0;
   const amount = parseFloat(amountStr.replace(/[^0-9.]/g, '')) || 0;
   const shares = price > 0 && amount > 0 ? amount / price : 0;
   const selectedAccount = activePersona.accounts.find(a => a.id === accountId);

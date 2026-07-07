@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FundDef, FundGroup } from '../../../data/funds';
 import { useFunds } from '../../../hooks/useFunds';
 import { useMarketData } from '../../../hooks/useMarketData';
+import { useFundMarketSummary } from '../../../hooks/useFundMarket';
 import { theme } from '../../../theme';
 
 // ── Family filter (top-level asset classes) ─────────────────────────────────
@@ -182,23 +183,28 @@ function TableHead({
 export function ResearchPage() {
   const { funds } = useFunds();
   const { data: marketData } = useMarketData();
+  const summary = useFundMarketSummary();
   const [family, setFamily] = useState<FamilyFilter>('All');
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  // Build a row (fund + live data) for every fund.
+  // Build a row for every fund. Return columns prefer the nightly real-data
+  // cache (adjclose-derived total returns, loads same-origin with no API wait);
+  // the live market-data quote is the fallback, so behavior without the cache
+  // is exactly what it was before.
   const rows: FundRow[] = useMemo(() => funds.map(fund => {
+    const cached = summary?.funds.find(f => f.ticker === fund.ticker);
     const live = marketData?.funds.find(f => f.ticker === fund.ticker);
     return {
       fund,
-      ytd:       live?.ytd       ?? null,
-      oneYear:   live?.oneYear   ?? null,
-      threeYear: live?.threeYear ?? null,
-      fiveYear:  live?.fiveYear  ?? null,
-      expenseRatio: live?.expenseRatio ?? fund.expenseRatio,
+      ytd:       cached?.ytd ?? live?.ytd ?? null,
+      oneYear:   cached ? cached.oneYear   : live?.oneYear   ?? null,
+      threeYear: cached ? cached.threeYear : live?.threeYear ?? null,
+      fiveYear:  cached ? cached.fiveYear  : live?.fiveYear  ?? null,
+      expenseRatio: cached?.expenseRatio ?? live?.expenseRatio ?? fund.expenseRatio,
     };
-  }), [funds, marketData]);
+  }), [funds, marketData, summary]);
 
   const q = query.trim().toLowerCase();
 

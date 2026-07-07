@@ -16,6 +16,7 @@ export class DataStack extends cdk.Stack {
   public readonly verificationTable: dynamodb.Table;
   public readonly replyEventsTable: dynamodb.Table;
   public readonly agentsTable: dynamodb.Table;
+  public readonly fundMarketTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: DataStackProps) {
     super(scope, id, props);
@@ -150,6 +151,24 @@ export class DataStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // ── Fund market-data table ─────────────────────────────────────
+    // REAL market data for the fund lineup, mirrored nightly from each fund's
+    // Vanguard proxy (FundDef.realSymbol) by the fund-data-refresh Lambda:
+    // prices, trailing/annual returns, holdings, distributions, and raw daily
+    // price history back to inception (chunked by calendar year, hash-guarded
+    // so unchanged years are never rewritten). PK ticker / SK section — sections
+    // are `latest` (page-ready payload), `history#<year>`, `dividends`, plus the
+    // reserved `_summary` and `_status` partitions (underscore can't collide with
+    // a real ticker). Fully re-derivable from Yahoo on any run → no PITR, DESTROY
+    // (agents-table precedent). Static catalog data stays in bobs-funds.
+    this.fundMarketTable = new dynamodb.Table(this, 'FundMarketTable', {
+      tableName: `bobs-fund-market${sfx}`,
+      partitionKey: { name: 'ticker', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'section', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // ── Outputs ────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ClientsTableName', { value: this.clientsTable.tableName });
     new cdk.CfnOutput(this, 'ChatSessionsTableName', { value: this.chatSessionsTable.tableName });
@@ -160,5 +179,6 @@ export class DataStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'VerificationTableName', { value: this.verificationTable.tableName });
     new cdk.CfnOutput(this, 'ReplyEventsTableName', { value: this.replyEventsTable.tableName });
     new cdk.CfnOutput(this, 'AgentsTableName', { value: this.agentsTable.tableName });
+    new cdk.CfnOutput(this, 'FundMarketTableName', { value: this.fundMarketTable.tableName });
   }
 }
