@@ -98,22 +98,59 @@ async function changeOptions(
 }
 
 // ── "Change to" mode: author a fresh reply along the agent's chosen direction ─────────────
-// Same data access (tools) + shape as the normal suggest path, plus the direction.
+// Purpose-built prompt (NOT the base suggest prompt): the base prompt's "1-2 sentences max" +
+// "if the agent spoke last, just add a brief follow-up" rules overpower a tail-appended
+// direction, producing bland filler ("feel free to ask") that ignores the chosen move. Here the
+// DIRECTION is the whole task, stated first, with those two rules explicitly neutralized. Same
+// data access (tools) + return shape as the normal suggest path.
+const CHANGE_REPLY_SYSTEM = (profile: ClientProfile, direction: string, rejected: string) => {
+  const firstName = (profile.name || '').trim().split(/\s+/)[0] || 'the client';
+  return `You are an AI assistant supporting a live chat agent at Bob's Mutual Funds.
+The client is ${profile.name}. Their accounts: ${summarizeAccounts(profile.accounts)}.
+
+The agent reviewed the conversation and DECIDED on their next move. Write the message the agent
+will send to ${firstName} that carries out THIS instruction, which is the entire point of the reply:
+
+  → ${direction}
+
+Fully deliver on that instruction — do NOT dilute it into a generic "let me know if you have any
+questions" or "feel free to ask" closer. If it asks you to explain or clarify something, actually
+give that explanation with real substance (2-4 sentences is fine — brevity is secondary to
+genuinely doing what the instruction says). If it asks you to ask ${firstName} something, ask it
+directly. If it asks you to acknowledge or empathize, do that specifically.
+
+Write AS THE AGENT (a Bob's representative) speaking TO ${firstName}. Even if the most recent
+message in the transcript is the AGENT's, still write the message that performs the instruction —
+the agent has chosen to send this proactively. NEVER write in the client's voice or answer on
+${firstName}'s behalf (do not begin with "Yes, that's correct"). No greetings or sign-offs.
+${rejected ? `\nThe agent rejected this earlier draft, so do not simply repeat it: "${rejected}"\n` : ''}
+Stay accurate and compliant: only state facts given in this prompt or returned by a tool; never
+invent client-specific figures; do not give personalized investment advice or execute trades
+(offer a licensed-advisor callback for those).
+
+Also select the 0-3 most relevant knowledge base articles for this reply, ordered by relevance.
+Only include genuinely on-topic articles — return an empty array if nothing fits.
+
+Available articles:
+${RESOURCE_LIST}
+
+Return ONLY valid JSON: {"suggestedText": "...", "resourceIds": ["kb-xxx", ...]}`;
+};
+
 async function changeReply(
-  transcript: ChatMessage[], profile: ClientProfile, direction: string, kbIndex: Map<string, Resource>,
+  transcript: ChatMessage[], profile: ClientProfile, direction: string, currentSuggestion: string,
+  kbIndex: Map<string, Resource>,
 ): Promise<APIGatewayProxyResultV2> {
   try {
     const executor = createToolExecutor(profile.clientId, {});
-    const system = SYSTEM_PROMPT(profile) + NBR_HALLUCINATION_RULE +
-      `\n\nThe agent REJECTED the previous draft and chose this direction for the reply: "${direction}".
-Write the reply along that direction — honor the agent's choice while staying accurate, compliant, and professional.`;
+    const system = CHANGE_REPLY_SYSTEM(profile, direction, currentSuggestion.trim()) + NBR_HALLUCINATION_RULE;
     const result = await invokeWithTools(
       system,
       [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
       NBR_CLIENT_TOOLS,
       executor,
       350,
-      { fn: 'next-best-response', clientId: profile.clientId },
+      { fn: 'next-best-response', clientId: profile.clientId, scope: 'change-reply' },
       true,
     );
     const parsed = parseJsonFromBedrock<{ suggestedText?: string; resourceIds?: string[] }>(result.text);
@@ -196,7 +233,7 @@ export const handler = async (
 
     // "Change to" modes — fire strictly after the normal suggestion is already shown client-side.
     if (mode === 'change-options') return changeOptions(transcript, profile, currentSuggestion);
-    if (mode === 'change-reply') return changeReply(transcript, profile, direction, kbIndex);
+    if (mode === 'change-reply') return changeReply(transcript, profile, direction, currentSuggestion, kbIndex);
     if (mode === 'magic-rewrite') return magicRewrite(currentSuggestion, style);
 
     let suggestedText = '';

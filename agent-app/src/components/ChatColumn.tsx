@@ -547,11 +547,12 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const contactId = slot.contactId;
     const s = store.getSlot(contactId);
     if (!s) return;
+    const rejected = s.suggestionHistory[s.suggestionIndex]?.text ?? '';   // the draft being changed
     const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
     store.patchSlot(contactId, { suggestionLoading: true });   // reuse the header spinner
     post<{ suggestedText: string; resources?: { id: string; title: string; url: string }[] }>(
       '/next-best-response',
-      { mode: 'change-reply', transcript: s.messages, clientProfile, direction },
+      { mode: 'change-reply', transcript: s.messages, clientProfile, direction, currentSuggestion: rejected },
     )
       .then(r => {
         if (r.suggestedText && r.suggestedText.trim()) {
