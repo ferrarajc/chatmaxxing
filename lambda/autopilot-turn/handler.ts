@@ -2432,10 +2432,14 @@ export const handler = async (
           // Safety guard: never exit without a proposedAction
           if (taskShouldExit && !taskProposedAction) taskShouldExit = false;
         } catch (e) {
+          // Transient LLM/JSON-parse failure — do NOT bail mid-task (mirrors the Phase-1 catch
+          // below). Bailing here exited autopilot with no proposedAction, and heavy agent editing
+          // raises the parse-failure rate. Instead stay in autopilot with a brief holding reply;
+          // the next customer turn re-drives the expert and transient errors self-heal.
           console.warn('Task expert LLM call failed', e);
           taskResponse = "I'm pulling some information, give me just a few moments please.";
-          taskShouldExit = true;
-          taskExitMessage = 'Autopilot stopped due to an unexpected processing error.';
+          taskShouldExit = false;
+          taskExitMessage = null;
         }
 
         console.log(JSON.stringify({

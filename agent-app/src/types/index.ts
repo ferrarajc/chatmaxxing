@@ -71,6 +71,16 @@ export interface ContactSlot {
   autopilotSendAt: number | null;
   /** Remaining ms captured at the moment of pause, frozen until resume; null while running. */
   autopilotPausedRemainingMs: number | null;
+  /** Candidate replies for the paused "Autopilot sending" box — the staged reply plus any
+   *  "Change to" / "Magic" alternatives the agent generates. Parallel to suggestionHistory,
+   *  but for the autopilot send. Meaningful only while autopilotPending is non-null (the box
+   *  renders only then, so it is always freshly initialized by the current send). */
+  autopilotHistory: Suggestion[];
+  /** Index into autopilotHistory of the candidate currently displayed/staged for send. */
+  autopilotIndex: number;
+  /** One-shot flag set by the "Send now" button: the in-flight send loop fires the currently
+   *  displayed reply immediately instead of waiting out the countdown. Cleared at send. */
+  autopilotSendNow?: boolean;
   /** Human-readable reason for last autopilot exit; null while autopilot is active or never ran */
   autopilotExitMessage: string | null;
   /** Currently DISPLAYED suggested reply — a mirror of suggestionHistory[suggestionIndex]

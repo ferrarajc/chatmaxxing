@@ -20,23 +20,40 @@ interface Props {
   onChangeTo: (direction: string) => void;
   /** Restyle the current suggested reply per a "Magic" preset/custom style (same meaning). */
   onMagic: (style: string) => void;
+  /** Author a new autopilot candidate along a "Change to" direction (paused sending box). */
+  onAutopilotChangeTo: (direction: string) => void;
+  /** Restyle the current autopilot candidate per a "Magic" style (paused sending box). */
+  onAutopilotMagic: (style: string) => void;
 }
 
-export function AISupport({ slot, onSend, onSendResource, onActivateAutopilot, onChangeTo, onMagic }: Props) {
+export function AISupport({
+  slot, onSend, onSendResource, onActivateAutopilot, onChangeTo, onMagic,
+  onAutopilotChangeTo, onAutopilotMagic,
+}: Props) {
   const store = useAgentStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingSuggestion, setEditingSuggestion] = useState(false);
   const [changeMenuOpen, setChangeMenuOpen] = useState(false);
   const [magicMenuOpen, setMagicMenuOpen] = useState(false);
+  // Separate open-state for the paused autopilot box's own Change to / Magic menus.
+  const [apChangeMenuOpen, setApChangeMenuOpen] = useState(false);
+  const [apMagicMenuOpen, setApMagicMenuOpen] = useState(false);
   const autopilotBtnRef = useRef<HTMLButtonElement>(null);
   const changeBtnRef = useRef<HTMLButtonElement>(null);
   const magicBtnRef = useRef<HTMLButtonElement>(null);
+  const apChangeBtnRef = useRef<HTMLButtonElement>(null);
+  const apMagicBtnRef = useRef<HTMLButtonElement>(null);
 
   // The suggested reply entry currently on screen (at the paged index).
   const currentEntry = slot.suggestionHistory[slot.suggestionIndex];
   const currentSuggestion = currentEntry?.text ?? '';
   const suggestionAtStart = slot.suggestionIndex <= 0;
   const suggestionAtEnd = slot.suggestionIndex >= slot.suggestionHistory.length - 1;
+
+  // The autopilot candidate currently staged/displayed (paused box paging/Change-to/Magic).
+  const currentApEntry = slot.autopilotHistory[slot.autopilotIndex];
+  const apAtStart = slot.autopilotIndex <= 0;
+  const apAtEnd = slot.autopilotIndex >= slot.autopilotHistory.length - 1;
 
   const handleSendSuggestion = () => {
     if (!currentSuggestion.trim() || !currentEntry) return;
@@ -59,6 +76,23 @@ export function AISupport({ slot, onSend, onSendResource, onActivateAutopilot, o
   const handleMagicSelect = (style: string) => {
     setMagicMenuOpen(false);
     onMagic(style);
+  };
+
+  // ── Paused "Autopilot sending" box controls ──────────────────────────────
+  // Send now: fire the currently displayed reply immediately. Sets the one-shot flag the
+  // in-flight send loop consumes, and unpauses so the loop resumes long enough to dispatch.
+  const handleSendNow = () => {
+    store.patchSlot(slot.contactId, { autopilotSendNow: true, autopilotPaused: false });
+    setApChangeMenuOpen(false);
+    setApMagicMenuOpen(false);
+  };
+  const handleApChangeSelect = (direction: string) => {
+    setApChangeMenuOpen(false);
+    onAutopilotChangeTo(direction);
+  };
+  const handleApMagicSelect = (style: string) => {
+    setApMagicMenuOpen(false);
+    onAutopilotMagic(style);
   };
 
   const handleSendResource = (resource: { title: string; url: string }) => {
@@ -188,7 +222,11 @@ export function AISupport({ slot, onSend, onSendResource, onActivateAutopilot, o
           <ProposedActionCard slot={slot} />
         )}
 
-        {/* Autopilot pending send */}
+        {/* Autopilot pending send. Running: just the label + countdown + editable reply. Paused
+            (Pause button or clicking into the text): the timer shifts left beside the label, pager
+            chevrons appear top-right, and a control row (Send now · Magic · Change to) appears below
+            — mirroring the Suggested-reply controls. On Resume everything collapses back and the
+            countdown continues. */}
         {slot.autopilotPending && (
           <div style={{
             background: '#fff', borderRadius: 8, padding: '8px 10px',
@@ -198,25 +236,110 @@ export function AISupport({ slot, onSend, onSendResource, onActivateAutopilot, o
             position: 'relative', zIndex: 2,
             boxShadow: '0 3px 12px rgba(0,0,0,0.15)',
           }}>
+            {/* Header: label + timer (left) · pager chevrons or timer (right). While running the
+                timer is right-aligned; when paused it moves left by the label and the pager takes
+                the top-right slot. */}
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               fontSize: 14, color: '#15803d', fontWeight: 600, marginBottom: 4,
             }}>
-              <span>Autopilot sending…</span>
-              <AutopilotCountdown
-                sendAt={slot.autopilotSendAt}
-                pausedRemainingMs={slot.autopilotPausedRemainingMs}
-                paused={slot.autopilotPaused}
-                fontSize={14}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>Autopilot sending…</span>
+                {slot.autopilotPaused && (
+                  <AutopilotCountdown
+                    sendAt={slot.autopilotSendAt}
+                    pausedRemainingMs={slot.autopilotPausedRemainingMs}
+                    paused={slot.autopilotPaused}
+                    fontSize={14}
+                  />
+                )}
+                {slot.autopilotPaused && slot.suggestionLoading && (
+                  <span style={{
+                    width: 12, height: 12, borderRadius: '50%',
+                    border: '2px solid #bbf7d0', borderTopColor: '#15803d',
+                    display: 'inline-block', animation: 'spin .7s linear infinite',
+                  }} />
+                )}
+              </div>
+              {slot.autopilotPaused ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <PagerChevron dir="left" disabled={apAtStart} color="#15803d"
+                    onClick={() => store.paginateAutopilot(slot.contactId, -1)} />
+                  <PagerChevron dir="right" disabled={apAtEnd} color="#15803d"
+                    onClick={() => store.paginateAutopilot(slot.contactId, 1)} />
+                </div>
+              ) : (
+                <AutopilotCountdown
+                  sendAt={slot.autopilotSendAt}
+                  pausedRemainingMs={slot.autopilotPausedRemainingMs}
+                  paused={slot.autopilotPaused}
+                  fontSize={14}
+                />
+              )}
             </div>
-            {/* Editable — clicking in pauses autopilot; the edited text is what sends. */}
+            {/* Editable — clicking in pauses autopilot; edits update the shown candidate (and thus
+                what sends). Routed through the deck so paging away and back preserves the edit. */}
             <EditableReply
               value={slot.autopilotPending}
-              onChange={t => store.patchSlot(slot.contactId, { autopilotPending: t })}
+              onChange={t => store.editCurrentAutopilotCandidate(slot.contactId, t)}
               onFocus={() => store.patchSlot(slot.contactId, { autopilotPaused: true })}
               style={{ color: '#166534', lineHeight: 1.5, fontSize: 15 }}
             />
+            {/* Paused control row: Send now (lower-left) + Magic / Change to (lower-right). */}
+            {slot.autopilotPaused && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6,
+              }}>
+                <button
+                  onClick={handleSendNow}
+                  title="Send the displayed reply to the client right now"
+                  style={{
+                    fontSize: 14, padding: '3px 10px', borderRadius: 6, border: 'none',
+                    background: '#16a34a', color: '#fff', cursor: 'pointer', fontWeight: 600,
+                  }}
+                >Send now</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button
+                    ref={apMagicBtnRef}
+                    onClick={() => setApMagicMenuOpen(o => !o)}
+                    title="Restyle this reply — same meaning, new presentation"
+                    style={{
+                      fontSize: 13, padding: '3px 8px', borderRadius: 6,
+                      border: '1px solid #ddd6fe', background: '#fff', color: '#7c3aed',
+                      cursor: 'pointer', fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}
+                  ><span aria-hidden="true">🪄</span>Magic <span style={{ fontSize: 9 }}>▼</span></button>
+                  <button
+                    ref={apChangeBtnRef}
+                    onClick={() => setApChangeMenuOpen(o => !o)}
+                    title="Change this reply to something else"
+                    style={{
+                      fontSize: 13, padding: '3px 8px', borderRadius: 6,
+                      border: '1px solid #86efac', background: '#fff', color: '#15803d',
+                      cursor: 'pointer', fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}
+                  >Change to <span style={{ fontSize: 9 }}>▼</span></button>
+                </div>
+                {apMagicMenuOpen && (
+                  <MagicMenu
+                    anchorRef={apMagicBtnRef}
+                    onSelect={handleApMagicSelect}
+                    onClose={() => setApMagicMenuOpen(false)}
+                  />
+                )}
+                {apChangeMenuOpen && (
+                  <ChangeToMenu
+                    anchorRef={apChangeBtnRef}
+                    options={currentApEntry?.changeOptions ?? null}
+                    loading={currentApEntry?.changeOptionsLoading ?? false}
+                    onSelect={handleApChangeSelect}
+                    onClose={() => setApChangeMenuOpen(false)}
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -346,10 +469,12 @@ export function AISupport({ slot, onSend, onSendResource, onActivateAutopilot, o
 
 // Left/right pager chevron for stepping through the suggested-reply history. Grays out
 // when disabled; the right one shows a small red dot when a newer suggestion is unseen.
-function PagerChevron({ dir, disabled, badge, onClick }: {
+function PagerChevron({ dir, disabled, badge, color = '#1d4ed8', onClick }: {
   dir: 'left' | 'right';
   disabled: boolean;
   badge?: boolean;
+  /** Enabled-state color (suggestion box = blue default; autopilot box passes green). */
+  color?: string;
   onClick: () => void;
 }) {
   const points = dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6';
@@ -362,7 +487,7 @@ function PagerChevron({ dir, disabled, badge, onClick }: {
         position: 'relative', width: 22, height: 22, padding: 0, border: 'none',
         background: 'transparent', cursor: disabled ? 'default' : 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: disabled ? '#cbd5e1' : '#1d4ed8',
+        color: disabled ? '#cbd5e1' : color,
       }}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"

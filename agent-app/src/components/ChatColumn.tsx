@@ -152,6 +152,10 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const initRunRef = useRef<Set<string>>(new Set());
   // Track previous scope to detect changes
   const prevScopeRef = useRef<AutopilotScope | null>(null);
+  // Per-contact "send generation" — each autopilotSend bumps it and captures its own number;
+  // a later send (e.g. a customer reply arriving mid-edit) supersedes older loops, which then
+  // abort silently instead of double-sending. Ref (not store) so it never triggers a re-render.
+  const autopilotGenRef = useRef<Map<string, number>>(new Map());
 
   // Auto-scroll when new messages arrive
   useEffect(() => {
@@ -244,7 +248,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   // total wait time is preserved exactly. Returns false if the wait was aborted (scope
   // cancelled or chat ended).
   const autopilotDelay = async (
-    ms: number, contactId: string, scope: AutopilotScope, showEllipsis: boolean,
+    ms: number, contactId: string, scope: AutopilotScope, showEllipsis: boolean, myGen: number,
   ): Promise<boolean> => {
     const POLL_MS = 250;
     const TYPING_HEARTBEAT_MS = 8000;
@@ -255,6 +259,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     for (;;) {
       await sleep(POLL_MS);
       const cur = store.getSlot(contactId);
+      // Superseded by a newer send loop for this contact (e.g. a customer reply started a fresh
+      // turn while this one was paused mid-edit) — bail WITHOUT touching shared state, since
+      // autopilotPending / the countdown now belong to the newer loop. Checked first so an
+      // older loop can never double-send or clobber the newer staged reply.
+      if (autopilotGenRef.current.get(contactId) !== myGen) return false;
       // Abort if scope was cancelled while waiting, or if the chat already ended.
       // (Checked before the pause branch so Exit-while-paused aborts immediately.)
       if (!cur || cur.autopilotScope !== scope || cur.status === 'acw') {
@@ -266,6 +275,12 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         if (showEllipsis && cur && cur.status !== 'acw' && stopToken) sendCustomerTypingStop(stopToken);
         return false;
       }
+      // "Send now" — the agent asked to fire the currently displayed reply immediately.
+      // Return true so the caller sends the live autopilotPending right away (bypassing any
+      // remaining countdown). Checked before the pause branch so it also fires while paused;
+      // the flag is cleared at the actual send point. Left set across the reading→typing phase
+      // boundary so a Send-now during the reading delay skips straight through the typing delay.
+      if (cur.autopilotSendNow) return true;
       // Paused — freeze the countdown; capture the remaining time once.
       if (cur.autopilotPaused) {
         if (pauseStart === 0) {
@@ -306,7 +321,16 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   // chars/15-seconds compose delay, during which the ellipsis is shown. The typing
   // delay only starts once the reading delay has fully elapsed.
   const autopilotSend = async (text: string, contactId: string, scope: AutopilotScope): Promise<boolean> => {
-    store.patchSlot(contactId, { autopilotPending: text });
+    // Claim the latest send generation for this contact. Any older in-flight send loop will see
+    // this bump on its next poll and abort silently — so a customer reply that starts a new turn
+    // while a prior staged send is still pending (e.g. paused mid-edit) can't cause a double-send
+    // or clobber the newer staged reply.
+    const myGen = (autopilotGenRef.current.get(contactId) ?? 0) + 1;
+    autopilotGenRef.current.set(contactId, myGen);
+    // Start a fresh candidate deck for this staged send. autopilotPending mirrors the shown
+    // candidate, so the existing send path (which reads autopilotPending) is unchanged; the
+    // deck only comes into play if the agent pauses and pages / Changes to / Magics the reply.
+    store.initAutopilotDeck(contactId, text, 'nbr');
 
     // Phase 1 — reading delay. No ellipsis yet (the agent is "reading", not typing).
     const slotForRead = store.getSlot(contactId);
@@ -323,14 +347,17 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       autopilotSendAt: Date.now() + readingDelayMs + delaySecs * 1000,
       autopilotPausedRemainingMs: null,
     });
-    if (!(await autopilotDelay(readingDelayMs, contactId, scope, false))) return false;
+    if (!(await autopilotDelay(readingDelayMs, contactId, scope, false, myGen))) return false;
 
     // Phase 2 — typing delay. Show the ellipsis now and keep it alive until send.
     const typingToken = store.getSlot(contactId)?.connectionToken;
     if (typingToken) sendCustomerTypingEvent(typingToken);
-    if (!(await autopilotDelay(delaySecs * 1000, contactId, scope, true))) return false;
+    if (!(await autopilotDelay(delaySecs * 1000, contactId, scope, true, myGen))) return false;
 
     const fresh = store.getSlot(contactId);
+    // Superseded by a newer send while we finished the delay — leave all shared state to that
+    // loop (don't null autopilotPending: the newer loop's staged reply is what should stand).
+    if (autopilotGenRef.current.get(contactId) !== myGen) return false;
     if (!fresh || fresh.autopilotScope !== scope || fresh.status === 'acw') {
       store.patchSlot(contactId, {
         autopilotPending: null, autopilotSendAt: null, autopilotPausedRemainingMs: null,
@@ -353,6 +380,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     store.patchSlot(contactId, {
       lastAgentMessageAt: Date.now(),
       autopilotPending: null, autopilotSendAt: null, autopilotPausedRemainingMs: null,
+      autopilotSendNow: false,
     });
     if (token) {
       post<{ ok: boolean }>('/send-agent-message', { connectionToken: token, message: outgoing })
@@ -420,10 +448,28 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         currentIntent: currentSlot.intentSummary,
       });
     } catch (e) {
-      console.warn('Autopilot turn failed', e);
-      exitAutopilot(contactId);
-      return;
+      // Don't hard-exit on a single transient failure (heavy Change-to/Magic/NBR traffic makes one
+      // more likely). Retry once; only give up if it fails again — and then exit with a clear,
+      // resumable message (re-activating autopilot now works — see the initRunRef reset on exit).
+      console.warn('Autopilot turn failed, retrying once', e);
+      await sleep(1200);
+      if (store.getSlot(contactId)?.autopilotScope !== scope) return;   // exited/changed meanwhile
+      try {
+        const s = store.getSlot(contactId);
+        result = await post<AutopilotTurnResult>('/autopilot-turn', {
+          transcript: s!.messages, clientProfile, scope, currentIntent: s!.intentSummary,
+        });
+      } catch (e2) {
+        console.warn('Autopilot turn failed after retry', e2);
+        exitAutopilot(contactId, 'Autopilot paused after a temporary error — click ✈ to resume.');
+        return;
+      }
     }
+
+    // Scope may have changed while the Lambda call was in flight (agent Exited, an idle-check fired,
+    // or the agent re-activated). Bail so a stale turn can't stage a reply, pop a proposed action,
+    // or send under a new activation.
+    if (store.getSlot(contactId)?.autopilotScope !== scope) return;
 
     // Kick off the evidence locator in parallel with the human-like send delay —
     // by the time the proposedAction card renders, the spans are usually ready.
@@ -622,6 +668,80 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       .catch(() => store.patchSlot(contactId, { suggestionLoading: false }));
   };
 
+  // ── Autopilot deck: "Change to" / "Magic" for the paused "Autopilot sending" box ─────────
+  // Same NBR calls the Suggested-reply box uses, but operating on the autopilot candidate deck
+  // (autopilotHistory) rather than the suggestion deck. The staged send stays paused throughout;
+  // the newly-authored candidate becomes the displayed/staged reply (mirrored into autopilotPending),
+  // so Resume or Send now dispatches it. suggestionLoading drives the box's header spinner — safe to
+  // reuse because the Suggested-reply box is hidden while autopilot is active.
+
+  // Pre-generate alternative directions for the currently-displayed autopilot candidate.
+  const generateAutopilotChangeOptions = (contactId: string) => {
+    const s = store.getSlot(contactId);
+    const entry = s?.autopilotHistory[s.autopilotIndex];
+    if (!s || !entry) return;
+    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    store.setAutopilotChangeOptionsLoading(contactId, entry.id, true);
+    post<{ options: string[] }>('/next-best-response', {
+      mode: 'change-options',
+      transcript: s.messages,
+      clientProfile,
+      currentSuggestion: entry.text,
+    })
+      .then(r => store.setAutopilotChangeOptions(contactId, entry.id, r.options ?? []))
+      .catch(() => store.setAutopilotChangeOptions(contactId, entry.id, []));
+  };
+
+  const handleAutopilotChangeTo = (direction: string) => {
+    if (!slot) return;
+    const contactId = slot.contactId;
+    const s = store.getSlot(contactId);
+    if (!s) return;
+    const rejected = s.autopilotHistory[s.autopilotIndex]?.text ?? s.autopilotPending ?? '';
+    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    store.patchSlot(contactId, { suggestionLoading: true });
+    post<{ suggestedText: string }>('/next-best-response', {
+      mode: 'change-reply', transcript: s.messages, clientProfile, direction, currentSuggestion: rejected,
+    })
+      .then(r => {
+        // Jump to the new candidate; the pause effect (autopilotIndex changed) generates its options.
+        if (r.suggestedText && r.suggestedText.trim()) store.addAutopilotChangeTo(contactId, r.suggestedText, direction);
+        store.patchSlot(contactId, { suggestionLoading: false });
+      })
+      .catch(() => store.patchSlot(contactId, { suggestionLoading: false }));
+  };
+
+  const handleAutopilotMagic = (style: string) => {
+    if (!slot) return;
+    const contactId = slot.contactId;
+    const s = store.getSlot(contactId);
+    const entry = s?.autopilotHistory[s.autopilotIndex];
+    if (!s || !entry) return;
+    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    store.patchSlot(contactId, { suggestionLoading: true });
+    post<{ suggestedText: string }>('/next-best-response', {
+      mode: 'magic-rewrite', transcript: s.messages, clientProfile, currentSuggestion: entry.text, style,
+    })
+      .then(r => {
+        if (r.suggestedText && r.suggestedText.trim()) store.addAutopilotMagic(contactId, r.suggestedText, style);
+        store.patchSlot(contactId, { suggestionLoading: false });
+      })
+      .catch(() => store.patchSlot(contactId, { suggestionLoading: false }));
+  };
+
+  // ── Effect: pre-generate autopilot "Change to" options once the agent pauses ─────────────
+  // Fires when the box's controls become available (pause) and whenever the displayed candidate
+  // changes (paging / a fresh Change-to/Magic jump). Guarded so each entry generates at most once.
+  const autopilotPausedFlag = slot?.autopilotPaused;
+  const autopilotIndexNow = slot?.autopilotIndex;
+  useEffect(() => {
+    if (!slot || slot.autopilotScope === null || !slot.autopilotPaused) return;
+    const entry = slot.autopilotHistory[slot.autopilotIndex];
+    if (!entry || entry.changeOptions !== null || entry.changeOptionsLoading) return;
+    generateAutopilotChangeOptions(slot.contactId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autopilotPausedFlag, autopilotIndexNow, slot?.contactId]);
+
   // ── Effect: Greeting suggestion on first connection ────────────────────
   const connectionToken = slot?.connectionToken;
   useEffect(() => {
@@ -646,7 +766,15 @@ export function ChatColumn({ slotIndex, slot }: Props) {
 
     // Scope turned off — clear timers (flash is handled by exitAutopilot)
     if (scope === null) {
-      if (prevScopeRef.current !== null) clearAutopilotTimers();
+      if (prevScopeRef.current !== null) {
+        clearAutopilotTimers();
+        // Release this contact's init guards so a later re-activation runs its kickoff again. The
+        // guard only exists to dedupe a single activation — left un-reset it made re-activating
+        // autopilot after a mid-task exit a permanent no-op (the task couldn't be resumed).
+        for (const k of Array.from(initRunRef.current)) {
+          if (k.startsWith(`${cid}:`)) initRunRef.current.delete(k);
+        }
+      }
       prevScopeRef.current = null;
       return;
     }
@@ -728,9 +856,13 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       // callback always uses Lambda
       runAutopilotTurn(cid, scope);
     } else {
-      // get-intent / full-auto: use the currently-shown suggestion if available, else call Lambda
+      // get-intent / full-auto: if a task is already in progress (a [TASK:] marker is in the
+      // transcript), always run a fresh Lambda turn so re-activation RESUMES field collection.
+      // Only reuse the currently-shown suggestion for a first activation (greeting / no task yet) —
+      // replaying a stale suggestion mid-task would send an off-task message.
+      const hasTaskMarker = slot.messages.some(m => m.role === 'SYSTEM' && /^\[TASK:/.test(m.content));
       const existingSuggestion = slot.suggestedText?.trim();
-      if (existingSuggestion) {
+      if (existingSuggestion && !hasTaskMarker) {
         autopilotSend(existingSuggestion, cid, scope);
       } else {
         runAutopilotTurn(cid, scope);
@@ -1094,6 +1226,8 @@ export function ChatColumn({ slotIndex, slot }: Props) {
                 onActivateAutopilot={handleActivateAutopilot}
                 onChangeTo={handleChangeTo}
                 onMagic={handleMagic}
+                onAutopilotChangeTo={handleAutopilotChangeTo}
+                onAutopilotMagic={handleAutopilotMagic}
               />
             )}
           </div>
