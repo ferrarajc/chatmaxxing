@@ -23,7 +23,8 @@ interface AgentStore {
     contact: Omit<ContactSlot,
       | 'messages' | 'autopilotScope' | 'suggestedScope' | 'autopilotFlash'
       | 'autopilotPending' | 'autopilotPaused' | 'autopilotSendAt' | 'autopilotPausedRemainingMs'
-      | 'autopilotExitMessage' | 'suggestedText' | 'suggestedResources'
+      | 'autopilotExitMessage' | 'autopilotHistory' | 'autopilotIndex'
+      | 'suggestedText' | 'suggestedResources'
       | 'suggestionHistory' | 'suggestionIndex' | 'suggestionAutoAdvance'
       | 'suggestionLoading' | 'suggestionNewBadge'
       | 'lastAgentMessageAt' | 'lastCustomerMessageAt' | 'connectionToken'
@@ -47,6 +48,24 @@ interface AgentStore {
   addChangeToReply: (contactId: string, text: string, direction: string) => void;
   /** Append a "Magic" (restyled, same-meaning) reply and jump straight to it. */
   addMagicReply: (contactId: string, text: string, style: string) => void;
+
+  // ── Autopilot "sending" box deck (parallel to the suggestion deck above, for the
+  //    staged autopilot reply the agent can page/Change-to/Magic while paused) ──
+  /** Start a fresh single-entry autopilot deck for a newly staged send; mirrors autopilotPending. */
+  initAutopilotDeck: (contactId: string, text: string, source: Suggestion['source']) => void;
+  /** Step the displayed autopilot candidate by delta (clamped); syncs autopilotPending. */
+  paginateAutopilot: (contactId: string, delta: number) => void;
+  /** Edit the currently-displayed autopilot candidate in place; syncs autopilotPending. */
+  editCurrentAutopilotCandidate: (contactId: string, text: string) => void;
+  /** Append a "Change to" autopilot reply and jump straight to it (syncs autopilotPending). */
+  addAutopilotChangeTo: (contactId: string, text: string, direction: string) => void;
+  /** Append a "Magic" autopilot reply and jump straight to it (syncs autopilotPending). */
+  addAutopilotMagic: (contactId: string, text: string, style: string) => void;
+  /** Attach generated "Change to" options to the autopilot deck entry with the given id. */
+  setAutopilotChangeOptions: (contactId: string, entryId: string, options: string[]) => void;
+  /** Mark the given autopilot deck entry's "Change to" options as generating (or done). */
+  setAutopilotChangeOptionsLoading: (contactId: string, entryId: string, loading: boolean) => void;
+
   clearSlot: (contactId: string) => void;
   insertSuggestion: (contactId: string) => void;
   pendingInserts: Set<string>;
@@ -84,6 +103,9 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       autopilotPaused: false,
       autopilotSendAt: null,
       autopilotPausedRemainingMs: null,
+      autopilotHistory: [],
+      autopilotIndex: 0,
+      autopilotSendNow: false,
       autopilotExitMessage: null,
       suggestedText: '',
       suggestedResources: [],
@@ -228,6 +250,97 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         suggestionAutoAdvance: true,
         suggestionNewBadge: false,
       };
+    }) as Slots;
+    set({ slots });
+  },
+
+  // ── Autopilot "sending" box deck ──────────────────────────────────────────
+  initAutopilotDeck: (contactId, text, source) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const entry: Suggestion = {
+        id: nanoid(), text, originalText: text, source,
+        changeOptions: null, changeOptionsLoading: false,
+      };
+      return {
+        ...s,
+        autopilotPending: text,
+        autopilotHistory: [entry],
+        autopilotIndex: 0,
+        autopilotSendNow: false,
+      };
+    }) as Slots;
+    set({ slots });
+  },
+
+  paginateAutopilot: (contactId, delta) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const len = s.autopilotHistory.length;
+      if (len === 0) return s;
+      const newIndex = Math.max(0, Math.min(len - 1, s.autopilotIndex + delta));
+      return { ...s, autopilotIndex: newIndex, autopilotPending: s.autopilotHistory[newIndex].text };
+    }) as Slots;
+    set({ slots });
+  },
+
+  editCurrentAutopilotCandidate: (contactId, text) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const history = s.autopilotHistory.slice();
+      if (s.autopilotIndex >= 0 && s.autopilotIndex < history.length) {
+        // Keep id / originalText / source / options; just update the shown text.
+        history[s.autopilotIndex] = { ...history[s.autopilotIndex], text };
+      }
+      return { ...s, autopilotHistory: history, autopilotPending: text };
+    }) as Slots;
+    set({ slots });
+  },
+
+  addAutopilotChangeTo: (contactId, text, direction) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const entry: Suggestion = {
+        id: nanoid(), text, originalText: text, source: 'change-to',
+        changeDirection: direction, changeOptions: null, changeOptionsLoading: false,
+      };
+      const history = [...s.autopilotHistory, entry];
+      return { ...s, autopilotHistory: history, autopilotIndex: history.length - 1, autopilotPending: text };
+    }) as Slots;
+    set({ slots });
+  },
+
+  addAutopilotMagic: (contactId, text, style) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const entry: Suggestion = {
+        id: nanoid(), text, originalText: text, source: 'magic',
+        magicStyle: style, changeOptions: null, changeOptionsLoading: false,
+      };
+      const history = [...s.autopilotHistory, entry];
+      return { ...s, autopilotHistory: history, autopilotIndex: history.length - 1, autopilotPending: text };
+    }) as Slots;
+    set({ slots });
+  },
+
+  setAutopilotChangeOptions: (contactId, entryId, options) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const history = s.autopilotHistory.map(e =>
+        e.id === entryId ? { ...e, changeOptions: options, changeOptionsLoading: false } : e,
+      );
+      return { ...s, autopilotHistory: history };
+    }) as Slots;
+    set({ slots });
+  },
+
+  setAutopilotChangeOptionsLoading: (contactId, entryId, loading) => {
+    const slots = get().slots.map(s => {
+      if (s?.contactId !== contactId) return s;
+      const history = s.autopilotHistory.map(e =>
+        e.id === entryId ? { ...e, changeOptionsLoading: loading } : e,
+      );
+      return { ...s, autopilotHistory: history };
     }) as Slots;
     set({ slots });
   },
