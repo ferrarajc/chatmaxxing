@@ -1,6 +1,15 @@
 {
-  "generatedAt": 1784543180515,
-  "exportedAt": 1784543196129,
+  "generatedAt": 1784628260003,
+  "exportedAt": 1784628284198,
   "count": 36,
-  "fundsFailedLastRun": []
+  "fundsFailedLastRun": [
+    {
+      "error": "Error: YF chart VCIT: HTTP 400",
+      "ticker": "BFITC"
+    },
+    {
+      "error": "Error: YF chart VCLT: HTTP 400",
+      "ticker": "BFLTC"
+    }
+  ]
 }
