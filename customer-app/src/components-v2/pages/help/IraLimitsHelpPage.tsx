@@ -1,6 +1,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { theme } from '../../../theme';
+// Same shared IRS table that drives the account-page contributions card, so this page
+// cannot quote a limit the client's own remaining-room figure disagrees with.
+import { limitsForYear, openTaxYears } from '../../../../../lambda/shared/contribution-limits';
 
 const card: React.CSSProperties = {
   background: theme.color.surface, borderRadius: theme.radius.lg, padding: '24px',
@@ -8,19 +11,24 @@ const card: React.CSSProperties = {
 };
 
 export function IraLimitsHelpPage() {
+  const taxYear = openTaxYears()[0];
+  const lim = limitsForYear(taxYear);
+  const usd = (n: number) => `$${n.toLocaleString('en-US')}`;
+  const base = usd(lim.base);
+  const withCatchUp = usd(lim.base + lim.catchUp);
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px', fontFamily: theme.font.sans }}>
-      <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, fontFamily: theme.font.serif }}>IRA Contribution Limits 2025</h1>
+      <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, fontFamily: theme.font.serif }}>IRA Contribution Limits {taxYear}</h1>
       <p style={{ margin: '0 0 32px', color: theme.color.textMuted, fontSize: 14 }}>
         Annual contribution limits set by the IRS for Traditional and Roth IRAs. Maximize your tax-advantaged savings every year.
       </p>
 
       <div style={{ background: theme.color.warningSoft, border: `1px solid ${theme.color.warningBorder}`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: theme.color.text, marginBottom: 20 }}>
-        ⚠ Tax laws change annually. Consult a tax professional for advice specific to your situation. Information below reflects 2025 IRS guidelines.
+        ⚠ Tax laws change annually. Consult a tax professional for advice specific to your situation. Information below reflects {taxYear} IRS guidelines.
       </div>
 
       <div style={card}>
-        <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, fontFamily: theme.font.serif }}>2025 Contribution Limits at a Glance</h2>
+        <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, fontFamily: theme.font.serif }}>{taxYear} Contribution Limits at a Glance</h2>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, marginBottom: 16 }}>
           <thead>
             <tr style={{ background: theme.color.bg }}>
@@ -31,10 +39,10 @@ export function IraLimitsHelpPage() {
           </thead>
           <tbody>
             {[
-              { type: 'Traditional IRA', under50: '$7,000', over50: '$8,000' },
-              { type: 'Roth IRA', under50: '$7,000', over50: '$8,000' },
-              { type: 'Combined IRA Limit', under50: '$7,000 total', over50: '$8,000 total' },
-              { type: 'SEP-IRA', under50: '25% of compensation, up to $70,000', over50: 'Same' },
+              { type: 'Traditional IRA', under50: base, over50: withCatchUp },
+              { type: 'Roth IRA', under50: base, over50: withCatchUp },
+              { type: 'Combined IRA Limit', under50: `${base} total`, over50: `${withCatchUp} total` },
+              { type: 'SEP-IRA', under50: `25% of compensation, up to ${usd(lim.dcCap)}`, over50: 'Same' },
             ].map((row, i) => (
               <tr key={row.type} style={{ background: i % 2 === 0 ? 'transparent' : theme.color.bg }}>
                 <td style={{ padding: '8px 12px', borderBottom: `1px solid ${theme.color.border}`, color: theme.color.text }}>{row.type}</td>
@@ -45,7 +53,7 @@ export function IraLimitsHelpPage() {
           </tbody>
         </table>
         <div style={{ background: theme.color.successSoft, border: `1px solid ${theme.color.successBorder}`, borderRadius: 8, padding: '12px 16px', fontSize: 13, color: theme.color.text }}>
-          The $7,000/$8,000 limit applies to the total of all your Traditional and Roth IRA contributions combined — not per account.
+          The {base}/{withCatchUp} limit applies to the total of all your Traditional and Roth IRA contributions combined — not per account. Your own running total across every IRA you hold with us is on each IRA account page.
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { theme } from '../../../theme';
 import { FUND_BY_TICKER } from '../../../data/funds';
 import { useMarketData } from '../../../hooks/useMarketData';
@@ -170,7 +170,15 @@ export function BuyPage() {
 
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [bankAccountId, setBankAccountId] = useState(activePersona.bankAccounts[0]?.id ?? '');
-  const [accountId, setAccountId] = useState(activePersona.accounts[0]?.id ?? '');
+  // `?account=` arrives from an account page's Contribute button (carried through the
+  // fund picker). It only seeds the initial selection — the client can still change it.
+  const [searchParams] = useSearchParams();
+  const preselectedAccountId = searchParams.get('account');
+  const [accountId, setAccountId] = useState(
+    activePersona.accounts.some(a => a.id === preselectedAccountId)
+      ? preselectedAccountId!
+      : activePersona.accounts[0]?.id ?? '',
+  );
   const [amountStr, setAmountStr] = useState('');
   const [purchaseType, setPurchaseType] = useState<'recurring' | 'onetime'>('recurring');
   const [frequency, setFrequency] = useState<AutoInvestSchedule['frequency']>('Monthly');

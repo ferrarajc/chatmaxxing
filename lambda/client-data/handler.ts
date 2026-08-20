@@ -3,6 +3,7 @@ import { GetCommand, UpdateCommand, QueryCommand, PutCommand } from '@aws-sdk/li
 import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
 import { buildTransactionRow, makeAcctKey, TxnType } from '../shared/transaction-history';
+import { computeContributionSummary } from '../shared/contributions';
 
 type Action =
   | 'get-all'
@@ -10,6 +11,7 @@ type Action =
   | 'get-beneficiaries' | 'put-beneficiaries'
   | 'get-auto-invest'   | 'put-auto-invest'
   | 'get-rmd'           | 'put-rmd'
+  | 'get-contributions'              // IRA contribution room, aggregated across ALL IRAs
   | 'put-profile'
   | 'put-account-settings'          // My Account hub — generic allowlisted partial write
   | 'put-holdings'
@@ -344,6 +346,18 @@ export const handler = async (
           ProjectionExpression: 'rmd',
         }));
         return jsonResponse(200, { rmd: result.Item?.rmd ?? { eligible: false } });
+      }
+
+      // IRA contribution summary. Read-only and derived — the aggregation across all of
+      // the client's IRAs lives in shared/contributions.ts so this API, the account-page
+      // card, and the get_contribution_room AI tool all return the same numbers.
+      case 'get-contributions': {
+        // `asOf` shifts the evaluation date. It only moves a read-only calculation, and
+        // it is what makes the prior-tax-year path testable outside January–April.
+        const p = (data ?? {}) as { asOf?: string };
+        const asOf = p.asOf && /^\d{4}-\d{2}-\d{2}$/.test(p.asOf) ? p.asOf : undefined;
+        const summary = await computeContributionSummary(clientId, asOf);
+        return jsonResponse(200, summary);
       }
 
       case 'put-rmd': {

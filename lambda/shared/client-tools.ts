@@ -1,5 +1,6 @@
 import { GetCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from './dynamo-client';
+import { computeContributionSummary, formatContributionSummary } from './contributions';
 
 export interface OpenAITool {
   type: 'function';
@@ -88,6 +89,14 @@ export const ALL_CLIENT_TOOLS: OpenAITool[] = [
   {
     type: 'function',
     function: {
+      name: 'get_contribution_room',
+      description: "Fetch how much the client has contributed to their IRAs so far in the current tax year, their age-adjusted annual contribution limit, and how much room remains. The figure is aggregated across ALL of the client's Traditional and Roth IRAs, which is how the IRS applies the limit — it is one limit per person, not per account. Also covers the PRIOR tax year while its deadline is still open (roughly January through April 15), and reports SEP-IRA contributions in a SEPARATE bucket with its own, much larger limit. Use this for any question about how much someone has contributed, how much more they can contribute, whether they have maxed out, catch-up contributions, or contribution deadlines. This is account fact-lookup, NOT investment advice — answer it. Do not compute contribution room yourself from the transaction list; call this.",
+      parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_funds',
       description: "Fetch Bob's Mutual Funds' FULL fund lineup (every fund offered): ticker, name, asset-class family (US Equity / Sector Equity / International / Fixed Income), annual expense ratio, and risk level. Use this whenever the customer asks what funds are available, for fund options/expense ratios, or to look up a fund by name or ticker. This is the authoritative catalog — do not rely on memory. Live prices/returns are NOT included here.",
       parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
@@ -108,7 +117,11 @@ let fundsCache: { text: string; expiresAt: number } | null = null;
 const FUNDS_CACHE_TTL_MS = 60 * 60 * 1000;
 
 function cap(s: string): string {
-  return s.length > MAX_RESULT_CHARS ? s.slice(0, MAX_RESULT_CHARS) + '...[truncated]' : s;
+  return capTo(s, MAX_RESULT_CHARS);
+}
+
+function capTo(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max) + '...[truncated]' : s;
 }
 
 function fmt(n: number): string {
@@ -272,6 +285,15 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
         `Tax withholding: ${(rmd.taxWithholding as number | undefined) ?? 0}%`,
       ];
       return cap(lines.join('\n'));
+    }
+
+    case 'get_contribution_room': {
+      const summary = await computeContributionSummary(clientId);
+      // Deliberately capped higher than the other tools: this payload can carry two tax
+      // years plus a SEP bucket, and the caveat lines that must accompany any quoted
+      // figure sit at the END. Truncating at the shared 2000 would drop exactly the part
+      // the model is required to repeat.
+      return capTo(formatContributionSummary(summary), 3600);
     }
 
     case 'get_chat_history': {

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { PERSONAS, Persona, Beneficiary, AutoInvestSchedule, RmdData, WatchlistEntry } from '../data/personas';
 import { post } from '../api/client';
+import { classifyAccount } from '../../../lambda/shared/contribution-limits';
 
 // Slice of the persona the My Account hub can write. Keys map 1:1 to the
 // `put-account-settings` allowlist in lambda/client-data/handler.ts.
@@ -230,10 +231,19 @@ export const useClientStore = create<ClientStore>((set, get) => {
       }
 
       const accountType = activePersona.accounts.find(a => a.id === accountId)?.type ?? accountId;
+
+      // New money going into a retirement account IS an IRA contribution, and must be
+      // recorded as one — it counts against the annual limit and feeds the contributions
+      // card on the account page. Everything reachable from this store is funded from a
+      // linked bank account (BuyPage requires one), so the destination is what decides.
+      // Note the SIGN FLIP: a contribution is money IN (positive, renders green in the
+      // transactions table), whereas a plain purchase is settlement cash out (negative).
+      const isContribution = classifyAccount(accountType) !== 'taxable'
+        && classifyAccount(accountType) !== 'other';
       const newTxn = {
         date: new Date().toISOString().slice(0, 10),
-        description: `Purchase - ${fundName}`,
-        amount: -amount,
+        description: isContribution ? `Contribution - ${fundName}` : `Purchase - ${fundName}`,
+        amount: isContribution ? amount : -amount,
         account: accountType,
         accountId,
         status: 'Pending',
@@ -262,7 +272,11 @@ export const useClientStore = create<ClientStore>((set, get) => {
         post<{ ok: boolean }>('/client-data', { action: 'put-holdings', clientId, data: newHoldings }),
         post<{ ok: boolean }>('/client-data', {
           action: 'append-transaction', clientId,
-          data: { description: newTxn.description, amount: newTxn.amount, account: accountType, accountId, type: 'purchase', status: 'Pending' },
+          data: {
+            description: newTxn.description, amount: newTxn.amount,
+            account: accountType, accountId,
+            type: isContribution ? 'contribution' : 'purchase', status: 'Pending',
+          },
         }),
         post<{ ok: boolean }>('/client-data', {
           action: 'put-profile', clientId,

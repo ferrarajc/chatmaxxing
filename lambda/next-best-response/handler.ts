@@ -1,6 +1,7 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { invokeWithTools, invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { NBR_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
+import { isAdviceRequest } from '../shared/advice-guard';
 import {
   ChatMessage,
   ClientProfile,
@@ -15,8 +16,12 @@ import {
 const RESOURCE_LIST = KNOWLEDGE_BASE.map(r => `${r.id}: ${r.title}`).join('\n');
 
 // Deterministic detectors: advice/trade requests should always suggest a callback.
-const ADVICE_RE = /\b(what|which|any|recommend|suggest|your)\b[^?.!]{0,50}\b(stock|stocks|fund|funds|invest|investment|investments|portfolio|allocation)\b|\b(should i (buy|sell|invest|put|move)|what should i do with|where should i (invest|put)|investment advice|financial advice|best (stock|stocks|fund|funds|investment|investments)|hot (stock|stocks|tip|tips))\b/i;
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
+
+// Mirrors CONTRIBUTION_DATA_RULE in autopilot-turn so an agent's suggested reply reaches
+// for the same tool, and never suggests asking a client for their age.
+const NBR_CONTRIBUTION_RULE = `
+If the client asks about IRA contributions — how much they have put in, how much room is left, catch-up contributions, maxing out, or a deadline — call get_contribution_room and write the reply from what it returns. Never suggest asking the client for their age or their prior contributions; we hold both. The limit is one limit across ALL their Traditional and Roth IRAs combined; a SEP-IRA has its own. Say that the figure counts only contributions made at Bob's.`;
 
 const NBR_HALLUCINATION_RULE = `
 
@@ -155,7 +160,7 @@ async function changeReply(
 ): Promise<APIGatewayProxyResultV2> {
   try {
     const executor = createToolExecutor(profile.clientId, {});
-    const system = CHANGE_REPLY_SYSTEM(profile, direction, currentSuggestion.trim()) + NBR_HALLUCINATION_RULE;
+    const system = CHANGE_REPLY_SYSTEM(profile, direction, currentSuggestion.trim()) + NBR_HALLUCINATION_RULE + NBR_CONTRIBUTION_RULE;
     const result = await invokeWithTools(
       system,
       [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
@@ -255,7 +260,7 @@ export const handler = async (
     try {
       const executor = createToolExecutor(profile.clientId, {});
       const result = await invokeWithTools(
-        SYSTEM_PROMPT(profile) + NBR_HALLUCINATION_RULE,
+        SYSTEM_PROMPT(profile) + NBR_HALLUCINATION_RULE + NBR_CONTRIBUTION_RULE,
         [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
         NBR_CLIENT_TOOLS,
         executor,
@@ -288,7 +293,7 @@ export const handler = async (
     // Deterministic guardrail: financial-advice or trade requests must suggest a
     // callback with a licensed advisor, regardless of the LLM's judgment.
     const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
-    if (ADVICE_RE.test(lastCustomerMsg) || TRADE_RE.test(lastCustomerMsg)) {
+    if (isAdviceRequest(lastCustomerMsg) || TRADE_RE.test(lastCustomerMsg)) {
       suggestedScope = 'callback';
     }
 
