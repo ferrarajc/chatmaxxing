@@ -266,27 +266,26 @@ export function AutopilotMenu({ onSelect, onClose, anchorRef }: Props) {
         />
       </div>
 
-      {filtering ? (
-        <div style={{ overflowY: 'auto', minHeight: 0, paddingBottom: 4 }}>
-          {visible.length === 0 ? (
+      {/* One scroll area for the whole list. The globals sit at the top so they are
+          the first thing seen on open; scrolling them away is fine. Only the header
+          and the filter box stay pinned. */}
+      <div style={{ overflowY: 'auto', minHeight: 0, paddingBottom: 4 }}>
+        {filtering ? (
+          visible.length === 0 ? (
             <div style={{ padding: '10px 12px', fontSize: 12, color: '#9ca3af' }}>
               No automations match “{query.trim()}”.
             </div>
-          ) : visible.map(rowFor)}
-        </div>
-      ) : (
-        <>
-          {/* Global automations are pinned: never scroll out of view on open. */}
-          <div style={{ flexShrink: 0, borderBottom: '1px solid #f3f4f6', paddingBottom: 4 }}>
+          ) : visible.map(rowFor)
+        ) : (
+          <>
             <SectionLabel>Global</SectionLabel>
             {GLOBAL_AUTOMATIONS.map(rowFor)}
-          </div>
-          <div style={{ overflowY: 'auto', minHeight: 0, paddingBottom: 4 }}>
+            <div style={{ borderTop: '1px solid #f3f4f6', margin: '4px 0 0' }} />
             <SectionLabel>Tasks</SectionLabel>
             {TASK_AUTOMATIONS.map(rowFor)}
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>,
     document.body,
   );
