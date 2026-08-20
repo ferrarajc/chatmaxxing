@@ -152,6 +152,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   const initRunRef = useRef<Set<string>>(new Set());
   // Track previous scope to detect changes
   const prevScopeRef = useRef<AutopilotScope | null>(null);
+  // Track the previously forced task alongside it — picking a different task row
+  // keeps the same 'get-intent' scope, so scope alone can't detect the change.
+  const prevTaskRef = useRef<string | null>(null);
   // Per-contact "send generation" — each autopilotSend bumps it and captures its own number;
   // a later send (e.g. a customer reply arriving mid-edit) supersedes older loops, which then
   // abort silently instead of double-sending. Ref (not store) so it never triggers a re-render.
@@ -415,6 +418,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
     store.patchSlot(contactId, {
       autopilotScope: null,
+      pendingTaskId: null,
       autopilotFlash: true,
       autopilotPending: null,
       autopilotPaused: false,
@@ -434,7 +438,11 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   };
 
   // ── Autopilot: call Lambda and handle result ───────────────────────────
-  const runAutopilotTurn = async (contactId: string, scope: AutopilotScope) => {
+  /** `forceTaskId` (set when the agent picks a Task row in the ✈ menu) tells the
+   *  Lambda to run that task expert instead of classifying the intent itself. */
+  const runAutopilotTurn = async (
+    contactId: string, scope: AutopilotScope, forceTaskId?: string | null,
+  ) => {
     const currentSlot = store.getSlot(contactId);
     if (!currentSlot || currentSlot.autopilotScope !== scope) return;
 
@@ -446,6 +454,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         clientProfile,
         scope,
         currentIntent: currentSlot.intentSummary,
+        forceTaskId: forceTaskId ?? undefined,
       });
     } catch (e) {
       // Don't hard-exit on a single transient failure (heavy Change-to/Magic/NBR traffic makes one
@@ -458,6 +467,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         const s = store.getSlot(contactId);
         result = await post<AutopilotTurnResult>('/autopilot-turn', {
           transcript: s!.messages, clientProfile, scope, currentIntent: s!.intentSummary,
+          forceTaskId: forceTaskId ?? undefined,
         });
       } catch (e2) {
         console.warn('Autopilot turn failed after retry', e2);
@@ -540,6 +550,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         proposedAction: result.proposedAction,
         proposedActionEvidence: null,
         autopilotScope: null,
+        pendingTaskId: null,
         autopilotFlash: true,
         autopilotPending: null,
         autopilotPaused: false,
@@ -759,10 +770,14 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   // ── Effect: Autopilot scope activation ────────────────────────────────
   const autopilotScope = slot?.autopilotScope;
   const contactId = slot?.contactId;
+  // Picking a Task row re-triggers this effect even when the scope itself doesn't
+  // change (task rows all activate 'get-intent'), so it is a dependency too.
+  const pendingTaskId = slot?.pendingTaskId ?? null;
   useEffect(() => {
     if (!slot || slot.status !== 'active') return;
     const scope = slot.autopilotScope;
     const cid = slot.contactId;
+    const forcedTask = slot.pendingTaskId;
 
     // Scope turned off — clear timers (flash is handled by exitAutopilot)
     if (scope === null) {
@@ -776,17 +791,31 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         }
       }
       prevScopeRef.current = null;
+      prevTaskRef.current = null;
       return;
     }
 
     // No change
-    if (scope === prevScopeRef.current) return;
+    if (scope === prevScopeRef.current && forcedTask === prevTaskRef.current) return;
     prevScopeRef.current = scope;
+    prevTaskRef.current = forcedTask;
     clearAutopilotTimers();
 
-    const initKey = `${cid}:${scope}`;
+    const initKey = `${cid}:${scope}:${forcedTask ?? ''}`;
     if (initRunRef.current.has(initKey)) return;
     initRunRef.current.add(initKey);
+
+    // A task picked straight from the ✈ menu always runs a fresh Lambda turn with
+    // that expert forced — never a canned scope script, never a stale suggestion.
+    if (forcedTask) {
+      // pendingTaskId is deliberately NOT cleared here — clearing it would change
+      // this effect's own dependency and re-fire it into the generic branch. It
+      // lives until autopilot exits (every exit site clears it) and doubles as the
+      // source for the header label. Following turns are driven by the [TASK: id]
+      // marker runAutopilotTurn appends, so forceTaskId is only sent on this one.
+      runAutopilotTurn(cid, scope, forcedTask);
+      return;
+    }
 
     if (scope === 'researching') {
       // Check if agent has already excused themselves
@@ -868,7 +897,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         runAutopilotTurn(cid, scope);
       }
     }
-  }, [autopilotScope, contactId]);
+  }, [autopilotScope, contactId, pendingTaskId]);
 
   // ── Effect: NBR + reactive autopilot on customer message ──────────────
   const lastCustomerMsg = slot?.lastCustomerMessageAt;
@@ -974,12 +1003,14 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     }
   };
 
-  const handleActivateAutopilot = (scope: AutopilotScope) => {
+  /** `taskId` is set when the agent picked a Task row in the ✈ menu — that task
+   *  expert starts immediately instead of waiting for intent classification. */
+  const handleActivateAutopilot = (scope: AutopilotScope, taskId?: string) => {
     if (!slot) return;
     // Keep suggestedText — the scope activation effect will consume it for get-intent/full-auto.
     // Reset any stale pause/countdown state so a fresh activation starts clean & unpaused.
     store.patchSlot(slot.contactId, {
-      autopilotScope: scope, suggestedScope: null,
+      autopilotScope: scope, suggestedScope: null, pendingTaskId: taskId ?? null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
   };

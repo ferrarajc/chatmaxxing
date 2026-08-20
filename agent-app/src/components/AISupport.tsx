@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { ContactSlot, AutopilotScope, AUTOPILOT_SCOPE_LABELS } from '../types';
+import { ContactSlot, AutopilotScope } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { AutopilotMenu } from './AutopilotMenu';
+import { AutomationItem, activeAutomationLabel } from '../data/automations';
 import { AutopilotCountdown } from './AutopilotCountdown';
 import { ChangeToMenu } from './ChangeToMenu';
 import { MagicMenu } from './MagicMenu';
@@ -15,7 +16,8 @@ interface Props {
   onSend: (message: string) => void;
   /** Send a resource link (does NOT refresh the suggestion). */
   onSendResource: (message: string) => void;
-  onActivateAutopilot: (scope: AutopilotScope) => void;
+  /** Start an automation. `taskId` forces a specific task expert (menu Task rows). */
+  onActivateAutopilot: (scope: AutopilotScope, taskId?: string) => void;
   /** Author a brand-new suggested reply along the chosen "Change to" direction (new meaning). */
   onChangeTo: (direction: string) => void;
   /** Restyle the current suggested reply per a "Magic" preset/custom style (same meaning). */
@@ -101,7 +103,7 @@ export function AISupport({
 
   const exitAutopilot = () => {
     store.patchSlot(slot.contactId, {
-      autopilotScope: null, autopilotFlash: true, autopilotPending: null,
+      autopilotScope: null, pendingTaskId: null, autopilotFlash: true, autopilotPending: null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
     setTimeout(() => store.patchSlot(slot.contactId, { autopilotFlash: false }), 100);
@@ -123,13 +125,15 @@ export function AISupport({
     setMenuOpen(prev => !prev);
   };
 
-  const handleScopeSelect = (scope: AutopilotScope) => {
+  const handleAutomationSelect = (item: AutomationItem) => {
     setMenuOpen(false);
-    onActivateAutopilot(scope);
+    onActivateAutopilot(item.scope, item.kind === 'task' ? item.taskId : undefined);
   };
 
   const isActive = slot.autopilotScope !== null;
-  const displayScope = slot.autopilotScope ?? slot.suggestedScope;
+  // While a task expert runs this reads the TASK ("Change beneficiaries"), not
+  // the scope it rides on ("Get intent").
+  const displayLabel = activeAutomationLabel(slot);
   const scopeColor = isActive ? '#22c55e' : '#374151';
 
   return (
@@ -153,7 +157,7 @@ export function AISupport({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2 }}>
-          {displayScope && (
+          {displayLabel && (
             <>
               <style>{`
                 @keyframes scopePop {
@@ -163,14 +167,14 @@ export function AISupport({
                 }
               `}</style>
               <span
-                key={displayScope}
+                key={displayLabel}
                 style={{
                   fontSize: 13, fontWeight: 600, color: scopeColor,
                   display: 'inline-block',
                   animation: !isActive ? 'scopePop 900ms ease-out forwards' : 'none',
                 }}
               >
-                {AUTOPILOT_SCOPE_LABELS[displayScope]}
+                {displayLabel}
               </span>
             </>
           )}
@@ -191,7 +195,7 @@ export function AISupport({
             >✈</button>
             {menuOpen && (
               <AutopilotMenu
-                onSelect={handleScopeSelect}
+                onSelect={handleAutomationSelect}
                 onClose={() => setMenuOpen(false)}
                 anchorRef={autopilotBtnRef}
               />

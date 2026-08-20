@@ -106,9 +106,16 @@ This is the core intelligence of the platform. It is a single Lambda function (~
 | `callback` | Routing | Signals that a callback scope is warranted |
 | `researching` | Agent manual | Holds pattern while agent investigates |
 
+**Starting an automation (the ✈ menu):** The agent's autopilot menu lists every automation the platform can run, in two labeled groups. **Global automations** (🌐 — Get intent, Idle check, Researching, Full auto) govern how the AI handles the conversation as a whole and are pinned at the top so they are always visible. **Task automations** (📄) are the 20 structured processes that solicit fields and produce a recommended-action mini-form — everything from *Change beneficiaries* to *Authorize an agent* to *Schedule a callback* — listed alphabetically. A filter box at the top of the menu finds any of them by name or by a related term (typing "beneficiary", "resched" or "rollover" all work), with arrow keys and Enter to start one.
+
+Previously a task automation could only be reached indirectly: the agent had to start Get intent and wait for the AI to infer which task the client wanted. If the agent hadn't started Get intent — their choice — and the client turned out to be, say, changing beneficiaries, the most valuable automation in the product was out of reach at exactly the moment it mattered. Now the agent picks the task directly and the matching expert starts immediately, reading the conversation so far as its context: it opens on-topic, skips anything the client has already said, and collects only what is still missing. A single chat can run several task automations in sequence.
+
 **The get-intent two-phase architecture:**
 
 *Phase 1 — Task Identification:*
+
+If the agent started the task from the ✈ menu, that choice is honored verbatim and steps 1–2 are skipped. Otherwise:
+
 1. Keyword matching against the TASKS catalog (fast, zero LLM calls)
 2. LLM fallback via Bedrock Nova Micro when keywords don't match (e.g., "give his wife access")
 3. Once the task is identified, the full task-expert system prompt is invoked for the first agent turn

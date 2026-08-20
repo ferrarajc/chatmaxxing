@@ -2297,6 +2297,7 @@ export const handler = async (
       currentIntent,
       currentPage,
       proposedAction,
+      forceTaskId,
     }: {
       transcript: ChatMessage[];
       clientProfile: ClientProfile;
@@ -2304,6 +2305,11 @@ export const handler = async (
       currentIntent?: string;
       currentPage?: string;
       proposedAction?: { taskId?: string; fields?: LocateEvidenceField[] } | null;
+      /** get-intent only: run THIS task expert instead of classifying the intent.
+       *  Set when an agent starts a task automation straight from the ✈ menu, so
+       *  the expert is available even when the conversation never surfaced the
+       *  intent the classifier would have needed. Unknown ids are ignored. */
+      forceTaskId?: string;
     } = JSON.parse(event.body ?? '{}');
 
     if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
@@ -2328,6 +2334,12 @@ export const handler = async (
 
     const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
 
+    // An agent-chosen task is an explicit instruction: it outranks the advice /
+    // callback-intent redirects below and skips intent classification entirely.
+    const forcedTask = scope === 'get-intent' && forceTaskId
+      ? TASKS.find(t => t.id === forceTaskId)
+      : undefined;
+
     // Has the agent already told the client a callback is being arranged?
     const callbackExplained = transcript.some(m =>
       m.role === 'AGENT' &&
@@ -2336,7 +2348,7 @@ export const handler = async (
     // Financial-advice requests must route to a callback with a licensed advisor —
     // and must NOT be swallowed by task identification (e.g. "best stocks to BUY"
     // must not match the place-purchase task). Short-circuit before any task logic.
-    if (scope === 'get-intent' && ADVICE_RE.test(lastCustomerMsg)) {
+    if (scope === 'get-intent' && !forcedTask && ADVICE_RE.test(lastCustomerMsg)) {
       return jsonResponse(200, {
         response: "I'm not permitted to provide personalized investment advice — that requires a licensed financial advisor. I can arrange a callback with one of our advisors who can give you tailored guidance. Would that work?",
         shouldExitAutopilot: true,
@@ -2356,7 +2368,8 @@ export const handler = async (
     if (scope === 'get-intent') {
       // If callback intent — suggest switching to the callback scope immediately
       // Exception: cancel/reschedule of an existing callback is its own task, not a new callback request
-      if (!CANCEL_RESCHEDULE_CALLBACK_RE.test(currentIntent ?? '') &&
+      if (!forcedTask &&
+          !CANCEL_RESCHEDULE_CALLBACK_RE.test(currentIntent ?? '') &&
           (CALLBACK_INTENT_RE.test(currentIntent ?? '') || CALLBACK_INTENT_RE.test(lastCustomerMsg))) {
         return jsonResponse(200, {
           response: '',
@@ -2370,13 +2383,19 @@ export const handler = async (
         });
       }
 
-      // Check if a task has already been identified (look for [TASK: id] in transcript)
+      // Check if a task has already been identified (look for [TASK: id] in transcript).
+      // The LAST marker wins: a chat can run several tasks in sequence (finish
+      // beneficiaries, then start account access), and taking the first one would
+      // pin the conversation to the task that already completed.
       const taskMarker = transcript
         .filter(m => m.role === 'SYSTEM')
+        .reverse()
         .map(m => m.content.match(/^\[TASK:\s*([^\]]+)\]$/))
         .find(Boolean);
 
-      const activeTaskId = taskMarker?.[1]?.trim() ?? null;
+      // A forced task starts fresh (Phase 1), ignoring any marker already in the
+      // transcript — the agent just told us which expert to run.
+      const activeTaskId = forcedTask ? null : (taskMarker?.[1]?.trim() ?? null);
 
       if (activeTaskId) {
         // Phase 2: LLM expert owns the entire task conversation
@@ -2462,7 +2481,7 @@ export const handler = async (
       } else {
         // Phase 1: task identification — try keyword match first (no LLM call)
         const accountTypes = profile.accounts.map(a => a.type);
-        const matchedTask = matchTaskByIntent(currentIntent ?? '', accountTypes);
+        const matchedTask = forcedTask ?? matchTaskByIntent(currentIntent ?? '', accountTypes);
 
         // LLM fallback when keyword match misses (e.g. "give his wife access" vs keyword "give access")
         const resolvedTask = matchedTask
