@@ -1,5 +1,11 @@
 // Default data for all 4 demo clients — used by reset-all-data Lambda and CDK seed.
 // This is the single source of truth for factory-reset values.
+//
+// Anything dated relative to "now" is DERIVED from DEMO_TODAY (the hand-bumped demo
+// clock in transaction-status.ts) rather than hardcoded, so the periodic refresh is a
+// one-line bump plus a reseed. See the bottom of this file for those derivations.
+
+import { DEMO_TODAY } from './transaction-status';
 
 export interface HoldingEntry {
   name: string;
@@ -635,31 +641,41 @@ const monthEndDay = (y: number, m: number) =>
   [31, (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
 
 /**
- * Month-end balances from 2023-12-31 through 2025-03-31, hitting the prior-year-start and
- * current-year-start anchors exactly (so a YTD/1-yr return is cleanly recoverable), ending just
- * shy of the live balance (which is "today"). A seeded wobble on interior months keeps it lifelike
- * without disturbing the anchors.
+ * Month-end balances covering the full prior calendar year plus the completed months of
+ * the current one, hitting the prior-year-start and current-year-start anchors exactly
+ * (so a YTD / 1-yr return is cleanly recoverable), ending just shy of the live balance
+ * (which is "today"). A seeded wobble on interior months keeps it lifelike without
+ * disturbing the anchors.
+ *
+ * The window is anchored to DEMO_TODAY, so bumping the demo clock re-bases the whole
+ * series. That matters: the `get_balance_history` AI tool tells the model to derive YTD
+ * return from these points, so a stale window would make the AI's arithmetic wrong.
  */
 function genBalanceHistory(current: number, ytdPct: number, priorYearPct: number, seedKey: string): BalancePoint[] {
-  const startOfYear = current / (1 + ytdPct);      // 2024-12-31
-  const startOfPrior = startOfYear / (1 + priorYearPct); // 2023-12-31
+  const nowYear = Number(DEMO_TODAY.slice(0, 4));
+  const nowMonth = Number(DEMO_TODAY.slice(5, 7));
+  const priorYear = nowYear - 1;
+  const ytdSteps = Math.max(1, nowMonth - 1);     // completed month-ends so far this year
+
+  const startOfYear = current / (1 + ytdPct);            // Dec 31 of the prior year
+  const startOfPrior = startOfYear / (1 + priorYearPct); // Dec 31 two years back
   let seed = 0;
   for (const ch of seedKey) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
   const wobble = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return ((seed % 1000) / 1000 - 0.5) * 0.012; }; // ±0.6%
 
-  const pts: BalancePoint[] = [{ asOf: '2023-12-31', balance: round2(startOfPrior) }];
+  const pts: BalancePoint[] = [{ asOf: `${priorYear - 1}-12-31`, balance: round2(startOfPrior) }];
   const rPrior = Math.pow(1 + priorYearPct, 1 / 12) - 1;
   let b = startOfPrior;
   for (let m = 1; m <= 12; m++) {
     b *= 1 + rPrior;
-    const value = m === 12 ? startOfYear : b * (1 + wobble());     // force Dec '24 = start-of-year anchor
-    pts.push({ asOf: `2024-${String(m).padStart(2, '0')}-${monthEndDay(2024, m)}`, balance: round2(value) });
+    const value = m === 12 ? startOfYear : b * (1 + wobble());     // force Dec = start-of-year anchor
+    pts.push({ asOf: `${priorYear}-${String(m).padStart(2, '0')}-${monthEndDay(priorYear, m)}`, balance: round2(value) });
   }
-  const rYtd = Math.pow(1 + ytdPct, 1 / 4) - 1;                    // ~4 steps from start-of-year to "now"
+  const rYtd = Math.pow(1 + ytdPct, 1 / ytdSteps) - 1;             // start-of-year -> "now"
   b = startOfYear;
-  for (let m = 1; m <= 3; m++) {
+  for (let m = 1; m <= ytdSteps; m++) {
     b *= 1 + rYtd;
-    pts.push({ asOf: `2025-${String(m).padStart(2, '0')}-${monthEndDay(2025, m)}`, balance: round2(b * (1 + wobble())) });
+    pts.push({ asOf: `${nowYear}-${String(m).padStart(2, '0')}-${monthEndDay(nowYear, m)}`, balance: round2(b * (1 + wobble())) });
   }
   return pts;
 }
@@ -678,9 +694,49 @@ const ACCOUNT_RETURNS: Record<string, { ytd: number; prior: number }> = {
   'acc-403': { ytd: 0.021, prior: 0.061 }, // Robert — Taxable
 };
 
+// ── Derivations anchored to the demo clock ──────────────────────────────────
+// These run once at module load and overwrite the literals above, so bumping
+// DEMO_TODAY is the only edit needed to move the whole demo world forward.
+
+/**
+ * Next occurrence of a recurring schedule strictly after the demo clock.
+ * Monthly lands on `dayOfMonth`; Quarterly lands on the 1st of the next
+ * Jan/Apr/Jul/Oct — matching how transaction-history.ts emits the ledger rows, so
+ * the "Scheduled" row and the schedule's own nextDate always agree.
+ */
+function nextScheduleDate(frequency: string, dayOfMonth: number | undefined, from: string = DEMO_TODAY): string {
+  const y = Number(from.slice(0, 4));
+  const m0 = Number(from.slice(5, 7)) - 1;
+  const quarterly = frequency.toLowerCase().startsWith('quarter');
+  const day = quarterly ? 1 : (dayOfMonth ?? 1);
+  for (let step = 0; step <= 24; step++) {
+    const d = new Date(Date.UTC(y, m0 + step, 1));
+    if (quarterly && d.getUTCMonth() % 3 !== 0) continue;
+    const lastDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+    const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
+    if (iso > from) return iso;
+  }
+  return from;
+}
+
+/** Re-base an RMD block onto the current demo year (deadline, distribution history). */
+function rebaseRmd(rmd: RmdEntry): void {
+  if (!rmd.eligible) return;
+  const y = Number(DEMO_TODAY.slice(0, 4));
+  rmd.nextDeadline = `${y}-12-31`;
+  const dists = rmd.distributions ?? [];
+  // Newest first: a partial taken this year, then the two prior full-year ones.
+  const years = [y, y - 1, y - 2];
+  rmd.distributions = dists.map((d, i) => ({ ...d, date: `${years[i] ?? y - i}${d.date.slice(4)}` }));
+}
+
 for (const client of Object.values(DEFAULT_CLIENT_DATA)) {
   for (const account of client.accounts) {
     const r = ACCOUNT_RETURNS[account.id];
     if (r) account.balanceHistory = genBalanceHistory(account.balance, r.ytd, r.prior, account.id);
   }
+  for (const schedule of client.autoInvest) {
+    if (schedule.active) schedule.nextDate = nextScheduleDate(schedule.frequency, schedule.dayOfMonth);
+  }
+  rebaseRmd(client.rmd);
 }

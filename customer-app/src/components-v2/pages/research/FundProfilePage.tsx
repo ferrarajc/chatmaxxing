@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { theme } from '../../../theme';
 import { AllocationSlice, Distribution, FundDef } from '../../../data/funds';
 import { useFunds } from '../../../hooks/useFunds';
@@ -497,6 +497,11 @@ function YourHoldings({ ticker, fundName, currentPrice }: { ticker: string; fund
 
 export function FundProfilePage() {
   const { ticker } = useParams<{ ticker: string }>();
+  // Preserved when the client arrived from an account page's Contribute button, so the
+  // destination account survives the detour through a fund's profile.
+  const [searchParams] = useSearchParams();
+  const intoAccountId = searchParams.get('account');
+  const buyQs = intoAccountId ? `?account=${encodeURIComponent(intoAccountId)}` : '';
   const { byTicker } = useFunds();
   const fundDef = byTicker.get(ticker ?? '');
   const { fundQuote, loading } = useMarketData();
@@ -611,7 +616,7 @@ export function FundProfilePage() {
                 {isWatching ? '★ Watching' : '☆ Watch'}
               </button>
               <Link
-                to={`/research/fund/${fundDef.ticker}/buy`}
+                to={`/research/fund/${fundDef.ticker}/buy${buyQs}`}
                 style={{
                   display: 'inline-block', padding: '10px 24px',
                   background: theme.color.accent, color: '#fff',

@@ -4,6 +4,7 @@ import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
 import { FUND_PRICES } from '../shared/client-defaults';
 import { buildTransactionRow, TxnType } from '../shared/transaction-history';
+import { isIraAccount } from '../shared/contribution-limits';
 
 interface ExecuteTaskRequest {
   taskId: string;
@@ -378,12 +379,21 @@ export const handler = async (
         const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
 
         await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        // New money into a retirement account is an IRA CONTRIBUTION, not a plain buy —
+        // it counts against the annual limit and must feed the contributions card. This
+        // mirrors clientStore.buyFund so a contribution made through an agent or
+        // autopilot is recorded identically to one made through the portal. The task is
+        // already named "Buy / Make a Contribution"; this makes the ledger agree.
+        // Note the SIGN FLIP: a contribution is money in (positive).
+        const purchaseIsContribution = isIraAccount(accountType);
         await appendTransactionRows(clientId, [{
-          description: `Purchase - ${fundInfo.name}`,
-          amount: -amount,
+          description: purchaseIsContribution
+            ? `Contribution - ${fundInfo.name}`
+            : `Purchase - ${fundInfo.name}`,
+          amount: purchaseIsContribution ? amount : -amount,
           account: accountType,
           accountId,
-          type: 'purchase',
+          type: purchaseIsContribution ? 'contribution' : 'purchase',
         }]);
         return jsonResponse(200, {
           success: true,

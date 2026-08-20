@@ -10,6 +10,7 @@
 
 import { DEFAULT_CLIENT_DATA, FullClientData, HoldingEntry, AccountEntry, AutoInvestEntry } from './client-defaults';
 import { DEMO_TODAY, TxnStatus, assignStatus, prevBusinessDay } from './transaction-status';
+import { classifyAccount } from './contribution-limits';
 
 export type TxnType =
   | 'deposit' | 'contribution' | 'dividend' | 'purchase'
@@ -61,6 +62,11 @@ export function buildTransactionRow(input: {
 
 // ── Per-account inception (account opening) dates ────────────────────────────
 // Older personas reach back decades; Jordan (28) is only a few years in.
+// Accounts whose opening balance arrived as a ROLLOVER from an employer plan rather
+// than as a contribution. Rollovers do not count against the annual IRA limit, so
+// these accounts' opening rows stay typed 'deposit'.
+const ROLLOVER_FUNDED = new Set<string>(['acc-002']);
+
 const INCEPTION: Record<string, string> = {
   // Alex Johnson
   'acc-001': '2012-03-01', // Roth IRA
@@ -140,12 +146,22 @@ function generateAccountEvents(
     return 0.2 + 0.8 * Math.max(0, Math.min(1, f));
   };
 
-  // Opening deposit
+  // Opening deposit. Into a retirement account this is NEW MONEY, so it counts as a
+  // contribution for that tax year and must carry `type: 'contribution'` — the
+  // contributions card sums that type. The exception is an account funded by a
+  // rollover (see ROLLOVER_FUNDED): a rollover is not a contribution and never
+  // counts against the annual limit.
+  const openingIsContribution =
+    classifyAccount(acc.type) !== 'taxable' &&
+    classifyAccount(acc.type) !== 'other' &&
+    !ROLLOVER_FUNDED.has(acc.id);
   events.push({
     date: start,
-    description: 'Account opened — initial deposit',
+    description: openingIsContribution
+      ? 'Account opened — initial contribution'
+      : 'Account opened — initial deposit',
     amount: Math.round(2000 + rng() * 8000),
-    type: 'deposit',
+    type: openingIsContribution ? 'contribution' : 'deposit',
   });
 
   // Walk each month from inception → now
@@ -236,8 +252,10 @@ function generateAccountEvents(
     for (const dist of known) {
       events.push({ date: dist.date, description: 'RMD Distribution', amount: -Math.abs(dist.amount), type: 'rmd' });
     }
-    // A couple of earlier synthesized RMDs (eligibility began ~age 73 = ~2022)
-    for (const y of [2022, 2021]) {
+    // A couple of earlier synthesized RMDs, predating the `distributions` history
+    // above (which covers the current demo year and the two before it).
+    const demoYear = Number(DEMO_TODAY.slice(0, 4));
+    for (const y of [demoYear - 3, demoYear - 4]) {
       events.push({
         date: iso(y, 11, 12 + Math.floor(rng() * 6)),
         description: 'RMD Distribution',

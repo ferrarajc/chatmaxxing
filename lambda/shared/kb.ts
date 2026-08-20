@@ -1,3 +1,25 @@
+// Contribution figures are interpolated from the shared IRS table rather than written
+// into the answer text. These answers are read back to customers verbatim by the bot and
+// the pill UI, so a hardcoded year here would have the AI quoting a stale limit while the
+// account page showed the current one.
+import { iraDeadlineFor, limitsForYear, openTaxYears, sepDeadlineFor } from './contribution-limits';
+
+const KB_YEAR = openTaxYears()[0];
+const KB_LIM = limitsForYear(KB_YEAR);
+const kbUsd = (n: number) => `$${n.toLocaleString('en-US')}`;
+const IRA_LIMIT = kbUsd(KB_LIM.base);
+const IRA_LIMIT_50 = kbUsd(KB_LIM.base + KB_LIM.catchUp);
+const IRA_CATCH_UP = kbUsd(KB_LIM.catchUp);
+const SEP_CAP = kbUsd(KB_LIM.dcCap);
+const ROTH_SINGLE_TOP = kbUsd(KB_LIM.rothPhaseOut.single[1]);
+const ROTH_JOINT_TOP = kbUsd(KB_LIM.rothPhaseOut.joint[1]);
+/** "2027-10-15" -> "October 15, 2027" */
+const kbLongDate = (iso: string): string => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+    'September', 'October', 'November', 'December'][m - 1]} ${d}, ${y}`;
+};
+
 export interface KBQuestion {
   id: string;
   text: string;         // pill label, ≤ 12 words
@@ -502,7 +524,7 @@ export const KB: KBTopic[] = [
       {
         id: 'q-ai-004',
         text: 'Does auto-invest count toward my IRA contribution limit?',
-        answer: "Yes — automatic contributions to an IRA count toward your annual contribution limit. For 2025, the limit is $7,000 per year ($8,000 if you're 50 or older), across all your IRAs combined. Bob's Mutual Funds will not automatically stop contributions when you reach the limit — you are responsible for monitoring your annual total.",
+        answer: `Yes — automatic contributions to an IRA count toward your annual contribution limit. For ${KB_YEAR}, the limit is ${IRA_LIMIT} per year (${IRA_LIMIT_50} if you're 50 or older), across all your IRAs combined. Your running total for the year is shown on each of your IRA account pages, but Bob's Mutual Funds will not automatically stop contributions when you reach the limit — you are responsible for monitoring your annual total.`,
         link: { text: 'Manage automatic investments', url: '/account/auto-invest' },
       },
     ],
@@ -519,20 +541,20 @@ export const KB: KBTopic[] = [
     questions: [
       {
         id: 'q-ira-001',
-        text: 'What are the 2025 Roth IRA contribution limits?',
-        answer: "For 2025, you can contribute up to $7,000 to a Roth IRA, or $8,000 if you're age 50 or older (the $1,000 catch-up contribution). This limit is shared across all your IRAs combined — Roth and Traditional. Income limits apply: single filers earning over $161,000 and joint filers over $240,000 face phase-outs.",
+        text: `What are the ${KB_YEAR} Roth IRA contribution limits?`,
+        answer: `For ${KB_YEAR}, you can contribute up to ${IRA_LIMIT} to a Roth IRA, or ${IRA_LIMIT_50} if you're age 50 or older (the ${IRA_CATCH_UP} catch-up contribution). This limit is shared across all your IRAs combined — Roth and Traditional. Income limits apply: single filers earning over ${ROTH_SINGLE_TOP} and joint filers over ${ROTH_JOINT_TOP} face phase-outs.`,
         link: { text: 'View IRA contribution limits', url: '/resources/ira-contribution-limits' },
       },
       {
         id: 'q-ira-002',
-        text: 'What are the 2025 Traditional IRA contribution limits?',
-        answer: "The 2025 Traditional IRA contribution limit is $7,000 per year, or $8,000 if you're age 50 or older. Unlike a Roth IRA, there are no income limits on contributing to a Traditional IRA, but the deductibility of your contribution depends on your income and whether you (or your spouse) have access to a workplace retirement plan.",
+        text: `What are the ${KB_YEAR} Traditional IRA contribution limits?`,
+        answer: `The ${KB_YEAR} Traditional IRA contribution limit is ${IRA_LIMIT} per year, or ${IRA_LIMIT_50} if you're age 50 or older. Unlike a Roth IRA, there are no income limits on contributing to a Traditional IRA, but the deductibility of your contribution depends on your income and whether you (or your spouse) have access to a workplace retirement plan. The deadline to contribute for ${KB_YEAR} is ${kbLongDate(iraDeadlineFor(KB_YEAR))}.`,
         link: { text: 'View IRA contribution limits', url: '/resources/ira-contribution-limits' },
       },
       {
         id: 'q-ira-003',
         text: 'Can I contribute to both a Roth and Traditional IRA?',
-        answer: "Yes, but your combined contributions across all IRAs cannot exceed the annual limit ($7,000 or $8,000 if 50+). For example, you could put $4,000 in a Roth IRA and $3,000 in a Traditional IRA in the same year. Many investors split contributions based on their expected tax rate now vs. in retirement.",
+        answer: `Yes, but your combined contributions across all IRAs cannot exceed the annual limit (${IRA_LIMIT}, or ${IRA_LIMIT_50} if 50+). You can split it across a Roth and a Traditional IRA in any proportion, as long as the total stays under the limit. Your running total across every IRA you hold with us is shown on each IRA account page.`,
         link: { text: 'Learn about combined contributions', url: '/resources/ira-contribution-limits' },
       },
       {
@@ -723,8 +745,8 @@ export const KB: KBTopic[] = [
     questions: [
       {
         id: 'q-sep-001',
-        text: 'What is the 2025 SEP-IRA contribution limit?',
-        answer: "For 2025, you can contribute up to the lesser of $70,000 or 25% of your net self-employment compensation to a SEP-IRA. Net self-employment compensation is your business net profit minus the deductible portion of self-employment taxes. This limit is substantially higher than IRA limits, making SEP-IRAs a powerful savings tool for self-employed individuals.",
+        text: `What is the ${KB_YEAR} SEP-IRA contribution limit?`,
+        answer: `For ${KB_YEAR}, you can contribute up to the lesser of ${SEP_CAP} or 25% of your net self-employment compensation to a SEP-IRA. Net self-employment compensation is your business net profit minus the deductible portion of self-employment taxes. This is a SEPARATE limit from the ${IRA_LIMIT} Traditional/Roth IRA limit — SEP contributions do not count against it, and vice versa.`,
         link: { text: 'View SEP-IRA contribution guide', url: '/resources/sep-ira' },
       },
       {
@@ -735,8 +757,8 @@ export const KB: KBTopic[] = [
       },
       {
         id: 'q-sep-003',
-        text: 'When is the SEP-IRA contribution deadline for 2025?',
-        answer: "You can make your 2025 SEP-IRA contribution up to the due date of your federal income tax return, including extensions. For most self-employed individuals, that is October 15, 2026 (with an extension). You don't need to set up or fund the account before December 31 — the extended deadline gives you maximum flexibility for tax planning.",
+        text: `When is the SEP-IRA contribution deadline for ${KB_YEAR}?`,
+        answer: `You can make your ${KB_YEAR} SEP-IRA contribution up to the due date of your federal income tax return, including extensions. For most self-employed individuals, that is ${kbLongDate(sepDeadlineFor(KB_YEAR))} (with an extension). You don't need to set up or fund the account before December 31 — the extended deadline gives you maximum flexibility for tax planning.`,
         link: { text: 'View SEP-IRA deadlines', url: '/resources/sep-ira' },
       },
       {
@@ -2107,7 +2129,9 @@ export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
   'account/auto-invest':   ['t-auto-invest', 't-ira-limits', 't-rebalancing'],
   'account/rmd':           ['t-rmd', 't-rmd-setup', 't-tax-docs'],
   'account/tax-documents': ['t-tax-docs', 't-cost-basis', 't-statements'],
-  'account/detail':        ['t-balance', 't-transactions', 't-fund-perf', 't-statements'],
+  // t-ira-limits / t-sep-limits are gated by `accountTypes`, so the contribution
+  // pills only surface on an IRA or SEP account page, never on a taxable one.
+  'account/detail':        ['t-balance', 't-ira-limits', 't-sep-limits', 't-transactions', 't-fund-perf', 't-statements'],
 
   // Research sub-pages
   'research/fund':         ['t-fund-perf', 't-expense-ratios', 't-historical-returns', 't-prospectus'],

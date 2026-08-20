@@ -4,7 +4,11 @@ import { useClientStore } from '../../../store/clientStore';
 import { post } from '../../../api/client';
 import { useRecentTransactions } from '../../../hooks/useRecentTransactions';
 import { StatusCell } from '../../common/StatusCell';
+import { ContributionsCard } from './ContributionsCard';
+import { useContributions } from '../../../hooks/useContributions';
 import { theme } from '../../../theme';
+// Shared with the backend so the page and the AI agree on what counts as an IRA.
+import { classifyAccount, isIraAccount } from '../../../../../lambda/shared/contribution-limits';
 
 interface LiveBeneficiary {
   accountId: string;
@@ -14,10 +18,6 @@ interface LiveBeneficiary {
   type: 'Primary' | 'Secondary';
 }
 
-function isRetirementAccount(type: string) {
-  const t = type.toLowerCase();
-  return t.includes('ira') || t.includes('sep');
-}
 
 const S = {
   card: {
@@ -45,9 +45,16 @@ export function AccountDetailPage() {
     fallback: activePersona.transactions.filter(t => account && t.account === account.type),
   });
 
-  const isIra = account ? isRetirementAccount(account.type) : false;
+  const isIra = account ? isIraAccount(account.type) : false;
+  const isSepAccount = account ? classifyAccount(account.type) === 'sep' : false;
   const rmd = activePersona.rmd;
   const showRmd = isIra && rmd.eligible && rmd.accountId === accountId;
+  const rmdYear = rmd.nextDeadline?.slice(0, 4) ?? new Date().getFullYear();
+
+  // Contribution room is a PORTFOLIO-wide figure (one IRS limit across all the client's
+  // IRAs), computed server-side so this card, the chatbot, and the phone cockpit cannot
+  // disagree. Skipped entirely for taxable accounts, which have no limit.
+  const contributions = useContributions(activePersona.clientId, isIra);
 
   const [liveBens, setLiveBens]   = useState<LiveBeneficiary[] | null>(null);
   const [bensLoading, setBensLoading] = useState(false);
@@ -103,6 +110,18 @@ export function AccountDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Contributions — IRA/SEP only. Sits above Holdings because "how much room do I
+          have left" is the time-sensitive question on a retirement account page. */}
+      {isIra && (
+        <ContributionsCard
+          summary={contributions.summary}
+          loading={contributions.loading}
+          error={contributions.error}
+          accountId={account.id}
+          isSepAccount={isSepAccount}
+        />
+      )}
 
       {/* Holdings */}
       {holdings.length > 0 && (
@@ -190,11 +209,12 @@ export function AccountDetailPage() {
         </div>
       )}
 
-      {/* RMD summary — only for Maria's Traditional IRA */}
+      {/* RMD summary — only for Maria's Traditional IRA. The year comes from the RMD's
+          own deadline so it tracks the seeded data instead of a hardcoded literal. */}
       {showRmd && (
         <div style={S.card}>
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ margin: 0, fontSize: 18, position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: theme.font.serif }}>Required Minimum Distribution (2025)</h2>
+            <h2 style={{ margin: 0, fontSize: 18, position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontFamily: theme.font.serif }}>Required Minimum Distribution ({rmdYear})</h2>
             <Link to="/account/rmd" style={{ fontSize: 13, color: theme.color.primary, textDecoration: 'none', fontWeight: 500 }}>
               Full details →
             </Link>

@@ -13,6 +13,10 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const TESTS = [
+  // Offline unit test (no network, no LLM): the pure IRA contribution-limit math.
+  'test-contribution-limits',
+  // Read-only API test (no LLM): the contributions summary across all four personas.
+  'test-contributions',
   // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.
   'test-force-task',
   'test-add-account-access',

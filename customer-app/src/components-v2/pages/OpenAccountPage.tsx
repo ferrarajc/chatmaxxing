@@ -4,6 +4,7 @@ import { usePageContextStore } from '../../store/pageContextStore';
 import { useFunds } from '../../hooks/useFunds';
 import { FundGroup } from '../../data/funds';
 import { theme } from '../../theme';
+import { limitsForYear, openTaxYears } from '../../../../lambda/shared/contribution-limits';
 
 /* ============================================================================
    Open a New Account — multi-step application wizard
@@ -266,25 +267,33 @@ function SubHeading({ children }: { children: React.ReactNode }) {
 
 // ── Static data ─────────────────────────────────────────────────────────────
 
+// Contribution limits come from the shared IRS table (lambda/shared/contribution-limits.ts)
+// that also drives the account-page contributions card, so a client never sees one figure
+// while opening an account and a different one afterwards.
+const OA_YEAR = openTaxYears()[0];
+const OA_LIMITS = limitsForYear(OA_YEAR);
+const oaUsd = (n: number) => `$${n.toLocaleString('en-US')}`;
+const OA_IRA_LIMIT = `${oaUsd(OA_LIMITS.base)}/year (${oaUsd(OA_LIMITS.base + OA_LIMITS.catchUp)} if 50+)`;
+
 const ACCOUNT_TYPES = [
   {
     id: 'roth-ira', name: 'Roth IRA',
     desc: 'After-tax contributions; tax-free growth and withdrawals in retirement. No RMDs.',
-    limit: '$7,000/year ($8,000 if 50+)',
+    limit: OA_IRA_LIMIT,
     best: 'Best for: younger investors, those expecting higher future taxes',
     color: theme.color.primarySoft, border: theme.color.primarySoftBorder,
   },
   {
     id: 'traditional-ira', name: 'Traditional IRA',
     desc: 'Pre-tax (deductible) contributions; tax-deferred growth; taxed on withdrawal.',
-    limit: '$7,000/year ($8,000 if 50+)',
+    limit: OA_IRA_LIMIT,
     best: 'Best for: high earners today expecting lower taxes in retirement',
     color: theme.color.successSoft, border: theme.color.successBorder,
   },
   {
     id: 'sep-ira', name: 'SEP-IRA',
     desc: 'For self-employed individuals. Very high contribution limits; fully deductible.',
-    limit: 'Up to $70,000/year (25% of compensation)',
+    limit: `Up to ${oaUsd(OA_LIMITS.dcCap)}/year (25% of compensation)`,
     best: 'Best for: sole proprietors, freelancers, small business owners',
     color: theme.color.warningSoft, border: theme.color.warningBorder,
   },

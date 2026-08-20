@@ -1,6 +1,7 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { invokeNovaMicro, invokeWithTools, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
+import { isAdviceRequest } from '../shared/advice-guard';
 import {
   ChatMessage,
   ClientProfile,
@@ -2162,6 +2163,23 @@ const HALLUCINATION_PROTECTION_RULE = `
 
 CRITICAL DATA RULE: You only know what is explicitly written in this system prompt or what a tool call returned. Never state, reference, or imply specific financial data (account balances, holdings quantities, transaction amounts, phone numbers, email addresses, beneficiary names, or any client-specific numbers) that was not provided here or returned by a tool. If you need data not already in context, call the appropriate tool first.`;
 
+// ── IRA contribution rule appended at the same LLM call sites ────────────
+// A static string, deliberately NOT a data block: injecting the numbers would cost a
+// DynamoDB read on every chat turn for something most turns never ask about. This just
+// makes sure the model reaches for the tool instead of interrogating the client for
+// facts we already hold — the observed failure was the bot replying "could you confirm
+// your age?" to "what can I still put in my IRA?", when their date of birth is on file
+// and the tool computes the whole answer.
+const CONTRIBUTION_DATA_RULE = `
+
+IRA CONTRIBUTION QUESTIONS
+If the client asks how much they have contributed, how much more they can contribute, whether they have maxed out, about catch-up contributions, over-contributing, or a contribution deadline: call get_contribution_room and answer from what it returns.
+- NEVER ask the client for their age, date of birth, or how much they have already contributed. We hold all of it; the tool does the arithmetic.
+- NEVER work contribution room out yourself from a transaction list or a balance.
+- The limit is ONE limit across ALL of their Traditional and Roth IRAs combined, not per account. A SEP-IRA has its own separate limit.
+- This is an account fact-lookup, not investment advice — answer it rather than declining or routing to an advisor. (Which FUND to put the money in is still advice.)
+- Whenever you quote a remaining amount, also say it counts only contributions made at Bob's — money they put into an IRA elsewhere counts toward the same limit and is not included.`;
+
 // ── Exit message instruction appended to system prompts at LLM call sites ─
 const EXIT_MESSAGE_INSTRUCTION = `
 
@@ -2278,8 +2296,9 @@ async function locateEvidence(
 const ESCALATION_RE = /\b(speak to|talk to|connect me|transfer me|live agent|real person|human agent|representative|escalate|supervisor|speak with|talk with)\b/i;
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
 // Financial-advice / investment-recommendation requests — must route to a callback
-// with a licensed advisor, not be answered by autopilot.
-const ADVICE_RE = /\b(what|which|any|recommend|suggest|your)\b[^?.!]{0,50}\b(stock|stocks|fund|funds|invest|investment|investments|portfolio|allocation)\b|\b(should i (buy|sell|invest|put|move)|what should i do with|where should i (invest|put)|investment advice|financial advice|best (stock|stocks|fund|funds|investment|investments)|hot (stock|stocks|tip|tips))\b/i;
+// with a licensed advisor, not be answered by autopilot. The rule (and its
+// contribution-room carve-out) lives in shared/advice-guard.ts so this path and
+// next-best-response can never diverge.
 const CALLBACK_INTENT_RE = /\b(callback|call back|schedule.*call|phone call|call me|ring me)\b/i;
 // Matches cancel/reschedule of an *existing* callback — must NOT be redirected to the callback scope
 const CANCEL_RESCHEDULE_CALLBACK_RE = /\b(cancel|reschedule|change|move|update)\b.{0,30}\b(callback|call back)\b/i;
@@ -2348,7 +2367,7 @@ export const handler = async (
     // Financial-advice requests must route to a callback with a licensed advisor —
     // and must NOT be swallowed by task identification (e.g. "best stocks to BUY"
     // must not match the place-purchase task). Short-circuit before any task logic.
-    if (scope === 'get-intent' && !forcedTask && ADVICE_RE.test(lastCustomerMsg)) {
+    if (scope === 'get-intent' && !forcedTask && isAdviceRequest(lastCustomerMsg)) {
       return jsonResponse(200, {
         response: "I'm not permitted to provide personalized investment advice — that requires a licensed financial advisor. I can arrange a callback with one of our advisors who can give you tailored guidance. Would that work?",
         shouldExitAutopilot: true,
@@ -2413,7 +2432,7 @@ export const handler = async (
           });
         }
 
-        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE;
+        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE;
         const p2ContactId = transcript[0]?.content?.slice(0, 8);
         const p2Executor = createToolExecutor(profile.clientId, { contactId: p2ContactId });
         let taskResponse = '';
@@ -2502,7 +2521,7 @@ export const handler = async (
             const p1ContactId = transcript[0]?.content?.slice(0, 8);
             const p1Executor = createToolExecutor(profile.clientId, { contactId: p1ContactId });
             const result = await invokeWithTools(
-              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE,
+              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE,
               [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
               ALL_CLIENT_TOOLS,
               p1Executor,
@@ -2573,7 +2592,7 @@ export const handler = async (
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
-    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE;
+    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE;
     const contactId = transcript[0]?.content?.slice(0, 8);
     const executor = createToolExecutor(profile.clientId, { contactId });
 
@@ -2623,7 +2642,7 @@ export const handler = async (
     // question — guaranteeing the client always knows why they're being asked.
     if (scope === 'callback' && !callbackExplained) {
       const recentCustomer = transcript.filter(m => m.role === 'CUSTOMER').slice(-3).map(m => m.content).join('  ');
-      const lead = ADVICE_RE.test(recentCustomer)
+      const lead = isAdviceRequest(recentCustomer)
         ? 'Picking specific investments calls for a licensed advisor, so let me set up a callback with one for you.'
         : /\b(inherit\w*|passed away|deceased|death|estate)\b/i.test(recentCustomer)
           ? "I'm so sorry for your loss — our specialist team handles inheritance, so let me arrange a callback with them."
@@ -2676,7 +2695,7 @@ export const handler = async (
       exitMessage = 'Trade request detected — please handle in the callback scope.';
     }
     // Financial-advice requests must route to a callback with a licensed advisor.
-    if (scope !== 'callback' && scope !== 'customer-bot' && ADVICE_RE.test(lastCustomerMsg)) {
+    if (scope !== 'callback' && scope !== 'customer-bot' && isAdviceRequest(lastCustomerMsg)) {
       shouldExitAutopilot = true;
       suggestedScope = 'callback';
       exitMessage = 'Financial-advice request — handle in the callback scope.';

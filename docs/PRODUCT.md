@@ -324,6 +324,36 @@ ownership before it clears — there is no cosmetic/fake "verified" state. The t
 carries a full TCPA/CTIA-compliant consent experience (separate account-alert vs. marketing opt-in,
 required disclosures, STOP/HELP, an SMS Terms page, and stored consent records).
 
+### IRA contributions summary (account pages + every AI surface)
+Each IRA account page carries a **Contributions** card answering the question retirement savers ask
+most: *how much can I still put in this year?* It shows what the client has contributed year to date,
+their annual limit, how much room is left, a progress bar, and a **Contribute** button that takes them
+to the fund lineup with the destination account already attached.
+
+The headline figure is deliberately **not** that one account's contributions. The IRS applies the
+annual limit **across all of a person's Traditional and Roth IRAs combined**, so the card sums every
+IRA the client holds with us and shows the per-account breakdown underneath. The catch-up amount is
+applied from the client's date of birth using the IRS rule (age attained during the tax year), and
+between January 1 and the April filing deadline the card shows **two** tax years side by side, because
+both are still contributable. A **SEP-IRA is a separate bucket** with its own, far larger limit — and
+because the real SEP limit is 25% of compensation, which Bob's does not hold, the card reports what was
+contributed and says plainly that the remaining amount cannot be computed rather than inventing one.
+
+Three limitations are stated on the card itself and repeated to the AI verbatim, so no one quotes a
+remaining amount without them: the figure counts **only contributions made at Bob's** (money the client
+put into an IRA at another firm counts toward the same limit and is not included), the earned-income
+rule is not checked, and Roth income phase-outs are not applied.
+
+**The same numbers reach every conversation.** The calculation runs once on the server and is exposed
+both to the web page and, through a single tool, to every AI surface at once — the customer chatbot,
+the voice assistant, all 19 autopilot task experts, the agent's suggested replies, and the phone-agent
+call-prep dossier. A client can ask "have I maxed out my IRA?" in chat, by voice, or to a live agent
+and get the same figure they see on screen, with the same caveat attached. Contribution questions are
+explicitly treated as account fact-lookup rather than investment advice, so the bot answers them
+instead of routing to a licensed advisor — while *which fund* to put the money in remains an advisor
+question. The annual IRS figures live in one table that also drives every explainer page and knowledge-
+base answer, so the product cannot quote one limit in an article and a different one on the account page.
+
 ### DynamoDB — Transactions Table
 Keyed by `clientId` + a date-ordered sort key (one item per transaction), with a per-account
 secondary index. Holds each client's full transaction history back to account inception (seeded

@@ -4,6 +4,7 @@ import { useClientStore } from '../../../store/clientStore';
 import { AutoInvestSchedule } from '../../../data/personas';
 import { post } from '../../../api/client';
 import { theme } from '../../../theme';
+import { limitsForYear, openTaxYears } from '../../../../../lambda/shared/contribution-limits';
 
 const card: React.CSSProperties = {
   background: theme.color.surface,
@@ -15,6 +16,8 @@ const card: React.CSSProperties = {
 };
 
 export function AutoInvestPage() {
+  const aiLimits = limitsForYear(openTaxYears()[0]);
+  const aiUsd = (n: number) => `$${n.toLocaleString('en-US')}`;
   const { activePersona, updateAutoInvestSchedule } = useClientStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<AutoInvestSchedule>>({});
@@ -183,7 +186,7 @@ export function AutoInvestPage() {
       )}
 
       <div style={{ background: theme.color.warningSoft, border: `1px solid ${theme.color.warningBorder}`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: theme.color.warning }}>
-        IRA contributions from automatic investments count toward your annual limit ($7,000 / $8,000 if 50+). Monitor your total to avoid excess contribution penalties.
+        IRA contributions from automatic investments count toward your annual limit ({aiUsd(aiLimits.base)} / {aiUsd(aiLimits.base + aiLimits.catchUp)} if 50+). Your running total for the year, across every IRA you hold with us, is on each IRA account page.
       </div>
     </div>
   );

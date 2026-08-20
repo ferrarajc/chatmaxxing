@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { FundDef, FundGroup } from '../../../data/funds';
 import { useFunds } from '../../../hooks/useFunds';
+import { useClientStore } from '../../../store/clientStore';
 import { useMarketData } from '../../../hooks/useMarketData';
 import { useFundMarketSummary } from '../../../hooks/useFundMarket';
 import { theme } from '../../../theme';
@@ -86,8 +87,12 @@ const td: React.CSSProperties = {
 
 // ── Fund row ────────────────────────────────────────────────────────────────
 
-function FundTableRow({ row }: { row: FundRow }) {
+// `intoAccountId` is set when the client arrived here from an account page's
+// Contribute button: they are choosing a fund for a specific account, so it rides
+// along on every link out of this page and lands preselected on the buy screen.
+function FundTableRow({ row, intoAccountId }: { row: FundRow; intoAccountId?: string }) {
   const { fund } = row;
+  const qs = intoAccountId ? `?account=${encodeURIComponent(intoAccountId)}` : '';
   const [nameHover, setNameHover] = useState(false);
   return (
     <tr>
@@ -97,7 +102,7 @@ function FundTableRow({ row }: { row: FundRow }) {
         onMouseLeave={() => setNameHover(false)}
       >
         <Link
-          to={`/research/fund/${fund.ticker}`}
+          to={`/research/fund/${fund.ticker}${qs}`}
           style={{ textDecoration: 'none', display: 'block' }}
         >
           <span style={{
@@ -113,7 +118,7 @@ function FundTableRow({ row }: { row: FundRow }) {
       </td>
       <td style={{ ...td, textAlign: 'left', width: 1, whiteSpace: 'nowrap' }}>
         <Link
-          to={`/research/fund/${fund.ticker}`}
+          to={`/research/fund/${fund.ticker}${qs}`}
           style={{
             fontWeight: 700, fontSize: 12, color: theme.color.accent, fontFamily: theme.font.mono,
             letterSpacing: '0.04em', background: theme.color.accentSoft, padding: '3px 8px',
@@ -132,7 +137,7 @@ function FundTableRow({ row }: { row: FundRow }) {
       </td>
       <td style={{ ...td, textAlign: 'right', width: 1, whiteSpace: 'nowrap' }}>
         <Link
-          to={`/research/fund/${fund.ticker}/buy`}
+          to={`/research/fund/${fund.ticker}/buy${qs}`}
           style={{
             fontSize: 12, fontWeight: 600, color: theme.color.primary,
             border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.sm,
@@ -181,6 +186,10 @@ function TableHead({
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export function ResearchPage() {
+  const [searchParams] = useSearchParams();
+  const intoAccountId = searchParams.get('account') ?? undefined;
+  const { activePersona } = useClientStore();
+  const intoAccount = activePersona.accounts.find(a => a.id === intoAccountId);
   const { funds } = useFunds();
   const { data: marketData } = useMarketData();
   const summary = useFundMarketSummary();
@@ -267,6 +276,23 @@ export function ResearchPage() {
         Explore our full lineup of {funds.length} low-cost mutual funds — index, sector, international, and bond strategies.
       </p>
 
+      {/* Arrived from an account page's Contribute button — say which account the
+          money is headed into, and keep it attached through to the buy screen. */}
+      {intoAccount && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+          background: theme.color.primarySoft, border: `1px solid ${theme.color.border}`,
+          borderRadius: theme.radius.lg, padding: '12px 16px', marginBottom: 20,
+        }}>
+          <span style={{ fontSize: 14, color: theme.color.text }}>
+            Choose a fund for your <strong>{intoAccount.type}</strong> contribution — we'll carry the account through to the next step.
+          </span>
+          <Link to={`/account/detail/${intoAccount.id}`} style={{ fontSize: 13, color: theme.color.primary, textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>
+            ← Back to account
+          </Link>
+        </div>
+      )}
+
       {/* Controls: search + family filter */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ position: 'relative', flex: '1 1 280px', minWidth: 220 }}>
@@ -341,7 +367,7 @@ export function ResearchPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
                   <TableHead sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                   <tbody>
-                    {groupRows.map(r => <FundTableRow key={r.fund.ticker} row={r} />)}
+                    {groupRows.map(r => <FundTableRow key={r.fund.ticker} row={r} intoAccountId={intoAccountId} />)}
                   </tbody>
                 </table>
               </div>
@@ -358,7 +384,7 @@ export function ResearchPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
               <TableHead sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
               <tbody>
-                {sortRows(filtered).map(r => <FundTableRow key={r.fund.ticker} row={r} />)}
+                {sortRows(filtered).map(r => <FundTableRow key={r.fund.ticker} row={r} intoAccountId={intoAccountId} />)}
               </tbody>
             </table>
           </div>
