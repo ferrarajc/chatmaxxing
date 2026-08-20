@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ContactSlot, AutopilotScope, AUTOPILOT_SCOPE_LABELS, ChatMessage } from '../types';
+import { ContactSlot, AutopilotScope, ChatMessage } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { post } from '../api/client';
 import { log } from '../api/logger';
@@ -8,6 +8,7 @@ import { ProposedActionCard } from './ProposedActionCard';
 import { AfterCallWork } from './AfterCallWork';
 import { renderHighlighted } from '../utils/evidenceHighlight';
 import { AutopilotMenu } from './AutopilotMenu';
+import { AutomationItem, activeAutomationLabel } from '../data/automations';
 import { AutopilotCountdown } from './AutopilotCountdown';
 import { ResponseTimer } from './ResponseTimer';
 import { IntentLabel, stripIntentMarkers } from './IntentLabel';
@@ -154,19 +155,23 @@ export function FocusingDesktop() {
     }
   };
 
-  const handleActivateAutopilot = (scope: AutopilotScope) => {
+  const handleActivateAutopilot = (scope: AutopilotScope, taskId?: string) => {
     if (!selectedSlot) return;
     setAutopilotMenuOpen(false);
     store.patchSlot(selectedSlot.contactId, {
-      autopilotScope: scope, suggestedScope: null,
+      autopilotScope: scope, suggestedScope: null, pendingTaskId: taskId ?? null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
+  };
+
+  const handleAutomationSelect = (item: AutomationItem) => {
+    handleActivateAutopilot(item.scope, item.kind === 'task' ? item.taskId : undefined);
   };
 
   const handleExitAutopilot = () => {
     if (!selectedSlot) return;
     store.patchSlot(selectedSlot.contactId, {
-      autopilotScope: null, autopilotFlash: true, autopilotPending: null,
+      autopilotScope: null, pendingTaskId: null, autopilotFlash: true, autopilotPending: null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
     setTimeout(() => store.patchSlot(selectedSlot.contactId, { autopilotFlash: false }), 100);
@@ -201,7 +206,8 @@ export function FocusingDesktop() {
     CLIENT_PROFILES[selectedSlot?.clientId ?? ''] ?? DEFAULT_PROFILE;
 
   const isAutopilot = !!selectedSlot?.autopilotScope;
-  const displayScope = selectedSlot?.autopilotScope ?? selectedSlot?.suggestedScope;
+  // Reads the running TASK when there is one, else the scope.
+  const displayLabel = selectedSlot ? activeAutomationLabel(selectedSlot) : null;
 
   return (
     <div style={{
@@ -457,12 +463,12 @@ export function FocusingDesktop() {
             {selectedSlot.status === 'active' && (
               <AISupportSection label="Autopilot">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  {displayScope && (
+                  {displayLabel && (
                     <span style={{
                       fontSize: 11, fontWeight: 600,
                       color: isAutopilot ? '#22c55e' : '#374151',
                     }}>
-                      {AUTOPILOT_SCOPE_LABELS[displayScope]}
+                      {displayLabel}
                     </span>
                   )}
                   <div style={{ position: 'relative' }}>
@@ -485,7 +491,7 @@ export function FocusingDesktop() {
                     </button>
                     {autopilotMenuOpen && (
                       <AutopilotMenu
-                        onSelect={handleActivateAutopilot}
+                        onSelect={handleAutomationSelect}
                         onClose={() => setAutopilotMenuOpen(false)}
                         anchorRef={autopilotBtnRef}
                       />

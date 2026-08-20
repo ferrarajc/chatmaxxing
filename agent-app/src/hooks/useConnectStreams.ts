@@ -522,6 +522,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
                   customerTyping: false,
                   // Nobody is listening anymore — stop autopilot and pending sends.
                   autopilotScope: null,
+                  pendingTaskId: null,
                   autopilotPending: null,
                   autopilotPaused: false,
                   autopilotSendAt: null,

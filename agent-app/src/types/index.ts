@@ -60,6 +60,11 @@ export interface ContactSlot {
   autopilotScope: AutopilotScope | null;
   /** AI-suggested scope shown in header in black, icon default state */
   suggestedScope: AutopilotScope | null;
+  /** Task expert the agent picked straight from the ✈ menu, awaiting its kickoff
+   *  turn. Sent to the Lambda as `forceTaskId` so it skips intent classification;
+   *  cleared once that turn is dispatched (the `[TASK: id]` transcript marker
+   *  carries the task from then on). null = let the classifier decide. */
+  pendingTaskId: string | null;
   /** true for 100 ms on autopilot exit — triggers yellow flash */
   autopilotFlash: boolean;
   /** Message staged for send during autopilot delay — shown in AI panel */

@@ -1,5 +1,5 @@
 /**
- * Runs all 20 autopilot task tests sequentially and prints a summary.
+ * Runs all autopilot task tests sequentially and prints a summary.
  * Usage: OPENAI_API_KEY=sk-... node lambda/tests/run-all-tests.mjs
  *
  * Each test file is run as a child process. A test passes if it exits 0.
@@ -13,6 +13,8 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const TESTS = [
+  // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.
+  'test-force-task',
   'test-add-account-access',
   'test-update-contact-info',
   'test-update-beneficiaries',
