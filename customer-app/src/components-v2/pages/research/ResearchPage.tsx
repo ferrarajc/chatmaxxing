@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { FundDef, FundGroup } from '../../../data/funds';
 import { useFunds } from '../../../hooks/useFunds';
 import { useClientStore } from '../../../store/clientStore';
+import { BuyIntent, buyIntentQuery, readBuyIntent } from '../../../utils/buyIntent';
 import { useMarketData } from '../../../hooks/useMarketData';
 import { useFundMarketSummary } from '../../../hooks/useFundMarket';
 import { theme } from '../../../theme';
@@ -87,12 +88,13 @@ const td: React.CSSProperties = {
 
 // ── Fund row ────────────────────────────────────────────────────────────────
 
-// `intoAccountId` is set when the client arrived here from an account page's
-// Contribute button: they are choosing a fund for a specific account, so it rides
-// along on every link out of this page and lands preselected on the buy screen.
-function FundTableRow({ row, intoAccountId }: { row: FundRow; intoAccountId?: string }) {
+// `intent` is set when the client stepped out here from a half-filled buy form (or from
+// an account page's Contribute button): they are choosing a fund for a specific account,
+// possibly with an amount already typed. It rides along on every link out of this page so
+// they land back on the buy screen with their work intact.
+function FundTableRow({ row, intent }: { row: FundRow; intent: BuyIntent }) {
   const { fund } = row;
-  const qs = intoAccountId ? `?account=${encodeURIComponent(intoAccountId)}` : '';
+  const qs = buyIntentQuery(intent);
   const [nameHover, setNameHover] = useState(false);
   return (
     <tr>
@@ -187,9 +189,9 @@ function TableHead({
 
 export function ResearchPage() {
   const [searchParams] = useSearchParams();
-  const intoAccountId = searchParams.get('account') ?? undefined;
+  const intent = readBuyIntent(searchParams);
   const { activePersona } = useClientStore();
-  const intoAccount = activePersona.accounts.find(a => a.id === intoAccountId);
+  const intoAccount = activePersona.accounts.find(a => a.id === intent.account);
   const { funds } = useFunds();
   const { data: marketData } = useMarketData();
   const summary = useFundMarketSummary();
@@ -276,8 +278,8 @@ export function ResearchPage() {
         Explore our full lineup of {funds.length} low-cost mutual funds — index, sector, international, and bond strategies.
       </p>
 
-      {/* Arrived from an account page's Contribute button — say which account the
-          money is headed into, and keep it attached through to the buy screen. */}
+      {/* Stepped out here mid-order to pick a different fund — say which account the
+          money is headed into, and make it clear this is a detour they'll return from. */}
       {intoAccount && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
@@ -285,10 +287,10 @@ export function ResearchPage() {
           borderRadius: theme.radius.lg, padding: '12px 16px', marginBottom: 20,
         }}>
           <span style={{ fontSize: 14, color: theme.color.text }}>
-            Choose a fund for your <strong>{intoAccount.type}</strong> contribution — we'll carry the account through to the next step.
+            Pick a fund for your <strong>{intoAccount.type}</strong> contribution — we'll take you straight back to finish the order.
           </span>
-          <Link to={`/account/detail/${intoAccount.id}`} style={{ fontSize: 13, color: theme.color.primary, textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>
-            ← Back to account
+          <Link to={`/contribute${buyIntentQuery(intent)}`} style={{ fontSize: 13, color: theme.color.primary, textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>
+            ← Back to order
           </Link>
         </div>
       )}
@@ -367,7 +369,7 @@ export function ResearchPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
                   <TableHead sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                   <tbody>
-                    {groupRows.map(r => <FundTableRow key={r.fund.ticker} row={r} intoAccountId={intoAccountId} />)}
+                    {groupRows.map(r => <FundTableRow key={r.fund.ticker} row={r} intent={intent} />)}
                   </tbody>
                 </table>
               </div>
@@ -384,7 +386,7 @@ export function ResearchPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
               <TableHead sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
               <tbody>
-                {sortRows(filtered).map(r => <FundTableRow key={r.fund.ticker} row={r} intoAccountId={intoAccountId} />)}
+                {sortRows(filtered).map(r => <FundTableRow key={r.fund.ticker} row={r} intent={intent} />)}
               </tbody>
             </table>
           </div>

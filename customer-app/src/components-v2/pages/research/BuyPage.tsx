@@ -7,6 +7,7 @@ import { useFundMarketSummary } from '../../../hooks/useFundMarket';
 import { useClientStore } from '../../../store/clientStore';
 import { AutoInvestSchedule } from '../../../data/personas';
 import { post } from '../../../api/client';
+import { buyIntentQuery, readBuyIntent } from '../../../utils/buyIntent';
 
 // ── Styles ─────────────────────────────────────────────────────────────────
 
@@ -156,36 +157,86 @@ function RadioGroup<T extends string>({
   );
 }
 
+/**
+ * One selectable fund in the Fund section. Same visual language as RadioGroup above,
+ * but carries a ticker badge and a position line, so "add to what I already own" is
+ * recognisable at a glance rather than needing a lookup.
+ */
+function FundChoiceRow({
+  ticker, name, sub, selected, onSelect,
+}: { ticker: string; name: string; sub: string; selected: boolean; onSelect: () => void }) {
+  return (
+    <label
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+        padding: '10px 14px', borderRadius: theme.radius.md,
+        border: `1px solid ${selected ? theme.color.primary : theme.color.border}`,
+        background: selected ? theme.color.primarySoft : theme.color.surface,
+        transition: 'border-color 0.15s, background 0.15s',
+      }}
+    >
+      <input
+        type="radio"
+        name="fund"
+        value={ticker}
+        checked={selected}
+        onChange={onSelect}
+        style={{ accentColor: theme.color.primary, flexShrink: 0 }}
+      />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 500, color: theme.color.text, display: 'flex', alignItems: 'center' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+          <TickerBadge ticker={ticker} />
+        </div>
+        <div style={{ fontSize: 12, color: theme.color.textMuted, marginTop: 2 }}>{sub}</div>
+      </div>
+    </label>
+  );
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 export function BuyPage() {
+  // Two entry points share this page:
+  //   /research/fund/:ticker/buy  — a fund is already chosen (from Research or a profile)
+  //   /contribute                 — no fund yet, reached from an IRA page's Contribute
+  //                                 button, so the page offers a fund picker instead.
+  // An absent route param IS the mode switch; it is a legitimate state, not an error.
   const { ticker } = useParams<{ ticker: string }>();
-  const fundDef = FUND_BY_TICKER.get(ticker ?? '');
-  const { fundQuote, loading: priceLoading } = useMarketData();
+  const fundLessEntry = !ticker;
+
+  const { fundQuote } = useMarketData();
   const summary = useFundMarketSummary();
   const { activePersona, buyFund, setAutoInvestSchedules } = useClientStore();
 
   const today = new Date();
   const dayOfMonth = today.getDate();
 
-  const [step, setStep] = useState<0 | 1 | 2>(0);
-  const [bankAccountId, setBankAccountId] = useState(activePersona.bankAccounts[0]?.id ?? '');
-  // `?account=` arrives from an account page's Contribute button (carried through the
-  // fund picker). It only seeds the initial selection — the client can still change it.
+  // An in-progress order can travel in the URL: the client may have stepped out to the
+  // fund list mid-form. Everything below only SEEDS the initial state — once here, the
+  // form is the source of truth.
   const [searchParams] = useSearchParams();
-  const preselectedAccountId = searchParams.get('account');
+  const intent = readBuyIntent(searchParams);
+
+  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [selectedTicker, setSelectedTicker] = useState(ticker ?? '');
+  const [bankAccountId, setBankAccountId] = useState(activePersona.bankAccounts[0]?.id ?? '');
   const [accountId, setAccountId] = useState(
-    activePersona.accounts.some(a => a.id === preselectedAccountId)
-      ? preselectedAccountId!
+    activePersona.accounts.some(a => a.id === intent.account)
+      ? intent.account!
       : activePersona.accounts[0]?.id ?? '',
   );
-  const [amountStr, setAmountStr] = useState('');
-  const [purchaseType, setPurchaseType] = useState<'recurring' | 'onetime'>('recurring');
-  const [frequency, setFrequency] = useState<AutoInvestSchedule['frequency']>('Monthly');
+  const [amountStr, setAmountStr] = useState(intent.amount ?? '');
+  const [purchaseType, setPurchaseType] = useState<'recurring' | 'onetime'>(intent.type ?? 'recurring');
+  const [frequency, setFrequency] = useState<AutoInvestSchedule['frequency']>(intent.freq ?? 'Monthly');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  if (!fundDef) {
+  const fundDef = FUND_BY_TICKER.get(selectedTicker);
+
+  // Only an unresolvable ticker in the ROUTE is an error. No ticker at all is the
+  // fund-picker mode below.
+  if (ticker && !fundDef) {
     return (
       <div style={S.page}>
         <Link to="/research" style={{ fontSize: 13, color: theme.color.textMuted, textDecoration: 'none' }}>← Back to Fund Research</Link>
@@ -194,16 +245,33 @@ export function BuyPage() {
     );
   }
 
-  const live = fundQuote(fundDef.ticker);
+  const live = fundDef ? fundQuote(fundDef.ticker) : undefined;
   // Live intraday quote first; the nightly real-data cache covers the gap while
   // market-data is still loading (kills the "Loading price…" dead state).
-  const cachedRow = summary?.funds.find(f => f.ticker === fundDef.ticker);
+  const cachedRow = fundDef ? summary?.funds.find(f => f.ticker === fundDef.ticker) : undefined;
   const price = live?.price ?? cachedRow?.price ?? 0;
   const amount = parseFloat(amountStr.replace(/[^0-9.]/g, '')) || 0;
   const shares = price > 0 && amount > 0 ? amount / price : 0;
   const selectedAccount = activePersona.accounts.find(a => a.id === accountId);
   const selectedBank = activePersona.bankAccounts.find(b => b.id === bankAccountId);
-  const isValid = amount > 0 && accountId !== '' && bankAccountId !== '';
+  const isValid = !!fundDef && amount > 0 && accountId !== '' && bankAccountId !== '';
+
+  // Funds the client already holds in the SELECTED account — the common case for a
+  // contribution is topping up a position they already have, so these lead. The list
+  // re-derives when the account dropdown changes.
+  const heldHere = activePersona.holdings.filter(h => h.accountId === accountId);
+  // A fund chosen from Research (or held in a different account) still has to be
+  // visible and selected, or switching accounts would silently drop the selection.
+  const selectedIsHeldHere = heldHere.some(h => h.ticker === selectedTicker);
+
+  // Where "a different fund" goes: the fund list, carrying the half-filled order so the
+  // client comes back to their work rather than an empty form.
+  const pickFundHref = `/research${buyIntentQuery({
+    account: accountId,
+    amount: amountStr || undefined,
+    type: purchaseType,
+    freq: frequency,
+  })}`;
 
   const freqOptions: RadioOption<AutoInvestSchedule['frequency']>[] = [
     { value: 'Monthly',    label: 'Monthly',    sub: `Every month on the ${dayOfMonth}${dayOfMonth === 1 ? 'st' : dayOfMonth === 2 ? 'nd' : dayOfMonth === 3 ? 'rd' : 'th'}` },
@@ -261,10 +329,10 @@ export function BuyPage() {
     return (
       <div style={S.page}>
         <Link
-          to={`/research/fund/${fundDef.ticker}`}
+          to={fundLessEntry ? `/account/detail/${accountId}` : `/research/fund/${fundDef!.ticker}`}
           style={{ fontSize: 13, color: theme.color.textMuted, textDecoration: 'none', display: 'block', marginBottom: 24 }}
         >
-          ← Back to fund profile
+          {fundLessEntry ? '← Back to account' : '← Back to fund profile'}
         </Link>
 
         <div style={{ marginBottom: 24 }}>
@@ -273,19 +341,104 @@ export function BuyPage() {
             fontFamily: theme.font.serif, letterSpacing: '-0.02em',
             display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 6,
           }}>
-            Buy {fundDef.name}<TickerBadge ticker={fundDef.ticker} />
+            {/* The heading sets the expectation, so it follows how they got here:
+                "Contribute" promised a transaction, and the account is the subject. It
+                tracks the dropdown, so switching accounts relabels honestly. */}
+            {fundLessEntry
+              ? `Contribute to your ${selectedAccount?.type ?? 'account'}`
+              : <>Buy {fundDef!.name}<TickerBadge ticker={fundDef!.ticker} /></>}
           </h1>
-          {price > 0 ? (
+          {fundDef && (price > 0 ? (
             <p style={{ margin: '6px 0 0', fontSize: 14, color: theme.color.textMuted }}>
               Current price: <strong style={{ color: theme.color.text }}>${fmt(price)}</strong>
               <span style={{ fontSize: 12, marginLeft: 6, color: theme.color.textSubtle }}>(delayed)</span>
             </p>
           ) : (
             <p style={{ margin: '6px 0 0', fontSize: 14, color: theme.color.textSubtle }}>Loading price…</p>
-          )}
+          ))}
         </div>
 
         <div style={S.card}>
+
+          {/* Invest into account — FIRST, because it decides which held funds are
+              offered in the Fund section below it. */}
+          <div style={{ marginBottom: 24 }}>
+            <SectionLabel>Invest Into</SectionLabel>
+            <div style={{ position: 'relative' }}>
+              <select
+                value={accountId}
+                onChange={e => setAccountId(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 36px 10px 14px', fontSize: 15,
+                  border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.md,
+                  background: theme.color.surface, color: theme.color.text,
+                  fontFamily: theme.font.sans, boxSizing: 'border-box', outline: 'none',
+                  appearance: 'none', cursor: 'pointer',
+                }}
+              >
+                {activePersona.accounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.type} — ${a.balance.toLocaleString()}</option>
+                ))}
+              </select>
+              <svg style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke={theme.color.textMuted} strokeWidth="2" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Fund — the funds already held in the selected account lead, because topping
+              up an existing position is the common case for a contribution. Anything
+              else is one tap away via the fund list, which returns here with the
+              half-filled order intact. */}
+          <div style={{ marginBottom: 24 }}>
+            <SectionLabel>Fund</SectionLabel>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {heldHere.map(h => (
+                <FundChoiceRow
+                  key={h.ticker}
+                  ticker={h.ticker}
+                  name={h.name}
+                  sub={`${fmt(h.shares, h.shares % 1 === 0 ? 0 : 2)} shares · $${h.value.toLocaleString()}`}
+                  selected={selectedTicker === h.ticker}
+                  onSelect={() => setSelectedTicker(h.ticker)}
+                />
+              ))}
+
+              {/* Chosen from Research, or held in a different account. Keep it visible and
+                  selected rather than letting an account switch silently drop it. */}
+              {fundDef && !selectedIsHeldHere && (
+                <FundChoiceRow
+                  ticker={fundDef.ticker}
+                  name={fundDef.name}
+                  sub="Not currently held in this account"
+                  selected
+                  onSelect={() => setSelectedTicker(fundDef.ticker)}
+                />
+              )}
+
+              {heldHere.length === 0 && !fundDef && (
+                <p style={{ margin: '0 0 4px', fontSize: 13, color: theme.color.textMuted, lineHeight: 1.5 }}>
+                  You don't hold any funds in this account yet — browse the lineup to choose one.
+                </p>
+              )}
+
+              <Link
+                to={pickFundHref}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', borderRadius: theme.radius.md,
+                  border: `1px dashed ${theme.color.borderStrong}`,
+                  background: 'transparent', textDecoration: 'none',
+                  fontSize: 14, fontWeight: 500, color: theme.color.primary,
+                }}
+              >
+                <span>{heldHere.length > 0 || fundDef ? 'A different fund' : 'Browse all funds'}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </div>
 
           {/* Funding source */}
           <div style={{ marginBottom: 24 }}>
@@ -318,33 +471,6 @@ export function BuyPage() {
                   </div>
                 </label>
               ))}
-            </div>
-          </div>
-
-          {/* Invest into account */}
-          <div style={{ marginBottom: 24 }}>
-            <SectionLabel>Invest Into</SectionLabel>
-            <div style={{ position: 'relative' }}>
-              <select
-                value={accountId}
-                onChange={e => setAccountId(e.target.value)}
-                style={{
-                  width: '100%', padding: '10px 36px 10px 14px', fontSize: 15,
-                  border: `1px solid ${theme.color.borderStrong}`, borderRadius: theme.radius.md,
-                  background: theme.color.surface, color: theme.color.text,
-                  fontFamily: theme.font.sans, boxSizing: 'border-box', outline: 'none',
-                  appearance: 'none', cursor: 'pointer',
-                }}
-              >
-                {activePersona.accounts.map(a => (
-                  <option key={a.id} value={a.id}>{a.type} — ${a.balance.toLocaleString()}</option>
-                ))}
-              </select>
-              <svg style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-                width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke={theme.color.textMuted} strokeWidth="2" aria-hidden="true">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
             </div>
           </div>
 
@@ -413,6 +539,10 @@ export function BuyPage() {
       </div>
     );
   }
+
+  // Past step 0 a fund is guaranteed: `isValid` gates the Review button and requires
+  // one. Narrow once here rather than asserting at every use site in the blocks below.
+  if (!fundDef) return null;
 
   // ── Step 1: Review ───────────────────────────────────────────────────────
 

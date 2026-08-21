@@ -7,6 +7,7 @@ import { useMarketData, FundQuote } from '../../../hooks/useMarketData';
 import { useFundMarket } from '../../../hooks/useFundMarket';
 import { PriceHistoryChart } from './PriceHistoryChart';
 import { useClientStore } from '../../../store/clientStore';
+import { buyIntentQuery, readBuyIntent } from '../../../utils/buyIntent';
 
 // ── Formatters ─────────────────────────────────────────────────────────────
 
@@ -497,11 +498,10 @@ function YourHoldings({ ticker, fundName, currentPrice }: { ticker: string; fund
 
 export function FundProfilePage() {
   const { ticker } = useParams<{ ticker: string }>();
-  // Preserved when the client arrived from an account page's Contribute button, so the
-  // destination account survives the detour through a fund's profile.
+  // Preserved when the client stepped out of a half-filled buy form to pick a fund, so
+  // their in-progress order survives the detour through a fund's profile.
   const [searchParams] = useSearchParams();
-  const intoAccountId = searchParams.get('account');
-  const buyQs = intoAccountId ? `?account=${encodeURIComponent(intoAccountId)}` : '';
+  const buyQs = buyIntentQuery(readBuyIntent(searchParams));
   const { byTicker } = useFunds();
   const fundDef = byTicker.get(ticker ?? '');
   const { fundQuote, loading } = useMarketData();

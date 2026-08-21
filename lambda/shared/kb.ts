@@ -2136,6 +2136,10 @@ export const EXTRA_PAGE_TOPICS: Record<string, string[]> = {
   // Research sub-pages
   'research/fund':         ['t-fund-perf', 't-expense-ratios', 't-historical-returns', 't-prospectus'],
   'research/fund/buy':     ['t-trading', 't-expense-ratios', 't-auto-invest', 't-fees'],
+  // The fund-less buy entry, reached from an IRA page's Contribute button. Leads with
+  // t-ira-limits (accountTypes-gated, so it self-suppresses for non-IRA holders)
+  // because the client got here from a contribution-room figure.
+  'contribute':            ['t-ira-limits', 't-trading', 't-auto-invest', 't-fees'],
 
   // Open an account — the wizard publishes a per-step/per-branch key (see
   // OpenAccountPage + pageContextStore) so pills track the exact screen. The
