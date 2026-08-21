@@ -327,8 +327,10 @@ required disclosures, STOP/HELP, an SMS Terms page, and stored consent records).
 ### IRA contributions summary (account pages + every AI surface)
 Each IRA account page carries a **Contributions** card answering the question retirement savers ask
 most: *how much can I still put in this year?* It shows what the client has contributed year to date,
-their annual limit, how much room is left, a progress bar, and a **Contribute** button that takes them
-to the fund lineup with the destination account already attached.
+their annual limit, how much room is left, a progress bar, and a **Contribute** button that opens the
+order form directly, with the destination account already selected. The form leads with the funds they
+already hold in that account — topping up an existing position is the common case — and choosing any
+other fund is one tap away through the full lineup, which hands the half-filled order back intact.
 
 The headline figure is deliberately **not** that one account's contributions. The IRS applies the
 annual limit **across all of a person's Traditional and Roth IRAs combined**, so the card sums every

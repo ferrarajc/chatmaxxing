@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { theme } from '../../../theme';
 import { ContributionSummary, ContributionYear, SepBucket } from '../../../hooks/useContributions';
+import { classifyAccount } from '../../../../../lambda/shared/contribution-limits';
 
 // Contributions card for an IRA account page.
 //
@@ -50,13 +51,13 @@ function Tile({ label, value, tone }: { label: string; value: string; tone?: 'go
 }
 
 function ContributeButton({ accountId }: { accountId: string }) {
-  // Sends the client to the fund lineup with the destination account attached, rather
-  // than picking a fund for them — choosing an investment is an advisor's job, not ours.
-  // ResearchPage and FundProfilePage carry `?account=` through to the buy screen, where
-  // it lands preselected.
+  // Straight into the order form with the destination account attached. "Contribute"
+  // promises a transaction, so it must not open a browse list — the buy page offers the
+  // funds already held in this account, and routes out to the lineup only if the client
+  // asks for a different one.
   return (
     <Link
-      to={`/research?account=${encodeURIComponent(accountId)}`}
+      to={`/contribute?account=${encodeURIComponent(accountId)}`}
       style={{
         display: 'inline-block', padding: '8px 18px', background: theme.color.primary,
         color: theme.color.textOnPrimary, borderRadius: theme.radius.md,
@@ -203,23 +204,41 @@ function SepBlock({ bucket, accountId, showDivider }: {
   );
 }
 
-export function ContributionsCard({ summary, loading, error, accountId, isSepAccount }: {
+export function ContributionsCard({ summary, loading, error, accountId, accounts, isSepAccount }: {
   summary: ContributionSummary | null;
   loading: boolean;
   error: string | null;
   accountId: string;
+  /** The client's accounts — needed to send each bucket's Contribute to a valid target. */
+  accounts: { id: string; type: string }[];
   isSepAccount: boolean;
 }) {
+  // Each bucket's Contribute must land on an account that bucket actually covers. The
+  // page's own account is only right for the bucket it belongs to: on a SEP page the
+  // personal Traditional/Roth block also renders, and sending its button to the SEP
+  // would deposit money that does NOT count toward the limit shown above it.
+  // Resolve against the client's accounts, not `byAccount` — the latter lists only
+  // accounts that have already contributed this year, so a $0 account would be missed.
+  const pageKind = classifyAccount(accounts.find(a => a.id === accountId)?.type);
+  const firstOfKind = (match: (k: string) => boolean) =>
+    accounts.find(a => match(classifyAccount(a.type)))?.id;
+
+  const aggregateTarget = pageKind === 'roth' || pageKind === 'traditional'
+    ? accountId
+    : firstOfKind(k => k === 'roth' || k === 'traditional') ?? accountId;
+  const sepTarget = pageKind === 'sep'
+    ? accountId
+    : firstOfKind(k => k === 'sep') ?? accountId;
   // A SEP page shows its own bucket first, then the personal Traditional/Roth bucket
   // underneath — that limit is cross-account, so it belongs there too when the client
   // also holds a Roth or Traditional IRA.
   const blocks: React.ReactNode[] = [];
   if (summary) {
     const years = summary.years.map((y, i) => (
-      <YearBlock key={`y-${y.taxYear}`} year={y} accountId={accountId} showDivider={isSepAccount || i > 0} />
+      <YearBlock key={`y-${y.taxYear}`} year={y} accountId={aggregateTarget} showDivider={isSepAccount || i > 0} />
     ));
     const seps = summary.sep.map((b, i) => (
-      <SepBlock key={`s-${b.taxYear}`} bucket={b} accountId={accountId} showDivider={i > 0} />
+      <SepBlock key={`s-${b.taxYear}`} bucket={b} accountId={sepTarget} showDivider={i > 0} />
     ));
     blocks.push(...(isSepAccount ? [...seps, ...years] : [...years, ...seps]));
   }

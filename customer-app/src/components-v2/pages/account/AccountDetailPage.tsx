@@ -119,6 +119,7 @@ export function AccountDetailPage() {
           loading={contributions.loading}
           error={contributions.error}
           accountId={account.id}
+          accounts={activePersona.accounts}
           isSepAccount={isSepAccount}
         />
       )}

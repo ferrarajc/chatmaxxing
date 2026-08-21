@@ -93,6 +93,10 @@ export default function App() {
               <Route path="/research" element={<ResearchPage />} />
               <Route path="/research/fund/:ticker" element={<FundProfilePage />} />
               <Route path="/research/fund/:ticker/buy" element={<BuyPage />} />
+              {/* Same page, entered without a fund. `useParams().ticker` is undefined
+                  here, which is what puts BuyPage into fund-picker mode — reached from
+                  an account page's Contribute button with ?account=. */}
+              <Route path="/contribute" element={<BuyPage />} />
               <Route path="/account" element={<AccountPage />} />
               <Route path="/account/detail/:accountId" element={<AccountDetailPage />} />
               <Route path="/transactions" element={<TransactionHistoryPage />} />
