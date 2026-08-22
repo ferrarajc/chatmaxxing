@@ -156,13 +156,15 @@ export interface AgreementEntry {
 export interface Persona {
   clientId: string;
   name: string;
+  /** Honored by every AI surface; NEVER inferred from the name. */
+  pronouns: string;
   age: number;
   salary: number;
   phone: string;
   displayPhone: string;
   email: string;
   address: string;
-  accounts: { type: string; balance: number; id: string; change: number }[];
+  accounts: { type: string; balance: number; cash: number; id: string; change: number }[];
   totalBalance: number;
   holdings: { name: string; ticker: string; accountId: string; shares: number; price: number; change: number; value: number }[];
   transactions: { date: string; description: string; amount: number; account: string; status?: string; accountId?: string }[];
@@ -187,6 +189,7 @@ export interface Persona {
 const alexJohnson: Persona = {
   clientId: 'demo-client-001',
   name: 'Alex Johnson',
+  pronouns: 'he/him',
   age: 59,       // turns 73 in 2040 per rmd.projectedEligibilityYear
   salary: 95000,
   phone: '4842384838',
@@ -194,18 +197,18 @@ const alexJohnson: Persona = {
   email: 'alex.johnson@email.com',
   address: '234 Maple Drive, Wayne, PA 19087',
   accounts: [
-    { type: 'Roth IRA',          balance: 45230,  id: 'acc-001', change: +4.2 },
-    { type: 'Traditional IRA',   balance: 128450, id: 'acc-002', change: +2.8 },
-    { type: 'Taxable Account',   balance: 67890,  id: 'acc-003', change: -0.9 },
+    { type: 'Roth IRA',          balance: 45230, cash: 779,  id: 'acc-001', change: +4.2 },
+    { type: 'Traditional IRA',   balance: 128450, cash: 1897, id: 'acc-002', change: +2.8 },
+    { type: 'Taxable Account',   balance: 67890, cash: 6385,  id: 'acc-003', change: -0.9 },
   ],
   totalBalance: 241570,
   holdings: [
-    { name: 'BobsFunds 500 Index',          ticker: 'BF500',  accountId: 'acc-001', shares: 142.3, price: 218.40, change: +1.2, value: 31072  },
-    { name: 'BobsFunds Growth',             ticker: 'BFGR',   accountId: 'acc-001', shares: 88.1,  price: 341.20, change: +2.1, value: 30060  },
-    { name: 'BobsFunds Bond Income',        ticker: 'BFBI',   accountId: 'acc-002', shares: 210.0, price: 98.30,  change: -0.3, value: 20643  },
-    { name: 'BobsFunds International',      ticker: 'BFIN',   accountId: 'acc-002', shares: 55.4,  price: 87.60,  change: +0.7, value: 4853   },
-    { name: 'BobsFunds ESG Leaders',        ticker: 'BFESG',  accountId: 'acc-003', shares: 31.2,  price: 156.90, change: +1.8, value: 4895   },
-    { name: 'BobsFunds Short-Term Treasury',  ticker: 'BFST',   accountId: 'acc-003', shares: 499.8, price: 100.10, change: +0.1, value: 50030  },
+    { name: 'BobsFunds 500 Index',          ticker: 'BF500',  accountId: 'acc-001', shares: 103.7, price: 218.40, change: +1.2, value: 22648  },
+    { name: 'BobsFunds Growth',             ticker: 'BFGR',   accountId: 'acc-001', shares: 63.9,  price: 341.20, change: +2.1, value: 21803  },
+    { name: 'BobsFunds Bond Income',        ticker: 'BFBI',   accountId: 'acc-002', shares: 1042.8, price: 98.30,  change: -0.3, value: 102507  },
+    { name: 'BobsFunds International',      ticker: 'BFIN',   accountId: 'acc-002', shares: 274.5,  price: 87.60,  change: +0.7, value: 24046   },
+    { name: 'BobsFunds ESG Leaders',        ticker: 'BFESG',  accountId: 'acc-003', shares: 35.3,  price: 156.90, change: +1.8, value: 5539   },
+    { name: 'BobsFunds Short-Term Treasury',  ticker: 'BFST',   accountId: 'acc-003', shares: 559.1, price: 100.10, change: +0.1, value: 55966  },
   ],
   transactions: [
     { date: '2025-04-10', description: 'Dividend reinvestment - BF500',      amount: +124.20,  account: 'Roth IRA'         },
@@ -289,6 +292,7 @@ const alexJohnson: Persona = {
 const mariaChen: Persona = {
   clientId: 'demo-client-002',
   name: 'Maria Chen',
+  pronouns: 'she/her',
   age: 74,   // rmd.age is explicit
   salary: 0, // retired
   phone: '6175550192',
@@ -296,16 +300,17 @@ const mariaChen: Persona = {
   email: 'maria.chen@email.com',
   address: '18 Harbor View Lane, Wellesley, MA 02482',
   accounts: [
-    { type: 'Traditional IRA',   balance: 612000, id: 'acc-201', change: +1.4 },
-    { type: 'Taxable Account',   balance: 278000, id: 'acc-202', change: +0.8 },
+    { type: 'Traditional IRA',   balance: 612000, cash: 12020, id: 'acc-201', change: +1.4 },
+    { type: 'Taxable Account',   balance: 278000, cash: 4628, id: 'acc-202', change: +0.8 },
   ],
   totalBalance: 890000,
   holdings: [
-    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  accountId: 'acc-201', shares: 850.0,  price: 218.40, change: +1.2, value: 185640 },
-    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-201', shares: 1500.0, price: 98.30,  change: -0.3, value: 147450 },
-    { name: 'BobsFunds Short-Term Treasury', ticker: 'BFST',   accountId: 'acc-201', shares: 2800.0, price: 100.10, change: +0.1, value: 280280 },
+    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  accountId: 'acc-201', shares: 832.4,  price: 218.40, change: +1.2, value: 181796 },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-201', shares: 1464.7, price: 98.30,  change: -0.3, value: 143980 },
+    { name: 'BobsFunds Short-Term Treasury', ticker: 'BFST',   accountId: 'acc-201', shares: 2739.3, price: 100.10, change: +0.1, value: 274204 },
     { name: 'BobsFunds International',     ticker: 'BFIN',   accountId: 'acc-202', shares: 500.0,  price: 87.60,  change: +0.7, value: 43800  },
     { name: 'BobsFunds ESG Leaders',       ticker: 'BFESG',  accountId: 'acc-202', shares: 150.0,  price: 156.90, change: +1.8, value: 23535  },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-202', shares: 2096.0, price: 98.30,  change: -0.3, value: 206037 },
   ],
   transactions: [
     { date: '2025-04-10', description: 'RMD Distribution',                   amount: -15300.00, account: 'Traditional IRA' },
@@ -397,6 +402,7 @@ const mariaChen: Persona = {
 const jordanWilliams: Persona = {
   clientId: 'demo-client-003',
   name: 'Jordan Williams',
+  pronouns: 'they/them',
   age: 28,
   salary: 52000,
   phone: '5035550847',
@@ -404,13 +410,13 @@ const jordanWilliams: Persona = {
   email: 'jordan.williams@email.com',
   address: '512 NE Burnside St Apt 3B, Portland, OR 97214',
   accounts: [
-    { type: 'Roth IRA',        balance: 18500, id: 'acc-301', change: +3.1 },
-    { type: 'Taxable Account', balance: 4800,  id: 'acc-302', change: +1.4 },
+    { type: 'Roth IRA',        balance: 18500, cash: 202, id: 'acc-301', change: +3.1 },
+    { type: 'Taxable Account', balance: 4800, cash: 877,  id: 'acc-302', change: +1.4 },
   ],
   totalBalance: 23300,
   holdings: [
-    { name: 'BobsFunds 500 Index',   ticker: 'BF500',  accountId: 'acc-301', shares: 65.0,  price: 218.40, change: +1.2, value: 14196 },
-    { name: 'BobsFunds Growth',      ticker: 'BFGR',   accountId: 'acc-301', shares: 15.0,  price: 341.20, change: +2.1, value: 5118  },
+    { name: 'BobsFunds 500 Index',   ticker: 'BF500',  accountId: 'acc-301', shares: 61.6,  price: 218.40, change: +1.2, value: 13453 },
+    { name: 'BobsFunds Growth',      ticker: 'BFGR',   accountId: 'acc-301', shares: 14.2,  price: 341.20, change: +2.1, value: 4845  },
     { name: 'BobsFunds ESG Leaders', ticker: 'BFESG',  accountId: 'acc-302', shares: 25.0,  price: 156.90, change: +1.8, value: 3923  },
   ],
   transactions: [
@@ -485,6 +491,7 @@ const jordanWilliams: Persona = {
 const robertMartinez: Persona = {
   clientId: 'demo-client-004',
   name: 'Robert Martinez',
+  pronouns: 'he/him',
   age: 52,        // kids born 2008/2011, self-employed with substantial SEP-IRA
   salary: 140000,
   phone: '7135550234',
@@ -492,16 +499,16 @@ const robertMartinez: Persona = {
   email: 'robert.martinez@email.com',
   address: '4217 Westheimer Rd, Houston, TX 77027',
   accounts: [
-    { type: 'SEP-IRA',           balance: 285000, id: 'acc-401', change: +1.9 },
-    { type: 'Roth IRA',          balance: 42000,  id: 'acc-402', change: +3.2 },
-    { type: 'Taxable Account',   balance: 118000, id: 'acc-403', change: -0.4 },
+    { type: 'SEP-IRA',           balance: 285000, cash: 8695, id: 'acc-401', change: +1.9 },
+    { type: 'Roth IRA',          balance: 42000, cash: 397,  id: 'acc-402', change: +3.2 },
+    { type: 'Taxable Account',   balance: 118000, cash: 7890, id: 'acc-403', change: -0.4 },
   ],
   totalBalance: 445000,
   holdings: [
-    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  accountId: 'acc-401', shares: 380.0,  price: 218.40, change: +1.2, value: 82992  },
-    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-401', shares: 800.0,  price: 98.30,  change: -0.3, value: 78640  },
-    { name: 'BobsFunds Growth',            ticker: 'BFGR',   accountId: 'acc-402', shares: 145.0,  price: 341.20, change: +2.1, value: 49474  },
-    { name: 'BobsFunds International',     ticker: 'BFIN',   accountId: 'acc-402', shares: 250.0,  price: 87.60,  change: +0.7, value: 21900  },
+    { name: 'BobsFunds 500 Index',         ticker: 'BF500',  accountId: 'acc-401', shares: 649.0,  price: 218.40, change: +1.2, value: 141742  },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-401', shares: 1368.9,  price: 98.30,  change: -0.3, value: 134563  },
+    { name: 'BobsFunds Growth',            ticker: 'BFGR',   accountId: 'acc-402', shares: 84.5,  price: 341.20, change: +2.1, value: 28831  },
+    { name: 'BobsFunds International',     ticker: 'BFIN',   accountId: 'acc-402', shares: 145.8,  price: 87.60,  change: +0.7, value: 12772  },
     { name: 'BobsFunds Short-Term Treasury', ticker: 'BFST',   accountId: 'acc-403', shares: 1100.0, price: 100.10, change: +0.1, value: 110110 },
   ],
   transactions: [

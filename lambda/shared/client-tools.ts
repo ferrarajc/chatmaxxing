@@ -1,6 +1,7 @@
 import { GetCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from './dynamo-client';
 import { computeContributionSummary, formatContributionSummary } from './contributions';
+import { cashOf, investedValue } from './account-math';
 
 export interface OpenAITool {
   type: 'function';
@@ -26,7 +27,7 @@ export const ALL_CLIENT_TOOLS: OpenAITool[] = [
     type: 'function',
     function: {
       name: 'get_accounts',
-      description: "Fetch the client's full account list with types, IDs, balances, and total portfolio value.",
+      description: "Fetch the client's account list: type, ID, TOTAL value, how much of that is invested in funds, and how much is uninvested CASH available to spend. Cash is part of the total, not additional to it. Use this whenever the client asks what an account is worth or whether they have cash available.",
       parameters: { type: 'object', properties: {} as Record<string, never>, required: [] },
     },
   },
@@ -163,13 +164,37 @@ async function runTool(toolName: string, clientId: string): Promise<string> {
     }
 
     case 'get_accounts': {
-      const item = await fetchField(clientId, 'accounts, totalBalance');
-      const accounts = (item.accounts as Array<{ type: string; id: string; balance: number; change?: number }> | undefined) ?? [];
+      const item = await fetchField(clientId, 'accounts, totalBalance, holdings');
+      const accounts = (item.accounts as Array<{ type: string; id: string; balance: number; cash?: number; change?: number }> | undefined) ?? [];
+      const holdings = (item.holdings as Array<{ accountId: string; shares: number; price: number; value: number }> | undefined) ?? [];
       if (!accounts.length) return 'No accounts found.';
-      const lines = accounts.map(a =>
-        `${a.type} (${a.id}): $${fmt(a.balance)}${a.change !== undefined ? ` (${a.change >= 0 ? '+' : ''}${a.change}% today)` : ''}`,
+
+      // Every number gets a NOUN, and the containment relation is written as an
+      // equation rather than left to be inferred from adjacency.
+      //
+      // This output used to be a bare "Taxable Account (acc-302): $4,800.00", with
+      // get_holdings separately reporting $3,923.00 and nothing anywhere stating that
+      // the first figure CONTAINS the second. A task expert asked whether the client had
+      // cash available reported $4,800 of cash — and, when challenged, confirmed $4,800
+      // of cash PLUS $3,923 of holdings. The explicit "never add them together" line is
+      // here because that is the exact mistake that was made.
+      const lines: string[] = [
+        "Account values. Each account's TOTAL VALUE = money invested in funds + uninvested cash.",
+        'Cash is the spendable portion and is ALREADY INCLUDED in the total — never add them together.',
+      ];
+      let totalCash = 0;
+      for (const a of accounts) {
+        const invested = investedValue(holdings, a.id);
+        const cash = cashOf(a, holdings);
+        totalCash += cash;
+        const changeStr = a.change !== undefined ? ` (${a.change >= 0 ? '+' : ''}${a.change}% today)` : '';
+        lines.push(
+          `${a.type} (${a.id}): total $${fmt(a.balance)} = $${fmt(invested)} in funds + $${fmt(cash)} cash${changeStr}`,
+        );
+      }
+      lines.push(
+        `Total portfolio value: $${fmt((item.totalBalance as number | undefined) ?? 0)} (of which $${fmt(totalCash)} is cash)`,
       );
-      lines.push(`Total portfolio value: $${fmt((item.totalBalance as number | undefined) ?? 0)}`);
       return cap(lines.join('\n'));
     }
 

@@ -47,6 +47,10 @@ export interface ClientTransaction {
 export interface ClientProfile {
   clientId: string;
   name: string;
+  /** e.g. 'she/her', 'he/him', 'they/them'. Honored, NEVER inferred from the name.
+   *  The phone surfaces (prep-callback, agent-callbacks) already did this; the chat
+   *  surfaces had no pronoun field at all and so guessed from the name. */
+  pronouns?: string;
   phone: string;
   displayPhone?: string;
   email?: string;
@@ -61,7 +65,11 @@ export interface ClientProfile {
 
 export interface Account {
   type: string;
+  /** TOTAL value of the account = cash + Σ holdings. */
   balance: number;
+  /** Uninvested cash — the spendable part of `balance`, already included in it.
+   *  Optional: the agent-app profile mirror carries balances only. */
+  cash?: number;
   id: string;
   change?: number;
 }
@@ -172,8 +180,25 @@ export function matchResources(text: string): Resource[] {
     .map(s => s.resource);
 }
 
+/**
+ * One compact line describing the client's accounts, injected into ~20 task-expert
+ * prompt headers as `Client accounts: ...`.
+ *
+ * It used to render a bare `Taxable Account: $4,800` — the dollar figure carried NO
+ * noun at all (not "balance", not "total value") and holdings were never injected
+ * alongside it. An expert offered "Cash in account" as a funding source, holding one
+ * unlabelled number, concluded the number WAS the cash. `total incl. $X cash` is
+ * unambiguous in four words and worth the ~50 characters.
+ *
+ * `cash` is optional so the agent-app's balances-only profile mirror and any legacy
+ * record degrade to the previous output rather than printing "incl. $undefined cash".
+ */
 export function summarizeAccounts(accounts: Account[]): string {
-  return accounts.map(a => `${a.type}: $${a.balance.toLocaleString()}`).join(', ');
+  return accounts.map(a => {
+    const hasCash = typeof a.cash === 'number' && Number.isFinite(a.cash);
+    const cashPart = hasCash ? ` total incl. $${(a.cash as number).toLocaleString()} cash` : '';
+    return `${a.type} (${a.id}): $${a.balance.toLocaleString()}${cashPart}`;
+  }).join(', ');
 }
 
 export function summarizeIntents(intents: IntentOption[] | undefined): string {

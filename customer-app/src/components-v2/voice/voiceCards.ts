@@ -1,4 +1,5 @@
 import { Persona } from '../../data/personas';
+import { cashOf } from '../../../../lambda/shared/account-math';
 
 // Derive a small on-screen card to show while Bob answers, straight from the signed-in
 // client's real data (no backend, no LLM — so the visual is instant and accurate). Returns
@@ -45,6 +46,11 @@ export function deriveCard(intent: string, p: Persona): VoiceCard | null {
       byTicker.set(h.ticker, e);
     }
     const slices = [...byTicker.values()].sort((a, b) => b.value - a.value);
+    // Cash is part of the portfolio, so it gets a slice — otherwise this card visibly
+    // under-totals the balance card above it and invites the same "is that extra?"
+    // confusion the account page had.
+    const totalCash = p.accounts.reduce((sum, a) => sum + cashOf(a, p.holdings), 0);
+    if (totalCash > 0) slices.push({ name: 'Cash', value: totalCash });
     return { kind: 'allocation', slices };
   }
 

@@ -6,6 +6,7 @@ import { FUND_PRICES } from '../shared/fund-catalog';
 import { buildTransactionRow, TxnType } from '../shared/transaction-history';
 import { isIraAccount } from '../shared/contribution-limits';
 import { parseMoney, isValidAmount, formatMoney, resolveAmount, numberOr } from '../shared/money';
+import { cashOf, applyCashDelta, recomputeAccounts, portfolioTotal } from '../shared/account-math';
 
 interface ExecuteTaskRequest {
   taskId: string;
@@ -38,7 +39,7 @@ function matchFund(nameOrTicker: string): { name: string; ticker: string; price:
   return null;
 }
 
-type AccountEntry  = { type: string; balance: number; id: string; change: number };
+type AccountEntry  = { type: string; balance: number; cash?: number; id: string; change: number };
 type HoldingEntry  = { name: string; ticker: string; accountId: string; shares: number; price: number; change: number; value: number; drip?: boolean };
 
 async function readClient(table: string, clientId: string): Promise<{
@@ -379,9 +380,32 @@ export const handler = async (
           });
         }
 
-        const sharesAdded = Math.round((amount / fundInfo.price) * 1000) / 1000;
         const account     = accounts.find(a => a.id === accountId);
         const accountType = account?.type ?? '';
+
+        // The funding source is finally READ. It was collected by the expert, shown on
+        // the proposed-action card, submitted — and then silently discarded, so both
+        // options behaved identically (and both CREATED money: the purchase added the
+        // full amount to the balance AND added the shares).
+        //
+        // Anything other than an explicit "cash" answer — including a missing field —
+        // means the linked bank, which preserves today's behavior for callers that
+        // don't send it.
+        const fromCash = /cash/i.test(fields.fundingSource ?? '');
+
+        if (fromCash && account) {
+          const available = cashOf(account, holdings);
+          if (available < amount) {
+            return jsonResponse(200, {
+              success: false,
+              message: `That account has $${formatMoney(available)} in cash — not enough for a $${formatMoney(amount)} purchase. `
+                     + `You can fund it from the linked bank account instead, sell holdings to raise cash, `
+                     + `or purchase up to $${formatMoney(available)} from cash.`,
+            });
+          }
+        }
+
+        const sharesAdded = Math.round((amount / fundInfo.price) * 1000) / 1000;
 
         // Update or create holding
         const hIdx = holdings.findIndex(h => h.ticker === fundInfo.ticker && h.accountId === accountId);
@@ -397,20 +421,29 @@ export const handler = async (
           });
         }
 
-        // Update account balance and total
-        const updatedAccounts = accounts.map(a =>
-          a.id === accountId ? { ...a, balance: a.balance + amount } : a,
-        );
-        const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
+        // Cash-funded: the money was already in the account, so cash goes DOWN and the
+        // total is unchanged. Bank-funded: new money arrives, cash is untouched and the
+        // total goes UP. Either way the balance is recomputed from the identity rather
+        // than adjusted by hand.
+        const cashAdjusted = fromCash
+          ? applyCashDelta(accounts, holdings, accountId, -amount).accounts
+          : accounts;
+        const updatedAccounts = recomputeAccounts(cashAdjusted, holdings);
+        const newTotal = portfolioTotal(updatedAccounts);
 
-        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await writeFinancials(table, clientId, updatedAccounts, holdings, newTotal);
         // New money into a retirement account is an IRA CONTRIBUTION, not a plain buy —
         // it counts against the annual limit and must feed the contributions card. This
         // mirrors clientStore.buyFund so a contribution made through an agent or
         // autopilot is recorded identically to one made through the portal. The task is
         // already named "Buy / Make a Contribution"; this makes the ledger agree.
         // Note the SIGN FLIP: a contribution is money in (positive).
-        const purchaseIsContribution = isIraAccount(accountType);
+        //
+        // ...but ONLY new money. Moving cash that is ALREADY inside a Roth into a fund
+        // is not a contribution and must not count against the annual limit. That was
+        // invisible while "cash in account" did nothing; now that it moves real cash,
+        // it would have overstated the client's contributions.
+        const purchaseIsContribution = isIraAccount(accountType) && !fromCash;
         await appendTransactionRows(clientId, [{
           description: purchaseIsContribution
             ? `Contribution - ${fundInfo.name}`
@@ -481,12 +514,14 @@ export const handler = async (
           }
         }
 
-        const updatedAccounts = accounts.map(a =>
-          a.id === accountId ? { ...a, balance: Math.max(0, a.balance - amount) } : a,
-        );
-        const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
+        // A sale CONVERTS shares to cash: proceeds land in the account and the total is
+        // unchanged. It used to subtract the amount from the balance while also removing
+        // the shares, so the money simply vanished from the client's account.
+        const withProceeds = applyCashDelta(accounts, holdings, accountId, +amount).accounts;
+        const updatedAccounts = recomputeAccounts(withProceeds, holdings);
+        const newTotal = portfolioTotal(updatedAccounts);
 
-        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await writeFinancials(table, clientId, updatedAccounts, holdings, newTotal);
         await appendTransactionRows(clientId, [{
           description: `Sale - ${fundInfo.name}`,
           amount: +amount,
@@ -568,8 +603,11 @@ export const handler = async (
           });
         }
 
-        await writeFinancials(table, clientId, accounts, holdings,
-          accounts.reduce((s, a) => s + a.balance, 0));
+        // An exchange moves value between two funds inside one account: cash untouched.
+        // (The two roundings are independent, so invested value can drift by ~$1 per
+        // exchange; recomputing means that lands on the balance rather than nowhere.)
+        const exchangedAccounts = recomputeAccounts(accounts, holdings);
+        await writeFinancials(table, clientId, exchangedAccounts, holdings, portfolioTotal(exchangedAccounts));
         await appendTransactionRows(clientId, [{
           description: `Exchange - ${fromFund.name} → ${toFund.name}`,
           amount: 0,
@@ -624,9 +662,11 @@ export const handler = async (
           return jsonResponse(200, { success: false, message: 'No account was specified for this distribution.' });
         }
 
-        // "Full balance" is the documented answer to the withdrawal amount question —
-        // and it used to reach parseFloat as a phrase, producing NaN and a failed submit.
-        const amount = resolveAmount(fields.amount, account.balance);
+        // A distribution is paid out of CASH, so "full balance" resolves to the cash
+        // available, not the account total. (It also used to reach parseFloat as a
+        // phrase, producing NaN and a failed submit.)
+        const availableCash = cashOf(account, holdings);
+        const amount = resolveAmount(fields.amount, availableCash);
 
         if (!isValidAmount(amount)) {
           return jsonResponse(200, {
@@ -634,19 +674,27 @@ export const handler = async (
             message: `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, or "full balance".`,
           });
         }
-        if (amount > account.balance) {
+        // DELIBERATE BEHAVIOR CHANGE: this used to always succeed, silently driving the
+        // balance below the value of the holdings. Money has to be in cash to be paid
+        // out — matching kb-014 and WithdrawalsPage ("sell the holdings you need...
+        // proceeds settle in about 1 business day"). We do NOT auto-liquidate to cover
+        // the gap: choosing which lot of which fund to sell, and its tax treatment, is
+        // not something this data model represents, and pretending otherwise is the
+        // exact class of fiction being removed here.
+        if (amount > availableCash) {
           return jsonResponse(200, {
             success: false,
-            message: `That account holds $${formatMoney(account.balance)} — not enough for a $${formatMoney(amount)} distribution.`,
+            message: `That account has $${formatMoney(availableCash)} available in cash — not enough for a `
+                   + `$${formatMoney(amount)} distribution. Sell holdings first to raise cash, or request up `
+                   + `to $${formatMoney(availableCash)}.`,
           });
         }
 
-        const updatedAccounts = accounts.map(a =>
-          a.id === accountId ? { ...a, balance: Math.max(0, a.balance - amount) } : a,
-        );
-        const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
+        const afterWithdrawal = applyCashDelta(accounts, holdings, accountId, -amount).accounts;
+        const updatedAccounts = recomputeAccounts(afterWithdrawal, holdings);
+        const newTotal = portfolioTotal(updatedAccounts);
 
-        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await writeFinancials(table, clientId, updatedAccounts, holdings, newTotal);
         await appendTransactionRows(clientId, [{
           description: `Distribution - ${fields.deliveryMethod ?? 'ACH'}`,
           amount: +amount,
@@ -725,16 +773,19 @@ export const handler = async (
         const initialAmount = Number.isFinite(parsedInitial) ? Math.max(0, parsedInitial) : 0;
         const newId         = 'acc-' + Math.random().toString(36).slice(2, 7);
 
+        // A new account holds nothing yet, so the opening deposit is ENTIRELY cash —
+        // which is what makes the client's first purchase from it work.
         const newAccount: AccountEntry = {
           type:    accountType,
           balance: initialAmount,
+          cash:    initialAmount,
           id:      newId,
           change:  0,
         };
-        const updatedAccounts = [...accounts, newAccount];
-        const newTotal        = updatedAccounts.reduce((s, a) => s + a.balance, 0);
+        const updatedAccounts = recomputeAccounts([...accounts, newAccount], holdings);
+        const newTotal        = portfolioTotal(updatedAccounts);
 
-        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await writeFinancials(table, clientId, updatedAccounts, holdings, newTotal);
         if (initialAmount > 0) {
           await appendTransactionRows(clientId, [{
             description: `Initial funding - ${accountType}`,
@@ -766,8 +817,12 @@ export const handler = async (
           });
         }
 
-        // "Full balance" converts the whole account — a documented answer here too.
-        const amount = resolveAmount(fields.amount, fromAccount.balance);
+        // A conversion moves CASH between two accounts (it leaves holdings alone), so
+        // "full balance" means the cash available and the amount is capped by it. Same
+        // reasoning as the distribution guard: converting money that is sitting in funds
+        // would require liquidating positions this model doesn't represent.
+        const convertibleCash = cashOf(fromAccount, holdings);
+        const amount = resolveAmount(fields.amount, convertibleCash);
 
         if (!isValidAmount(amount)) {
           return jsonResponse(200, {
@@ -775,21 +830,27 @@ export const handler = async (
             message: `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, or "full balance".`,
           });
         }
-        if (amount > fromAccount.balance) {
+        if (!rothAccount) {
           return jsonResponse(200, {
             success: false,
-            message: `That account holds $${formatMoney(fromAccount.balance)} — not enough to convert $${formatMoney(amount)}.`,
+            message: 'There is no Roth IRA on this account to convert into.',
+          });
+        }
+        if (amount > convertibleCash) {
+          return jsonResponse(200, {
+            success: false,
+            message: `That ${fromAccount.type} has $${formatMoney(convertibleCash)} available in cash — not enough to `
+                   + `convert $${formatMoney(amount)}. Sell holdings first to raise cash, or convert up to `
+                   + `$${formatMoney(convertibleCash)}.`,
           });
         }
 
-        const updatedAccounts = accounts.map(a => {
-          if (a.id === fromAccountId) return { ...a, balance: Math.max(0, a.balance - amount) };
-          if (rothAccount && a.id === rothAccount.id) return { ...a, balance: a.balance + amount };
-          return a;
-        });
-        const newTotal = updatedAccounts.reduce((s, a) => s + a.balance, 0);
+        const debited  = applyCashDelta(accounts, holdings, fromAccountId, -amount).accounts;
+        const credited = applyCashDelta(debited, holdings, rothAccount.id, +amount).accounts;
+        const updatedAccounts = recomputeAccounts(credited, holdings);
+        const newTotal = portfolioTotal(updatedAccounts);
 
-        await writeFinancials(table, clientId, updatedAccounts, holdings, Math.round(newTotal));
+        await writeFinancials(table, clientId, updatedAccounts, holdings, newTotal);
         await appendTransactionRows(clientId, [
           {
             description: `Roth Conversion - from ${fromAccount.type}`,
