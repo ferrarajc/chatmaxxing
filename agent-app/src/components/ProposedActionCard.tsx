@@ -66,8 +66,17 @@ export function ProposedActionCard({ slot }: Props) {
           store.patchSlot(slot.contactId, { proposedAction: null, proposedActionEvidence: null });
         }, 4000);
       }
-    } catch {
-      setResult({ success: false, message: 'Submission failed — please try again.' });
+    } catch (e) {
+      // Surface the real reason. This used to swallow the Error entirely, so every
+      // backend failure — a rejected amount, a fund we can't match, a genuine 500 —
+      // looked identical and could only be diagnosed from CloudWatch.
+      const detail = e instanceof Error ? e.message : '';
+      setResult({
+        success: false,
+        message: detail
+          ? `Submission failed — ${detail}`
+          : 'Submission failed — please try again.',
+      });
     } finally {
       setSubmitting(false);
     }

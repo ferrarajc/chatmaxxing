@@ -13,8 +13,11 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const TESTS = [
-  // Offline unit test (no network, no LLM): the pure IRA contribution-limit math.
-  'test-contribution-limits',
+  // Offline unit tests (no network, no LLM) — these run first because they are fast
+  // and because a failure here explains failures further down the list.
+  'test-contribution-limits',   // the pure IRA contribution-limit math
+  'test-money',                 // currency parsing — "$4,800" must not become NaN
+  'test-advice-guard',          // holdings questions are facts, not advice
   // Read-only API test (no LLM): the contributions summary across all four personas.
   'test-contributions',
   // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.

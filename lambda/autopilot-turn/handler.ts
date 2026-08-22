@@ -2364,10 +2364,34 @@ export const handler = async (
       m.role === 'AGENT' &&
       /\b(callback|call you back|call you|advisor will call|set (this|that|it|one) up|schedul\w* (a |the )?call|arrang\w* (a |the )?call)\b/i.test(m.content));
 
+    // Is a task expert already running? The [TASK: id] marker is what carries a task
+    // across turns — forceTaskId is sent ONLY on the kickoff turn — so this has to be
+    // resolved BEFORE the advice guard below, not after it.
+    //
+    // It used to be resolved after, which meant the guard could not tell a running task
+    // from a cold one and fired on every mid-task client message. A client answering the
+    // buy-funds expert's own question with "Which fund do I hold right now" was handed
+    // the scripted advice decline and a callback, ending the task. Once an expert is
+    // running, advice is handled inside the expert prompt (FORBIDDEN_TOPICS), which has
+    // the conversation's context and can tell a holdings lookup from a recommendation.
+    //
+    // The LAST marker wins: a chat can run several tasks in sequence (finish
+    // beneficiaries, then start account access), and taking the first one would pin the
+    // conversation to the task that already completed.
+    const taskMarker = transcript
+      .filter(m => m.role === 'SYSTEM')
+      .reverse()
+      .map(m => m.content.match(/^\[TASK:\s*([^\]]+)\]$/))
+      .find(Boolean);
+
+    // A forced task starts fresh (Phase 1), ignoring any marker already in the
+    // transcript — the agent just told us which expert to run.
+    const activeTaskId = forcedTask ? null : (taskMarker?.[1]?.trim() ?? null);
+
     // Financial-advice requests must route to a callback with a licensed advisor —
     // and must NOT be swallowed by task identification (e.g. "best stocks to BUY"
     // must not match the place-purchase task). Short-circuit before any task logic.
-    if (scope === 'get-intent' && !forcedTask && isAdviceRequest(lastCustomerMsg)) {
+    if (scope === 'get-intent' && !forcedTask && !activeTaskId && isAdviceRequest(lastCustomerMsg)) {
       return jsonResponse(200, {
         response: "I'm not permitted to provide personalized investment advice — that requires a licensed financial advisor. I can arrange a callback with one of our advisors who can give you tailored guidance. Would that work?",
         shouldExitAutopilot: true,
@@ -2402,20 +2426,7 @@ export const handler = async (
         });
       }
 
-      // Check if a task has already been identified (look for [TASK: id] in transcript).
-      // The LAST marker wins: a chat can run several tasks in sequence (finish
-      // beneficiaries, then start account access), and taking the first one would
-      // pin the conversation to the task that already completed.
-      const taskMarker = transcript
-        .filter(m => m.role === 'SYSTEM')
-        .reverse()
-        .map(m => m.content.match(/^\[TASK:\s*([^\]]+)\]$/))
-        .find(Boolean);
-
-      // A forced task starts fresh (Phase 1), ignoring any marker already in the
-      // transcript — the agent just told us which expert to run.
-      const activeTaskId = forcedTask ? null : (taskMarker?.[1]?.trim() ?? null);
-
+      // activeTaskId is resolved above, before the advice guard — see the comment there.
       if (activeTaskId) {
         // Phase 2: LLM expert owns the entire task conversation
 

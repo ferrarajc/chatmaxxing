@@ -2,9 +2,10 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { UpdateCommand, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '../shared/dynamo-client';
 import { jsonResponse } from '../shared/types';
-import { FUND_PRICES } from '../shared/client-defaults';
+import { FUND_PRICES } from '../shared/fund-catalog';
 import { buildTransactionRow, TxnType } from '../shared/transaction-history';
 import { isIraAccount } from '../shared/contribution-limits';
+import { parseMoney, isValidAmount, formatMoney, resolveAmount, numberOr } from '../shared/money';
 
 interface ExecuteTaskRequest {
   taskId: string;
@@ -139,7 +140,7 @@ export const handler = async (
             accountId,
             name,
             relationship: fields[`ben_${i}_relationship`] ?? '',
-            percentage:   parseFloat(fields[`ben_${i}_percentage`] ?? '0'),
+            percentage:   numberOr(fields[`ben_${i}_percentage`], 0),
             type:         fields[`ben_${i}_type`] ?? 'Primary',
           });
         }
@@ -174,13 +175,21 @@ export const handler = async (
         const accountType = accounts.find(a => a.id === fields.accountId)?.type ?? '';
         const fundInfo = matchFund(fields.fund ?? '');
 
+        const scheduleAmount = parseMoney(fields.amount);
+        if (!isValidAmount(scheduleAmount)) {
+          return jsonResponse(200, {
+            success: false,
+            message: `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, like $250.`,
+          });
+        }
+
         const newSchedule = {
           id:          'sched-' + Math.random().toString(36).slice(2, 8),
           accountId:   fields.accountId,
           accountType,
           fund:        fundInfo?.name ?? fields.fund ?? '',
           ticker:      fundInfo?.ticker ?? '',
-          amount:      parseFloat(fields.amount ?? '0'),
+          amount:      scheduleAmount,
           frequency:   fields.frequency ?? 'Monthly',
           dayOfMonth:  parseInt(fields.dayOfMonth ?? '1', 10),
           nextDate:    fields.startDate ?? today(),
@@ -210,7 +219,9 @@ export const handler = async (
           if (i === 0) {
             return {
               ...s,
-              amount:    fields.amount    ? parseFloat(fields.amount) : s.amount,
+              // Keep the existing amount unless a NEW, parseable one was given —
+              // an unparseable edit must not blank out a working schedule.
+              amount:    isValidAmount(parseMoney(fields.amount)) ? parseMoney(fields.amount) : s.amount,
               frequency: fields.frequency && fields.frequency !== 'Keep the same' ? fields.frequency : s.frequency,
               dayOfMonth: fields.dayOfMonth && fields.dayOfMonth !== 'Keep the same'
                 ? parseInt(fields.dayOfMonth, 10) : s.dayOfMonth,
@@ -266,7 +277,7 @@ export const handler = async (
           ...current,
           deliveryMethod: fields.deliveryMethod,
           frequency:      fields.frequency,
-          taxWithholding: parseFloat(fields.taxWithholding ?? '10'),
+          taxWithholding: numberOr(fields.taxWithholding, 10),
         };
         await docClient.send(new UpdateCommand({
           TableName: table,
@@ -343,14 +354,28 @@ export const handler = async (
       case 'place-purchase': {
         const { accounts, holdings } = await readClient(table, clientId);
         const accountId = fields.accountId ?? accounts[0]?.id ?? '';
-        const amount    = parseFloat(fields.amount ?? '0');
+        const amount    = parseMoney(fields.amount ?? '0');
         const fundInfo  = matchFund(fields.fund ?? '');
 
-        if (!fundInfo || !accountId || amount <= 0) {
+        // Validate BEFORE the first write. These used to fall through to a cheerful
+        // "order placed" that wrote nothing at all — the agent saw success, the ledger
+        // never moved, and an IRA contribution never reached the contributions card.
+        if (!isValidAmount(amount)) {
           return jsonResponse(200, {
-            success: true,
-            message: `Purchase order placed: $${fields.amount} into ${fields.fund}. Order will execute at next available NAV.`,
-            referenceNumber: ref,
+            success: false,
+            message: `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, like $1,500.`,
+          });
+        }
+        if (!fundInfo) {
+          return jsonResponse(200, {
+            success: false,
+            message: `I couldn't match "${fields.fund ?? ''}" to a fund in the lineup. Check the ticker and try again.`,
+          });
+        }
+        if (!accountId) {
+          return jsonResponse(200, {
+            success: false,
+            message: 'No account was specified for this purchase.',
           });
         }
 
@@ -407,14 +432,38 @@ export const handler = async (
       case 'place-sale': {
         const { accounts, holdings } = await readClient(table, clientId);
         const accountId = fields.accountId ?? accounts[0]?.id ?? '';
-        const amount    = parseFloat(fields.amount ?? '0');
         const fundInfo  = matchFund(fields.fund ?? '');
 
-        if (!fundInfo || !accountId || amount <= 0) {
+        if (!fundInfo) {
           return jsonResponse(200, {
-            success: true,
-            message: `Sale order placed: ${fields.amount} of ${fields.fund}. Order will execute at next available NAV.`,
-            referenceNumber: ref,
+            success: false,
+            message: `I couldn't match "${fields.fund ?? ''}" to a fund in the lineup. Check the ticker and try again.`,
+          });
+        }
+        if (!accountId) {
+          return jsonResponse(200, { success: false, message: 'No account was specified for this sale.' });
+        }
+
+        const hIdx = holdings.findIndex(h => h.ticker === fundInfo.ticker && h.accountId === accountId);
+        const position = hIdx >= 0 ? holdings[hIdx] : null;
+
+        // "Full redemption" / "all shares" is an answer the expert explicitly invites,
+        // so resolve it against the position rather than feeding the phrase to a parser.
+        const amount = resolveAmount(fields.amount, position?.value ?? 0);
+
+        if (!isValidAmount(amount)) {
+          return jsonResponse(200, {
+            success: false,
+            message: position
+              ? `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, or "full redemption".`
+              : `There's no ${fundInfo.name} position in that account to sell.`,
+          });
+        }
+        if (position && amount > position.value) {
+          return jsonResponse(200, {
+            success: false,
+            message: `That position is worth $${formatMoney(position.value)} — not enough to sell $${formatMoney(amount)}. `
+                   + `You can sell up to $${formatMoney(position.value)}, or request a full redemption.`,
           });
         }
 
@@ -422,7 +471,6 @@ export const handler = async (
         const account = accounts.find(a => a.id === accountId);
         const accountType = account?.type ?? '';
 
-        const hIdx = holdings.findIndex(h => h.ticker === fundInfo.ticker && h.accountId === accountId);
         if (hIdx >= 0) {
           const h = holdings[hIdx];
           const newShares = Math.max(0, Math.round((h.shares - sharesRemoved) * 1000) / 1000);
@@ -458,17 +506,39 @@ export const handler = async (
       case 'exchange-funds': {
         const { accounts, holdings } = await readClient(table, clientId);
         const accountId  = fields.accountId ?? accounts[0]?.id ?? '';
-        const amount     = parseFloat(fields.amount ?? '0');
         const fromFund   = matchFund(fields.fromFund ?? '');
         const toFund     = matchFund(fields.toFund   ?? '');
         const account    = accounts.find(a => a.id === accountId);
         const accountType = account?.type ?? '';
 
-        if (!fromFund || !toFund || !accountId || amount <= 0) {
+        if (!fromFund || !toFund) {
           return jsonResponse(200, {
-            success: true,
-            message: `Exchange initiated: ${fields.amount} from ${fields.fromFund} to ${fields.toFund}. Will execute at next NAV.`,
-            referenceNumber: ref,
+            success: false,
+            message: `I couldn't match "${(!fromFund ? fields.fromFund : fields.toFund) ?? ''}" to a fund in the lineup. Check the ticker and try again.`,
+          });
+        }
+        if (!accountId) {
+          return jsonResponse(200, { success: false, message: 'No account was specified for this exchange.' });
+        }
+
+        const fromPosition = holdings.find(h => h.ticker === fromFund.ticker && h.accountId === accountId) ?? null;
+
+        // "Full balance" / "everything in that fund" is a documented answer here too.
+        const amount = resolveAmount(fields.amount, fromPosition?.value ?? 0);
+
+        if (!isValidAmount(amount)) {
+          return jsonResponse(200, {
+            success: false,
+            message: fromPosition
+              ? `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, or "the full balance".`
+              : `There's no ${fromFund.name} position in that account to exchange out of.`,
+          });
+        }
+        if (fromPosition && amount > fromPosition.value) {
+          return jsonResponse(200, {
+            success: false,
+            message: `That ${fromFund.name} position is worth $${formatMoney(fromPosition.value)} — not enough to exchange $${formatMoney(amount)}. `
+                   + `You can exchange up to $${formatMoney(fromPosition.value)}.`,
           });
         }
 
@@ -547,9 +617,29 @@ export const handler = async (
       case 'request-withdrawal': {
         const { accounts, holdings } = await readClient(table, clientId);
         const accountId   = fields.accountId ?? accounts[0]?.id ?? '';
-        const amount      = parseFloat(fields.amount ?? '0');
         const account     = accounts.find(a => a.id === accountId);
         const accountType = account?.type ?? '';
+
+        if (!account) {
+          return jsonResponse(200, { success: false, message: 'No account was specified for this distribution.' });
+        }
+
+        // "Full balance" is the documented answer to the withdrawal amount question —
+        // and it used to reach parseFloat as a phrase, producing NaN and a failed submit.
+        const amount = resolveAmount(fields.amount, account.balance);
+
+        if (!isValidAmount(amount)) {
+          return jsonResponse(200, {
+            success: false,
+            message: `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, or "full balance".`,
+          });
+        }
+        if (amount > account.balance) {
+          return jsonResponse(200, {
+            success: false,
+            message: `That account holds $${formatMoney(account.balance)} — not enough for a $${formatMoney(amount)} distribution.`,
+          });
+        }
 
         const updatedAccounts = accounts.map(a =>
           a.id === accountId ? { ...a, balance: Math.max(0, a.balance - amount) } : a,
@@ -583,13 +673,21 @@ export const handler = async (
         const accounts: AccountEntry[] = existing.Item?.accounts ?? [];
         const accountType = accounts.find(a => a.id === fields.accountId)?.type ?? '';
 
+        const swAmount = parseMoney(fields.amount);
+        if (!isValidAmount(swAmount)) {
+          return jsonResponse(200, {
+            success: false,
+            message: `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, like $1,500.`,
+          });
+        }
+
         const schedule = {
           id:           'sw-' + Math.random().toString(36).slice(2, 8),
           accountId:    fields.accountId,
           accountType,
           fund:         '',
           ticker:       '',
-          amount:       parseFloat(fields.amount ?? '0'),
+          amount:       swAmount,
           frequency:    fields.frequency ?? 'Monthly',
           nextDate:     fields.startDate ?? today(),
           active:       true,
@@ -614,7 +712,17 @@ export const handler = async (
       case 'open-account': {
         const { accounts, holdings } = await readClient(table, clientId);
         const accountType   = fields.accountType ?? 'Taxable Account';
-        const initialAmount = parseFloat(fields.initialAmount ?? '0');
+        // An opening deposit is optional, so an absent/blank field means $0 — but a
+        // present-and-unparseable one must not become NaN on the new account's balance.
+        const rawInitial    = fields.initialAmount ?? '';
+        const parsedInitial = parseMoney(rawInitial);
+        if (rawInitial.trim() !== '' && !Number.isFinite(parsedInitial)) {
+          return jsonResponse(200, {
+            success: false,
+            message: `"${rawInitial}" isn't an amount I can process. Enter a dollar figure, like $1,500.`,
+          });
+        }
+        const initialAmount = Number.isFinite(parsedInitial) ? Math.max(0, parsedInitial) : 0;
         const newId         = 'acc-' + Math.random().toString(36).slice(2, 7);
 
         const newAccount: AccountEntry = {
@@ -648,15 +756,29 @@ export const handler = async (
       case 'roth-conversion': {
         const { accounts, holdings } = await readClient(table, clientId);
         const fromAccountId = fields.fromAccountId ?? '';
-        const amount        = parseFloat(fields.amount ?? '0');
         const fromAccount   = accounts.find(a => a.id === fromAccountId);
         const rothAccount   = accounts.find(a => a.type === 'Roth IRA');
 
         if (!fromAccount) {
           return jsonResponse(200, {
-            success: true,
-            message: `Roth conversion of $${fields.amount} submitted for tax year ${fields.taxYear}.`,
-            referenceNumber: ref,
+            success: false,
+            message: 'I couldn\'t find the account to convert from.',
+          });
+        }
+
+        // "Full balance" converts the whole account — a documented answer here too.
+        const amount = resolveAmount(fields.amount, fromAccount.balance);
+
+        if (!isValidAmount(amount)) {
+          return jsonResponse(200, {
+            success: false,
+            message: `"${fields.amount ?? ''}" isn't an amount I can process. Enter a dollar figure, or "full balance".`,
+          });
+        }
+        if (amount > fromAccount.balance) {
+          return jsonResponse(200, {
+            success: false,
+            message: `That account holds $${formatMoney(fromAccount.balance)} — not enough to convert $${formatMoney(amount)}.`,
           });
         }
 
