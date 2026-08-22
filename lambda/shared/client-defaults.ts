@@ -26,7 +26,9 @@ export interface TransactionEntry {
 
 export interface AccountEntry {
   type: string;
-  balance: number;
+  balance: number;                 // TOTAL value of the account = cash + Σ holdings
+  cash: number;                    // uninvested cash — the SPENDABLE part of balance,
+                                   // already included in it. See lambda/shared/account-math.ts.
   id: string;
   change: number;                  // daily % change ("today")
   balanceHistory?: BalancePoint[]; // month-end market values, so returns can be DERIVED from real data
@@ -228,17 +230,17 @@ const alexJohnson: FullClientData = {
   address: '234 Maple Drive, Wayne, PA 19087',
   totalBalance: 241570,
   accounts: [
-    { type: 'Roth IRA',        balance: 45230,  id: 'acc-001', change: +4.2 },
-    { type: 'Traditional IRA', balance: 128450, id: 'acc-002', change: +2.8 },
-    { type: 'Taxable Account', balance: 67890,  id: 'acc-003', change: -0.9 },
+    { type: 'Roth IRA',        balance: 45230, cash: 779,  id: 'acc-001', change: +4.2 },
+    { type: 'Traditional IRA', balance: 128450, cash: 1897, id: 'acc-002', change: +2.8 },
+    { type: 'Taxable Account', balance: 67890, cash: 6385,  id: 'acc-003', change: -0.9 },
   ],
   holdings: [
-    { name: 'BobsFunds 500 Index',         ticker: 'BF500', accountId: 'acc-001', shares: 142.3, price: 218.40, change: +1.2, value: 31072  },
-    { name: 'BobsFunds Growth',            ticker: 'BFGR',  accountId: 'acc-001', shares: 88.1,  price: 341.20, change: +2.1, value: 30060  },
-    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',  accountId: 'acc-002', shares: 210.0, price: 98.30,  change: -0.3, value: 20643  },
-    { name: 'BobsFunds International',     ticker: 'BFIN',  accountId: 'acc-002', shares: 55.4,  price: 87.60,  change: +0.7, value: 4853   },
-    { name: 'BobsFunds ESG Leaders',       ticker: 'BFESG', accountId: 'acc-003', shares: 31.2,  price: 156.90, change: +1.8, value: 4895   },
-    { name: "BobsFunds Short-Term Treasury", ticker: 'BFST',  accountId: 'acc-003', shares: 499.8, price: 100.10, change: +0.1, value: 50030  },
+    { name: 'BobsFunds 500 Index',         ticker: 'BF500', accountId: 'acc-001', shares: 103.7, price: 218.40, change: +1.2, value: 22648  },
+    { name: 'BobsFunds Growth',            ticker: 'BFGR',  accountId: 'acc-001', shares: 63.9,  price: 341.20, change: +2.1, value: 21803  },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',  accountId: 'acc-002', shares: 1042.8, price: 98.30,  change: -0.3, value: 102507  },
+    { name: 'BobsFunds International',     ticker: 'BFIN',  accountId: 'acc-002', shares: 274.5,  price: 87.60,  change: +0.7, value: 24046   },
+    { name: 'BobsFunds ESG Leaders',       ticker: 'BFESG', accountId: 'acc-003', shares: 35.3,  price: 156.90, change: +1.8, value: 5539   },
+    { name: "BobsFunds Short-Term Treasury", ticker: 'BFST',  accountId: 'acc-003', shares: 559.1, price: 100.10, change: +0.1, value: 55966  },
   ],
   transactions: [
     { date: '2025-04-10', description: 'Dividend reinvestment - BF500',    amount: +124.20,  account: 'Roth IRA'        },
@@ -333,15 +335,16 @@ const mariaChen: FullClientData = {
   address: '18 Harbor View Lane, Wellesley, MA 02482',
   totalBalance: 890000,
   accounts: [
-    { type: 'Traditional IRA', balance: 612000, id: 'acc-201', change: +1.4 },
-    { type: 'Taxable Account', balance: 278000, id: 'acc-202', change: +0.8 },
+    { type: 'Traditional IRA', balance: 612000, cash: 12020, id: 'acc-201', change: +1.4 },
+    { type: 'Taxable Account', balance: 278000, cash: 4628, id: 'acc-202', change: +0.8 },
   ],
   holdings: [
-    { name: 'BobsFunds 500 Index',         ticker: 'BF500', accountId: 'acc-201', shares: 850.0,  price: 218.40, change: +1.2, value: 185640 },
-    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',  accountId: 'acc-201', shares: 1500.0, price: 98.30,  change: -0.3, value: 147450 },
-    { name: "BobsFunds Short-Term Treasury", ticker: 'BFST',  accountId: 'acc-201', shares: 2800.0, price: 100.10, change: +0.1, value: 280280 },
+    { name: 'BobsFunds 500 Index',         ticker: 'BF500', accountId: 'acc-201', shares: 832.4,  price: 218.40, change: +1.2, value: 181796 },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',  accountId: 'acc-201', shares: 1464.7, price: 98.30,  change: -0.3, value: 143980 },
+    { name: "BobsFunds Short-Term Treasury", ticker: 'BFST',  accountId: 'acc-201', shares: 2739.3, price: 100.10, change: +0.1, value: 274204 },
     { name: 'BobsFunds International',     ticker: 'BFIN',  accountId: 'acc-202', shares: 500.0,  price: 87.60,  change: +0.7, value: 43800  },
     { name: 'BobsFunds ESG Leaders',       ticker: 'BFESG', accountId: 'acc-202', shares: 150.0,  price: 156.90, change: +1.8, value: 23535  },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',  accountId: 'acc-202', shares: 2096.0, price: 98.30,  change: -0.3, value: 206037 },
   ],
   transactions: [
     { date: '2025-04-10', description: 'RMD Distribution',                 amount: -15300.00, account: 'Traditional IRA' },
@@ -441,12 +444,12 @@ const jordanWilliams: FullClientData = {
   address: '512 NE Burnside St Apt 3B, Portland, OR 97214',
   totalBalance: 23300,
   accounts: [
-    { type: 'Roth IRA',        balance: 18500, id: 'acc-301', change: +3.1 },
-    { type: 'Taxable Account', balance: 4800,  id: 'acc-302', change: +1.4 },
+    { type: 'Roth IRA',        balance: 18500, cash: 202, id: 'acc-301', change: +3.1 },
+    { type: 'Taxable Account', balance: 4800, cash: 877,  id: 'acc-302', change: +1.4 },
   ],
   holdings: [
-    { name: 'BobsFunds 500 Index',   ticker: 'BF500', accountId: 'acc-301', shares: 65.0,  price: 218.40, change: +1.2, value: 14196 },
-    { name: 'BobsFunds Growth',      ticker: 'BFGR',  accountId: 'acc-301', shares: 15.0,  price: 341.20, change: +2.1, value: 5118  },
+    { name: 'BobsFunds 500 Index',   ticker: 'BF500', accountId: 'acc-301', shares: 61.6,  price: 218.40, change: +1.2, value: 13453 },
+    { name: 'BobsFunds Growth',      ticker: 'BFGR',  accountId: 'acc-301', shares: 14.2,  price: 341.20, change: +2.1, value: 4845  },
     { name: 'BobsFunds ESG Leaders', ticker: 'BFESG', accountId: 'acc-302', shares: 25.0,  price: 156.90, change: +1.8, value: 3923  },
   ],
   transactions: [
@@ -529,15 +532,15 @@ const robertMartinez: FullClientData = {
   address: '4217 Westheimer Rd, Houston, TX 77027',
   totalBalance: 445000,
   accounts: [
-    { type: 'SEP-IRA',         balance: 285000, id: 'acc-401', change: +1.9 },
-    { type: 'Roth IRA',        balance: 42000,  id: 'acc-402', change: +3.2 },
-    { type: 'Taxable Account', balance: 118000, id: 'acc-403', change: -0.4 },
+    { type: 'SEP-IRA',         balance: 285000, cash: 8695, id: 'acc-401', change: +1.9 },
+    { type: 'Roth IRA',        balance: 42000, cash: 397,  id: 'acc-402', change: +3.2 },
+    { type: 'Taxable Account', balance: 118000, cash: 7890, id: 'acc-403', change: -0.4 },
   ],
   holdings: [
-    { name: 'BobsFunds 500 Index',         ticker: 'BF500', accountId: 'acc-401', shares: 380.0,  price: 218.40, change: +1.2, value: 82992  },
-    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',  accountId: 'acc-401', shares: 800.0,  price: 98.30,  change: -0.3, value: 78640  },
-    { name: 'BobsFunds Growth',            ticker: 'BFGR',  accountId: 'acc-402', shares: 145.0,  price: 341.20, change: +2.1, value: 49474  },
-    { name: 'BobsFunds International',     ticker: 'BFIN',  accountId: 'acc-402', shares: 250.0,  price: 87.60,  change: +0.7, value: 21900  },
+    { name: 'BobsFunds 500 Index',         ticker: 'BF500', accountId: 'acc-401', shares: 649.0,  price: 218.40, change: +1.2, value: 141742  },
+    { name: 'BobsFunds Bond Income',       ticker: 'BFBI',  accountId: 'acc-401', shares: 1368.9,  price: 98.30,  change: -0.3, value: 134563  },
+    { name: 'BobsFunds Growth',            ticker: 'BFGR',  accountId: 'acc-402', shares: 84.5,  price: 341.20, change: +2.1, value: 28831  },
+    { name: 'BobsFunds International',     ticker: 'BFIN',  accountId: 'acc-402', shares: 145.8,  price: 87.60,  change: +0.7, value: 12772  },
     { name: "BobsFunds Short-Term Treasury", ticker: 'BFST',  accountId: 'acc-403', shares: 1100.0, price: 100.10, change: +0.1, value: 110110 },
   ],
   transactions: [
@@ -734,4 +737,57 @@ for (const client of Object.values(DEFAULT_CLIENT_DATA)) {
     if (schedule.active) schedule.nextDate = nextScheduleDate(schedule.frequency, schedule.dayOfMonth);
   }
   rebaseRmd(client.rmd);
+}
+
+// ── Seed invariant: balance === cash + Σ holdings ────────────────────────────
+//
+// This runs at module load and THROWS, so drifting seed data is a build/boot failure
+// rather than something an LLM discovers mid-conversation and explains to a client.
+//
+// It is the actual fix for the root cause. Balances and holdings were authored
+// independently here, so the residual between them was meaningless — positive in six
+// accounts and NEGATIVE in four. A task expert handed $4,800 (from get_accounts) and
+// $3,923 (from get_holdings) with nothing relating them reported them as $4,800 of CASH
+// plus $3,923 of holdings, which is how a client came to be told she had money she
+// didn't have.
+//
+// It also catches the smaller class of error: one seeded holding had value 31072 where
+// 142.3 x 218.40 is 31,077.72 — a $5.72 discrepancy that was invisible until cash made
+// it load-bearing.
+for (const [key, client] of Object.entries(DEFAULT_CLIENT_DATA)) {
+  const where = `${key} (${client.clientId})`;
+
+  for (const h of client.holdings) {
+    const expected = Math.round(h.shares * h.price);
+    if (h.value !== expected) {
+      throw new Error(
+        `${where}: holding ${h.ticker} in ${h.accountId} has value ${h.value}, but ` +
+        `${h.shares} x ${h.price} = ${expected}. Fix the seed data.`,
+      );
+    }
+  }
+
+  let totalOfBalances = 0;
+  for (const account of client.accounts) {
+    const invested = client.holdings
+      .filter(h => h.accountId === account.id)
+      .reduce((sum, h) => sum + h.value, 0);
+
+    if (account.cash < 0) {
+      throw new Error(`${where}: account ${account.id} has negative cash (${account.cash}).`);
+    }
+    if (account.cash + invested !== account.balance) {
+      throw new Error(
+        `${where}: account ${account.id} balance ${account.balance} != cash ${account.cash} ` +
+        `+ invested ${invested} (= ${account.cash + invested}). Fix the seed data.`,
+      );
+    }
+    totalOfBalances += account.balance;
+  }
+
+  if (totalOfBalances !== client.totalBalance) {
+    throw new Error(
+      `${where}: totalBalance ${client.totalBalance} != sum of account balances ${totalOfBalances}.`,
+    );
+  }
 }

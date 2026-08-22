@@ -299,7 +299,12 @@ history is demonstration-seeded.
 
 ### DynamoDB — Clients Table
 Keyed by `clientId`. Stores:
-- Client profile: name, phone, accounts (type, balance, id), totalBalance
+- Client profile: name, pronouns, phone, accounts (type, balance, **cash**, id), totalBalance.
+  An account's `balance` is its TOTAL value and always equals `cash + the value of its
+  holdings` — cash is the uninvested, spendable part, included in the total rather than
+  additional to it. That identity is enforced in one place (`lambda/shared/account-math.ts`)
+  and checked at load time, so the account page, the chatbot, the voice assistant and the
+  task experts can never quote figures that disagree with each other.
 - `beneficiaries`: array of `{ accountId, name, relationship, percentage, type }`
 - `autoInvest`: array of recurring investment schedules
 - `rmd`: RMD delivery and withholding preferences

@@ -9,6 +9,7 @@ import { useContributions } from '../../../hooks/useContributions';
 import { theme } from '../../../theme';
 // Shared with the backend so the page and the AI agree on what counts as an IRA.
 import { classifyAccount, isIraAccount } from '../../../../../lambda/shared/contribution-limits';
+import { cashOf, investedValue } from '../../../../../lambda/shared/account-math';
 
 interface LiveBeneficiary {
   accountId: string;
@@ -44,6 +45,10 @@ export function AccountDetailPage() {
     limit: 8,
     fallback: activePersona.transactions.filter(t => account && t.account === account.type),
   });
+
+  // Same helpers the Lambdas use, so the page can never disagree with the chatbot.
+  const investedTotal = account ? investedValue(activePersona.holdings, account.id) : 0;
+  const cashBalance   = account ? cashOf(account, activePersona.holdings) : 0;
 
   const isIra = account ? isIraAccount(account.type) : false;
   const isSepAccount = account ? classifyAccount(account.type) === 'sep' : false;
@@ -102,10 +107,19 @@ export function AccountDetailPage() {
             <div style={{ fontSize: 12, color: theme.color.textSubtle, fontFamily: theme.font.mono, marginBottom: 6 }}>{account.id}</div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, fontFamily: theme.font.serif }}>{account.type}</h1>
           </div>
+          {/* The big number used to carry NO label at all, and nothing on the page
+              related it to the holdings table below — so the gap between them was
+              unexplained on screen exactly as it was unexplained to the chatbot.
+              This is the same sentence get_accounts now gives the AI, so the screen
+              and the bot say the same thing. */}
           <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 12, color: theme.color.textSubtle, marginBottom: 2 }}>Total value</div>
             <div style={{ fontSize: 34, fontWeight: 800 }}>${account.balance.toLocaleString()}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: account.change >= 0 ? theme.color.success : theme.color.danger }}>
               {account.change >= 0 ? '▲' : '▼'} {Math.abs(account.change)}% today
+            </div>
+            <div style={{ fontSize: 13, color: theme.color.textMuted, marginTop: 4 }}>
+              ${investedTotal.toLocaleString()} invested · ${cashBalance.toLocaleString()} cash
             </div>
           </div>
         </div>
@@ -124,8 +138,9 @@ export function AccountDetailPage() {
         />
       )}
 
-      {/* Holdings */}
-      {holdings.length > 0 && (
+      {/* Holdings. Rendered when there are holdings OR cash — a cash-only account
+          (a freshly opened one, say) used to render nothing at all here. */}
+      {(holdings.length > 0 || cashBalance > 0) && (
         <div style={S.card}>
           <h2 style={{ margin: '0 0 16px', fontSize: 18, fontFamily: theme.font.serif }}>Holdings</h2>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -152,7 +167,28 @@ export function AccountDetailPage() {
                   </td>
                 </tr>
               ))}
+              {/* Cash sits in the same table as the funds, because that is the only
+                  place a reader can see that it is PART of the total rather than
+                  something extra. Styled to read as not-a-fund. */}
+              <tr>
+                <td style={{ ...S.td, fontWeight: 500, fontStyle: 'italic', color: theme.color.textMuted }}>Cash</td>
+                <td style={{ ...S.td, color: theme.color.textSubtle }}>—</td>
+                <td style={{ ...S.td, textAlign: 'right', color: theme.color.textSubtle }}>—</td>
+                <td style={{ ...S.td, textAlign: 'right', color: theme.color.textSubtle }}>—</td>
+                <td style={{ ...S.td, textAlign: 'right', fontWeight: 600 }}>${cashBalance.toLocaleString()}</td>
+                <td style={{ ...S.td, textAlign: 'right', color: theme.color.textSubtle }}>—</td>
+              </tr>
             </tbody>
+            {/* The subtotal is what makes the identity self-evident: the rows above
+                add up to the number in the header. */}
+            <tfoot>
+              <tr style={{ borderTop: `2px solid ${theme.color.border}` }}>
+                <td style={{ ...S.td, fontWeight: 700 }}>Total</td>
+                <td style={S.td} /><td style={S.td} /><td style={S.td} />
+                <td style={{ ...S.td, textAlign: 'right', fontWeight: 800 }}>${account.balance.toLocaleString()}</td>
+                <td style={S.td} />
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
