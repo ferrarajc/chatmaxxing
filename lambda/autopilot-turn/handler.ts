@@ -143,6 +143,23 @@ function callbackTimeAskResponse(reason: CallbackResolveError, badPhone: boolean
 
 // ── Scope-specific system prompts ──────────────────────────────────────────
 
+/**
+ * Pronoun rule for every conversational surface.
+ *
+ * The phone surfaces already got this right — prep-callback and agent-callbacks both
+ * instruct the model to use the client's stated pronouns and "NEVER infer gender from
+ * the name" — but `ClientProfile` had no pronouns field and neither autopilot-turn nor
+ * next-best-response mentioned pronouns at all, so all 19 chat experts, the customer bot
+ * and NBR guessed from the name. Jordan Williams is they/them in the client record.
+ *
+ * Returns '' when pronouns are unknown, so nothing is asserted without data.
+ */
+function pronounRule(profile: ClientProfile): string {
+  const p = (profile.pronouns ?? '').trim();
+  if (!p) return '';
+  return `\nPRONOUNS — ${profile.name} uses ${p} pronouns. Use them for every third-person reference to the client, in the chat and in any proposedAction summary you write. NEVER infer gender from the name.\n`;
+}
+
 const TASK_FIELD_RULES = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FIELD COLLECTION RULES — apply at every turn
@@ -811,8 +828,24 @@ ${accountSection}FUND — one of: ${FUND_PICKLIST}
 PURCHASE AMOUNT — a specific dollar amount (e.g. "$5,000")
 
 FUNDING SOURCE — one of:
-  • Linked bank account — debited from their bank on file
-  • Cash in account — from cash already sitting in the account
+  • Linked bank account — new money, debited from their bank on file
+  • Cash in account — uninvested cash already sitting in that account
+
+  ACCOUNT VALUES: an account's total value = money invested in funds + uninvested cash.
+  The cash figure is PART of the total, never additional to it. Never present an
+  account's total as though it were cash, and never add the two together.
+
+  Before offering "Cash in account", CHECK the cash actually available in the account
+  they chose — it is in the account list above, and get_accounts reports it per account.
+  • If cash covers the purchase, offer both sources normally.
+  • If it does NOT, say plainly how much cash is there and offer the alternatives:
+    fund it from the linked bank account instead, or buy a smaller amount from cash.
+    For example: "You have $877 available in cash in that account — would you like to
+    use that, or fund the full $4,800 from your linked bank account?"
+  • If the account has no cash at all, don't offer the option; just use the bank.
+
+  Do NOT propose a cash-funded purchase larger than the available cash. It will be
+  rejected when the agent submits it, and the client will have been told otherwise.
 
 ════════════════════════════════════
 HOW TO HANDLE THIS CONVERSATION
@@ -875,6 +908,11 @@ ${accountSection}FUND TO SELL — one of: ${FUND_PICKLIST}
 AMOUNT — one of:
   • A specific dollar amount (e.g. "$10,000")
   • "Full redemption" or "all shares" (sell everything in that fund)
+
+  A sale CONVERTS shares into cash inside the same account: the proceeds land as
+  uninvested cash there, and the account's total value does not change. If the client
+  wants the money paid out to them, that is a separate distribution request.
+  You cannot sell more than the position is worth — check it with get_holdings.
 
 REASON FOR SALE — one of: Withdrawal, Fund exchange, Rebalancing, Other
 
@@ -1274,6 +1312,13 @@ WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
 ${accountSection}WITHDRAWAL AMOUNT — a specific dollar amount, or "full balance"
+
+  A distribution is paid out of the account's uninvested CASH, which is only part of its
+  total value (total = invested in funds + cash). "Full balance" here means the cash
+  available, not the whole account. If the client asks for more than the cash on hand,
+  say how much is available and explain that holdings would need to be sold first —
+  proceeds settle in about one business day. Do not promise a distribution larger than
+  the available cash; it will be rejected on submission.
 
 DELIVERY METHOD — one of:
   • Direct deposit (ACH) — sent to their bank account on file
@@ -2443,7 +2488,7 @@ export const handler = async (
           });
         }
 
-        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE;
+        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
         const p2ContactId = transcript[0]?.content?.slice(0, 8);
         const p2Executor = createToolExecutor(profile.clientId, { contactId: p2ContactId });
         let taskResponse = '';
@@ -2497,11 +2542,24 @@ export const handler = async (
           hasProposedAction: !!taskProposedAction,
         }));
 
+        // Mid-task advice: NUDGE, never hijack.
+        //
+        // The pre-task guard above deliberately doesn't run once an expert is on, so a
+        // false positive can't kill a live task any more. But that also meant a GENUINE
+        // advice request mid-task lost its scope hint: the expert declines correctly in
+        // words (FORBIDDEN_TOPICS), yet returned suggestedScope: null, so the agent app
+        // no longer offered to switch to the callback scope.
+        //
+        // So we set the hint and nothing else — the expert's own reply still goes to the
+        // client and the task is NOT force-exited. Worst case for a false positive is a
+        // scope suggestion the agent ignores, rather than a dead task.
+        const midTaskAdvice = isAdviceRequest(lastCustomerMsg);
+
         return jsonResponse(200, {
           response: taskResponse,
           shouldExitAutopilot: taskShouldExit,
           exitMessage: taskExitMessage,
-          suggestedScope: null,
+          suggestedScope: midTaskAdvice ? 'callback' : null,
           closeChat: false,
           scheduleCallback: null,
           taskIdentified: null,
@@ -2532,7 +2590,7 @@ export const handler = async (
             const p1ContactId = transcript[0]?.content?.slice(0, 8);
             const p1Executor = createToolExecutor(profile.clientId, { contactId: p1ContactId });
             const result = await invokeWithTools(
-              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE,
+              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile),
               [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
               ALL_CLIENT_TOOLS,
               p1Executor,
@@ -2603,7 +2661,7 @@ export const handler = async (
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
-    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE;
+    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
     const contactId = transcript[0]?.content?.slice(0, 8);
     const executor = createToolExecutor(profile.clientId, { contactId });
 

@@ -18,6 +18,7 @@ const TESTS = [
   'test-contribution-limits',   // the pure IRA contribution-limit math
   'test-money',                 // currency parsing — "$4,800" must not become NaN
   'test-advice-guard',          // holdings questions are facts, not advice
+  'test-account-math',          // balance === cash + Σ holdings, incl. the seed invariant
   // Read-only API test (no LLM): the contributions summary across all four personas.
   'test-contributions',
   // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.
