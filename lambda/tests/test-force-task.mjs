@@ -136,6 +136,54 @@ await run('forceTaskId overrides the financial-advice redirect', async () => {
     `suggestedScope: ${r.suggestedScope}`);
 });
 
+// THE production path that broke. forceTaskId is sent only on the kickoff turn; every
+// later turn is carried by the [TASK:] marker alone. The advice guard used to run before
+// that marker was even parsed, so it fired on mid-task client messages and killed the
+// expert. A client answering the buy-funds expert's own "which fund?" question with a
+// question about their own holdings got the scripted advice decline and a callback.
+await run('a mid-task holdings question does NOT trigger the advice redirect', async () => {
+  const r = await turn({
+    transcript: [
+      ...CHITCHAT,
+      msg('SYSTEM', '[TASK: place-purchase]'),
+      msg('AGENT', 'Sure, I can take care of that for you. Which account would you like to purchase into?'),
+      msg('CUSTOMER', 'The one that is not the Roth'),
+      msg('AGENT', 'Which fund would you like to purchase, and how much would you like to invest?'),
+      msg('CUSTOMER', 'Which fund do I hold right now'),
+    ],
+    currentIntent: 'buy fund shares',
+    // deliberately NO forceTaskId — this is turn N of a running task
+  });
+  check('did not redirect to a callback', r.suggestedScope !== 'callback',
+    `suggestedScope: ${r.suggestedScope}`);
+  check('did not exit autopilot', r.shouldExitAutopilot !== true,
+    `shouldExitAutopilot: ${r.shouldExitAutopilot}`);
+  check('did not send the advice decline',
+    !/not permitted to provide personalized investment advice/i.test(r.response ?? ''),
+    `response: ${r.response}`);
+  check('the expert answered about holdings instead',
+    /BFESG|ESG|hold|own|currently/i.test(r.response ?? ''),
+    `response: ${r.response}`);
+});
+
+// The guard must still fire mid-task for a REAL advice request — via the expert's own
+// FORBIDDEN_TOPICS rules rather than the pre-task regex.
+await run('a mid-task genuine advice request is still declined', async () => {
+  const r = await turn({
+    transcript: [
+      ...CHITCHAT,
+      msg('SYSTEM', '[TASK: place-purchase]'),
+      msg('AGENT', 'Which fund would you like to purchase?'),
+      msg('CUSTOMER', 'Which fund is best for me?'),
+    ],
+    currentIntent: 'buy fund shares',
+  });
+  check('declined or routed to an advisor',
+    r.suggestedScope === 'callback' ||
+    /not permitted|licensed|advisor/i.test(r.response ?? ''),
+    `scope: ${r.suggestedScope} response: ${r.response}`);
+});
+
 await run('an unknown forceTaskId falls back to normal classification', async () => {
   const r = await turn({
     transcript: [...CHITCHAT, msg('CUSTOMER', 'I want to update my beneficiaries.')],

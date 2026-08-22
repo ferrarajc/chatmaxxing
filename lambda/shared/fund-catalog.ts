@@ -17,3 +17,19 @@ import { FUNDS } from '../../customer-app/src/data/funds';
 
 /** Compact picklist for task-expert prompts: "BF500 (BobsFunds 500 Index), BFGR (...), ..." */
 export const FUND_PICKLIST: string = FUNDS.map(f => `${f.ticker} (${f.name})`).join(', ');
+
+/**
+ * Ticker → { name, price } for order execution, DERIVED from the catalog.
+ *
+ * This used to be a hand-maintained object in client-defaults.ts holding only the
+ * ORIGINAL SIX tickers, while the task experts were offered all 36 from FUND_PICKLIST.
+ * The 30-fund gap failed silently and expensively: execute-task's matchFund() returned
+ * null, the handler took a fallback that reported "order placed" and wrote NOTHING —
+ * no holding, no balance change, no transaction row — so an IRA contribution in one of
+ * those funds never reached the contributions card.
+ *
+ * Deriving it here is the same treatment market-data's FUND_MAP already got, and it
+ * means adding a fund to funds.ts is now the only step required to make it tradeable.
+ */
+export const FUND_PRICES: Record<string, { name: string; price: number }> =
+  Object.fromEntries(FUNDS.map(f => [f.ticker, { name: f.name, price: f.seedNav }]));
