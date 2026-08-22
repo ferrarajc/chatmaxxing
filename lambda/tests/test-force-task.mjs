@@ -136,11 +136,19 @@ await run('forceTaskId overrides the financial-advice redirect', async () => {
     `suggestedScope: ${r.suggestedScope}`);
 });
 
+// The two cases below each drive a FULL task-expert turn (~3.5k prompt tokens) rather
+// than asserting routing only, so back-to-back they push the suite past OpenAI's 30k
+// tokens-per-minute limit and the handler correctly falls back to its holding reply
+// ("I'm pulling some information..."). Pace them so the assertions test the guard rather
+// than the rate limiter.
+const settle = (ms = 20000) => new Promise(r => setTimeout(r, ms));
+
 // THE production path that broke. forceTaskId is sent only on the kickoff turn; every
 // later turn is carried by the [TASK:] marker alone. The advice guard used to run before
 // that marker was even parsed, so it fired on mid-task client messages and killed the
 // expert. A client answering the buy-funds expert's own "which fund?" question with a
 // question about their own holdings got the scripted advice decline and a callback.
+await settle();
 await run('a mid-task holdings question does NOT trigger the advice redirect', async () => {
   const r = await turn({
     transcript: [
@@ -168,6 +176,7 @@ await run('a mid-task holdings question does NOT trigger the advice redirect', a
 
 // The guard must still fire mid-task for a REAL advice request — via the expert's own
 // FORBIDDEN_TOPICS rules rather than the pre-task regex.
+await settle();
 await run('a mid-task genuine advice request is still declined', async () => {
   const r = await turn({
     transcript: [

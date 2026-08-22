@@ -204,7 +204,7 @@ export const handler = async (
         }));
         return jsonResponse(200, {
           success: true,
-          message: `Automatic investment set up: $${fields.amount} ${fields.frequency?.toLowerCase()} into ${fields.fund}.`,
+          message: `Automatic investment set up: $${formatMoney(scheduleAmount)} ${fields.frequency?.toLowerCase()} into ${fields.fund}.`,
           referenceNumber: ref,
         });
       }
@@ -455,7 +455,7 @@ export const handler = async (
         }]);
         return jsonResponse(200, {
           success: true,
-          message: `Purchase order placed: $${fields.amount} into ${fundInfo.name}. Order executed at NAV.`,
+          message: `Purchase order placed: $${formatMoney(amount)} into ${fundInfo.name}. Order executed at NAV.`,
           referenceNumber: ref,
         });
       }
@@ -531,7 +531,7 @@ export const handler = async (
         }]);
         return jsonResponse(200, {
           success: true,
-          message: `Sale order placed: $${fields.amount} of ${fundInfo.name}. Order executed at NAV.`,
+          message: `Sale order placed: $${formatMoney(amount)} of ${fundInfo.name}. Order executed at NAV.`,
           referenceNumber: ref,
         });
       }
@@ -617,7 +617,7 @@ export const handler = async (
         }]);
         return jsonResponse(200, {
           success: true,
-          message: `Exchange completed: $${fields.amount} from ${fromFund.name} to ${toFund.name}.`,
+          message: `Exchange completed: $${formatMoney(amount)} from ${fromFund.name} to ${toFund.name}.`,
           referenceNumber: ref,
         });
       }
@@ -704,7 +704,7 @@ export const handler = async (
         }]);
         return jsonResponse(200, {
           success: true,
-          message: `Distribution of $${fields.amount} requested. Funds will arrive via ${fields.deliveryMethod} within 3–5 business days.`,
+          message: `Distribution of $${formatMoney(amount)} requested. Funds will arrive via ${fields.deliveryMethod} within 3–5 business days.`,
           referenceNumber: ref,
         });
       }
@@ -750,7 +750,7 @@ export const handler = async (
         }));
         return jsonResponse(200, {
           success: true,
-          message: `Recurring distribution set up: $${fields.amount} ${fields.frequency?.toLowerCase()}, starting ${fields.startDate}.`,
+          message: `Recurring distribution set up: $${formatMoney(swAmount)} ${fields.frequency?.toLowerCase()}, starting ${fields.startDate}.`,
           referenceNumber: ref,
         });
       }
@@ -869,7 +869,7 @@ export const handler = async (
         ]);
         return jsonResponse(200, {
           success: true,
-          message: `Roth conversion of $${fields.amount} from ${fromAccount.type} submitted for tax year ${fields.taxYear}.`,
+          message: `Roth conversion of $${formatMoney(amount)} from ${fromAccount.type} submitted for tax year ${fields.taxYear}.`,
           referenceNumber: ref,
         });
       }

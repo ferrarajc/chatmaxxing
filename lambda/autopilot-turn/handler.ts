@@ -2542,11 +2542,24 @@ export const handler = async (
           hasProposedAction: !!taskProposedAction,
         }));
 
+        // Mid-task advice: NUDGE, never hijack.
+        //
+        // The pre-task guard above deliberately doesn't run once an expert is on, so a
+        // false positive can't kill a live task any more. But that also meant a GENUINE
+        // advice request mid-task lost its scope hint: the expert declines correctly in
+        // words (FORBIDDEN_TOPICS), yet returned suggestedScope: null, so the agent app
+        // no longer offered to switch to the callback scope.
+        //
+        // So we set the hint and nothing else — the expert's own reply still goes to the
+        // client and the task is NOT force-exited. Worst case for a false positive is a
+        // scope suggestion the agent ignores, rather than a dead task.
+        const midTaskAdvice = isAdviceRequest(lastCustomerMsg);
+
         return jsonResponse(200, {
           response: taskResponse,
           shouldExitAutopilot: taskShouldExit,
           exitMessage: taskExitMessage,
-          suggestedScope: null,
+          suggestedScope: midTaskAdvice ? 'callback' : null,
           closeChat: false,
           scheduleCallback: null,
           taskIdentified: null,
