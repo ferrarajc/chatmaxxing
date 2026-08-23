@@ -2,6 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { invokeNovaMicro, invokeWithTools, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import { isAdviceRequest } from '../shared/advice-guard';
+import { stripInternalStatus } from '../shared/reply-hygiene';
 import {
   ChatMessage,
   ClientProfile,
@@ -142,6 +143,23 @@ function callbackTimeAskResponse(reason: CallbackResolveError, badPhone: boolean
 }
 
 // ── Scope-specific system prompts ──────────────────────────────────────────
+
+/**
+ * Pronoun rule for every conversational surface.
+ *
+ * The phone surfaces already got this right — prep-callback and agent-callbacks both
+ * instruct the model to use the client's stated pronouns and "NEVER infer gender from
+ * the name" — but `ClientProfile` had no pronouns field and neither autopilot-turn nor
+ * next-best-response mentioned pronouns at all, so all 19 chat experts, the customer bot
+ * and NBR guessed from the name. Jordan Williams is they/them in the client record.
+ *
+ * Returns '' when pronouns are unknown, so nothing is asserted without data.
+ */
+function pronounRule(profile: ClientProfile): string {
+  const p = (profile.pronouns ?? '').trim();
+  if (!p) return '';
+  return `\nPRONOUNS — ${profile.name} uses ${p} pronouns. Use them for every third-person reference to the client, in the chat and in any proposedAction summary you write. NEVER infer gender from the name.\n`;
+}
 
 const TASK_FIELD_RULES = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -293,7 +311,7 @@ When ALL fields are collected, replace proposedAction with:
 {
   "taskId": "${task.id}",
   "taskName": "${task.name}",
-  "summary": "one clear sentence describing exactly what the client wants done",
+  "summary": "a NOUN PHRASE naming exactly what the client wants done, e.g. "Sale of $1,000 of BF500 from their Roth IRA" — never a sentence starting with a verb",
   "fields": [
 ${proposedActionFieldsSchema}
   ]
@@ -373,7 +391,7 @@ When all three are collected, set shouldExitAutopilot=true and replace proposedA
 {
   "taskId": "add-account-access",
   "taskName": "Add Authorized Account User",
-  "summary": "Grant [name] ([email]) [access level] access to ${profile.name}'s account",
+  "summary": "[access level] account access for [name] ([email]) on ${profile.name}'s account",
   "fields": [
     {"key": "personName",  "label": "Person's full name",    "value": "[the name provided]"},
     {"key": "personEmail", "label": "Email address",          "value": "[the email provided]"},
@@ -454,7 +472,7 @@ When both fields are collected:
 {
   "taskId": "update-contact-info",
   "taskName": "Update Contact Information",
-  "summary": "Update ${profile.name}'s [infoType] to [newValue]",
+  "summary": "Contact-info update for ${profile.name}: [infoType] to [newValue]",
   "fields": [
     {"key": "infoType",  "label": "What to update", "value": "[Phone number / Email address / Mailing address]"},
     {"key": "newValue",  "label": "New value",       "value": "[the new value provided]"}
@@ -474,6 +492,50 @@ async function fetchBeneficiaries(clientId: string): Promise<BeneficiaryEntry[]>
   } catch {
     return [];
   }
+}
+
+interface HoldingRow { name: string; ticker: string; accountId: string; shares: number; price: number; value: number }
+
+/**
+ * The client's actual positions, for the tasks that operate on what they ALREADY own.
+ *
+ * Selling and exchanging are not browsing. PLACE_SALE_PROMPT injected FUND_PICKLIST —
+ * the whole 36-fund lineup — so when a client asked to sell, the expert listed every
+ * fund Bob's offers and invited her to pick one. She holds exactly one. Her reply was
+ * "Wait, what? You're saying that I hold all of those funds?"
+ *
+ * `ClientProfile.holdings` is optional and the agent-app profile carries balances only,
+ * so the positions have to be read here — same pattern as fetchBeneficiaries.
+ */
+async function fetchHoldings(clientId: string): Promise<HoldingRow[]> {
+  try {
+    const result = await docClient.send(new GetCommand({
+      TableName: process.env.CLIENTS_TABLE!,
+      Key: { clientId },
+      ProjectionExpression: 'holdings',
+    }));
+    return (result.Item?.holdings as HoldingRow[] | undefined) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Render the client's positions grouped by account, for injection into a prompt.
+ * Returns '' when there are none, so the caller can fall back gracefully.
+ */
+function formatHoldings(holdings: HoldingRow[], accounts: Account[]): string {
+  if (!holdings.length) return '';
+  const lines: string[] = [];
+  for (const a of accounts) {
+    const rows = holdings.filter(h => h.accountId === a.id);
+    if (!rows.length) continue;
+    lines.push(`  ${a.type} (${a.id}):`);
+    for (const h of rows) {
+      lines.push(`    • ${h.name} (${h.ticker}) — ${h.shares} shares, worth $${h.value.toLocaleString()}`);
+    }
+  }
+  return lines.join('\n');
 }
 
 async function fetchRmdSettings(clientId: string): Promise<RmdData> {
@@ -688,7 +750,7 @@ ONLY after the client confirms the recap above:
   "proposedAction": {
     "taskId": "update-beneficiaries",
     "taskName": "Change Beneficiary Designations",
-    "summary": "Update beneficiaries on ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'} to [brief description]",
+    "summary": "Beneficiary update on ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'}: [brief description]",
     "fields": [
       {"key": "accountId",       "label": "Account",                    "value": "${exampleAccountId}"},
       {"key": "ben_1_name",      "label": "Beneficiary 1 name",         "value": "[full legal name]"},
@@ -708,7 +770,7 @@ If the client wants NO beneficiaries on the account, use an empty fields array (
   "proposedAction": {
     "taskId": "update-beneficiaries",
     "taskName": "Change Beneficiary Designations",
-    "summary": "Remove all beneficiaries from ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'}",
+    "summary": "Removal of all beneficiaries from ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'}",
     "fields": [
       {"key": "accountId", "label": "Account", "value": "${exampleAccountId}"}
     ]
@@ -778,7 +840,7 @@ When all three fields are confirmed, return this EXACT structure with proposedAc
   "proposedAction": {
     "taskId": "open-account",
     "taskName": "Open a New Account",
-    "summary": "Open a new [accountType] for ${profile.name} with $[amount] funded via [source]",
+    "summary": "New [accountType] for ${profile.name}, opening deposit $[amount] via [source]",
     "fields": [
       {"key": "accountType",    "label": "Account type",          "value": "[Roth IRA / Traditional IRA / SEP-IRA / Taxable]"},
       {"key": "initialAmount",  "label": "Initial contribution",  "value": "[dollar amount, e.g. $5,000]"},
@@ -811,8 +873,24 @@ ${accountSection}FUND — one of: ${FUND_PICKLIST}
 PURCHASE AMOUNT — a specific dollar amount (e.g. "$5,000")
 
 FUNDING SOURCE — one of:
-  • Linked bank account — debited from their bank on file
-  • Cash in account — from cash already sitting in the account
+  • Linked bank account — new money, debited from their bank on file
+  • Cash in account — uninvested cash already sitting in that account
+
+  ACCOUNT VALUES: an account's total value = money invested in funds + uninvested cash.
+  The cash figure is PART of the total, never additional to it. Never present an
+  account's total as though it were cash, and never add the two together.
+
+  Before offering "Cash in account", CHECK the cash actually available in the account
+  they chose — it is in the account list above, and get_accounts reports it per account.
+  • If cash covers the purchase, offer both sources normally.
+  • If it does NOT, say plainly how much cash is there and offer the alternatives:
+    fund it from the linked bank account instead, or buy a smaller amount from cash.
+    For example: "You have $877 available in cash in that account — would you like to
+    use that, or fund the full $4,800 from your linked bank account?"
+  • If the account has no cash at all, don't offer the option; just use the bank.
+
+  Do NOT propose a cash-funded purchase larger than the available cash. It will be
+  rejected when the agent submits it, and the client will have been told otherwise.
 
 ════════════════════════════════════
 HOW TO HANDLE THIS CONVERSATION
@@ -841,9 +919,9 @@ When complete:
 {
   "taskId": "place-purchase",
   "taskName": "Buy / Make a Contribution",
-  "summary": "Purchase $[amount] of [fund] in ${profile.name}'s [account] funded via [source]",
+  "summary": "Purchase of $[amount] of [fund] in ${profile.name}'s [account], funded via [source]",
   "fields": [
-    {"key": "accountId",      "label": "Account",          "value": "[account id or type]"},
+    {"key": "accountId",      "label": "Account",          "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
     {"key": "amount",         "label": "Purchase amount",  "value": "[dollar amount]"},
     {"key": "fundingSource",  "label": "Funding source",   "value": "[Linked bank account / Cash in account]"}
@@ -853,11 +931,18 @@ When complete:
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
 };
 
-const PLACE_SALE_PROMPT = (profile: ClientProfile) => {
+const PLACE_SALE_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) => {
   const multiAccount = profile.accounts.length > 1;
   const accountSection = multiAccount
     ? `ACCOUNT — which account to sell from\n  Options: ${profile.accounts.map(a => `${a.type} (${a.id})`).join(', ')}\n\n`
     : `(Account pre-selected: ${profile.accounts[0]?.type ?? 'on file'} — do NOT ask for it.)\n\n`;
+
+  // You can only sell what you own. Listing the whole 36-fund lineup here made the
+  // expert offer a client every fund Bob's sells when she held exactly one.
+  const held = formatHoldings(holdings, profile.accounts);
+  const fundSection = held
+    ? `FUND TO SELL — the client can ONLY sell a fund they actually hold. These are their\ncurrent positions — offer ONLY from this list, never the full Bob's lineup:\n\n${held}\n\n  If they have just one position in the chosen account, name it and confirm rather than\n  asking them to choose. If the account they picked holds nothing, say so plainly.\n`
+    : `FUND TO SELL — call get_holdings to see what the client actually owns, and offer ONLY\nfrom that. Never list the full Bob's fund lineup: they can only sell what they hold.\n`;
 
   return `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
 Client accounts: ${summarizeAccounts(profile.accounts)}.
@@ -869,14 +954,18 @@ You are handling a SELL FUND SHARES request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND TO SELL — one of: ${FUND_PICKLIST}
-  Map partial names to the correct ticker.
-
+${accountSection}${fundSection}
 AMOUNT — one of:
   • A specific dollar amount (e.g. "$10,000")
   • "Full redemption" or "all shares" (sell everything in that fund)
 
-REASON FOR SALE — one of: Withdrawal, Fund exchange, Rebalancing, Other
+  A sale CONVERTS shares into cash inside the same account: the proceeds land as
+  uninvested cash there, and the account's total value does not change. If the client
+  wants the money paid out to them, that is a separate distribution request.
+  You cannot sell more than the position is worth.
+
+DO NOT ASK WHY THEY ARE SELLING. It is their money and their decision, and we do not
+need a reason to place the order. If they volunteer one, just acknowledge it naturally.
 
 ════════════════════════════════════
 HOW TO HANDLE THIS CONVERSATION
@@ -909,12 +998,11 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
   "proposedAction": {
     "taskId": "place-sale",
     "taskName": "Sell Fund Shares",
-    "summary": "Sell [amount] of [fund] from ${profile.name}'s [account] for [reason]",
+    "summary": "Sale of [amount] of [fund] from ${profile.name}'s [account]",
     "fields": [
-      {"key": "accountId",  "label": "Account",           "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",  "label": "Account",           "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fund",       "label": "Fund to sell",      "value": "[ticker symbol, e.g. BF500]"},
-      {"key": "amount",     "label": "Amount or shares",  "value": "[dollar amount or Full redemption]"},
-      {"key": "reason",     "label": "Reason for sale",   "value": "[Withdrawal / Fund exchange / Rebalancing / Other]"}
+      {"key": "amount",     "label": "Amount or shares",  "value": "[dollar amount or Full redemption]"}
     ]
   }
 }
@@ -922,11 +1010,18 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
 ⚠ Never set shouldExitAutopilot=true unless all four fields are present in proposedAction.`;
 };
 
-const EXCHANGE_FUNDS_PROMPT = (profile: ClientProfile) => {
+const EXCHANGE_FUNDS_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) => {
   const multiAccount = profile.accounts.length > 1;
   const accountSection = multiAccount
     ? `ACCOUNT — which account to exchange within\n  Options: ${profile.accounts.map(a => `${a.type} (${a.id})`).join(', ')}\n\n`
     : `(Account pre-selected: ${profile.accounts[0]?.type ?? 'on file'} — do NOT ask for it.)\n\n`;
+
+  // The SOURCE side of an exchange is constrained to what they hold; the destination
+  // is genuinely a choice from the whole lineup.
+  const held = formatHoldings(holdings, profile.accounts);
+  const sourceSection = held
+    ? `FUND TO EXCHANGE OUT OF — the client can only exchange OUT of a fund they hold.\nThese are their current positions — offer ONLY from this list:\n\n${held}\n`
+    : `FUND TO EXCHANGE OUT OF — call get_holdings and offer ONLY funds the client holds.\n`;
 
   return `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
 Client accounts: ${summarizeAccounts(profile.accounts)}.
@@ -938,9 +1033,7 @@ You are handling an EXCHANGE BETWEEN FUNDS request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND TO EXCHANGE OUT OF — one of: ${FUND_PICKLIST}
-  The source fund (money moves out of this fund).
-
+${accountSection}${sourceSection}
 FUND TO EXCHANGE INTO — one of: ${FUND_PICKLIST}
   The destination fund (money moves into this fund). Must be different from the source.
 
@@ -981,9 +1074,9 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
   "proposedAction": {
     "taskId": "exchange-funds",
     "taskName": "Exchange Between Funds",
-    "summary": "Exchange [amount] from [fromFund] to [toFund] in ${profile.name}'s [account]",
+    "summary": "Exchange of [amount] from [fromFund] to [toFund] in ${profile.name}'s [account]",
     "fields": [
-      {"key": "accountId",  "label": "Account",                    "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",  "label": "Account",                    "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fromFund",   "label": "Fund to exchange out of",    "value": "[ticker symbol, e.g. BF500]"},
       {"key": "toFund",     "label": "Fund to exchange into",      "value": "[ticker symbol, e.g. BFBI]"},
       {"key": "amount",     "label": "Amount to exchange",         "value": "[dollar amount or Full balance]"}
@@ -1044,9 +1137,9 @@ When complete:
 {
   "taskId": "toggle-drip",
   "taskName": "Change Dividend Reinvestment (DRIP)",
-  "summary": "[Enable/Disable] dividend reinvestment for [fund] in ${profile.name}'s [account]",
+  "summary": "Dividend reinvestment [on/off] for [fund] in ${profile.name}'s [account]",
   "fields": [
-    {"key": "accountId",    "label": "Account",            "value": "[account id or type]"},
+    {"key": "accountId",    "label": "Account",            "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "fund",         "label": "Fund",               "value": "[ticker symbol]"},
     {"key": "dripEnabled",  "label": "Enable or disable",  "value": "[Turn ON (reinvest) / Turn OFF (receive as cash)]"}
   ]
@@ -1112,9 +1205,9 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
   "proposedAction": {
     "taskId": "setup-auto-invest",
     "taskName": "Set Up Automatic Investment",
-    "summary": "Invest $[amount] [frequency] on the [day] into [fund] in ${profile.name}'s [account]",
+    "summary": "Automatic investment of $[amount] [frequency] on the [day] into [fund] in ${profile.name}'s [account]",
     "fields": [
-      {"key": "accountId",   "label": "Account",             "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",   "label": "Account",             "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fund",        "label": "Fund",                "value": "[ticker symbol, e.g. BF500]"},
       {"key": "amount",      "label": "Investment amount",   "value": "[dollar amount, e.g. $200]"},
       {"key": "frequency",   "label": "Frequency",           "value": "[Monthly / Quarterly]"},
@@ -1178,7 +1271,7 @@ When all four fields have answers, return this EXACT structure with proposedActi
   "proposedAction": {
     "taskId": "update-auto-invest",
     "taskName": "Modify Auto-Invest Schedule",
-    "summary": "Update ${profile.name}'s auto-invest: [description of change]",
+    "summary": "Auto-invest update for ${profile.name}: [description of change]",
     "fields": [
       {"key": "scheduleDescription",  "label": "Which schedule",        "value": "[client's description, e.g. monthly $200 into BF500]"},
       {"key": "amount",               "label": "New investment amount",  "value": "[dollar amount or unchanged]"},
@@ -1239,7 +1332,7 @@ When both fields are confirmed, return this EXACT structure with proposedAction 
   "proposedAction": {
     "taskId": "pause-auto-invest",
     "taskName": "Pause or Resume Auto-Invest",
-    "summary": "[Pause / Resume] ${profile.name}'s auto-invest: [schedule description]",
+    "summary": "[Pause / Resumption] of ${profile.name}'s auto-invest: [schedule description]",
     "fields": [
       {"key": "scheduleDescription",  "label": "Which schedule",    "value": "[client's description, e.g. monthly $200 into BF500]"},
       {"key": "action",               "label": "Pause or resume",   "value": "[Pause / Resume]"}
@@ -1274,6 +1367,13 @@ WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
 ${accountSection}WITHDRAWAL AMOUNT — a specific dollar amount, or "full balance"
+
+  A distribution is paid out of the account's uninvested CASH, which is only part of its
+  total value (total = invested in funds + cash). "Full balance" here means the cash
+  available, not the whole account. If the client asks for more than the cash on hand,
+  say how much is available and explain that holdings would need to be sold first —
+  proceeds settle in about one business day. Do not promise a distribution larger than
+  the available cash; it will be rejected on submission.
 
 DELIVERY METHOD — one of:
   • Direct deposit (ACH) — sent to their bank account on file
@@ -1310,9 +1410,9 @@ When all required fields are confirmed, return this EXACT structure with propose
   "proposedAction": {
     "taskId": "request-withdrawal",
     "taskName": "Request a Distribution",
-    "summary": "Withdraw [amount] from ${profile.name}'s [account] via [deliveryMethod]",
+    "summary": "Distribution of [amount] from ${profile.name}'s [account] via [deliveryMethod]",
     "fields": [
-      {"key": "accountId",       "label": "Account",                  "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",       "label": "Account",                  "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "amount",          "label": "Amount",                   "value": "[dollar amount or Full balance]"},
       {"key": "deliveryMethod",  "label": "Delivery method",          "value": "[Direct deposit (ACH) / Check by mail]"},
       {"key": "taxWithholding",  "label": "Federal tax withholding",  "value": "[percentage, e.g. 10% — omit this field entirely for Roth IRA]"}
@@ -1382,9 +1482,9 @@ When all five fields are confirmed, return this EXACT structure with proposedAct
   "proposedAction": {
     "taskId": "setup-systematic-withdrawal",
     "taskName": "Set Up Recurring Distributions",
-    "summary": "Set up [frequency] $[amount] distributions from ${profile.name}'s [account] starting [startDate]",
+    "summary": "[frequency] distributions of $[amount] from ${profile.name}'s [account], starting [startDate]",
     "fields": [
-      {"key": "accountId",       "label": "Account",             "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",       "label": "Account",             "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "amount",          "label": "Amount per period",   "value": "[dollar amount, e.g. $500]"},
       {"key": "frequency",       "label": "Frequency",           "value": "[Monthly / Quarterly / Annually]"},
       {"key": "startDate",       "label": "Start date",          "value": "[specific date, e.g. June 1, 2026]"},
@@ -1485,7 +1585,7 @@ When all three fields are confirmed, return this EXACT structure with proposedAc
   "proposedAction": {
     "taskId": "update-rmd-settings",
     "taskName": "Update RMD Settings",
-    "summary": "Update ${profile.name}'s RMD to [frequency] payments via [deliveryMethod] with [withholding]% withholding",
+    "summary": "RMD update for ${profile.name}: [frequency] payments via [deliveryMethod] with [withholding]% withholding",
     "fields": [
       {"key": "deliveryMethod",  "label": "RMD delivery method",                "value": "[Direct deposit (ACH) / Check by mail]"},
       {"key": "frequency",       "label": "RMD frequency",                      "value": "[Annual (December) / Monthly / Quarterly]"},
@@ -1555,12 +1655,12 @@ When complete:
 {
   "taskId": "initiate-rollover",
   "taskName": "Roll Over From Another Institution",
-  "summary": "Roll over ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
+  "summary": "Rollover of ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
   "fields": [
     {"key": "sourceInstitution",  "label": "Source institution",       "value": "[institution name / description]"},
     {"key": "sourceAccountType",  "label": "Source account type",      "value": "[Traditional 401(k) / Roth 401(k) / 403(b) / Traditional IRA / Other]"},
     {"key": "estimatedAmount",    "label": "Estimated rollover amount", "value": "[dollar amount or unknown]"},
-    {"key": "targetAccountId",    "label": "Receiving account",         "value": "[account id or type]"}
+    {"key": "targetAccountId",    "label": "Receiving account",         "value": "[the bare account id, e.g. acc-002 — NOT the label]"}
   ]
 }
 
@@ -1619,9 +1719,9 @@ When all three are collected:
 {
   "taskId": "roth-conversion",
   "taskName": "Convert to Roth IRA",
-  "summary": "Convert [amount] from ${profile.name}'s [fromAccountId] to Roth IRA for tax year [taxYear]",
+  "summary": "Roth conversion of [amount] from ${profile.name}'s [fromAccountId] for tax year [taxYear]",
   "fields": [
-    {"key": "fromAccountId",  "label": "Source account",       "value": "[account id or type]"},
+    {"key": "fromAccountId",  "label": "Source account",       "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "amount",         "label": "Conversion amount",    "value": "[dollar amount or full balance]"},
     {"key": "taxYear",        "label": "Tax year",             "value": "[2025 / 2026]"}
   ]
@@ -1681,7 +1781,7 @@ When both fields are confirmed, return this EXACT structure with proposedAction 
   "proposedAction": {
     "taskId": "request-tax-document",
     "taskName": "Request Tax Document",
-    "summary": "Send ${profile.name} a copy of their [formType] for tax year [taxYear]",
+    "summary": "Copy of ${profile.name}'s [formType] for tax year [taxYear]",
     "fields": [
       {"key": "formType",  "label": "Form type",  "value": "[1099-R / 1099-B / 1099-DIV / Form 5498]"},
       {"key": "taxYear",   "label": "Tax year",   "value": "[2024 / 2023 / 2022]"}
@@ -1742,7 +1842,7 @@ If action is Cancel:
   "proposedAction": {
     "taskId": "cancel-reschedule-callback",
     "taskName": "Cancel or Reschedule Callback",
-    "summary": "Cancel ${profile.name}'s scheduled callback",
+    "summary": "Cancellation of ${profile.name}'s scheduled callback",
     "fields": [
       {"key": "action",  "label": "Action",  "value": "Cancel"}
     ]
@@ -1757,7 +1857,7 @@ If action is Reschedule (include newScheduledTime):
   "proposedAction": {
     "taskId": "cancel-reschedule-callback",
     "taskName": "Cancel or Reschedule Callback",
-    "summary": "Reschedule ${profile.name}'s callback to [new time]",
+    "summary": "Rescheduling of ${profile.name}'s callback to [new time]",
     "fields": [
       {"key": "action",            "label": "Action",            "value": "Reschedule"},
       {"key": "newScheduledTime",  "label": "New callback time", "value": "[the new time the client specified]"}
@@ -1873,8 +1973,13 @@ async function buildTaskSystemPrompt(profile: ClientProfile, taskId: string): Pr
     case 'add-account-access':            return ADD_ACCOUNT_ACCESS_PROMPT(profile);
     case 'open-account':                  return OPEN_ACCOUNT_PROMPT(profile);
     case 'place-purchase':                return PLACE_PURCHASE_PROMPT(profile);
-    case 'place-sale':                    return PLACE_SALE_PROMPT(profile);
-    case 'exchange-funds':                return EXCHANGE_FUNDS_PROMPT(profile);
+    case 'place-sale': {
+      // Selling and exchanging operate on what the client ALREADY owns.
+      return PLACE_SALE_PROMPT(profile, await fetchHoldings(profile.clientId));
+    }
+    case 'exchange-funds': {
+      return EXCHANGE_FUNDS_PROMPT(profile, await fetchHoldings(profile.clientId));
+    }
     case 'toggle-drip':                   return TOGGLE_DRIP_PROMPT(profile);
     case 'setup-auto-invest':             return SETUP_AUTO_INVEST_PROMPT(profile);
     case 'update-auto-invest':            return UPDATE_AUTO_INVEST_PROMPT(profile);
@@ -2183,8 +2288,31 @@ If the client asks how much they have contributed, how much more they can contri
 // ── Exit message instruction appended to system prompts at LLM call sites ─
 const EXIT_MESSAGE_INSTRUCTION = `
 
+PROPOSED-ACTION SUMMARY STYLE
+Write proposedAction.summary as a NOUN PHRASE naming the action — "Sale of $1,000 of
+BFESG from Jordan Williams's Taxable Account", "Purchase of $800 of BF500 in their Roth
+IRA, funded via linked bank account". NEVER start it with a verb ("Sell …", "Withdraw
+…", "Send …"). The same string is shown to the AGENT before they submit and to the
+CLIENT in the confirmation afterwards, so it has to read correctly in both places —
+a noun phrase does; a verb does not.
+
 EXIT MESSAGE RULE
-When shouldExitAutopilot is true, also set exitMessage to a ≤20-word sentence addressed to the human agent explaining why autopilot is handing back control (third person, e.g. "All fields collected — proposed action is ready for review." or "Customer requested escalation to a supervisor."). When shouldExitAutopilot is false, set exitMessage to null.`;
+"response" and "exitMessage" go to DIFFERENT AUDIENCES and must never be mixed.
+
+• "response" is sent VERBATIM TO THE CLIENT in the chat. Write only what you would say
+  out loud to them. It must NEVER contain internal status, field-collection bookkeeping,
+  or any mention of a "proposed action", "fields", "review", or "autopilot" — the client
+  has no idea any of that exists and seeing it is alarming.
+• "exitMessage" is a separate field read ONLY by the human agent, never shown to the
+  client. When shouldExitAutopilot is true, set it to a ≤20-word third-person sentence
+  explaining why autopilot is handing back control — e.g. that every required field has
+  now been collected and the action is ready for the agent to review, or that the
+  customer asked for a supervisor. When shouldExitAutopilot is false, set it to null.
+
+Do NOT append the exitMessage to the response, and do not paraphrase it there. On an
+exit turn the response should simply be the natural thing to say to the client — a brief
+confirmation of what you are setting up for them.`;
+
 
 // ── Task-expert model selection ────────────────────────────────────────────
 // The agent-side task experts carry the nuanced conversational load (warm
@@ -2443,7 +2571,7 @@ export const handler = async (
           });
         }
 
-        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE;
+        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
         const p2ContactId = transcript[0]?.content?.slice(0, 8);
         const p2Executor = createToolExecutor(profile.clientId, { contactId: p2ContactId });
         let taskResponse = '';
@@ -2473,9 +2601,15 @@ export const handler = async (
             proposedAction?: Record<string, unknown> | null;
           }>(result.text);
 
-          taskResponse = parsed.response ?? '';
           taskShouldExit = parsed.shouldExitAutopilot ?? false;
           taskExitMessage = parsed.exitMessage ?? null;
+          // exitMessage is agent-facing; never let it (or any internal status) reach the client.
+          // A client must never receive an empty bubble. Two ways to get one: the model
+          // writes nothing at all (observed — an exit-shaped turn with no response and no
+          // proposedAction), or it writes ONLY internal status and stripping empties it.
+          // Both end here, so the fallback is unconditional.
+          taskResponse = stripInternalStatus(parsed.response ?? '', taskExitMessage)
+            || "Thanks — I'm getting that set up for you now.";
           taskProposedAction = parsed.proposedAction ?? null;
 
           // Safety guard: never exit without a proposedAction
@@ -2497,11 +2631,24 @@ export const handler = async (
           hasProposedAction: !!taskProposedAction,
         }));
 
+        // Mid-task advice: NUDGE, never hijack.
+        //
+        // The pre-task guard above deliberately doesn't run once an expert is on, so a
+        // false positive can't kill a live task any more. But that also meant a GENUINE
+        // advice request mid-task lost its scope hint: the expert declines correctly in
+        // words (FORBIDDEN_TOPICS), yet returned suggestedScope: null, so the agent app
+        // no longer offered to switch to the callback scope.
+        //
+        // So we set the hint and nothing else — the expert's own reply still goes to the
+        // client and the task is NOT force-exited. Worst case for a false positive is a
+        // scope suggestion the agent ignores, rather than a dead task.
+        const midTaskAdvice = isAdviceRequest(lastCustomerMsg);
+
         return jsonResponse(200, {
           response: taskResponse,
           shouldExitAutopilot: taskShouldExit,
           exitMessage: taskExitMessage,
-          suggestedScope: null,
+          suggestedScope: midTaskAdvice ? 'callback' : null,
           closeChat: false,
           scheduleCallback: null,
           taskIdentified: null,
@@ -2532,7 +2679,7 @@ export const handler = async (
             const p1ContactId = transcript[0]?.content?.slice(0, 8);
             const p1Executor = createToolExecutor(profile.clientId, { contactId: p1ContactId });
             const result = await invokeWithTools(
-              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE,
+              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile),
               [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
               ALL_CLIENT_TOOLS,
               p1Executor,
@@ -2549,9 +2696,10 @@ export const handler = async (
               proposedAction?: Record<string, unknown> | null;
             }>(result.text);
 
-            p1Response = parsed.response ?? '';
             p1ShouldExit = parsed.shouldExitAutopilot ?? false;
             p1ExitMessage = parsed.exitMessage ?? null;
+            p1Response = stripInternalStatus(parsed.response ?? '', p1ExitMessage)
+              || "Thanks — I'm getting that set up for you now.";
             p1ProposedAction = parsed.proposedAction ?? null;
             if (p1ShouldExit && !p1ProposedAction) p1ShouldExit = false;
           } catch (e) {
@@ -2603,7 +2751,7 @@ export const handler = async (
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
-    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE;
+    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
     const contactId = transcript[0]?.content?.slice(0, 8);
     const executor = createToolExecutor(profile.clientId, { contactId });
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { PERSONAS, Persona, Beneficiary, AutoInvestSchedule, RmdData, WatchlistEntry } from '../data/personas';
 import { post } from '../api/client';
 import { classifyAccount } from '../../../lambda/shared/contribution-limits';
+import { cashOf, recomputeAccounts, portfolioTotal } from '../../../lambda/shared/account-math';
 
 // Slice of the persona the My Account hub can write. Keys map 1:1 to the
 // `put-account-settings` allowlist in lambda/client-data/handler.ts.
@@ -250,10 +251,20 @@ export const useClientStore = create<ClientStore>((set, get) => {
       };
       const newTransactions = [newTxn, ...activePersona.transactions];
 
-      const newAccounts = activePersona.accounts.map(a =>
-        a.id === accountId ? { ...a, balance: +(a.balance + amount).toFixed(2) } : a,
-      );
-      const newTotalBalance = +(activePersona.totalBalance + amount).toFixed(2);
+      // This path is always BANK-funded (BuyPage requires a linked bank): the money
+      // arrives from outside and goes STRAIGHT into shares, so cash is untouched and the
+      // account total rises because the holdings did.
+      //
+      // The balance is recomputed from `cash + Σ holdings` rather than incremented by
+      // `amount`, because the block above RE-MARKS the whole existing position at the
+      // live quote — so Σ holdings moves by more than the purchase, and a hand-
+      // incremented balance would drift out of the identity by the mark-to-market delta.
+      // That drift is exactly why cash is a stored field and not derived from the gap.
+      const carriedCash = activePersona.accounts.map(a => ({
+        ...a, cash: cashOf(a, activePersona.holdings),
+      }));
+      const newAccounts = recomputeAccounts(carriedCash, newHoldings);
+      const newTotalBalance = portfolioTotal(newAccounts);
 
       // Optimistic update
       set(state => ({

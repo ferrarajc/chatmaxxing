@@ -18,6 +18,11 @@ const TESTS = [
   'test-contribution-limits',   // the pure IRA contribution-limit math
   'test-money',                 // currency parsing — "$4,800" must not become NaN
   'test-advice-guard',          // holdings questions are facts, not advice
+  'test-account-math',          // balance === cash + Σ holdings, incl. the seed invariant
+  'test-resolve-account',       // "Taxable Account (acc-302)" must not silently no-op
+  'test-strip-internal-status', // agent-facing status must never reach the client
+  'test-task-suggestion',       // "I'd like to sell" suggests Sell fund shares, not Callback
+  'test-summary-style',         // summaries stay noun phrases — no "Selled"
   // Read-only API test (no LLM): the contributions summary across all four personas.
   'test-contributions',
   // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.
