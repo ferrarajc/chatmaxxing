@@ -255,14 +255,12 @@ export const TASKS: Task[] = [
         type: 'text',
         required: true,
       },
-      {
-        key: 'reason',
-        label: 'Reason for sale',
-        question: 'Is this sale for a withdrawal, a fund exchange, or rebalancing?',
-        type: 'enum',
-        options: ['Withdrawal', 'Fund exchange', 'Rebalancing', 'Other'],
-        required: true,
-      },
+      // REMOVED: 'reason' (Withdrawal / Fund exchange / Rebalancing / Other).
+      // Nothing downstream ever read it — execute-task discarded it — and asking a
+      // client to justify selling their own money reads as intrusive. When one asked
+      // "Why do you need to know my reason for selling?", the expert invented a
+      // compliance rationale ("It also helps us with internal reporting and
+      // compliance"), which was not true of anything in this system.
     ],
     executionType: 'mock',
   },

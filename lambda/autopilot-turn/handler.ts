@@ -494,6 +494,50 @@ async function fetchBeneficiaries(clientId: string): Promise<BeneficiaryEntry[]>
   }
 }
 
+interface HoldingRow { name: string; ticker: string; accountId: string; shares: number; price: number; value: number }
+
+/**
+ * The client's actual positions, for the tasks that operate on what they ALREADY own.
+ *
+ * Selling and exchanging are not browsing. PLACE_SALE_PROMPT injected FUND_PICKLIST —
+ * the whole 36-fund lineup — so when a client asked to sell, the expert listed every
+ * fund Bob's offers and invited her to pick one. She holds exactly one. Her reply was
+ * "Wait, what? You're saying that I hold all of those funds?"
+ *
+ * `ClientProfile.holdings` is optional and the agent-app profile carries balances only,
+ * so the positions have to be read here — same pattern as fetchBeneficiaries.
+ */
+async function fetchHoldings(clientId: string): Promise<HoldingRow[]> {
+  try {
+    const result = await docClient.send(new GetCommand({
+      TableName: process.env.CLIENTS_TABLE!,
+      Key: { clientId },
+      ProjectionExpression: 'holdings',
+    }));
+    return (result.Item?.holdings as HoldingRow[] | undefined) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Render the client's positions grouped by account, for injection into a prompt.
+ * Returns '' when there are none, so the caller can fall back gracefully.
+ */
+function formatHoldings(holdings: HoldingRow[], accounts: Account[]): string {
+  if (!holdings.length) return '';
+  const lines: string[] = [];
+  for (const a of accounts) {
+    const rows = holdings.filter(h => h.accountId === a.id);
+    if (!rows.length) continue;
+    lines.push(`  ${a.type} (${a.id}):`);
+    for (const h of rows) {
+      lines.push(`    • ${h.name} (${h.ticker}) — ${h.shares} shares, worth $${h.value.toLocaleString()}`);
+    }
+  }
+  return lines.join('\n');
+}
+
 async function fetchRmdSettings(clientId: string): Promise<RmdData> {
   try {
     const result = await docClient.send(new GetCommand({
@@ -887,11 +931,18 @@ When complete:
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
 };
 
-const PLACE_SALE_PROMPT = (profile: ClientProfile) => {
+const PLACE_SALE_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) => {
   const multiAccount = profile.accounts.length > 1;
   const accountSection = multiAccount
     ? `ACCOUNT — which account to sell from\n  Options: ${profile.accounts.map(a => `${a.type} (${a.id})`).join(', ')}\n\n`
     : `(Account pre-selected: ${profile.accounts[0]?.type ?? 'on file'} — do NOT ask for it.)\n\n`;
+
+  // You can only sell what you own. Listing the whole 36-fund lineup here made the
+  // expert offer a client every fund Bob's sells when she held exactly one.
+  const held = formatHoldings(holdings, profile.accounts);
+  const fundSection = held
+    ? `FUND TO SELL — the client can ONLY sell a fund they actually hold. These are their\ncurrent positions — offer ONLY from this list, never the full Bob's lineup:\n\n${held}\n\n  If they have just one position in the chosen account, name it and confirm rather than\n  asking them to choose. If the account they picked holds nothing, say so plainly.\n`
+    : `FUND TO SELL — call get_holdings to see what the client actually owns, and offer ONLY\nfrom that. Never list the full Bob's fund lineup: they can only sell what they hold.\n`;
 
   return `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
 Client accounts: ${summarizeAccounts(profile.accounts)}.
@@ -903,9 +954,7 @@ You are handling a SELL FUND SHARES request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND TO SELL — one of: ${FUND_PICKLIST}
-  Map partial names to the correct ticker.
-
+${accountSection}${fundSection}
 AMOUNT — one of:
   • A specific dollar amount (e.g. "$10,000")
   • "Full redemption" or "all shares" (sell everything in that fund)
@@ -913,9 +962,10 @@ AMOUNT — one of:
   A sale CONVERTS shares into cash inside the same account: the proceeds land as
   uninvested cash there, and the account's total value does not change. If the client
   wants the money paid out to them, that is a separate distribution request.
-  You cannot sell more than the position is worth — check it with get_holdings.
+  You cannot sell more than the position is worth.
 
-REASON FOR SALE — one of: Withdrawal, Fund exchange, Rebalancing, Other
+DO NOT ASK WHY THEY ARE SELLING. It is their money and their decision, and we do not
+need a reason to place the order. If they volunteer one, just acknowledge it naturally.
 
 ════════════════════════════════════
 HOW TO HANDLE THIS CONVERSATION
@@ -948,12 +998,11 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
   "proposedAction": {
     "taskId": "place-sale",
     "taskName": "Sell Fund Shares",
-    "summary": "Sell [amount] of [fund] from ${profile.name}'s [account] for [reason]",
+    "summary": "Sell [amount] of [fund] from ${profile.name}'s [account]",
     "fields": [
       {"key": "accountId",  "label": "Account",           "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fund",       "label": "Fund to sell",      "value": "[ticker symbol, e.g. BF500]"},
-      {"key": "amount",     "label": "Amount or shares",  "value": "[dollar amount or Full redemption]"},
-      {"key": "reason",     "label": "Reason for sale",   "value": "[Withdrawal / Fund exchange / Rebalancing / Other]"}
+      {"key": "amount",     "label": "Amount or shares",  "value": "[dollar amount or Full redemption]"}
     ]
   }
 }
@@ -961,11 +1010,18 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
 ⚠ Never set shouldExitAutopilot=true unless all four fields are present in proposedAction.`;
 };
 
-const EXCHANGE_FUNDS_PROMPT = (profile: ClientProfile) => {
+const EXCHANGE_FUNDS_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) => {
   const multiAccount = profile.accounts.length > 1;
   const accountSection = multiAccount
     ? `ACCOUNT — which account to exchange within\n  Options: ${profile.accounts.map(a => `${a.type} (${a.id})`).join(', ')}\n\n`
     : `(Account pre-selected: ${profile.accounts[0]?.type ?? 'on file'} — do NOT ask for it.)\n\n`;
+
+  // The SOURCE side of an exchange is constrained to what they hold; the destination
+  // is genuinely a choice from the whole lineup.
+  const held = formatHoldings(holdings, profile.accounts);
+  const sourceSection = held
+    ? `FUND TO EXCHANGE OUT OF — the client can only exchange OUT of a fund they hold.\nThese are their current positions — offer ONLY from this list:\n\n${held}\n`
+    : `FUND TO EXCHANGE OUT OF — call get_holdings and offer ONLY funds the client holds.\n`;
 
   return `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
 Client accounts: ${summarizeAccounts(profile.accounts)}.
@@ -977,9 +1033,7 @@ You are handling an EXCHANGE BETWEEN FUNDS request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND TO EXCHANGE OUT OF — one of: ${FUND_PICKLIST}
-  The source fund (money moves out of this fund).
-
+${accountSection}${sourceSection}
 FUND TO EXCHANGE INTO — one of: ${FUND_PICKLIST}
   The destination fund (money moves into this fund). Must be different from the source.
 
@@ -1919,8 +1973,13 @@ async function buildTaskSystemPrompt(profile: ClientProfile, taskId: string): Pr
     case 'add-account-access':            return ADD_ACCOUNT_ACCESS_PROMPT(profile);
     case 'open-account':                  return OPEN_ACCOUNT_PROMPT(profile);
     case 'place-purchase':                return PLACE_PURCHASE_PROMPT(profile);
-    case 'place-sale':                    return PLACE_SALE_PROMPT(profile);
-    case 'exchange-funds':                return EXCHANGE_FUNDS_PROMPT(profile);
+    case 'place-sale': {
+      // Selling and exchanging operate on what the client ALREADY owns.
+      return PLACE_SALE_PROMPT(profile, await fetchHoldings(profile.clientId));
+    }
+    case 'exchange-funds': {
+      return EXCHANGE_FUNDS_PROMPT(profile, await fetchHoldings(profile.clientId));
+    }
     case 'toggle-drip':                   return TOGGLE_DRIP_PROMPT(profile);
     case 'setup-auto-invest':             return SETUP_AUTO_INVEST_PROMPT(profile);
     case 'update-auto-invest':            return UPDATE_AUTO_INVEST_PROMPT(profile);

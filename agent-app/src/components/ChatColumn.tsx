@@ -632,7 +632,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (!s || s.status !== 'active') return;
     const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
     store.patchSlot(contactId, { suggestionLoading: true });
-    post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null }>(
+    post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null; suggestedTaskId?: string | null }>(
       '/next-best-response',
       { transcript: s.messages, clientProfile },
     )
@@ -647,6 +647,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
         };
         if (result.suggestedScope !== undefined && !store.getSlot(contactId)?.autopilotScope) {
           patch.suggestedScope = result.suggestedScope as AutopilotScope | null;
+          // NBR can now name a specific expert (e.g. Sell fund shares) instead of only
+          // a scope. Activating the suggestion starts that expert directly.
+          patch.suggestedTaskId = result.suggestedTaskId ?? null;
         }
         store.patchSlot(contactId, patch);
       })
@@ -999,7 +1002,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     runNbrRefresh(slot.contactId);
     // Re-evaluate suggested scope after agent sends; clear any stale exit message
     if (slot.autopilotScope === null) {
-      store.patchSlot(slot.contactId, { suggestedScope: null, autopilotExitMessage: null });
+      store.patchSlot(slot.contactId, { suggestedScope: null, suggestedTaskId: null, autopilotExitMessage: null });
     }
   };
 
@@ -1010,7 +1013,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     // Keep suggestedText — the scope activation effect will consume it for get-intent/full-auto.
     // Reset any stale pause/countdown state so a fresh activation starts clean & unpaused.
     store.patchSlot(slot.contactId, {
-      autopilotScope: scope, suggestedScope: null, pendingTaskId: taskId ?? null,
+      autopilotScope: scope, suggestedScope: null, suggestedTaskId: null, pendingTaskId: taskId ?? null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
   };
