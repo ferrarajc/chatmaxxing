@@ -6,7 +6,7 @@ import { FUND_PRICES } from '../shared/fund-catalog';
 import { buildTransactionRow, TxnType } from '../shared/transaction-history';
 import { isIraAccount } from '../shared/contribution-limits';
 import { parseMoney, isValidAmount, formatMoney, resolveAmount, numberOr } from '../shared/money';
-import { cashOf, applyCashDelta, recomputeAccounts, portfolioTotal } from '../shared/account-math';
+import { cashOf, applyCashDelta, recomputeAccounts, portfolioTotal, transferValue } from '../shared/account-math';
 
 interface ExecuteTaskRequest {
   taskId: string;
@@ -817,12 +817,17 @@ export const handler = async (
           });
         }
 
-        // A conversion moves CASH between two accounts (it leaves holdings alone), so
-        // "full balance" means the cash available and the amount is capped by it. Same
-        // reasoning as the distribution guard: converting money that is sitting in funds
-        // would require liquidating positions this model doesn't represent.
-        const convertibleCash = cashOf(fromAccount, holdings);
-        const amount = resolveAmount(fields.amount, convertibleCash);
+        // A conversion is an INTERNAL transfer between two accounts at the same
+        // custodian, and converting IN KIND — moving the shares themselves rather than
+        // liquidating — is standard practice. So unlike a distribution (where money
+        // actually leaves the firm and must therefore be in cash), this is capped by the
+        // source account's TOTAL value, and "full balance" means the whole account.
+        //
+        // Capping it by cash instead broke the flagship "Roth conversion strategy" demo:
+        // Alex's Traditional IRA holds $128,450 but only $1,897 in cash, so every
+        // realistic conversion was refused.
+        const convertible = fromAccount.balance;
+        const amount = resolveAmount(fields.amount, convertible);
 
         if (!isValidAmount(amount)) {
           return jsonResponse(200, {
@@ -836,21 +841,28 @@ export const handler = async (
             message: 'There is no Roth IRA on this account to convert into.',
           });
         }
-        if (amount > convertibleCash) {
+        if (amount > convertible) {
           return jsonResponse(200, {
             success: false,
-            message: `That ${fromAccount.type} has $${formatMoney(convertibleCash)} available in cash — not enough to `
-                   + `convert $${formatMoney(amount)}. Sell holdings first to raise cash, or convert up to `
-                   + `$${formatMoney(convertibleCash)}.`,
+            message: `That ${fromAccount.type} is worth $${formatMoney(convertible)} — not enough to convert `
+                   + `$${formatMoney(amount)}. You can convert up to $${formatMoney(convertible)}.`,
           });
         }
 
-        const debited  = applyCashDelta(accounts, holdings, fromAccountId, -amount).accounts;
-        const credited = applyCashDelta(debited, holdings, rothAccount.id, +amount).accounts;
-        const updatedAccounts = recomputeAccounts(credited, holdings);
+        // Cash first, then positions in kind, pro-rata. Keeps balance = cash + holdings
+        // true on BOTH accounts; the old code moved balances only and left holdings
+        // behind, which is what drove the source account underwater.
+        const moved = transferValue(accounts, holdings, fromAccountId, rothAccount.id, amount);
+        if (!moved.ok) {
+          return jsonResponse(200, {
+            success: false,
+            message: `That ${fromAccount.type} is worth $${formatMoney(moved.available)} — not enough to convert $${formatMoney(amount)}.`,
+          });
+        }
+        const updatedAccounts = moved.accounts;
         const newTotal = portfolioTotal(updatedAccounts);
 
-        await writeFinancials(table, clientId, updatedAccounts, holdings, newTotal);
+        await writeFinancials(table, clientId, updatedAccounts, moved.holdings, newTotal);
         await appendTransactionRows(clientId, [
           {
             description: `Roth Conversion - from ${fromAccount.type}`,

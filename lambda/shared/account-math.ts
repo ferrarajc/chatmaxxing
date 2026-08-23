@@ -101,6 +101,100 @@ export function portfolioTotal(accounts: AccountLike[]): number {
   return Math.round(accounts.reduce((sum, a) => sum + a.balance, 0));
 }
 
+export interface TransferrableHolding extends HoldingLike {
+  name: string;
+  ticker: string;
+  price: number;
+  change?: number;
+  drip?: boolean;
+}
+
+/**
+ * Move VALUE between two accounts belonging to the same client — cash first, then
+ * positions in kind, pro-rata across the source account's holdings.
+ *
+ * This is what a Roth conversion actually is: an internal transfer at the same
+ * custodian. Nothing leaves the firm, and converting IN KIND (moving the shares
+ * themselves rather than liquidating) is standard practice — which is why a conversion
+ * must NOT be capped by the source account's cash the way a withdrawal is. Capping it
+ * by cash broke the flagship "Roth conversion strategy" demo: Alex's Traditional IRA
+ * holds $128,450 but only $1,897 of it is cash, so every realistic conversion amount
+ * was refused.
+ *
+ * Returns ok:false only when the source cannot cover the amount from its TOTAL value.
+ */
+export function transferValue<A extends AccountLike, H extends TransferrableHolding>(
+  accounts: A[],
+  holdings: H[],
+  fromId: string,
+  toId: string,
+  amount: number,
+): { accounts: A[]; holdings: H[]; ok: boolean; available: number } {
+  const from = accounts.find(a => a.id === fromId);
+  const to = accounts.find(a => a.id === toId);
+  if (!from || !to) return { accounts, holdings, ok: false, available: 0 };
+
+  const fromCash = cashOf(from, holdings);
+  const fromInvested = investedValue(holdings, fromId);
+  const available = fromCash + fromInvested;
+  if (amount > available + 0.005) return { accounts, holdings, ok: false, available };
+
+  // 1. Cash moves first — it is the cheapest thing to transfer.
+  const cashMoved = Math.min(fromCash, amount);
+  let remaining = amount - cashMoved;
+
+  let nextHoldings = holdings;
+
+  // 2. Anything left comes out of the positions, pro-rata, and lands in the destination
+  //    account as the SAME funds (an in-kind transfer, not a sale).
+  if (remaining > 0.005 && fromInvested > 0) {
+    const fraction = Math.min(1, remaining / fromInvested);
+    const out: H[] = [];
+    const additions: H[] = [];
+
+    for (const h of holdings) {
+      if (h.accountId !== fromId) { out.push(h); continue; }
+
+      const sharesMoved = Math.round(h.shares * fraction * 1000) / 1000;
+      const sharesLeft = Math.round((h.shares - sharesMoved) * 1000) / 1000;
+
+      if (sharesLeft > 0) {
+        out.push({ ...h, shares: sharesLeft, value: holdingValue(sharesLeft, h.price) });
+      }
+      if (sharesMoved > 0) {
+        additions.push({ ...h, accountId: toId, shares: sharesMoved, value: holdingValue(sharesMoved, h.price) });
+      }
+    }
+
+    // Merge each moved position into an existing one of the same ticker, if any.
+    for (const add of additions) {
+      const idx = out.findIndex(h => h.accountId === toId && h.ticker === add.ticker);
+      if (idx >= 0) {
+        const merged = Math.round((out[idx].shares + add.shares) * 1000) / 1000;
+        out[idx] = { ...out[idx], shares: merged, value: holdingValue(merged, out[idx].price) };
+      } else {
+        out.push(add);
+      }
+    }
+    nextHoldings = out;
+    remaining = 0;
+  }
+
+  // 3. Settle cash on both sides, then let the balances fall out of the identity.
+  const withCash = accounts.map(a => {
+    if (a.id === fromId) return { ...a, cash: Math.max(0, Math.round((fromCash - cashMoved) * 100) / 100) };
+    if (a.id === toId) return { ...a, cash: Math.max(0, Math.round((cashOf(to, holdings) + cashMoved) * 100) / 100) };
+    return a;
+  });
+
+  return {
+    accounts: recomputeAccounts(withCash, nextHoldings),
+    holdings: nextHoldings,
+    ok: true,
+    available,
+  };
+}
+
 export interface CashDeltaResult<T extends AccountLike> {
   accounts: T[];
   ok: boolean;
