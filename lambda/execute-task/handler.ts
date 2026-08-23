@@ -6,7 +6,7 @@ import { FUND_PRICES } from '../shared/fund-catalog';
 import { buildTransactionRow, TxnType } from '../shared/transaction-history';
 import { isIraAccount } from '../shared/contribution-limits';
 import { parseMoney, isValidAmount, formatMoney, resolveAmount, numberOr } from '../shared/money';
-import { cashOf, applyCashDelta, recomputeAccounts, portfolioTotal, transferValue } from '../shared/account-math';
+import { cashOf, applyCashDelta, recomputeAccounts, portfolioTotal, transferValue, resolveAccount } from '../shared/account-math';
 
 interface ExecuteTaskRequest {
   taskId: string;
@@ -173,7 +173,8 @@ export const handler = async (
         }));
         const current: Array<Record<string, unknown>> = existing.Item?.autoInvest ?? [];
         const accounts: AccountEntry[] = existing.Item?.accounts ?? [];
-        const accountType = accounts.find(a => a.id === fields.accountId)?.type ?? '';
+        const schedAccount = resolveAccount(accounts, fields.accountId);
+        const accountType = schedAccount?.type ?? '';
         const fundInfo = matchFund(fields.fund ?? '');
 
         const scheduleAmount = parseMoney(fields.amount);
@@ -354,7 +355,10 @@ export const handler = async (
 
       case 'place-purchase': {
         const { accounts, holdings } = await readClient(table, clientId);
-        const accountId = fields.accountId ?? accounts[0]?.id ?? '';
+        const account   = (fields.accountId ?? '').trim()
+          ? resolveAccount(accounts, fields.accountId)
+          : (accounts[0] ?? null);
+        const accountId = account?.id ?? '';
         const amount    = parseMoney(fields.amount ?? '0');
         const fundInfo  = matchFund(fields.fund ?? '');
 
@@ -373,15 +377,15 @@ export const handler = async (
             message: `I couldn't match "${fields.fund ?? ''}" to a fund in the lineup. Check the ticker and try again.`,
           });
         }
-        if (!accountId) {
+        // Refuse rather than guess. An unresolvable account used to sail through and
+        // create a holding keyed to the label, which belonged to no account at all.
+        if (!account) {
           return jsonResponse(200, {
             success: false,
-            message: 'No account was specified for this purchase.',
+            message: `I couldn't match "${fields.accountId ?? ''}" to one of this client's accounts.`,
           });
         }
-
-        const account     = accounts.find(a => a.id === accountId);
-        const accountType = account?.type ?? '';
+        const accountType = account.type;
 
         // The funding source is finally READ. It was collected by the expert, shown on
         // the proposed-action card, submitted — and then silently discarded, so both
@@ -393,7 +397,7 @@ export const handler = async (
         // don't send it.
         const fromCash = /cash/i.test(fields.fundingSource ?? '');
 
-        if (fromCash && account) {
+        if (fromCash) {
           const available = cashOf(account, holdings);
           if (available < amount) {
             return jsonResponse(200, {
@@ -425,9 +429,19 @@ export const handler = async (
         // total is unchanged. Bank-funded: new money arrives, cash is untouched and the
         // total goes UP. Either way the balance is recomputed from the identity rather
         // than adjusted by hand.
-        const cashAdjusted = fromCash
-          ? applyCashDelta(accounts, holdings, accountId, -amount).accounts
-          : accounts;
+        let cashAdjusted = accounts;
+        if (fromCash) {
+          const debit = applyCashDelta(accounts, holdings, accountId, -amount);
+          // Never ignore ok:false. Discarding it is what let a failed cash debit
+          // continue to a "success" response with the money silently unmoved.
+          if (!debit.ok) {
+            return jsonResponse(200, {
+              success: false,
+              message: `That account has $${formatMoney(debit.available)} in cash — not enough for a $${formatMoney(amount)} purchase.`,
+            });
+          }
+          cashAdjusted = debit.accounts;
+        }
         const updatedAccounts = recomputeAccounts(cashAdjusted, holdings);
         const newTotal = portfolioTotal(updatedAccounts);
 
@@ -464,7 +478,10 @@ export const handler = async (
 
       case 'place-sale': {
         const { accounts, holdings } = await readClient(table, clientId);
-        const accountId = fields.accountId ?? accounts[0]?.id ?? '';
+        const account   = (fields.accountId ?? '').trim()
+          ? resolveAccount(accounts, fields.accountId)
+          : (accounts[0] ?? null);
+        const accountId = account?.id ?? '';
         const fundInfo  = matchFund(fields.fund ?? '');
 
         if (!fundInfo) {
@@ -473,8 +490,11 @@ export const handler = async (
             message: `I couldn't match "${fields.fund ?? ''}" to a fund in the lineup. Check the ticker and try again.`,
           });
         }
-        if (!accountId) {
-          return jsonResponse(200, { success: false, message: 'No account was specified for this sale.' });
+        if (!account) {
+          return jsonResponse(200, {
+            success: false,
+            message: `I couldn't match "${fields.accountId ?? ''}" to one of this client's accounts.`,
+          });
         }
 
         const hIdx = holdings.findIndex(h => h.ticker === fundInfo.ticker && h.accountId === accountId);
@@ -501,7 +521,6 @@ export const handler = async (
         }
 
         const sharesRemoved = Math.round((amount / fundInfo.price) * 1000) / 1000;
-        const account = accounts.find(a => a.id === accountId);
         const accountType = account?.type ?? '';
 
         if (hIdx >= 0) {
@@ -540,10 +559,12 @@ export const handler = async (
 
       case 'exchange-funds': {
         const { accounts, holdings } = await readClient(table, clientId);
-        const accountId  = fields.accountId ?? accounts[0]?.id ?? '';
+        const account    = (fields.accountId ?? '').trim()
+          ? resolveAccount(accounts, fields.accountId)
+          : (accounts[0] ?? null);
+        const accountId  = account?.id ?? '';
         const fromFund   = matchFund(fields.fromFund ?? '');
         const toFund     = matchFund(fields.toFund   ?? '');
-        const account    = accounts.find(a => a.id === accountId);
         const accountType = account?.type ?? '';
 
         if (!fromFund || !toFund) {
@@ -552,8 +573,11 @@ export const handler = async (
             message: `I couldn't match "${(!fromFund ? fields.fromFund : fields.toFund) ?? ''}" to a fund in the lineup. Check the ticker and try again.`,
           });
         }
-        if (!accountId) {
-          return jsonResponse(200, { success: false, message: 'No account was specified for this exchange.' });
+        if (!account) {
+          return jsonResponse(200, {
+            success: false,
+            message: `I couldn't match "${fields.accountId ?? ''}" to one of this client's accounts.`,
+          });
         }
 
         const fromPosition = holdings.find(h => h.ticker === fromFund.ticker && h.accountId === accountId) ?? null;
@@ -654,12 +678,17 @@ export const handler = async (
 
       case 'request-withdrawal': {
         const { accounts, holdings } = await readClient(table, clientId);
-        const accountId   = fields.accountId ?? accounts[0]?.id ?? '';
-        const account     = accounts.find(a => a.id === accountId);
+        const account     = (fields.accountId ?? '').trim()
+          ? resolveAccount(accounts, fields.accountId)
+          : (accounts[0] ?? null);
+        const accountId   = account?.id ?? '';
         const accountType = account?.type ?? '';
 
         if (!account) {
-          return jsonResponse(200, { success: false, message: 'No account was specified for this distribution.' });
+          return jsonResponse(200, {
+            success: false,
+            message: `I couldn't match "${fields.accountId ?? ''}" to one of this client's accounts.`,
+          });
         }
 
         // A distribution is paid out of CASH, so "full balance" resolves to the cash
@@ -806,8 +835,8 @@ export const handler = async (
 
       case 'roth-conversion': {
         const { accounts, holdings } = await readClient(table, clientId);
-        const fromAccountId = fields.fromAccountId ?? '';
-        const fromAccount   = accounts.find(a => a.id === fromAccountId);
+        const fromAccount   = resolveAccount(accounts, fields.fromAccountId);
+        const fromAccountId = fromAccount?.id ?? '';
         const rothAccount   = accounts.find(a => a.type === 'Roth IRA');
 
         if (!fromAccount) {

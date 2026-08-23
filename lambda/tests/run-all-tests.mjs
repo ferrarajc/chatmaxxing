@@ -19,6 +19,7 @@ const TESTS = [
   'test-money',                 // currency parsing — "$4,800" must not become NaN
   'test-advice-guard',          // holdings questions are facts, not advice
   'test-account-math',          // balance === cash + Σ holdings, incl. the seed invariant
+  'test-resolve-account',       // "Taxable Account (acc-302)" must not silently no-op
   // Read-only API test (no LLM): the contributions summary across all four personas.
   'test-contributions',
   // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.

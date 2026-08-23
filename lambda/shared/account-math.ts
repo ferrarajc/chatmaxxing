@@ -231,3 +231,50 @@ export function applyCashDelta<T extends AccountLike>(
   );
   return { accounts: updated, ok: true, available };
 }
+
+
+/**
+ * Resolve whatever the LLM wrote in an `accountId` field to a real account.
+ *
+ * The task prompts list the options as `Traditional IRA (acc-002)`, and the field
+ * schema says `"[account id or type]"` — so the model legitimately writes any of
+ * "acc-302", "Taxable Account", or "Taxable Account (acc-302)". A bare
+ * `accounts.find(a => a.id === raw)` matches only the first of those.
+ *
+ * That was not a cosmetic miss. When it returned undefined the purchase still went
+ * ahead: it created a holding whose accountId was the LABEL (belonging to no account),
+ * skipped the insufficient-cash guard, and left every real balance untouched — while
+ * reporting success with a reference number. A live POAT purchase of $800 vanished
+ * into exactly such an orphan row. Resolve properly, and refuse when we cannot.
+ */
+export function resolveAccount<T extends AccountLike>(accounts: T[], raw: string | undefined): T | null {
+  const s = (raw ?? '').trim();
+  if (!s) return null;
+
+  // 1. Exact id.
+  const byId = accounts.find(a => a.id === s);
+  if (byId) return byId;
+
+  // 2. An id in parentheses: "Taxable Account (acc-302)".
+  const paren = s.match(/\(([^)]+)\)/);
+  if (paren) {
+    const inner = paren[1].trim();
+    const byInner = accounts.find(a => a.id === inner);
+    if (byInner) return byInner;
+  }
+
+  // 3. Any account id appearing anywhere in the string.
+  const embedded = accounts.find(a => s.includes(a.id));
+  if (embedded) return embedded;
+
+  // 4. Account type, case-insensitively — but only when it is unambiguous, since a
+  //    client can hold two accounts of the same type.
+  const lower = s.toLowerCase();
+  const byType = accounts.filter(a => a.type.toLowerCase() === lower);
+  if (byType.length === 1) return byType[0];
+
+  const contains = accounts.filter(a => lower.includes(a.type.toLowerCase()));
+  if (contains.length === 1) return contains[0];
+
+  return null;
+}

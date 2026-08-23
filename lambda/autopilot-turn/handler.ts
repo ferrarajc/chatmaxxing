@@ -876,7 +876,7 @@ When complete:
   "taskName": "Buy / Make a Contribution",
   "summary": "Purchase $[amount] of [fund] in ${profile.name}'s [account] funded via [source]",
   "fields": [
-    {"key": "accountId",      "label": "Account",          "value": "[account id or type]"},
+    {"key": "accountId",      "label": "Account",          "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
     {"key": "amount",         "label": "Purchase amount",  "value": "[dollar amount]"},
     {"key": "fundingSource",  "label": "Funding source",   "value": "[Linked bank account / Cash in account]"}
@@ -949,7 +949,7 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
     "taskName": "Sell Fund Shares",
     "summary": "Sell [amount] of [fund] from ${profile.name}'s [account] for [reason]",
     "fields": [
-      {"key": "accountId",  "label": "Account",           "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",  "label": "Account",           "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fund",       "label": "Fund to sell",      "value": "[ticker symbol, e.g. BF500]"},
       {"key": "amount",     "label": "Amount or shares",  "value": "[dollar amount or Full redemption]"},
       {"key": "reason",     "label": "Reason for sale",   "value": "[Withdrawal / Fund exchange / Rebalancing / Other]"}
@@ -1021,7 +1021,7 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
     "taskName": "Exchange Between Funds",
     "summary": "Exchange [amount] from [fromFund] to [toFund] in ${profile.name}'s [account]",
     "fields": [
-      {"key": "accountId",  "label": "Account",                    "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",  "label": "Account",                    "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fromFund",   "label": "Fund to exchange out of",    "value": "[ticker symbol, e.g. BF500]"},
       {"key": "toFund",     "label": "Fund to exchange into",      "value": "[ticker symbol, e.g. BFBI]"},
       {"key": "amount",     "label": "Amount to exchange",         "value": "[dollar amount or Full balance]"}
@@ -1084,7 +1084,7 @@ When complete:
   "taskName": "Change Dividend Reinvestment (DRIP)",
   "summary": "[Enable/Disable] dividend reinvestment for [fund] in ${profile.name}'s [account]",
   "fields": [
-    {"key": "accountId",    "label": "Account",            "value": "[account id or type]"},
+    {"key": "accountId",    "label": "Account",            "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "fund",         "label": "Fund",               "value": "[ticker symbol]"},
     {"key": "dripEnabled",  "label": "Enable or disable",  "value": "[Turn ON (reinvest) / Turn OFF (receive as cash)]"}
   ]
@@ -1152,7 +1152,7 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
     "taskName": "Set Up Automatic Investment",
     "summary": "Invest $[amount] [frequency] on the [day] into [fund] in ${profile.name}'s [account]",
     "fields": [
-      {"key": "accountId",   "label": "Account",             "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",   "label": "Account",             "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fund",        "label": "Fund",                "value": "[ticker symbol, e.g. BF500]"},
       {"key": "amount",      "label": "Investment amount",   "value": "[dollar amount, e.g. $200]"},
       {"key": "frequency",   "label": "Frequency",           "value": "[Monthly / Quarterly]"},
@@ -1357,7 +1357,7 @@ When all required fields are confirmed, return this EXACT structure with propose
     "taskName": "Request a Distribution",
     "summary": "Withdraw [amount] from ${profile.name}'s [account] via [deliveryMethod]",
     "fields": [
-      {"key": "accountId",       "label": "Account",                  "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",       "label": "Account",                  "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "amount",          "label": "Amount",                   "value": "[dollar amount or Full balance]"},
       {"key": "deliveryMethod",  "label": "Delivery method",          "value": "[Direct deposit (ACH) / Check by mail]"},
       {"key": "taxWithholding",  "label": "Federal tax withholding",  "value": "[percentage, e.g. 10% — omit this field entirely for Roth IRA]"}
@@ -1429,7 +1429,7 @@ When all five fields are confirmed, return this EXACT structure with proposedAct
     "taskName": "Set Up Recurring Distributions",
     "summary": "Set up [frequency] $[amount] distributions from ${profile.name}'s [account] starting [startDate]",
     "fields": [
-      {"key": "accountId",       "label": "Account",             "value": "[account id or type — omit if pre-selected]"},
+      {"key": "accountId",       "label": "Account",             "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "amount",          "label": "Amount per period",   "value": "[dollar amount, e.g. $500]"},
       {"key": "frequency",       "label": "Frequency",           "value": "[Monthly / Quarterly / Annually]"},
       {"key": "startDate",       "label": "Start date",          "value": "[specific date, e.g. June 1, 2026]"},
@@ -1605,7 +1605,7 @@ When complete:
     {"key": "sourceInstitution",  "label": "Source institution",       "value": "[institution name / description]"},
     {"key": "sourceAccountType",  "label": "Source account type",      "value": "[Traditional 401(k) / Roth 401(k) / 403(b) / Traditional IRA / Other]"},
     {"key": "estimatedAmount",    "label": "Estimated rollover amount", "value": "[dollar amount or unknown]"},
-    {"key": "targetAccountId",    "label": "Receiving account",         "value": "[account id or type]"}
+    {"key": "targetAccountId",    "label": "Receiving account",         "value": "[the bare account id, e.g. acc-002 — NOT the label]"}
   ]
 }
 
@@ -1666,7 +1666,7 @@ When all three are collected:
   "taskName": "Convert to Roth IRA",
   "summary": "Convert [amount] from ${profile.name}'s [fromAccountId] to Roth IRA for tax year [taxYear]",
   "fields": [
-    {"key": "fromAccountId",  "label": "Source account",       "value": "[account id or type]"},
+    {"key": "fromAccountId",  "label": "Source account",       "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "amount",         "label": "Conversion amount",    "value": "[dollar amount or full balance]"},
     {"key": "taxYear",        "label": "Tax year",             "value": "[2025 / 2026]"}
   ]
