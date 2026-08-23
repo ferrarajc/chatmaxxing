@@ -22,6 +22,7 @@ const TESTS = [
   'test-resolve-account',       // "Taxable Account (acc-302)" must not silently no-op
   'test-strip-internal-status', // agent-facing status must never reach the client
   'test-task-suggestion',       // "I'd like to sell" suggests Sell fund shares, not Callback
+  'test-summary-style',         // summaries stay noun phrases — no "Selled"
   // Read-only API test (no LLM): the contributions summary across all four personas.
   'test-contributions',
   // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.
