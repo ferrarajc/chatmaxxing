@@ -205,7 +205,7 @@ const alexJohnson: Persona = {
     { name: 'BobsFunds Bond Income',        ticker: 'BFBI',   accountId: 'acc-002', shares: 210.0, price: 98.30,  change: -0.3, value: 20643  },
     { name: 'BobsFunds International',      ticker: 'BFIN',   accountId: 'acc-002', shares: 55.4,  price: 87.60,  change: +0.7, value: 4853   },
     { name: 'BobsFunds ESG Leaders',        ticker: 'BFESG',  accountId: 'acc-003', shares: 31.2,  price: 156.90, change: +1.8, value: 4895   },
-    { name: 'BobsFunds Short-Term Treas.',  ticker: 'BFST',   accountId: 'acc-003', shares: 499.8, price: 100.10, change: +0.1, value: 50030  },
+    { name: 'BobsFunds Short-Term Treasury',  ticker: 'BFST',   accountId: 'acc-003', shares: 499.8, price: 100.10, change: +0.1, value: 50030  },
   ],
   transactions: [
     { date: '2025-04-10', description: 'Dividend reinvestment - BF500',      amount: +124.20,  account: 'Roth IRA'         },
@@ -303,7 +303,7 @@ const mariaChen: Persona = {
   holdings: [
     { name: 'BobsFunds 500 Index',         ticker: 'BF500',  accountId: 'acc-201', shares: 850.0,  price: 218.40, change: +1.2, value: 185640 },
     { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-201', shares: 1500.0, price: 98.30,  change: -0.3, value: 147450 },
-    { name: 'BobsFunds Short-Term Treas.', ticker: 'BFST',   accountId: 'acc-201', shares: 2800.0, price: 100.10, change: +0.1, value: 280280 },
+    { name: 'BobsFunds Short-Term Treasury', ticker: 'BFST',   accountId: 'acc-201', shares: 2800.0, price: 100.10, change: +0.1, value: 280280 },
     { name: 'BobsFunds International',     ticker: 'BFIN',   accountId: 'acc-202', shares: 500.0,  price: 87.60,  change: +0.7, value: 43800  },
     { name: 'BobsFunds ESG Leaders',       ticker: 'BFESG',  accountId: 'acc-202', shares: 150.0,  price: 156.90, change: +1.8, value: 23535  },
   ],
@@ -502,7 +502,7 @@ const robertMartinez: Persona = {
     { name: 'BobsFunds Bond Income',       ticker: 'BFBI',   accountId: 'acc-401', shares: 800.0,  price: 98.30,  change: -0.3, value: 78640  },
     { name: 'BobsFunds Growth',            ticker: 'BFGR',   accountId: 'acc-402', shares: 145.0,  price: 341.20, change: +2.1, value: 49474  },
     { name: 'BobsFunds International',     ticker: 'BFIN',   accountId: 'acc-402', shares: 250.0,  price: 87.60,  change: +0.7, value: 21900  },
-    { name: 'BobsFunds Short-Term Treas.', ticker: 'BFST',   accountId: 'acc-403', shares: 1100.0, price: 100.10, change: +0.1, value: 110110 },
+    { name: 'BobsFunds Short-Term Treasury', ticker: 'BFST',   accountId: 'acc-403', shares: 1100.0, price: 100.10, change: +0.1, value: 110110 },
   ],
   transactions: [
     { date: '2025-04-10', description: 'SEP-IRA Contribution',               amount: +15000.00, account: 'SEP-IRA'         },
