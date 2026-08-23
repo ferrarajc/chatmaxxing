@@ -311,7 +311,7 @@ When ALL fields are collected, replace proposedAction with:
 {
   "taskId": "${task.id}",
   "taskName": "${task.name}",
-  "summary": "one clear sentence describing exactly what the client wants done",
+  "summary": "a NOUN PHRASE naming exactly what the client wants done, e.g. "Sale of $1,000 of BF500 from their Roth IRA" — never a sentence starting with a verb",
   "fields": [
 ${proposedActionFieldsSchema}
   ]
@@ -391,7 +391,7 @@ When all three are collected, set shouldExitAutopilot=true and replace proposedA
 {
   "taskId": "add-account-access",
   "taskName": "Add Authorized Account User",
-  "summary": "Grant [name] ([email]) [access level] access to ${profile.name}'s account",
+  "summary": "[access level] account access for [name] ([email]) on ${profile.name}'s account",
   "fields": [
     {"key": "personName",  "label": "Person's full name",    "value": "[the name provided]"},
     {"key": "personEmail", "label": "Email address",          "value": "[the email provided]"},
@@ -472,7 +472,7 @@ When both fields are collected:
 {
   "taskId": "update-contact-info",
   "taskName": "Update Contact Information",
-  "summary": "Update ${profile.name}'s [infoType] to [newValue]",
+  "summary": "Contact-info update for ${profile.name}: [infoType] to [newValue]",
   "fields": [
     {"key": "infoType",  "label": "What to update", "value": "[Phone number / Email address / Mailing address]"},
     {"key": "newValue",  "label": "New value",       "value": "[the new value provided]"}
@@ -750,7 +750,7 @@ ONLY after the client confirms the recap above:
   "proposedAction": {
     "taskId": "update-beneficiaries",
     "taskName": "Change Beneficiary Designations",
-    "summary": "Update beneficiaries on ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'} to [brief description]",
+    "summary": "Beneficiary update on ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'}: [brief description]",
     "fields": [
       {"key": "accountId",       "label": "Account",                    "value": "${exampleAccountId}"},
       {"key": "ben_1_name",      "label": "Beneficiary 1 name",         "value": "[full legal name]"},
@@ -770,7 +770,7 @@ If the client wants NO beneficiaries on the account, use an empty fields array (
   "proposedAction": {
     "taskId": "update-beneficiaries",
     "taskName": "Change Beneficiary Designations",
-    "summary": "Remove all beneficiaries from ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'}",
+    "summary": "Removal of all beneficiaries from ${profile.name}'s ${iraAccounts[0]?.type ?? 'IRA'}",
     "fields": [
       {"key": "accountId", "label": "Account", "value": "${exampleAccountId}"}
     ]
@@ -840,7 +840,7 @@ When all three fields are confirmed, return this EXACT structure with proposedAc
   "proposedAction": {
     "taskId": "open-account",
     "taskName": "Open a New Account",
-    "summary": "Open a new [accountType] for ${profile.name} with $[amount] funded via [source]",
+    "summary": "New [accountType] for ${profile.name}, opening deposit $[amount] via [source]",
     "fields": [
       {"key": "accountType",    "label": "Account type",          "value": "[Roth IRA / Traditional IRA / SEP-IRA / Taxable]"},
       {"key": "initialAmount",  "label": "Initial contribution",  "value": "[dollar amount, e.g. $5,000]"},
@@ -919,7 +919,7 @@ When complete:
 {
   "taskId": "place-purchase",
   "taskName": "Buy / Make a Contribution",
-  "summary": "Purchase $[amount] of [fund] in ${profile.name}'s [account] funded via [source]",
+  "summary": "Purchase of $[amount] of [fund] in ${profile.name}'s [account], funded via [source]",
   "fields": [
     {"key": "accountId",      "label": "Account",          "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
@@ -998,7 +998,7 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
   "proposedAction": {
     "taskId": "place-sale",
     "taskName": "Sell Fund Shares",
-    "summary": "Sell [amount] of [fund] from ${profile.name}'s [account]",
+    "summary": "Sale of [amount] of [fund] from ${profile.name}'s [account]",
     "fields": [
       {"key": "accountId",  "label": "Account",           "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fund",       "label": "Fund to sell",      "value": "[ticker symbol, e.g. BF500]"},
@@ -1074,7 +1074,7 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
   "proposedAction": {
     "taskId": "exchange-funds",
     "taskName": "Exchange Between Funds",
-    "summary": "Exchange [amount] from [fromFund] to [toFund] in ${profile.name}'s [account]",
+    "summary": "Exchange of [amount] from [fromFund] to [toFund] in ${profile.name}'s [account]",
     "fields": [
       {"key": "accountId",  "label": "Account",                    "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fromFund",   "label": "Fund to exchange out of",    "value": "[ticker symbol, e.g. BF500]"},
@@ -1137,7 +1137,7 @@ When complete:
 {
   "taskId": "toggle-drip",
   "taskName": "Change Dividend Reinvestment (DRIP)",
-  "summary": "[Enable/Disable] dividend reinvestment for [fund] in ${profile.name}'s [account]",
+  "summary": "Dividend reinvestment [on/off] for [fund] in ${profile.name}'s [account]",
   "fields": [
     {"key": "accountId",    "label": "Account",            "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "fund",         "label": "Fund",               "value": "[ticker symbol]"},
@@ -1205,7 +1205,7 @@ When all fields are confirmed, return this EXACT structure with proposedAction n
   "proposedAction": {
     "taskId": "setup-auto-invest",
     "taskName": "Set Up Automatic Investment",
-    "summary": "Invest $[amount] [frequency] on the [day] into [fund] in ${profile.name}'s [account]",
+    "summary": "Automatic investment of $[amount] [frequency] on the [day] into [fund] in ${profile.name}'s [account]",
     "fields": [
       {"key": "accountId",   "label": "Account",             "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "fund",        "label": "Fund",                "value": "[ticker symbol, e.g. BF500]"},
@@ -1271,7 +1271,7 @@ When all four fields have answers, return this EXACT structure with proposedActi
   "proposedAction": {
     "taskId": "update-auto-invest",
     "taskName": "Modify Auto-Invest Schedule",
-    "summary": "Update ${profile.name}'s auto-invest: [description of change]",
+    "summary": "Auto-invest update for ${profile.name}: [description of change]",
     "fields": [
       {"key": "scheduleDescription",  "label": "Which schedule",        "value": "[client's description, e.g. monthly $200 into BF500]"},
       {"key": "amount",               "label": "New investment amount",  "value": "[dollar amount or unchanged]"},
@@ -1332,7 +1332,7 @@ When both fields are confirmed, return this EXACT structure with proposedAction 
   "proposedAction": {
     "taskId": "pause-auto-invest",
     "taskName": "Pause or Resume Auto-Invest",
-    "summary": "[Pause / Resume] ${profile.name}'s auto-invest: [schedule description]",
+    "summary": "[Pause / Resumption] of ${profile.name}'s auto-invest: [schedule description]",
     "fields": [
       {"key": "scheduleDescription",  "label": "Which schedule",    "value": "[client's description, e.g. monthly $200 into BF500]"},
       {"key": "action",               "label": "Pause or resume",   "value": "[Pause / Resume]"}
@@ -1410,7 +1410,7 @@ When all required fields are confirmed, return this EXACT structure with propose
   "proposedAction": {
     "taskId": "request-withdrawal",
     "taskName": "Request a Distribution",
-    "summary": "Withdraw [amount] from ${profile.name}'s [account] via [deliveryMethod]",
+    "summary": "Distribution of [amount] from ${profile.name}'s [account] via [deliveryMethod]",
     "fields": [
       {"key": "accountId",       "label": "Account",                  "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "amount",          "label": "Amount",                   "value": "[dollar amount or Full balance]"},
@@ -1482,7 +1482,7 @@ When all five fields are confirmed, return this EXACT structure with proposedAct
   "proposedAction": {
     "taskId": "setup-systematic-withdrawal",
     "taskName": "Set Up Recurring Distributions",
-    "summary": "Set up [frequency] $[amount] distributions from ${profile.name}'s [account] starting [startDate]",
+    "summary": "[frequency] distributions of $[amount] from ${profile.name}'s [account], starting [startDate]",
     "fields": [
       {"key": "accountId",       "label": "Account",             "value": "[the bare account id, e.g. acc-002 — NOT the label; omit if pre-selected]"},
       {"key": "amount",          "label": "Amount per period",   "value": "[dollar amount, e.g. $500]"},
@@ -1585,7 +1585,7 @@ When all three fields are confirmed, return this EXACT structure with proposedAc
   "proposedAction": {
     "taskId": "update-rmd-settings",
     "taskName": "Update RMD Settings",
-    "summary": "Update ${profile.name}'s RMD to [frequency] payments via [deliveryMethod] with [withholding]% withholding",
+    "summary": "RMD update for ${profile.name}: [frequency] payments via [deliveryMethod] with [withholding]% withholding",
     "fields": [
       {"key": "deliveryMethod",  "label": "RMD delivery method",                "value": "[Direct deposit (ACH) / Check by mail]"},
       {"key": "frequency",       "label": "RMD frequency",                      "value": "[Annual (December) / Monthly / Quarterly]"},
@@ -1655,7 +1655,7 @@ When complete:
 {
   "taskId": "initiate-rollover",
   "taskName": "Roll Over From Another Institution",
-  "summary": "Roll over ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
+  "summary": "Rollover of ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
   "fields": [
     {"key": "sourceInstitution",  "label": "Source institution",       "value": "[institution name / description]"},
     {"key": "sourceAccountType",  "label": "Source account type",      "value": "[Traditional 401(k) / Roth 401(k) / 403(b) / Traditional IRA / Other]"},
@@ -1719,7 +1719,7 @@ When all three are collected:
 {
   "taskId": "roth-conversion",
   "taskName": "Convert to Roth IRA",
-  "summary": "Convert [amount] from ${profile.name}'s [fromAccountId] to Roth IRA for tax year [taxYear]",
+  "summary": "Roth conversion of [amount] from ${profile.name}'s [fromAccountId] for tax year [taxYear]",
   "fields": [
     {"key": "fromAccountId",  "label": "Source account",       "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
     {"key": "amount",         "label": "Conversion amount",    "value": "[dollar amount or full balance]"},
@@ -1781,7 +1781,7 @@ When both fields are confirmed, return this EXACT structure with proposedAction 
   "proposedAction": {
     "taskId": "request-tax-document",
     "taskName": "Request Tax Document",
-    "summary": "Send ${profile.name} a copy of their [formType] for tax year [taxYear]",
+    "summary": "Copy of ${profile.name}'s [formType] for tax year [taxYear]",
     "fields": [
       {"key": "formType",  "label": "Form type",  "value": "[1099-R / 1099-B / 1099-DIV / Form 5498]"},
       {"key": "taxYear",   "label": "Tax year",   "value": "[2024 / 2023 / 2022]"}
@@ -1842,7 +1842,7 @@ If action is Cancel:
   "proposedAction": {
     "taskId": "cancel-reschedule-callback",
     "taskName": "Cancel or Reschedule Callback",
-    "summary": "Cancel ${profile.name}'s scheduled callback",
+    "summary": "Cancellation of ${profile.name}'s scheduled callback",
     "fields": [
       {"key": "action",  "label": "Action",  "value": "Cancel"}
     ]
@@ -1857,7 +1857,7 @@ If action is Reschedule (include newScheduledTime):
   "proposedAction": {
     "taskId": "cancel-reschedule-callback",
     "taskName": "Cancel or Reschedule Callback",
-    "summary": "Reschedule ${profile.name}'s callback to [new time]",
+    "summary": "Rescheduling of ${profile.name}'s callback to [new time]",
     "fields": [
       {"key": "action",            "label": "Action",            "value": "Reschedule"},
       {"key": "newScheduledTime",  "label": "New callback time", "value": "[the new time the client specified]"}
@@ -2288,6 +2288,14 @@ If the client asks how much they have contributed, how much more they can contri
 // ── Exit message instruction appended to system prompts at LLM call sites ─
 const EXIT_MESSAGE_INSTRUCTION = `
 
+PROPOSED-ACTION SUMMARY STYLE
+Write proposedAction.summary as a NOUN PHRASE naming the action — "Sale of $1,000 of
+BFESG from Jordan Williams's Taxable Account", "Purchase of $800 of BF500 in their Roth
+IRA, funded via linked bank account". NEVER start it with a verb ("Sell …", "Withdraw
+…", "Send …"). The same string is shown to the AGENT before they submit and to the
+CLIENT in the confirmation afterwards, so it has to read correctly in both places —
+a noun phrase does; a verb does not.
+
 EXIT MESSAGE RULE
 "response" and "exitMessage" go to DIFFERENT AUDIENCES and must never be mixed.
 
@@ -2596,10 +2604,12 @@ export const handler = async (
           taskShouldExit = parsed.shouldExitAutopilot ?? false;
           taskExitMessage = parsed.exitMessage ?? null;
           // exitMessage is agent-facing; never let it (or any internal status) reach the client.
-          // If the model wrote ONLY internal status, stripping empties the reply —
-          // send something human rather than a blank message.
+          // A client must never receive an empty bubble. Two ways to get one: the model
+          // writes nothing at all (observed — an exit-shaped turn with no response and no
+          // proposedAction), or it writes ONLY internal status and stripping empties it.
+          // Both end here, so the fallback is unconditional.
           taskResponse = stripInternalStatus(parsed.response ?? '', taskExitMessage)
-            || (parsed.response ? "Thanks — I'm getting that set up for you now." : '');
+            || "Thanks — I'm getting that set up for you now.";
           taskProposedAction = parsed.proposedAction ?? null;
 
           // Safety guard: never exit without a proposedAction
@@ -2689,7 +2699,7 @@ export const handler = async (
             p1ShouldExit = parsed.shouldExitAutopilot ?? false;
             p1ExitMessage = parsed.exitMessage ?? null;
             p1Response = stripInternalStatus(parsed.response ?? '', p1ExitMessage)
-              || (parsed.response ? "Thanks — I'm getting that set up for you now." : '');
+              || "Thanks — I'm getting that set up for you now.";
             p1ProposedAction = parsed.proposedAction ?? null;
             if (p1ShouldExit && !p1ProposedAction) p1ShouldExit = false;
           } catch (e) {

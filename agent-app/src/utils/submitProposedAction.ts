@@ -8,17 +8,25 @@ export interface ExecuteTaskResult {
   referenceNumber?: string;
 }
 
-const PAST_TENSE: Record<string, string> = {
-  Update: 'Updated', Add: 'Added', Remove: 'Removed', Change: 'Changed',
-  Schedule: 'Scheduled', Cancel: 'Cancelled', Grant: 'Granted',
-  Transfer: 'Transferred', Set: 'Set', Enable: 'Enabled', Disable: 'Disabled',
-  Replace: 'Replaced', Modify: 'Modified', Close: 'Closed',
-};
-
-/** Turn a proposed-action summary ("Grant …") into a confirmation ("Granted …"). */
-export function toPastTense(summary: string): string {
-  return summary.replace(/^\w+/, w => PAST_TENSE[w] ?? (w.endsWith('e') ? w + 'd' : w + 'ed'));
-}
+/**
+ * REMOVED: toPastTense() and its PAST_TENSE lookup.
+ *
+ * It conjugated the leading verb of a proposed-action summary so the confirmation read
+ * "Granted …" instead of "Grant …". The lookup held 14 verbs and fell back to
+ * `endsWith('e') ? +'d' : +'ed'`, so every verb outside the list was a coin flip — and
+ * three of the ones actually used lost it, in messages that go to CLIENTS:
+ *
+ *     Sell     → "Selled"       (Sold)
+ *     Withdraw → "Withdrawed"   (Withdrew)
+ *     Send     → "Sended"       (Sent)
+ *
+ * Adding three more entries would not have fixed the class; the next new verb breaks it
+ * again. So the conjugation is gone entirely: proposedAction summaries are now NOUN
+ * PHRASES ("Sale of $1,000 of BFESG from Jordan Williams's Taxable Account"), which read
+ * correctly BOTH on the card before submission and in the confirmation after it. There
+ * is no longer a verb to get wrong, and if a model ever drifts back to a verb the worst
+ * case is a slightly imperative line — never an invented word.
+ */
 
 /**
  * Execute a proposed action and deliver the confirmation — the shared body of the
@@ -41,7 +49,7 @@ export async function submitProposedAction(
     fields: fieldsMap,
   });
   if (res.success) {
-    const description = toPastTense(action.summary);
+    const description = action.summary;
     const clientMsg = res.referenceNumber
       ? `Confirmation\nRef: ${res.referenceNumber}\n\n${description}`
       : `Confirmation\n\n${description}`;
