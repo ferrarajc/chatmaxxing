@@ -528,6 +528,7 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
                   autopilotSendAt: null,
                   autopilotPausedRemainingMs: null,
                   suggestedScope: null,
+                  suggestedTaskId: null,
                   // A Type 3 action sent to the client can no longer be submitted.
                   ...(leftSlot.awaitingClientApproval ? { awaitingClientApproval: false } : {}),
                 });

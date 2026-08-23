@@ -179,5 +179,11 @@ export function activeAutomationLabel(slot: ContactSlot): string | null {
     const label = id ? taskLabel(id) : null;
     if (label) return label;
   }
+  // A merely SUGGESTED task names the expert too — "Sell fund shares" is a far more
+  // useful thing for the agent to see than the scope it happens to ride on.
+  if (!slot.autopilotScope && slot.suggestedTaskId) {
+    const label = taskLabel(slot.suggestedTaskId);
+    if (label) return label;
+  }
   return AUTOPILOT_SCOPE_LABELS[scope];
 }

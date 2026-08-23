@@ -60,6 +60,9 @@ export interface ContactSlot {
   autopilotScope: AutopilotScope | null;
   /** AI-suggested scope shown in header in black, icon default state */
   suggestedScope: AutopilotScope | null;
+  /** Task expert NBR suggests starting, paired with suggestedScope 'get-intent'.
+   *  Activating the suggestion starts THIS expert rather than the generic scope. */
+  suggestedTaskId: string | null;
   /** Task expert the agent picked straight from the ✈ menu, awaiting its kickoff
    *  turn. Sent to the Lambda as `forceTaskId` so it skips intent classification;
    *  cleared once that turn is dispatched (the `[TASK: id]` transcript marker

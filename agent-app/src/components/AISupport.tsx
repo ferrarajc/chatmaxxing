@@ -119,7 +119,7 @@ export function AISupport({
     // If menu is open and there's a suggested scope, double-click activates it
     if (menuOpen && slot.suggestedScope) {
       setMenuOpen(false);
-      onActivateAutopilot(slot.suggestedScope);
+      onActivateAutopilot(slot.suggestedScope, slot.suggestedTaskId ?? undefined);
       return;
     }
     setMenuOpen(prev => !prev);

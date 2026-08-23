@@ -2,6 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { invokeWithTools, invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { NBR_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import { isAdviceRequest } from '../shared/advice-guard';
+import { matchTaskByIntent } from '../shared/tasks';
 import {
   ChatMessage,
   ClientProfile,
@@ -15,7 +16,8 @@ import {
 
 const RESOURCE_LIST = KNOWLEDGE_BASE.map(r => `${r.id}: ${r.title}`).join('\n');
 
-// Deterministic detectors: advice/trade requests should always suggest a callback.
+// Deterministic detectors. Advice still routes to a callback; a TRADE does not — see the
+// guardrail near the end of the handler for why TRADE_RE is now only a last resort.
 const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
 
 // Mirrors CONTRIBUTION_DATA_RULE in autopilot-turn so an agent's suggested reply reaches
@@ -54,7 +56,7 @@ Do not pad it out, and do not pretend ${firstName} has answered.
 Also suggest an autopilot scope if the conversation calls for one:
 - "get-intent": the customer's need is not yet clearly defined
 - "researching": the agent has indicated they need time to look into something
-- "callback": topic requires phone escalation (trades, financial advice, complex account changes)
+- "callback": topic genuinely requires phone escalation — personalized investment ADVICE, or a complex account change we cannot do here. NOT for ordinary buys, sells, exchanges or withdrawals: those are handled by task automations in chat.
 - "idle-check": the customer has not responded in a while
 - "full-auto": the conversation is simple and AI could handle it end-to-end
 - null: no autopilot scope is needed right now
@@ -290,14 +292,47 @@ export const handler = async (
       resources = matchResources(conversationText);
     }
 
-    // Deterministic guardrail: financial-advice or trade requests must suggest a
-    // callback with a licensed advisor, regardless of the LLM's judgment.
+    // ── Deterministic scope/task guardrail ──────────────────────────────────
+    //
+    // ADVICE still goes to a callback: recommending investments needs a licensed
+    // advisor and we cannot do it here.
+    //
+    // TRADES NO LONGER DO. `TRADE_RE` used to force suggestedScope='callback' for any
+    // message containing buy/sell/redeem, which dates from when trades genuinely could
+    // not be handled in chat. They can now — `place-purchase` and `place-sale` are two
+    // of the 19 task experts. So a client saying "I'd like to sell some shares" was met
+    // with a suggestion to schedule a callback, when the right suggestion was sitting
+    // in the ✈ menu all along.
+    //
+    // Instead, run the SAME keyword matcher autopilot uses to identify a task
+    // (matchTaskByIntent) and suggest that expert by id. The agent app already knows
+    // how to start a specific task — onActivateAutopilot(scope, taskId) — it just was
+    // never given one to start.
     const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
-    if (isAdviceRequest(lastCustomerMsg) || TRADE_RE.test(lastCustomerMsg)) {
+    let suggestedTaskId: string | null = null;
+
+    if (isAdviceRequest(lastCustomerMsg)) {
       suggestedScope = 'callback';
+    } else {
+      // Match on the latest message first, then the recent customer side of the
+      // conversation, so "the taxable account" right after "I want to sell" still lands.
+      const recentCustomer = transcript
+        .filter(m => m.role === 'CUSTOMER').slice(-3).map(m => m.content).join('  ');
+      const accountTypes = profile.accounts.map(a => a.type);
+      const matched = matchTaskByIntent(lastCustomerMsg, accountTypes)
+        ?? matchTaskByIntent(recentCustomer, accountTypes);
+
+      if (matched) {
+        suggestedScope = 'get-intent';
+        suggestedTaskId = matched.id;
+      } else if (TRADE_RE.test(lastCustomerMsg)) {
+        // A trade word with no task match — fall back to the old behavior rather than
+        // leaving the agent with nothing.
+        suggestedScope = 'callback';
+      }
     }
 
-    return jsonResponse(200, { suggestedText, resources, suggestedScope, toolsUsed });
+    return jsonResponse(200, { suggestedText, resources, suggestedScope, suggestedTaskId, toolsUsed });
   } catch (err) {
     console.error('next-best-response error', err);
     return jsonResponse(500, { error: 'Failed to generate response' });

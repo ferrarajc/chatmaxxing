@@ -151,7 +151,7 @@ export function FocusingDesktop() {
     setInputText('');
     sendText(selectedSlot, text, store);
     if (selectedSlot.autopilotScope === null) {
-      store.patchSlot(selectedSlot.contactId, { suggestedScope: null, autopilotExitMessage: null });
+      store.patchSlot(selectedSlot.contactId, { suggestedScope: null, suggestedTaskId: null, autopilotExitMessage: null });
     }
   };
 
@@ -159,7 +159,7 @@ export function FocusingDesktop() {
     if (!selectedSlot) return;
     setAutopilotMenuOpen(false);
     store.patchSlot(selectedSlot.contactId, {
-      autopilotScope: scope, suggestedScope: null, pendingTaskId: taskId ?? null,
+      autopilotScope: scope, suggestedScope: null, suggestedTaskId: null, pendingTaskId: taskId ?? null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
   };
