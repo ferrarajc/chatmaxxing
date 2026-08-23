@@ -2,6 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { invokeNovaMicro, invokeWithTools, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import { isAdviceRequest } from '../shared/advice-guard';
+import { stripInternalStatus } from '../shared/reply-hygiene';
 import {
   ChatMessage,
   ClientProfile,
@@ -2229,7 +2230,22 @@ If the client asks how much they have contributed, how much more they can contri
 const EXIT_MESSAGE_INSTRUCTION = `
 
 EXIT MESSAGE RULE
-When shouldExitAutopilot is true, also set exitMessage to a ≤20-word sentence addressed to the human agent explaining why autopilot is handing back control (third person, e.g. "All fields collected — proposed action is ready for review." or "Customer requested escalation to a supervisor."). When shouldExitAutopilot is false, set exitMessage to null.`;
+"response" and "exitMessage" go to DIFFERENT AUDIENCES and must never be mixed.
+
+• "response" is sent VERBATIM TO THE CLIENT in the chat. Write only what you would say
+  out loud to them. It must NEVER contain internal status, field-collection bookkeeping,
+  or any mention of a "proposed action", "fields", "review", or "autopilot" — the client
+  has no idea any of that exists and seeing it is alarming.
+• "exitMessage" is a separate field read ONLY by the human agent, never shown to the
+  client. When shouldExitAutopilot is true, set it to a ≤20-word third-person sentence
+  explaining why autopilot is handing back control — e.g. that every required field has
+  now been collected and the action is ready for the agent to review, or that the
+  customer asked for a supervisor. When shouldExitAutopilot is false, set it to null.
+
+Do NOT append the exitMessage to the response, and do not paraphrase it there. On an
+exit turn the response should simply be the natural thing to say to the client — a brief
+confirmation of what you are setting up for them.`;
+
 
 // ── Task-expert model selection ────────────────────────────────────────────
 // The agent-side task experts carry the nuanced conversational load (warm
@@ -2518,9 +2534,13 @@ export const handler = async (
             proposedAction?: Record<string, unknown> | null;
           }>(result.text);
 
-          taskResponse = parsed.response ?? '';
           taskShouldExit = parsed.shouldExitAutopilot ?? false;
           taskExitMessage = parsed.exitMessage ?? null;
+          // exitMessage is agent-facing; never let it (or any internal status) reach the client.
+          // If the model wrote ONLY internal status, stripping empties the reply —
+          // send something human rather than a blank message.
+          taskResponse = stripInternalStatus(parsed.response ?? '', taskExitMessage)
+            || (parsed.response ? "Thanks — I'm getting that set up for you now." : '');
           taskProposedAction = parsed.proposedAction ?? null;
 
           // Safety guard: never exit without a proposedAction
@@ -2607,9 +2627,10 @@ export const handler = async (
               proposedAction?: Record<string, unknown> | null;
             }>(result.text);
 
-            p1Response = parsed.response ?? '';
             p1ShouldExit = parsed.shouldExitAutopilot ?? false;
             p1ExitMessage = parsed.exitMessage ?? null;
+            p1Response = stripInternalStatus(parsed.response ?? '', p1ExitMessage)
+              || (parsed.response ? "Thanks — I'm getting that set up for you now." : '');
             p1ProposedAction = parsed.proposedAction ?? null;
             if (p1ShouldExit && !p1ProposedAction) p1ShouldExit = false;
           } catch (e) {
