@@ -41,7 +41,7 @@ const cd = bundle('lambda/shared/client-defaults.ts', 'client-defaults');
 
 const {
   holdingValue, investedValue, cashOf, accountBalance,
-  recomputeAccounts, portfolioTotal, applyCashDelta,
+  recomputeAccounts, portfolioTotal, applyCashDelta, transferValue,
 } = await import(pathToFileURL(am.outFile).href);
 
 // Importing this at all exercises the load-time invariant in client-defaults.ts, which
@@ -135,6 +135,56 @@ group('applyCashDelta edge cases', () => {
   check('other accounts are untouched',
     applyCashDelta([TAXABLE, { id: 'acc-301', type: 'Roth IRA', balance: 13655, cash: 202 }], HOLDINGS, 'acc-302', -100)
       .accounts[1].cash === 202);
+});
+
+// ── In-kind transfer (Roth conversion) ──────────────────────────────────────
+// A conversion is an INTERNAL move at the same custodian, and converting in kind is
+// standard — so it is capped by the source account's TOTAL value, not its cash.
+// Capping it by cash broke the flagship "Roth conversion strategy" demo: Alex's
+// Traditional IRA holds $128,450 but only $1,897 of it is cash.
+group('transferValue — Roth conversion moves value, not just cash', () => {
+  const accts = [
+    { id: 'trad', type: 'Traditional IRA', balance: 128450, cash: 1897 },
+    { id: 'roth', type: 'Roth IRA', balance: 45230, cash: 779 },
+  ];
+  const hold = [
+    { accountId: 'trad', ticker: 'BFBI', name: 'Bond Income', shares: 1042.8, price: 98.30, value: 102507 },
+    { accountId: 'trad', ticker: 'BFIN', name: 'International', shares: 274.5, price: 87.60, value: 24046 },
+    { accountId: 'roth', ticker: 'BF500', name: '500 Index', shares: 103.7, price: 218.40, value: 22648 },
+    { accountId: 'roth', ticker: 'BFGR', name: 'Growth', shares: 63.9, price: 341.20, value: 21803 },
+  ];
+
+  const r = transferValue(accts, hold, 'trad', 'roth', 50000);
+  check('$50,000 conversion is ALLOWED (was refused when capped by cash)', r.ok === true);
+
+  const tradAfter = r.accounts.find(a => a.id === 'trad');
+  const rothAfter = r.accounts.find(a => a.id === 'roth');
+  check('source drops by ~50,000', Math.abs(tradAfter.balance - 78450) <= 5, String(tradAfter.balance));
+  check('destination rises by ~50,000', Math.abs(rothAfter.balance - 95230) <= 5, String(rothAfter.balance));
+  check('portfolio total is preserved', Math.abs(portfolioTotal(r.accounts) - 173680) <= 5,
+    String(portfolioTotal(r.accounts)));
+
+  check('source cash fully used first (1897 -> 0)', tradAfter.cash === 0, String(tradAfter.cash));
+  check('destination cash gained it (779 -> 2676)', rothAfter.cash === 2676, String(rothAfter.cash));
+
+  // The remainder moved IN KIND — the Roth now holds the bond fund it did not before.
+  const rothBFBI = r.holdings.find(h => h.accountId === 'roth' && h.ticker === 'BFBI');
+  check('positions moved in kind (Roth now holds BFBI)', !!rothBFBI && rothBFBI.shares > 0,
+    rothBFBI ? String(rothBFBI.shares) : 'absent');
+  check('both accounts still satisfy balance = cash + invested',
+    cashOf(tradAfter, r.holdings) + investedValue(r.holdings, 'trad') === tradAfter.balance &&
+    cashOf(rothAfter, r.holdings) + investedValue(r.holdings, 'roth') === rothAfter.balance);
+
+  // Merging into an existing position rather than duplicating it.
+  const rothBF500 = r.holdings.filter(h => h.accountId === 'roth' && h.ticker === 'BF500');
+  check('no duplicate positions created', rothBF500.length === 1, `${rothBF500.length} BF500 rows`);
+
+  check('more than the account is worth is refused',
+    transferValue(accts, hold, 'trad', 'roth', 200000).ok === false);
+  const full = transferValue(accts, hold, 'trad', 'roth', 128450);
+  check('full-balance conversion empties the source',
+    full.ok === true && full.accounts.find(a => a.id === 'trad').balance === 0,
+    String(full.accounts.find(a => a.id === 'trad').balance));
 });
 
 // ── The seed invariant, across every persona ────────────────────────────────
