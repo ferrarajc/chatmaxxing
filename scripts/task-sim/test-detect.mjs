@@ -134,12 +134,20 @@ await group('D11 — a rate-limited turn is INCONCLUSIVE, never a product failur
 });
 
 await group('D4 — re-asking, but a recap is legitimate', async () => {
+  // An UNAMBIGUOUS re-ask: both earlier fields are answered, and the only field still
+  // outstanding (amount) matches this sentence far worse than the one being repeated.
+  // The earlier version of this fixture said "…sell from that account?", which honestly
+  // reads as asking about the still-unanswered account — the detector was right to stay
+  // quiet on it, and the fixture was the thing at fault.
   const reask = await run(view(
+    { role: 'agent', text: 'Which account would you like to sell from?' },
+    { role: 'you', text: 'the taxable one, acc-302' },
     { role: 'agent', text: 'Which fund would you like to sell?' },
     { role: 'you', text: 'BFESG' },
-    { role: 'agent', text: 'And which fund would you like to sell from that account?' },
+    { role: 'agent', text: 'Sorry, which fund did you want to sell?' },
   ));
-  check('flags a genuine re-ask', codes(reask).includes('REASKED_ANSWERED_FIELD'));
+  check('flags a genuine re-ask', codes(reask).includes('REASKED_ANSWERED_FIELD'),
+    codes(reask).join(', ') || 'nothing flagged');
 
   const recap = await run(view(
     { role: 'agent', text: 'Which fund would you like to sell?' },
@@ -147,6 +155,21 @@ await group('D4 — re-asking, but a recap is legitimate', async () => {
     { role: 'agent', text: 'Before I proceed, just to confirm: sell $1,000 of BFESG. Is that correct?' },
   ));
   check('a recap is NOT a re-ask', !codes(recap).includes('REASKED_ANSWERED_FIELD'));
+
+  // Verbatim from the FIRST LIVE RUN, which flagged both of these. A task's field
+  // questions are nearly the same sentence, so raw token overlap fires everywhere:
+  // asking about the FUND scored 0.83 against the ACCOUNT question on filler words alone.
+  const live = await run(view(
+    { role: 'you', text: "I'd like to sell some shares I hold" },
+    { role: 'agent', text: 'Sure, I can help with that. Which account would you like to sell from: your Roth IRA, Traditional IRA, or Taxable Account?' },
+    { role: 'you', text: "I'd like to sell from my Traditional IRA, account acc-302." },
+    { role: 'agent', text: 'Which fund would you like to sell from in your Traditional IRA? You have the following options: BFESG' },
+    { role: 'you', text: 'I would like to sell the BFESG.' },
+    { role: 'agent', text: 'How much would you like to sell from the BobsFunds ESG Leaders (BFESG) fund?' },
+    { role: 'you', text: 'I would like to sell $1,000 of BFESG.' },
+  ));
+  check('asking about the FUND is not "re-asking the account"',
+    !codes(live).includes('REASKED_ANSWERED_FIELD'), codes(live).join(', '));
 });
 
 // ── The half that matters most: what must NOT fire ──────────────────────────

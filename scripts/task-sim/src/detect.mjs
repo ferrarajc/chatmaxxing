@@ -168,22 +168,63 @@ export async function detect(sim) {
       if (norm(t.text).includes(needle)) { answeredAt.set(f.key, t.i); break; }
     }
   }
+  // The match must be DISCRIMINATIVE, not merely strong.
+  //
+  // A task's field questions are nearly the same sentence — "Which account would you
+  // like to sell from?", "Which fund would you like to sell?", "How much would you like
+  // to sell?" — so raw token overlap fires everywhere. The first live run flagged
+  // "Which fund would you like to sell from in your Traditional IRA?" as re-asking the
+  // ACCOUNT, at 0.83 overlap, purely on the shared filler words.
+  //
+  // So: score the message against EVERY field, take the best, and only accuse the agent
+  // of repeating itself when there is no innocent reading — i.e. when no still-unanswered
+  // field matches just as well. An agent naming the fund while asking the amount is doing
+  // its job, not repeating a question.
+  // Score against the ASK, not the whole question string. Several field questions append
+  // an option list — fund's is `Which fund would you like to sell? Options: BF500, BFGR,
+  // BFBI, BFIN, BFESG, BFST.` — and those tickers inflate the denominator, so the fund
+  // question could never score highly while the short account question scored ~1.0 and
+  // won every argmax. That is why the first full run flagged "re-asked the Account" on
+  // all ten simulations: a scoring artefact, not agent behaviour.
+  const askHead = q => String(q ?? '').split(/[?:—–]/)[0];
+  const score = (text, field) => {
+    const qWords = new Set(norm(askHead(field.question)).split(' ').filter(w => w.length > 3));
+    if (!qWords.size) return 0;
+    const tWords = new Set(norm(text).split(' '));
+    return [...qWords].filter(w => tWords.has(w)).length / qWords.size;
+  };
+
   for (const t of agentTurns) {
     if (!/\?/.test(t.text ?? '')) continue;
     if (RECAP_CUE.test(t.text)) continue;             // a recap may restate anything
     if (CROSS_SELL_CUE.test(t.text)) continue;        // a cross-sell is a feature
-    for (const f of sim.taskFields ?? []) {
-      const at = answeredAt.get(f.key);
-      if (at === undefined || at >= t.i) continue;
-      const qWords = new Set(norm(f.question).split(' ').filter(w => w.length > 3));
-      if (!qWords.size) continue;
-      const tWords = new Set(norm(t.text).split(' '));
-      const overlap = [...qWords].filter(w => tWords.has(w)).length / qWords.size;
-      if (overlap >= 0.5) {
-        add('REASKED_ANSWERED_FIELD', 'warn', t.i,
-          `Asked again for "${f.label}" — the client already answered it at turn ${at}.`, t.text);
-      }
-    }
+
+    const scored = (sim.taskFields ?? [])
+      .map(f => ({ f, s: score(t.text, f), answeredAt: answeredAt.get(f.key) }))
+      .sort((a, b) => b.s - a.s);
+    const best = scored[0];
+    if (!best || best.s < 0.5) continue;
+    if (best.answeredAt === undefined || best.answeredAt >= t.i) continue;
+
+    // Two innocent readings, either of which is enough to stay quiet.
+    //
+    // (a) A still-unanswered field matches at least as well.
+    // (b) The message NAMES a still-unanswered field. This is the reliable signal, and
+    //     word overlap is not: "What fund would you like to sell from in your Taxable
+    //     Account?" scored 0.83 against the account question and 0.80 against the fund
+    //     one — flagged as re-asking the account purely because it said "What" rather
+    //     than "Which". The word "fund" is right there; that is what a reader uses.
+    const nounOf = f =>
+      String(f.label ?? f.key).toLowerCase().trim().split(/\s+/).pop().replace(/id$/, '');
+    const tWords = new Set(norm(t.text).split(' '));
+    const unanswered = scored.filter(x => x.answeredAt === undefined || x.answeredAt >= t.i);
+
+    if (unanswered.some(x => x.s >= best.s)) continue;
+    if (unanswered.some(x => tWords.has(nounOf(x.f)))) continue;
+
+    add('REASKED_ANSWERED_FIELD', 'warn', t.i,
+      `Asked again for "${best.f.label}" — the client already answered it at turn ${best.answeredAt}.`,
+      t.text);
   }
 
   // ── D5 asking for something we must never ask ───────────────────────────────

@@ -23,6 +23,7 @@ import { runSimulation } from './src/sim.mjs';
 import { makePacer } from './src/pace.mjs';
 import { judgeTranscript, judgeAnnotations } from './src/judge.mjs';
 import { renderReport } from './src/report.mjs';
+import { resolveOpenAiKey } from './src/secrets.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(HERE, 'runs');
@@ -43,11 +44,39 @@ async function main() {
 
   if (args.flags.has('list')) { process.exit(await listTasks(args.taskId) ? 1 : 0); }
 
+  // Re-render a completed run, RE-RUNNING the deterministic detectors against the stored
+  // transcripts. Detectors improve — and when one is fixed you want yesterday's run
+  // re-judged, not a fresh 30-minute, money-spending re-run. The advisory notes are kept
+  // as they were, since re-judging would cost tokens and change under you.
   if (args['report-only']) {
     const run = JSON.parse(readFileSync(args['report-only'], 'utf8'));
+    const { detect } = await import('./src/detect.mjs');
+    const factsForFields = await getFacts();
+    for (const s of run.sims) {
+      const task = factsForFields.TASKS.find(t => t.id === run.taskId);
+      const snap = s.before ?? s.after ?? { accounts: [], holdings: [] };
+      const taskFields = task && snap.accounts?.length
+        ? factsForFields.filterFields(task, snap.accounts.map(a => a.type), snap.accounts.length, {})
+        : [];
+      const rerun = await detect({
+        clientView: s.clientView, goal: s.goal, snapshot: snap,
+        taskFields, actionTurnIndex: s.actionTurnIndex,
+      });
+      // Keep findings that detect() cannot reproduce (ledger- and execution-derived).
+      const keep = (s.findings ?? []).filter(f =>
+        ['SUCCESS_BUT_NOTHING_WROTE', 'SUMMARY_LEDGER_DISAGREEMENT', 'BALANCE_IDENTITY_BROKEN',
+         'ROUTING_MISS', 'EXITED_WITHOUT_ACTION'].includes(f.code));
+      s.findings = [...rerun, ...keep];
+      const failed = s.findings.filter(f => f.severity === 'fail').length
+        + (s.assertions ?? []).filter(a => !a.ok).length
+        + (s.ledgerChecks ?? []).filter(c => !c.ok).length;
+      if (s.verdict !== 'inconclusive') s.verdict = failed === 0 ? 'pass' : 'fail';
+      s.failedCount = failed;
+    }
     const out = args['report-only'].replace(/\.json$/, '.html');
+    writeFileSync(args['report-only'], JSON.stringify(run, null, 2));
     writeFileSync(out, renderReport(run));
-    console.log(`re-rendered → ${out}`);
+    console.log(`re-analysed and re-rendered → ${out}`);
     return;
   }
 
@@ -60,10 +89,12 @@ async function main() {
   const task = facts.TASKS.find(t => t.id === args.taskId);
   if (!task) { console.error(`Unknown task "${args.taskId}". Try --list.`); process.exit(2); }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    console.error('OPENAI_API_KEY is required — it pays for the simulated customer and the advisory judge.\n' +
-                  'The expert turns themselves bill through the Lambda\'s own key.');
+  // Env var wins; otherwise fall back to the key already in SSM. Announced, never printed.
+  let apiKey;
+  try {
+    apiKey = resolveOpenAiKey(m => console.log(m));
+  } catch (e) {
+    console.error(e.message);
     process.exit(2);
   }
 
