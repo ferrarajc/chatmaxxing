@@ -20,3 +20,4 @@ scripts/quality-loop/results/
 # committing it would ship a stale copy inside dist/ and stomp the nightly-published
 # gh-pages /fund-data files on every app deploy.
 customer-app/public/fund-data/
+scripts/task-sim/runs/

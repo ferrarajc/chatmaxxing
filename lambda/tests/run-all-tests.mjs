@@ -1,9 +1,26 @@
 /**
- * Runs all autopilot task tests sequentially and prints a summary.
- * Usage: OPENAI_API_KEY=sk-... node lambda/tests/run-all-tests.mjs
+ * Runs the fast test suite and prints a summary.
  *
- * Each test file is run as a child process. A test passes if it exits 0.
- * Results are printed as they complete, with a final summary table.
+ *   node lambda/tests/run-all-tests.mjs              everything (2 tests need network)
+ *   node lambda/tests/run-all-tests.mjs --offline    just the pure unit tests, a few seconds
+ *
+ * Each test file runs as a child process; it passes if it exits 0.
+ *
+ * WHAT IS NOT HERE ANY MORE: the 19 per-task conversation harnesses that used to live in
+ * this folder. They were ~88% copy-paste, they built a full transcript and then DISCARDED
+ * it (so a failure could not be diagnosed without a re-run), not one of them ever called
+ * /execute-task — leaving the entire write path untested end to end — and they all
+ * defaulted to PROD. They are replaced by:
+ *
+ *     node scripts/task-sim/run.mjs <taskId>
+ *
+ * which drives ONE expert end to end ten times, submits, verifies the ledger actually
+ * moved, and produces a readable transcript with the problems marked inline. It is
+ * deliberately NOT wired in here: it takes tens of minutes, spends money, and mutates dev
+ * data, so it must be invoked knowingly.
+ *
+ * This suite no longer requires OPENAI_API_KEY. Nothing left in it plays a customer; the
+ * two networked tests call Lambdas that hold their own key.
  */
 
 import { spawn } from 'child_process';
@@ -12,132 +29,88 @@ import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const TESTS = [
-  // Offline unit tests (no network, no LLM) — these run first because they are fast
-  // and because a failure here explains failures further down the list.
-  'test-contribution-limits',   // the pure IRA contribution-limit math
+// Pure unit tests — no network, no LLM, no key. Ordered so a failure here explains
+// failures further down.
+const OFFLINE = [
+  'test-contribution-limits',   // the IRA contribution-limit math
   'test-money',                 // currency parsing — "$4,800" must not become NaN
   'test-advice-guard',          // holdings questions are facts, not advice
   'test-account-math',          // balance === cash + Σ holdings, incl. the seed invariant
   'test-resolve-account',       // "Taxable Account (acc-302)" must not silently no-op
   'test-strip-internal-status', // agent-facing status must never reach the client
-  'test-task-suggestion',       // "I'd like to sell" suggests Sell fund shares, not Callback
   'test-summary-style',         // summaries stay noun phrases — no "Selled"
-  // Read-only API test (no LLM): the contributions summary across all four personas.
-  'test-contributions',
-  // Routing test (no simulated conversation): forceTaskId + last-[TASK:]-marker-wins.
-  'test-force-task',
-  'test-add-account-access',
-  'test-update-contact-info',
-  'test-update-beneficiaries',
-  'test-open-account',
-  'test-place-purchase',
-  'test-place-sale',
-  'test-exchange-funds',
-  'test-toggle-drip',
-  'test-setup-auto-invest',
-  'test-update-auto-invest',
-  'test-pause-auto-invest',
-  'test-request-withdrawal',
-  'test-setup-systematic-withdrawal',
-  'test-update-rmd-settings',
-  'test-initiate-rollover',
-  'test-roth-conversion',
-  'test-request-tax-document',
-  'test-cancel-reschedule-callback',
-  'test-update-security',
+  'test-task-suggestion',       // "I'd like to sell" suggests Sell fund shares, not Callback
 ];
 
-// Allow skipping specific tests via SKIP env var (comma-separated)
+// Hit a deployed API, but read-only and needing no local key.
+const ONLINE = [
+  'test-contributions',         // contribution summary across all four personas
+  'test-force-task',            // routing: forceTaskId + last-[TASK:]-marker-wins
+];
+
+const offlineOnly = process.argv.includes('--offline');
 const SKIP = new Set((process.env.SKIP ?? '').split(',').filter(Boolean));
-// Allow running only specific tests via ONLY env var (comma-separated)
 const ONLY = new Set((process.env.ONLY ?? '').split(',').filter(Boolean));
 
-const toRun = TESTS.filter(t => {
+const toRun = [...OFFLINE, ...(offlineOnly ? [] : ONLINE)].filter(t => {
   const id = t.replace('test-', '');
   if (ONLY.size > 0 && !ONLY.has(id) && !ONLY.has(t)) return false;
-  if (SKIP.has(id) || SKIP.has(t)) return false;
-  return true;
+  return !(SKIP.has(id) || SKIP.has(t));
 });
 
 function runTest(testName) {
-  return new Promise((resolve) => {
-    const testFile = path.join(__dirname, `${testName}.mjs`);
+  return new Promise(resolve => {
     const start = Date.now();
-
-    const child = spawn(process.execPath, [testFile], {
-      env: { ...process.env },
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const child = spawn(process.execPath, [path.join(__dirname, `${testName}.mjs`)], {
+      env: { ...process.env }, stdio: ['ignore', 'pipe', 'pipe'],
     });
-
-    let stdout = '';
-    let stderr = '';
+    let stdout = '', stderr = '';
     child.stdout.on('data', d => { stdout += d; });
     child.stderr.on('data', d => { stderr += d; });
-
-    child.on('close', (code) => {
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      resolve({ testName, passed: code === 0, code, stdout, stderr, elapsed });
-    });
+    child.on('close', code => resolve({
+      testName, passed: code === 0, code, stdout, stderr,
+      elapsed: ((Date.now() - start) / 1000).toFixed(1),
+    }));
   });
 }
 
 async function main() {
-  if (!process.env.OPENAI_API_KEY) {
-    console.error('OPENAI_API_KEY is required');
-    process.exit(1);
-  }
-
   const totalStart = Date.now();
   console.log(`\n${'═'.repeat(60)}`);
-  console.log(`  Autopilot Task Test Suite — ${toRun.length} tests`);
+  console.log(`  Test suite — ${toRun.length} tests${offlineOnly ? ' (offline only)' : ''}`);
   console.log(`${'═'.repeat(60)}\n`);
 
   const results = [];
-
   for (let i = 0; i < toRun.length; i++) {
-    const testName = toRun[i];
-    const taskId = testName.replace('test-', '');
-    process.stdout.write(`[${i + 1}/${toRun.length}] ${taskId.padEnd(32)} ... `);
-
-    const result = await runTest(testName);
-    results.push(result);
-
-    if (result.passed) {
-      console.log(`✓ PASS  (${result.elapsed}s)`);
+    process.stdout.write(`[${i + 1}/${toRun.length}] ${toRun[i].replace('test-', '').padEnd(28)} ... `);
+    const r = await runTest(toRun[i]);
+    results.push(r);
+    if (r.passed) {
+      console.log(`✓ PASS  (${r.elapsed}s)`);
     } else {
-      console.log(`✗ FAIL  (${result.elapsed}s)`);
-      // Print failure summary from stdout (last few lines)
-      const failLines = result.stdout.split('\n')
-        .filter(l => l.includes('FAIL') || l.includes('ERROR') || l.includes('x:') || l.includes('wrong'))
-        .slice(0, 6);
-      for (const line of failLines) {
+      console.log(`✗ FAIL  (${r.elapsed}s)`);
+      for (const line of r.stdout.split('\n').filter(l => l.includes('✗')).slice(0, 8)) {
         console.log(`          ${line.trim()}`);
+      }
+      if (!r.stdout.trim() && r.stderr.trim()) {
+        console.log(`          ${r.stderr.split('\n').slice(0, 3).join('\n          ')}`);
       }
     }
   }
 
-  const totalElapsed = ((Date.now() - totalStart) / 1000).toFixed(1);
   const passed = results.filter(r => r.passed).length;
-  const failed = results.filter(r => !r.passed).length;
-
+  const failed = results.length - passed;
   console.log(`\n${'═'.repeat(60)}`);
-  console.log(`  Results: ${passed}/${toRun.length} passed  (${totalElapsed}s total)`);
+  console.log(`  ${passed}/${toRun.length} passed  (${((Date.now() - totalStart) / 1000).toFixed(1)}s)`);
   console.log(`${'═'.repeat(60)}`);
 
-  if (failed > 0) {
-    console.log('\nFailed tests:');
-    for (const r of results.filter(r => !r.passed)) {
-      console.log(`  ✗ ${r.testName.replace('test-', '')}`);
-    }
-    console.log('\nTo re-run only failed tests:');
-    const failedIds = results.filter(r => !r.passed).map(r => r.testName.replace('test-', '')).join(',');
-    console.log(`  OPENAI_API_KEY=sk-... ONLY=${failedIds} node lambda/tests/run-all-tests.mjs`);
-    console.log('');
+  if (failed) {
+    const ids = results.filter(r => !r.passed).map(r => r.testName.replace('test-', '')).join(',');
+    console.log(`\nRe-run just those:\n  ONLY=${ids} node lambda/tests/run-all-tests.mjs\n`);
     process.exit(1);
   }
-
-  console.log('\n  All tests passed.\n');
+  console.log('\n  Conversation-level behaviour is covered separately, per task, on demand:');
+  console.log('    node scripts/task-sim/run.mjs <taskId>\n');
   process.exit(0);
 }
 
