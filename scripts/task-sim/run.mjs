@@ -73,7 +73,10 @@ async function main() {
       if (s.verdict !== 'inconclusive') s.verdict = failed === 0 ? 'pass' : 'fail';
       s.failedCount = failed;
     }
-    const out = args['report-only'].replace(/\.json$/, '.html');
+    // Overwrite report.html in the same folder — NOT <json-name>.html, which produced a
+    // second file called run.html sitting next to a now-stale report.html. One run, one
+    // report.
+    const out = path.join(path.dirname(path.resolve(args['report-only'])), 'report.html');
     writeFileSync(args['report-only'], JSON.stringify(run, null, 2));
     writeFileSync(out, renderReport(run));
     console.log(`re-analysed and re-rendered → ${out}`);
