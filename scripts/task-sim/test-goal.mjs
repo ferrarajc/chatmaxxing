@@ -108,6 +108,41 @@ await group('Preconditions are respected, not guessed', async () => {
     'a field-level requiresAccountTypes is leaking into account selection');
 });
 
+await group('A percentage is not money, whatever the registry calls it', async () => {
+  // update-rmd-settings declares `taxWithholding` as type 'amount' even though its own
+  // question says "0% to 99%". IS.amount matches on the type alone, so when it was tested
+  // before IS.percent the deriver sent it through the money branch and the simulated
+  // client asked to withhold "$2,850" from an RMD payment.
+  const val = (goal, key) => goal.fields.find(f => f.key === key)?.value;
+  let checked = 0;
+  for (let s = 0; s < 40; s++) {
+    for (const id of ['demo-client-001', 'demo-client-002', 'demo-client-004']) {
+      const r = await deriveGoal(task('update-rmd-settings'), byId[id], s);
+      if (!r.ok) continue;
+      const v = val(r.goal, 'taxWithholding');
+      if (v === undefined) continue;
+      checked++;
+      check(`withholding "${v}" is a percentage, not a dollar amount`,
+        /^\d+%$/.test(String(v)), 'the money branch is capturing a percentage field');
+    }
+  }
+  check('a withholding percentage was actually derived', checked > 0);
+
+  // The beneficiary split is a percentage too, but it is pinned by an override to keep
+  // each tier at 100 — so it must NOT pick up the withholding list, which includes 0%.
+  let shares = 0;
+  for (let s = 0; s < 20; s++) {
+    const r = await deriveGoal(task('update-beneficiaries'), byId['demo-client-001'], s);
+    if (!r.ok) continue;
+    const v = val(r.goal, 'percentage');
+    if (v === undefined) continue;                     // Remove skips it, correctly
+    shares++;
+    check(`beneficiary share "${v}" is never 0`, String(v) !== '0' && String(v) !== '0%',
+      '0% is a valid withholding election but a nonsense inheritance share');
+  }
+  check('a beneficiary share was actually derived', shares > 0);
+});
+
 await group('Derivation is deterministic for a given seed', async () => {
   const a = await deriveGoal(task('place-sale'), byId['demo-client-003'], 12345);
   const b = await deriveGoal(task('place-sale'), byId['demo-client-003'], 12345);

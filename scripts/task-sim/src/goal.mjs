@@ -100,6 +100,19 @@ function deriveField(facts, task, field, ctx, rng) {
     return ctx.position?.ticker;                       // you can only sell what you hold
   }
 
+  // PERCENT IS TESTED BEFORE AMOUNT, and must stay that way. `update-beneficiaries`
+  // declares `percentage` as `type: 'amount'`, and IS.amount fires on the type alone — so
+  // with the checks the other way round the deriver handed a beneficiary split through the
+  // money branch and the simulated client asked for "$2,850 percent of the account".
+  // A percentage is not money, whatever the registry calls it.
+  if (IS.percent(field)) {
+    // 0% is a legitimate tax withholding election and a nonsense inheritance share, so the
+    // two cannot draw from one list. A 0% beneficiary would make the expert push back —
+    // correctly — and the run would score the refusal as the expert's failure.
+    const shares = /withholding/i.test(field.key) ? [0, 10, 15, 20] : [25, 50, 75, 100];
+    return `${pick(rng, shares)}%`;
+  }
+
   if (IS.amount(field)) {
     const ceiling = amountCeiling(facts, task, ctx);
     if (ceiling != null) {
@@ -111,7 +124,6 @@ function deriveField(facts, task, field, ctx, rng) {
 
   if (field.type === 'enum' && field.options?.length) return pick(rng, field.options);
   if (field.type === 'boolean') return pick(rng, ['Yes', 'No']);
-  if (IS.percent(field)) return `${pick(rng, [0, 10, 15, 20])}%`;
   if (IS.dayOfMonth(field)) return String(1 + Math.floor(rng() * 28));
   if (IS.taxYear(field)) return String(new Date().getFullYear());
   if (IS.dateTime(field)) return ctx.slot.text;
