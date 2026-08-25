@@ -51,6 +51,7 @@ async function main() {
   if (args['report-only']) {
     const run = JSON.parse(readFileSync(args['report-only'], 'utf8'));
     const { detect } = await import('./src/detect.mjs');
+    const { diffSnapshots, expectationFor } = await import('./src/ledger.mjs');
     const factsForFields = await getFacts();
     for (const s of run.sims) {
       const task = factsForFields.TASKS.find(t => t.id === run.taskId);
@@ -67,6 +68,16 @@ async function main() {
         ['SUCCESS_BUT_NOTHING_WROTE', 'SUMMARY_LEDGER_DISAGREEMENT', 'BALANCE_IDENTITY_BROKEN',
          'ROUTING_MISS', 'EXITED_WITHOUT_ACTION'].includes(f.code));
       s.findings = [...rerun, ...keep];
+
+      // Ledger expectations are derived from the stored before/after snapshots, so they
+      // can be recomputed for free too. A wrong ledger check is worth re-judging exactly
+      // as much as a wrong detector — and re-running the conversation to find out costs
+      // real money and twenty-five minutes. Only recompute where both snapshots survived
+      // and the original run actually got far enough to check.
+      if (s.before && s.after && (s.ledgerChecks ?? []).length) {
+        s.ledgerChecks = expectationFor(s.goal, diffSnapshots(s.before, s.after), s.before);
+      }
+
       const failed = s.findings.filter(f => f.severity === 'fail').length
         + (s.assertions ?? []).filter(a => !a.ok).length
         + (s.ledgerChecks ?? []).filter(c => !c.ok).length;

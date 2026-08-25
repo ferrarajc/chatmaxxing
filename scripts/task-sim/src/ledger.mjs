@@ -39,8 +39,23 @@ export function diffSnapshots(before, after) {
   const holdings = [];
   for (const k of new Set([...Object.keys(h0), ...Object.keys(h1)])) {
     const x = h0[k], y = h1[k];
-    if (!x) { holdings.push({ key: k, added: true, shares: y.shares, value: y.value, accountId: y.accountId, ticker: y.ticker }); continue; }
-    if (!y) { holdings.push({ key: k, removed: true, shares: x.shares, value: x.value, accountId: x.accountId, ticker: x.ticker }); continue; }
+    // An opened or closed position carries a delta like any other. Without one, `dShares`
+    // was undefined on a newly created holding and `undefined > 0` is false — so buying a
+    // fund the client did not already hold, which is the ordinary case, was reported as
+    // "the fund position grew: FAILED" while the cash and balance checks passed beside it.
+    // It never surfaced on place-sale, where the position always exists already.
+    if (!x) {
+      holdings.push({ key: k, added: true, shares: y.shares, value: y.value,
+        dShares: round(y.shares ?? 0), dValue: round(y.value ?? 0),
+        accountId: y.accountId, ticker: y.ticker });
+      continue;
+    }
+    if (!y) {
+      holdings.push({ key: k, removed: true, shares: x.shares, value: x.value,
+        dShares: round(-(x.shares ?? 0)), dValue: round(-(x.value ?? 0)),
+        accountId: x.accountId, ticker: x.ticker });
+      continue;
+    }
     const dShares = round((y.shares ?? 0) - (x.shares ?? 0));
     const dValue = round((y.value ?? 0) - (x.value ?? 0));
     const dDrip = (x.drip ?? false) !== (y.drip ?? false);

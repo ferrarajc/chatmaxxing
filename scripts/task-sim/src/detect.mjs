@@ -145,9 +145,24 @@ export async function detect(sim) {
   // The window between the amount and the word "cash" is deliberately tight, so that
   // "not enough for a $4,800 purchase … sell holdings to raise cash" is not a hit.
   const realCash = new Set((snapshot.accounts ?? []).map(a => a.cash).filter(c => typeof c === 'number'));
+
+  // The amount being MOVED is not a claim about a balance. "We'll use the $7,150 from the
+  // cash available in your Traditional IRA" is correct English and correct behaviour, but
+  // it puts a figure within a few words of "cash" and the first version of this detector
+  // failed the run for it — twice. Two exemptions, both about the sentence's grammar
+  // rather than its arithmetic:
+  //   1. the figure is the transaction amount the client themselves asked for, and
+  //   2. the connector marks cash as the SOURCE ("from", "using", "out of") rather than
+  //      the thing being described. "in cash" is deliberately NOT on that list, because
+  //      "$4,800 held in cash" is the original bug this detector exists to catch.
+  const txAmount = Number(String(goal?.byKey?.amount ?? '').replace(/[^0-9.]/g, '')) || null;
+  const SOURCE_CONNECTOR = /\b(from|using|use|out of|drawn?|against|toward)\b/i;
+
   for (const t of agentTurns) {
     for (const m of (t.text ?? '').matchAll(/\$\s?([\d,]+(?:\.\d{1,2})?)([^.!?$]{0,25}?)\bcash\b/gi)) {
       const stated = Number(m[1].replace(/,/g, ''));
+      if (txAmount && Math.abs(stated - txAmount) <= 1) continue;
+      if (SOURCE_CONNECTOR.test(m[2])) continue;
       if (![...realCash].some(c => Math.abs(c - stated) <= 1)) {
         add('CASH_MISSTATED', 'fail', t.i,
           `Told the client $${stated.toLocaleString()} is cash. Their actual cash is ` +
