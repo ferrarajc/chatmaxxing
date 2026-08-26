@@ -390,6 +390,69 @@ Lives in `heqya/` (npm-extractable package). The Bob's implementation uses it vi
 
 The old `runner.mjs`, `evaluator.mjs`, `reporter.mjs`, and `scenarios.mjs` are **legacy/deprecated** — kept for reference but no longer imported by active scripts.
 
+> ⚠ **`scripts/quality-loop/improvement-loop.mjs` is armed and dangerous.** It sends
+> `lambda/autopilot-turn/handler.ts` to an LLM, applies the returned edit with `writeFileSync`
+> (no diff, no approval, no branch, no backup), then runs `cdk deploy --require-approval never`
+> **straight to production** for up to 12 unattended iterations — bypassing the
+> `safe-deploy.mjs` guard this repo requires. It is one `POST /api/loop` from the local
+> dashboard. Do not run it. Deleting it is an open decision for John.
+
+---
+
+## task-sim — the task-expert simulator (branch `feat/task-sim-v2`, not merged)
+
+**Status: frozen 2026-08-25 at John's request.** Complete and pushed; no PR opened.
+Lives at `scripts/task-sim/`. **It reports and never fixes** — a hard requirement: nothing in
+it writes to source, and no LLM is ever asked for a code change.
+
+```
+node scripts/task-sim/run.mjs --list          derivability for all 19 tasks, offline, free
+node scripts/task-sim/run.mjs place-purchase  10 sims against dev, submit, full report
+node scripts/task-sim/run.mjs place-sale --dry           1 sim, no submit, no reseed
+node scripts/task-sim/run.mjs --report-only=<run.json>   re-judge a stored run, free
+```
+
+One expert per run, exactly 10 simulations: reseed → derive a satisfiable goal from `tasks.ts`
+plus the persona's real seeded data → converse with a simulated customer → submit through
+`/execute-task` → snapshot the ledger before and after → assert that what moved is what was
+promised. Then one advisory LLM pass, then a self-contained `report.html` rendering the whole
+conversation **as the client saw it**, with problems marked inline at the offending turn.
+
+Why it exists: every significant bug in the buy/sell experts was found by a human reading a
+transcript. The 19 per-task harnesses it replaces passed throughout — they asserted only
+non-emptiness, **discarded the transcript**, and never once called `/execute-task`, so the write
+path where an $800 purchase vanished was untested end to end.
+
+| Commitment | How |
+|---|---|
+| Assertions can't drift from shipped behaviour | `src/facts.mjs` is the ONLY import boundary — assertions import the real `TASKS`, `filterFields`, `resolveAccount`, `cashOf`, `parseMoney`, `stripInternalStatus`, `isAdviceRequest`, `FUND_PRICES` |
+| The judge cannot propose code | closed code enum; any note naming a file, prompt, line or edit is dropped in code |
+| Dev only | default hardcoded to dev, prod host blocklisted, `LAMBDA_URL` deliberately NOT read, plus a positive environment assertion before sim 1 |
+| Rate limiting is infrastructure, not a defect | `autopilot-turn` catches a 429 and returns HTTP 200 with "I'm pulling some information…", so an unpaced run yields transcripts of an agent going vague. That exact string marks a sim **inconclusive**, never fail. Runs are serial and paced |
+
+**Not defects, and asserted as such:** an unprompted cross-sell, a chat running two tasks, and a
+recap restating answered fields. The turn budget is measured to the proposed action, not to the
+end of the chat, so a naive turn-count rule can't fire on them.
+
+`runs/` is **gitignored** — reports are local artefacts and never arrive via a merge.
+The OpenAI key comes from SSM (`bobs-openai-api-key`) unless `OPENAI_API_KEY` is set; reading it
+is announced, never printed. A run costs ~$2 and 20–25 minutes, bounded by the 30k TPM ceiling.
+
+**Migration on this branch:** the 19 per-task conversation harnesses in `lambda/tests/` are
+deleted (~2,700 lines, ~88% duplicated). Kept: the 8 offline unit suites, `test-contributions.mjs`
+and `test-force-task.mjs`. `run-all-tests.mjs` gained `--offline`, **no longer requires
+`OPENAI_API_KEY`**, and runs in ~18s instead of tens of minutes — CI-viable for the first time.
+task-sim is deliberately NOT wired into it: it costs money and mutates data, so it must be
+invoked knowingly. Its own tests are offline and free: `test-goal` (48), `test-detect` (29),
+`test-report` (14).
+
+**Live runs:** `place-sale` 10/10 clean; `place-purchase` 9 pass / 1 inconclusive; and
+`update-beneficiaries`, which found a real defect — `UPDATE_BENEFICIARIES_PROMPT`
+(`autopilot-turn/handler.ts:562`) filters accounts to IRA/SEP only, so a taxable-account request
+is either deflected to a fabricated "support team" (the client's **own** phone and email) or
+acted on blind. Unfixed; needs a product decision on whether beneficiaries belong on a taxable
+account at all.
+
 ---
 
 ## Active Branch / Current State (as of 2026-08-20)
