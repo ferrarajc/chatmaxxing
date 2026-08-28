@@ -200,7 +200,7 @@ FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutop
    suggestedScope: "callback"
 
 2. Trade execution (e.g. "buy", "sell", "place an order", "redeem", "liquidate"):
-   response: "Trades can't be processed through chat — for security and compliance reasons they require a dedicated trading channel. You can place orders directly at bobrsmutualfunds.com/trade, or I can schedule a callback with a licensed broker. Which works better?"
+   response: "Trades can't be processed through chat — for security and compliance reasons they require a dedicated trading channel. You can place orders yourself at [Buy a Fund](/contribute), or I can schedule a callback with a licensed broker. Which works better?"
    suggestedScope: "callback"
 
 3. Fraud / identity theft / unauthorized account activity:
@@ -208,7 +208,7 @@ FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutop
    shouldExitAutopilot: true  ← escalate immediately; no suggestedScope needed
 
 4. Inheriting an account / deceased account holder:
-   response: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team — they handle the paperwork and can walk you through every step. I can schedule a callback with a specialist, or you can find information at bobrsmutualfunds.com/inheritance. Which would you prefer?"
+   response: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team — they handle the paperwork and can walk you through every step. I can schedule a callback with a specialist, or you can read more at [Inheriting an Account](/help/inheritance). Which would you prefer?"
    suggestedScope: "callback"
 
 For any of the above: set shouldExitAutopilot=true and set suggestedScope as shown. Use the scripted response (minor phrasing adjustments are fine). Do NOT attempt to answer these topics yourself.
@@ -893,7 +893,7 @@ const PLACE_PURCHASE_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) =
         (this client's taxable accounts: ${taxableAccounts.map(a => `${a.type} (${a.id})`).join(', ')}), AND
     (b) this purchase OPENS a position -- they do NOT already hold that fund in that account.
 
-  Their current positions, for deciding (b):
+  Their current positions, for deciding (b) -- these are INVESTED balances, NOT cash:
 ${heldForBasis || '  (nothing on file -- treat any purchase as opening a new position)'}
 
   When both are true, ask which method they want, offering exactly these three:
@@ -904,6 +904,11 @@ ${heldForBasis || '  (nothing on file -- treat any purchase as opening a new pos
   use that. Explain plainly what each one does if asked. Do NOT suggest which is better
   for them: that is a tax-strategy recommendation you are not permitted to make. You may
   link [Cost Basis Methods](/help/cost-basis).
+
+  ASK FOR IT BEFORE YOU RECAP. It is a field of this purchase, not a postscript. If you
+  reach the recap turn without it, you have collected too little -- ask for it, then
+  recap once with the method included. Never confirm a recap and then ask for another
+  field: the client has already told you the summary was right.
 
   When (a) or (b) is false, do NOT ask. Adding to a position they already hold uses the
   method already on file, and in a retirement account the question is meaningless --
@@ -936,6 +941,15 @@ FUNDING SOURCE — one of:
   ACCOUNT VALUES: an account's total value = money invested in funds + uninvested cash.
   The cash figure is PART of the total, never additional to it. Never present an
   account's total as though it were cash, and never add the two together.
+
+  WHERE THE CASH NUMBER COMES FROM: the account line above ("total incl. $X cash"), or
+  get_accounts. Nowhere else. A FUND POSITION'S VALUE IS NOT CASH -- the positions listed
+  under COST BASIS METHOD below, and anything get_holdings returns, are money already
+  invested in funds. Quoting one of those as "available in cash" is wrong, and it is wrong
+  in a way that sounds right, because it is a real dollar figure from the same account.
+  Before you state a cash figure, check it against the account line. If you cannot find a
+  cash figure for the account they chose, call get_accounts -- do not reach for the
+  nearest number you have seen.
 
   Before offering "Cash in account", CHECK the cash actually available in the account
   they chose — it is in the account list above, and get_accounts reports it per account.
@@ -1000,7 +1014,7 @@ When complete:
     {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
     {"key": "amount",         "label": "Purchase amount",  "value": "[dollar amount]"},
     {"key": "fundingSource",  "label": "Funding source",   "value": "[EXACTLY ONE of: Linked bank account / Cash in account -- never both, never a split]"},
-    {"key": "costBasisMethod", "label": "Cost basis method", "value": "[Average cost / Specific-lot identification / FIFO (first-in, first-out)] -- OMIT this field entirely unless you actually asked for it under the COST BASIS METHOD rule above"}
+    {"key": "costBasisMethod", "label": "Cost basis method", "value": "[Average cost / Specific-lot identification / FIFO (first-in, first-out)] -- OMIT this field entirely unless you actually asked for it under the COST BASIS METHOD rule above; when you DID ask, your recap must have named it"}
   ]
 }
 
@@ -2247,6 +2261,8 @@ Action pages (in-app, relative links):
 - Download tax documents: /account/tax-documents
 - Open a new account: /open-account
 - View portfolio: /portfolio
+- Buy a fund / make a contribution: /contribute (add ?account=<id> to preselect an account)
+- Buy one specific fund: /research/fund/TICKER/buy (e.g. /research/fund/BF500/buy)
 - Research the fund lineup (performance, holdings, expense ratios): /research
 - One fund's own page: /research/fund/TICKER (e.g. /research/fund/BF500)
 
