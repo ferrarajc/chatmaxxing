@@ -40,6 +40,13 @@ single most useful point, not an exhaustive rundown. Write it AS THE AGENT (a Bo
 speaking TO ${firstName}. NEVER write in the client's voice or answer the agent's own question on the
 client's behalf (e.g. do NOT begin with "Yes, that's correct"). Do not include greetings or sign-offs.
 
+HARD RULE — do NOT offer a callback, a licensed broker, or a "dedicated trading channel" for an
+ordinary buy, sell, exchange, contribution or withdrawal. Those are handled right here in chat by a
+task automation, and the agent is about to start one. Suggesting a callback for them contradicts the
+action being offered alongside your text and sends the client away for something we do now. Draft the
+next step of the TRANSACTION instead — which account, which fund, how much. (Personalized investment
+ADVICE is the exception: that genuinely does need a licensed advisor.)
+
 HARD RULE — never send an empty placeholder whose only substance is an offer to help more, e.g.
 "let me know if you have any questions", "feel free to ask", "is there anything else I can help
 with?". These add nothing and are NOT acceptable as the suggestion. Every suggestion must carry
@@ -314,10 +321,15 @@ export const handler = async (
     if (isAdviceRequest(lastCustomerMsg)) {
       suggestedScope = 'callback';
     } else {
-      // Match on the latest message first, then the recent customer side of the
-      // conversation, so "the taxable account" right after "I want to sell" still lands.
+      // Match on the latest message first, then the customer side of the WHOLE
+      // conversation, so "the taxable account" right after "I want to sell" still
+      // lands -- and so does "I'd like to buy a fund" said at the very top, which a
+      // last-3-messages window drops as soon as the agent greets and the client says
+      // "that's right". That drop is what left the agent looking at a bare "Get
+      // intent" with no expert attached, on an intent nobody could have called
+      // ambiguous. Most recent first, so the newest stated intent still wins.
       const recentCustomer = transcript
-        .filter(m => m.role === 'CUSTOMER').slice(-3).map(m => m.content).join('  ');
+        .filter(m => m.role === 'CUSTOMER').map(m => m.content).reverse().join('  ');
       const accountTypes = profile.accounts.map(a => a.type);
       const matched = matchTaskByIntent(lastCustomerMsg, accountTypes)
         ?? matchTaskByIntent(recentCustomer, accountTypes);
