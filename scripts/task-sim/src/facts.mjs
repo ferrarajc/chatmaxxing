@@ -10,9 +10,10 @@
 // that will rot.
 //
 // Most of lambda/shared is dependency-free, so Node 24 strips the types and imports it
-// directly. fund-catalog.ts is the exception — it reaches across into customer-app —
-// so it goes through esbuild, the same way lambda/tests/test-account-math.mjs already
-// bundles TypeScript for a test.
+// directly. Two modules are the exception and go through esbuild instead, the same way
+// lambda/tests/test-account-math.mjs already bundles TypeScript for a test:
+// fund-catalog.ts reaches across into customer-app, and tasks.ts now imports
+// fund-catalog for FUND_TICKERS (its fund fields used to hard-code the original six).
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -44,8 +45,7 @@ export async function getFacts() {
   if (cached) return cached;
 
   // Dependency-free: Node strips the types and imports these as-is.
-  const [tasks, accountMath, money, hygiene, adviceGuard, contribution] = await Promise.all([
-    import(pathToFileURL(path.join(SHARED, 'tasks.ts')).href),
+  const [accountMath, money, hygiene, adviceGuard, contribution] = await Promise.all([
     import(pathToFileURL(path.join(SHARED, 'account-math.ts')).href),
     import(pathToFileURL(path.join(SHARED, 'money.ts')).href),
     import(pathToFileURL(path.join(SHARED, 'reply-hygiene.ts')).href),
@@ -53,10 +53,14 @@ export async function getFacts() {
     import(pathToFileURL(path.join(SHARED, 'contribution-limits.ts')).href),
   ]);
 
-  // Reaches into customer-app/src/data/funds.ts — needs bundling.
+  // Both reach into customer-app/src/data/funds.ts — need bundling.
   const cat = bundleAndImport('lambda/shared/fund-catalog.ts', 'fund-catalog');
   const fundCatalog = await import(cat.url);
   cat.cleanup();
+
+  const tsk = bundleAndImport('lambda/shared/tasks.ts', 'tasks');
+  const tasks = await import(tsk.url);
+  tsk.cleanup();
 
   cached = {
     // The task registry — the source of truth for what a simulator must collect.

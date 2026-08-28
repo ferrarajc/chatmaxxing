@@ -40,7 +40,7 @@ function matchFund(nameOrTicker: string): { name: string; ticker: string; price:
 }
 
 type AccountEntry  = { type: string; balance: number; cash?: number; id: string; change: number };
-type HoldingEntry  = { name: string; ticker: string; accountId: string; shares: number; price: number; change: number; value: number; drip?: boolean };
+type HoldingEntry  = { name: string; ticker: string; accountId: string; shares: number; price: number; change: number; value: number; drip?: boolean; costBasisMethod?: string };
 
 async function readClient(table: string, clientId: string): Promise<{
   accounts: AccountEntry[];
@@ -418,10 +418,16 @@ export const handler = async (
           const newShares = Math.round((h.shares + sharesAdded) * 1000) / 1000;
           holdings[hIdx] = { ...h, shares: newShares, value: Math.round(newShares * h.price) };
         } else {
+          // A new position carries the cost basis method the client elected during the
+          // conversation. Adding to an existing position keeps whatever it already has.
+          // Collected-then-discarded is the exact shape of the fundingSource bug above,
+          // so it is written here rather than left on the proposed-action card.
+          const electedBasis = (fields.costBasisMethod ?? '').trim();
           holdings.push({
             name: fundInfo.name, ticker: fundInfo.ticker, accountId,
             shares: sharesAdded, price: fundInfo.price, change: 0,
             value: Math.round(sharesAdded * fundInfo.price),
+            ...(electedBasis ? { costBasisMethod: electedBasis } : {}),
           });
         }
 

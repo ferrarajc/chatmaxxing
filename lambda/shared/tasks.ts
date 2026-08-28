@@ -1,3 +1,5 @@
+import { FUND_TICKERS } from './fund-catalog';
+
 export interface TaskField {
   key: string;
   label: string;
@@ -202,9 +204,9 @@ export const TASKS: Task[] = [
       {
         key: 'fund',
         label: 'Fund',
-        question: 'Which fund would you like to purchase? Options: BF500 (500 Index), BFGR (Growth), BFBI (Bond Income), BFIN (International), BFESG (ESG Leaders), BFST (Short-Term Bond).',
+        question: 'Which fund would you like to purchase?',
         type: 'enum',
-        options: ['BF500', 'BFGR', 'BFBI', 'BFIN', 'BFESG', 'BFST'],
+        options: FUND_TICKERS,
         required: true,
       },
       {
@@ -221,6 +223,21 @@ export const TASKS: Task[] = [
         type: 'enum',
         options: ['Linked bank account', 'Cash in account'],
         required: true,
+      },
+      {
+        // Elected once, when a purchase OPENS a position — an existing position already
+        // has a method on file. Only meaningful in a taxable account: inside an IRA no
+        // sale is taxed, so basis is never reported (see kb.ts q-cb-003). The "new
+        // position" half of that condition can't be expressed in the registry, so the
+        // expert prompt gates the ask; this entry exists so the value has a home on the
+        // proposed action instead of being invented at submit time.
+        key: 'costBasisMethod',
+        label: 'Cost basis method',
+        question: 'This purchase opens a new position, so we need your cost basis method for it — average cost, specific-lot identification, or FIFO (first-in, first-out)?',
+        type: 'enum',
+        options: ['Average cost', 'Specific-lot identification', 'FIFO (first-in, first-out)'],
+        required: false,
+        requiresAccountTypes: ['Taxable Account'],
       },
     ],
     executionType: 'mock',
@@ -243,9 +260,9 @@ export const TASKS: Task[] = [
       {
         key: 'fund',
         label: 'Fund to sell',
-        question: 'Which fund would you like to sell? Options: BF500, BFGR, BFBI, BFIN, BFESG, BFST.',
+        question: 'Which fund would you like to sell?',
         type: 'enum',
-        options: ['BF500', 'BFGR', 'BFBI', 'BFIN', 'BFESG', 'BFST'],
+        options: FUND_TICKERS,
         required: true,
       },
       {
@@ -284,7 +301,7 @@ export const TASKS: Task[] = [
         label: 'Fund to exchange out of',
         question: 'Which fund would you like to move money out of?',
         type: 'enum',
-        options: ['BF500', 'BFGR', 'BFBI', 'BFIN', 'BFESG', 'BFST'],
+        options: FUND_TICKERS,
         required: true,
       },
       {
@@ -292,7 +309,7 @@ export const TASKS: Task[] = [
         label: 'Fund to exchange into',
         question: 'Which fund would you like to move money into?',
         type: 'enum',
-        options: ['BF500', 'BFGR', 'BFBI', 'BFIN', 'BFESG', 'BFST'],
+        options: FUND_TICKERS,
         required: true,
       },
       {
@@ -325,7 +342,7 @@ export const TASKS: Task[] = [
         label: 'Fund',
         question: 'Which fund would you like to change the dividend setting for?',
         type: 'enum',
-        options: ['BF500', 'BFGR', 'BFBI', 'BFIN', 'BFESG', 'BFST'],
+        options: FUND_TICKERS,
         required: true,
       },
       {
@@ -359,7 +376,7 @@ export const TASKS: Task[] = [
         label: 'Fund',
         question: 'Which fund should the automatic investment go into?',
         type: 'enum',
-        options: ['BF500', 'BFGR', 'BFBI', 'BFIN', 'BFESG', 'BFST'],
+        options: FUND_TICKERS,
         required: true,
       },
       {
