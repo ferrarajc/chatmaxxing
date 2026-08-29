@@ -101,6 +101,63 @@ export function portfolioTotal(accounts: AccountLike[]): number {
   return Math.round(accounts.reduce((sum, a) => sum + a.balance, 0));
 }
 
+/**
+ * The authoritative cash statement injected into task-expert prompts.
+ *
+ * Same treatment `describeCallbackAvailability` gives call-centre hours: the SERVER
+ * computes the fact and the model reads it off. The model is never asked to derive,
+ * reconcile, or explain the balance identity, because every time it was asked to, it
+ * got it wrong in a different way and said so to a client:
+ *
+ *   - it quoted a fund position's value as cash ("$5,539 available in cash" — that was
+ *     their BFESG holding);
+ *   - it quoted a figure from a worked example in the prompt ("$877" — a number that
+ *     existed in none of the client's accounts);
+ *   - it recited the identity itself as prose and got it inside out ("$67,890 in total,
+ *     which includes $67,890 already invested in funds and no cash available", of an
+ *     account holding $6,385 in cash).
+ *
+ * Each of those followed an attempt to fix the previous one by adding MORE rules about
+ * how to reason about the numbers. So this states the answer instead of the method.
+ *
+ * `live: false` is the honest degraded mode: it forbids stating any figure at all,
+ * including the ones on the prompt's own "Client accounts" header, which is the thing
+ * that may be stale. Better a turn that asks than a turn that invents.
+ */
+export function describeCashAvailability(
+  accounts: AccountLike[],
+  holdings: HoldingLike[],
+  live: boolean,
+): string {
+  if (!live || accounts.length === 0) {
+    return [
+      "CASH AVAILABLE — UNAVAILABLE THIS TURN. The system could not read this client's account",
+      'figures. Do NOT state any balance, cash or invested amount — including the figures on the',
+      '"Client accounts" line above, which may be out of date. If the client asks what they have,',
+      'say you are pulling it up rather than guessing. Fund any purchase from the linked bank',
+      'account.',
+    ].join('\n');
+  }
+
+  const rows = accounts.map(a => {
+    const cash = cashOf(a, holdings);
+    const figure = cash > 0 ? `$${cash.toLocaleString()} available in cash.` : 'no cash available.';
+    return `  ${a.type} (${a.id}) — ${figure}`;
+  });
+
+  return [
+    'CASH AVAILABLE — computed by the system. Read these figures; never derive or reconcile them.',
+    ...rows,
+    'Never quote an account total or an invested amount to the client. Neither is money they can',
+    'spend, and neither answers "how would you like to pay for this".',
+    'For the account they choose:',
+    '  • cash covers the amount → offer both sources plainly.',
+    '  • some cash, but not enough → name the cash figure, then offer the two real choices.',
+    '  • no cash available → do NOT offer cash, and do NOT mention balances, totals or invested',
+    '    amounts at all. Say it will come from their linked bank account and move on.',
+  ].join('\n');
+}
+
 export interface TransferrableHolding extends HoldingLike {
   name: string;
   ticker: string;

@@ -42,7 +42,11 @@ const cd = bundle('lambda/shared/client-defaults.ts', 'client-defaults');
 const {
   holdingValue, investedValue, cashOf, accountBalance,
   recomputeAccounts, portfolioTotal, applyCashDelta, transferValue,
+  describeCashAvailability,
 } = await import(pathToFileURL(am.outFile).href);
+
+const ty = bundle('lambda/shared/types.ts', 'types');
+const { summarizeAccounts } = await import(pathToFileURL(ty.outFile).href);
 
 // Importing this at all exercises the load-time invariant in client-defaults.ts, which
 // THROWS on drifting seed data. If the seed is wrong this test fails at import.
@@ -226,6 +230,55 @@ group('Jordan acc-302 renders exactly $4,800 / $3,923 / $877', () => {
   check('Jordan is they/them', jordan?.pronouns === 'they/them', String(jordan?.pronouns));
 });
 
+// ── The authoritative cash statement injected into task-expert prompts ──────────
+//
+// Three live chats told a client a wrong cash figure, each by a different route: a fund
+// position's value quoted as cash, a number lifted from a worked example in the prompt,
+// and the balance identity recited inside out ("$67,890 in total, which includes $67,890
+// already invested and no cash available", of an account holding $6,385). The model is
+// no longer asked to derive any of it; these assert what it is handed instead.
+group('describeCashAvailability states the fact and nothing else', () => {
+  const accts = [
+    { id: 'acc-003', type: 'Taxable Account', balance: 68890, cash: 6385 },
+    { id: 'acc-001', type: 'Roth IRA', balance: 45230, cash: 0 },
+  ];
+  const out = describeCashAvailability(accts, [], true);
+
+  check('names the real cash figure', out.includes('$6,385 available in cash'), out.slice(0, 60));
+  check('a zero-cash account says so in words', out.includes('Roth IRA (acc-001) — no cash available.'), out);
+
+  // The complaint that prompted this: balances are irrelevant to "how will you pay".
+  check('never states an account total', !out.includes('68,890') && !out.includes('45,230'), out);
+  check('never states an invested amount', !/invested (?:balance|amount)s? of|\$[\d,]+ (?:already )?invested/i.test(out), out);
+  check('forbids quoting totals', out.includes('Never quote an account total'), out);
+  check('zero-cash branch forbids mentioning balances', out.includes('do NOT mention balances'), out);
+});
+
+group('describeCashAvailability degrades by going silent, not by guessing', () => {
+  const degraded = describeCashAvailability([], [], false);
+  check('flags the read failure', degraded.includes('UNAVAILABLE THIS TURN'), degraded.slice(0, 50));
+  check('forbids stating any figure', degraded.includes('Do NOT state any balance, cash or invested amount'), degraded);
+  // The header line is the stale thing, so it must be disclaimed rather than trusted.
+  check('disclaims the prompt header too', degraded.includes('"Client accounts" line above'), degraded);
+  check('contains no dollar figure at all', !/\$[\d]/.test(degraded), degraded);
+  // "no accounts" and "could not read the accounts" must not collapse together.
+  check('live:true with no accounts also degrades', describeCashAvailability([], [], true).includes('UNAVAILABLE'), '');
+});
+
+// A dollar amount with no noun after it is the shape that started all of this: an expert
+// handed one unlabelled number decided it was cash.
+group('summarizeAccounts never emits a nounless dollar figure', () => {
+  const withCash = summarizeAccounts([{ id: 'acc-003', type: 'Taxable Account', balance: 68890, cash: 6385 }]);
+  const noCash   = summarizeAccounts([{ id: 'acc-003', type: 'Taxable Account', balance: 68890 }]);
+  check('with cash, labels both numbers', withCash === 'Taxable Account (acc-003): $68,890 total incl. $6,385 cash', withCash);
+  check('without cash, still says "total"', noCash === 'Taxable Account (acc-003): $68,890 total', noCash);
+  for (const [label, out] of [['with cash', withCash], ['without cash', noCash]]) {
+    check(`${label}: every $ figure is followed by a noun`,
+      [...out.matchAll(/\$[\d,]+(?!\d)(.{0,7})/g)].every(m => /^\s+(total|cash)/.test(m[1])), out);
+  }
+});
+
+rmSync(ty.outDir, { recursive: true, force: true });
 rmSync(am.outDir, { recursive: true, force: true });
 rmSync(cd.outDir, { recursive: true, force: true });
 

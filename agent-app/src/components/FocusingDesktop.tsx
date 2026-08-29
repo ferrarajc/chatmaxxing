@@ -3,7 +3,8 @@ import { ContactSlot, AutopilotScope, ChatMessage } from '../types';
 import { useAgentStore } from '../store/agentStore';
 import { post } from '../api/client';
 import { log } from '../api/logger';
-import { CLIENT_PROFILES, DEFAULT_PROFILE, ClientProfile } from '../data/clientProfiles';
+import { ClientProfile } from '../data/clientProfiles';
+import { currentProfile, loadLiveProfile } from '../data/liveProfile';
 import { ProposedActionCard } from './ProposedActionCard';
 import { AfterCallWork } from './AfterCallWork';
 import { renderHighlighted } from '../utils/evidenceHighlight';
@@ -151,15 +152,17 @@ export function FocusingDesktop() {
     setInputText('');
     sendText(selectedSlot, text, store);
     if (selectedSlot.autopilotScope === null) {
-      store.patchSlot(selectedSlot.contactId, { suggestedScope: null, suggestedTaskId: null, autopilotExitMessage: null });
+      store.setSuggestion(selectedSlot.contactId, null, null);
+      store.patchSlot(selectedSlot.contactId, { autopilotExitMessage: null });
     }
   };
 
   const handleActivateAutopilot = (scope: AutopilotScope, taskId?: string) => {
     if (!selectedSlot) return;
     setAutopilotMenuOpen(false);
+    store.setSuggestion(selectedSlot.contactId, null, null);
     store.patchSlot(selectedSlot.contactId, {
-      autopilotScope: scope, suggestedScope: null, suggestedTaskId: null, pendingTaskId: taskId ?? null,
+      autopilotScope: scope, pendingTaskId: taskId ?? null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
   };
@@ -202,8 +205,17 @@ export function FocusingDesktop() {
     window.dispatchEvent(new CustomEvent('bobs:skipContact', { detail: { contactId } }));
   };
 
-  const clientProfile: ClientProfile =
-    CLIENT_PROFILES[selectedSlot?.clientId ?? ''] ?? DEFAULT_PROFILE;
+  // The agent's own context panel used to render the same hardcoded seed balances the
+  // task experts were fed, so agent and bot could quote different numbers for the same
+  // account. Both read live figures now.
+  const [, setProfileVersion] = useState(0);
+  const selectedClientId = selectedSlot?.clientId;
+  useEffect(() => {
+    if (!selectedClientId) return;
+    loadLiveProfile(selectedClientId).then(() => setProfileVersion(v => v + 1));
+  }, [selectedClientId]);
+
+  const clientProfile: ClientProfile = currentProfile(selectedClientId ?? '');
 
   const isAutopilot = !!selectedSlot?.autopilotScope;
   // Reads the running TASK when there is one, else the scope.

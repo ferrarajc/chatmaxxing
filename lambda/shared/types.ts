@@ -190,13 +190,15 @@ export function matchResources(text: string): Resource[] {
  * unlabelled number, concluded the number WAS the cash. `total incl. $X cash` is
  * unambiguous in four words and worth the ~50 characters.
  *
- * `cash` is optional so the agent-app's balances-only profile mirror and any legacy
- * record degrade to the previous output rather than printing "incl. $undefined cash".
+ * `cash` is optional, so a legacy record without one falls back to `$X total` — the
+ * NOUN is not optional. The degraded form used to drop it entirely and reprint the
+ * bare figure this comment exists to condemn: the fallback reintroduced the bug on
+ * exactly the records least likely to be noticed.
  */
 export function summarizeAccounts(accounts: Account[]): string {
   return accounts.map(a => {
     const hasCash = typeof a.cash === 'number' && Number.isFinite(a.cash);
-    const cashPart = hasCash ? ` total incl. $${(a.cash as number).toLocaleString()} cash` : '';
+    const cashPart = hasCash ? ` total incl. $${(a.cash as number).toLocaleString()} cash` : ' total';
     return `${a.type} (${a.id}): $${a.balance.toLocaleString()}${cashPart}`;
   }).join(', ');
 }
