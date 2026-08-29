@@ -10,7 +10,7 @@ import { IncomingAlert } from './IncomingAlert';
 import { ResponseTimer } from './ResponseTimer';
 import { AISupport } from './AISupport';
 import { AfterCallWork } from './AfterCallWork';
-import { CLIENT_PROFILES, DEFAULT_PROFILE } from '../data/clientProfiles';
+import { currentProfile, loadLiveProfile } from '../data/liveProfile';
 
 
 const DEFAULT_AI_HEIGHT = 250;
@@ -98,6 +98,8 @@ const RESEARCHING_MSGS = [
 export function ChatColumn({ slotIndex, slot }: Props) {
   const store = useAgentStore();
   const [inputText, setInputText] = useState('');
+  // Bumped when live account figures arrive, so anything rendering balances repaints.
+  const [, setProfileVersion] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   // Message id currently flashing after an evidence jump (cleared after ~1.5 s)
@@ -446,7 +448,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const currentSlot = store.getSlot(contactId);
     if (!currentSlot || currentSlot.autopilotScope !== scope) return;
 
-    const clientProfile = CLIENT_PROFILES[currentSlot.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(currentSlot.clientId);
     let result: AutopilotTurnResult;
     try {
       result = await post<AutopilotTurnResult>('/autopilot-turn', {
@@ -494,7 +496,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
 
     // Update suggested scope if Lambda returned one
     if (result.suggestedScope !== undefined) {
-      store.patchSlot(contactId, { suggestedScope: result.suggestedScope as AutopilotScope | null });
+      // autopilot-turn only ever emits callback / idle-check / null, never a task —
+      // so the task is cleared with it rather than left pointing at a stale expert.
+      store.setSuggestion(contactId, result.suggestedScope as AutopilotScope | null, null);
     }
 
     // Send the response with delay
@@ -586,7 +590,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const s = store.getSlot(contactId);
     const entry = s?.suggestionHistory[s.suggestionHistory.length - 1];
     if (!s || !entry) return;
-    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(s.clientId);
     store.setChangeOptionsLoading(contactId, entry.id, true);
     post<{ options: string[] }>('/next-best-response', {
       mode: 'change-options',
@@ -605,7 +609,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const s = store.getSlot(contactId);
     if (!s) return;
     const rejected = s.suggestionHistory[s.suggestionIndex]?.text ?? '';   // the draft being changed
-    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(s.clientId);
     store.patchSlot(contactId, { suggestionLoading: true });   // reuse the header spinner
     post<{ suggestedText: string; resources?: { id: string; title: string; url: string }[] }>(
       '/next-best-response',
@@ -627,10 +631,30 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   // ── NBR: fetch a fresh suggested reply. Fires on customer reply AND right after the agent
   // sends (the shown suggestion is then stale). Reads the LIVE transcript so it includes the
   // latest message; pre-generates the new entry's "Change to" options after display. ────────
+  // Resolve WHICH expert to suggest, with no LLM call and no cost. Runs the moment a
+  // contact is accepted, so the ✈ names the right task before the client has said
+  // anything on the live socket. Deliberately does NOT set lastCustomerMessageAt: that
+  // would also trigger the full LLM refresh and overwrite the greeting suggestion.
+  const runScopeSuggest = (contactId: string) => {
+    const s = store.getSlot(contactId);
+    if (!s) return;
+    const clientProfile = currentProfile(s.clientId);
+    post<{ suggestedScope?: string | null; suggestedTaskId?: string | null }>(
+      '/next-best-response',
+      { mode: 'scope-only', transcript: s.messages, clientProfile },
+    )
+      .then(r => {
+        // An agent who already started autopilot outranks a suggestion.
+        if (store.getSlot(contactId)?.autopilotScope) return;
+        store.setSuggestion(contactId, (r.suggestedScope ?? 'get-intent') as AutopilotScope | null, r.suggestedTaskId ?? null);
+      })
+      .catch(() => { /* the 'get-intent' default is already on screen */ });
+  };
+
   const runNbrRefresh = (contactId: string) => {
     const s = store.getSlot(contactId);
     if (!s || s.status !== 'active') return;
-    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(s.clientId);
     store.patchSlot(contactId, { suggestionLoading: true });
     post<{ suggestedText: string; resources: Array<{ id: string; title: string; url: string }>; suggestedScope?: string | null; suggestedTaskId?: string | null }>(
       '/next-best-response',
@@ -641,17 +665,15 @@ export function ChatColumn({ slotIndex, slot }: Props) {
           store.addSuggestion(contactId, result.suggestedText, 'nbr');
           generateChangeOptions(contactId);
         }
-        const patch: Partial<ContactSlot> = {
+        if (result.suggestedScope !== undefined && !store.getSlot(contactId)?.autopilotScope) {
+          // Scope and task are one fact, written together — NBR names a specific expert
+          // (e.g. Buy funds), and activating the suggestion starts that expert directly.
+          store.setSuggestion(contactId, result.suggestedScope as AutopilotScope | null, result.suggestedTaskId ?? null);
+        }
+        store.patchSlot(contactId, {
           suggestedResources: result.resources,
           suggestionLoading: false,
-        };
-        if (result.suggestedScope !== undefined && !store.getSlot(contactId)?.autopilotScope) {
-          patch.suggestedScope = result.suggestedScope as AutopilotScope | null;
-          // NBR can now name a specific expert (e.g. Sell fund shares) instead of only
-          // a scope. Activating the suggestion starts that expert directly.
-          patch.suggestedTaskId = result.suggestedTaskId ?? null;
-        }
-        store.patchSlot(contactId, patch);
+        });
       })
       .catch(e => { console.warn('NBR fetch failed', e); store.patchSlot(contactId, { suggestionLoading: false }); });
   };
@@ -663,7 +685,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const s = store.getSlot(contactId);
     const entry = s?.suggestionHistory[s.suggestionIndex];
     if (!s || !entry) return;
-    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(s.clientId);
     store.patchSlot(contactId, { suggestionLoading: true });
     post<{ suggestedText: string }>('/next-best-response', {
       mode: 'magic-rewrite',
@@ -694,7 +716,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const s = store.getSlot(contactId);
     const entry = s?.autopilotHistory[s.autopilotIndex];
     if (!s || !entry) return;
-    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(s.clientId);
     store.setAutopilotChangeOptionsLoading(contactId, entry.id, true);
     post<{ options: string[] }>('/next-best-response', {
       mode: 'change-options',
@@ -712,7 +734,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const s = store.getSlot(contactId);
     if (!s) return;
     const rejected = s.autopilotHistory[s.autopilotIndex]?.text ?? s.autopilotPending ?? '';
-    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(s.clientId);
     store.patchSlot(contactId, { suggestionLoading: true });
     post<{ suggestedText: string }>('/next-best-response', {
       mode: 'change-reply', transcript: s.messages, clientProfile, direction, currentSuggestion: rejected,
@@ -731,7 +753,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const s = store.getSlot(contactId);
     const entry = s?.autopilotHistory[s.autopilotIndex];
     if (!s || !entry) return;
-    const clientProfile = CLIENT_PROFILES[s.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(s.clientId);
     store.patchSlot(contactId, { suggestionLoading: true });
     post<{ suggestedText: string }>('/next-best-response', {
       mode: 'magic-rewrite', transcript: s.messages, clientProfile, currentSuggestion: entry.text, style,
@@ -766,7 +788,15 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     const firstName = slot.clientName.split(' ')[0];
     const close = slot.intentGreeting || 'How can I assist you today?';
     store.addSuggestion(slot.contactId, `Hi ${firstName}, my name is ${store.agentName} with Bob's Mutual Funds. ${close}`, 'greeting');
-    store.patchSlot(slot.contactId, { suggestedScope: 'get-intent' });
+    // Show something immediately, then resolve the ACTUAL expert from the pre-agent
+    // transcript. That transcript is where the client says what they want, and it
+    // never reaches the LLM refresh below because that is gated on a live-socket
+    // timestamp the pre-agent history does not set.
+    store.setSuggestion(slot.contactId, 'get-intent', null);
+    runScopeSuggest(slot.contactId);
+    // Warm the live account figures before the first autopilot turn needs them, so the
+    // expert is never handed the hardcoded seed balances.
+    loadLiveProfile(slot.clientId).then(() => setProfileVersion(v => v + 1));
     generateChangeOptions(slot.contactId);
   }, [connectionToken, slot?.contactId]);
 
@@ -907,7 +937,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   useEffect(() => {
     if (!slot || slot.status !== 'active' || !lastCustomerMsg) return;
     const cid = slot.contactId;
-    const clientProfile = CLIENT_PROFILES[slot.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(slot.clientId);
 
     // Customer replied — cancel autopilot idle timer and agent-question idle timer
     if (autopilotIdleRef.current) { clearTimeout(autopilotIdleRef.current); autopilotIdleRef.current = null; }
@@ -938,7 +968,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       const s = store.getSlot(cid);
       if (!s || s.autopilotScope !== null) return;
       if (s.lastCustomerMessageAt && Date.now() - s.lastCustomerMessageAt > 5 * 60 * 1000) {
-        store.patchSlot(cid, { suggestedScope: 'idle-check' });
+        store.setSuggestion(cid, 'idle-check', null);
       }
     }, 30_000);
     return () => clearInterval(timer);
@@ -949,7 +979,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
   useEffect(() => {
     if (!slot || slot.status !== 'acw' || slot.acwData !== null) return;
     const cid = slot.contactId;
-    const clientProfile = CLIENT_PROFILES[slot.clientId] ?? DEFAULT_PROFILE;
+    const clientProfile = currentProfile(slot.clientId);
 
     post<ACWData & { wrapUpCodes?: string[] }>('/generate-acw', {
       transcript: slot.messages,
@@ -998,11 +1028,22 @@ export function ChatColumn({ slotIndex, slot }: Props) {
       path: 'composer-send', suggestionShownText: shown?.text, sentText: text,
     });
     sendText(text);
+    afterAgentSend(slot.contactId);
+  };
+
+  /**
+   * Everything that must happen once the agent has sent, wherever they sent from.
+   *
+   * This used to live inline in handleSend, so a send from the AI panel refreshed the
+   * suggestion but never cleared the stale scope the composer path cleared — the two
+   * send buttons left the slot in different states.
+   */
+  const afterAgentSend = (contactId: string) => {
     // The shown suggestion is now stale — fetch a fresh one immediately.
-    runNbrRefresh(slot.contactId);
-    // Re-evaluate suggested scope after agent sends; clear any stale exit message
-    if (slot.autopilotScope === null) {
-      store.patchSlot(slot.contactId, { suggestedScope: null, suggestedTaskId: null, autopilotExitMessage: null });
+    runNbrRefresh(contactId);
+    if (store.getSlot(contactId)?.autopilotScope === null) {
+      store.setSuggestion(contactId, null, null);
+      store.patchSlot(contactId, { autopilotExitMessage: null });
     }
   };
 
@@ -1012,8 +1053,9 @@ export function ChatColumn({ slotIndex, slot }: Props) {
     if (!slot) return;
     // Keep suggestedText — the scope activation effect will consume it for get-intent/full-auto.
     // Reset any stale pause/countdown state so a fresh activation starts clean & unpaused.
+    store.setSuggestion(slot.contactId, null, null);
     store.patchSlot(slot.contactId, {
-      autopilotScope: scope, suggestedScope: null, suggestedTaskId: null, pendingTaskId: taskId ?? null,
+      autopilotScope: scope, pendingTaskId: taskId ?? null,
       autopilotPaused: false, autopilotSendAt: null, autopilotPausedRemainingMs: null,
     });
   };
@@ -1255,7 +1297,7 @@ export function ChatColumn({ slotIndex, slot }: Props) {
             ) : (
               <AISupport
                 slot={slot}
-                onSend={text => { sendText(text); runNbrRefresh(slot.contactId); }}
+                onSend={text => { sendText(text); afterAgentSend(slot.contactId); }}
                 onSendResource={text => sendText(text)}
                 onActivateAutopilot={handleActivateAutopilot}
                 onChangeTo={handleChangeTo}

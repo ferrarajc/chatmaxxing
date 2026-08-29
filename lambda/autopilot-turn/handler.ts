@@ -4,6 +4,7 @@ import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import { isAdviceRequest } from '../shared/advice-guard';
 import { stripInternalStatus } from '../shared/reply-hygiene';
 import {
+  Account,
   ChatMessage,
   ClientProfile,
   RmdData,
@@ -13,6 +14,7 @@ import {
   jsonResponse,
 } from '../shared/types';
 import { TASKS, matchTaskByIntent, filterFields } from '../shared/tasks';
+import { recomputeAccounts, portfolioTotal, describeCashAvailability } from '../shared/account-math';
 import { FUND_PICKLIST } from '../shared/fund-catalog';
 import { fromZonedTime } from 'date-fns-tz';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
@@ -531,6 +533,39 @@ interface HoldingRow { name: string; ticker: string; accountId: string; shares: 
  * `ClientProfile.holdings` is optional and the agent-app profile carries balances only,
  * so the positions have to be read here — same pattern as fetchBeneficiaries.
  */
+/**
+ * The client's REAL accounts, read at the top of every turn.
+ *
+ * There was no equivalent of this until now, and the omission was load-bearing. The
+ * handler took `clientProfile` off the request body and used it verbatim, and the agent
+ * app posts a HARDCODED literal (agent-app/src/data/clientProfiles.ts) that nothing ever
+ * refreshes. So a single prompt carried the client's positions read live from DynamoDB
+ * and their balances read from a constant frozen at seed time. A client was told
+ * "$67,890 in total in your Taxable Account" when the table said $68,890 — the
+ * difference being a purchase they had made minutes earlier, in that chat.
+ *
+ * Returns null on failure rather than an empty array: "no accounts" and "we could not
+ * read the accounts" must not collapse into the same value, because the caller tells the
+ * model to stay silent about figures in the second case.
+ */
+async function fetchAccounts(clientId: string): Promise<{ accounts: Account[]; holdings: HoldingRow[] } | null> {
+  try {
+    const result = await docClient.send(new GetCommand({
+      TableName: process.env.CLIENTS_TABLE!,
+      Key: { clientId },
+      ProjectionExpression: 'accounts, holdings',
+    }));
+    const raw = result.Item?.accounts as Account[] | undefined;
+    if (!raw?.length) return null;
+    const holdings = (result.Item?.holdings as HoldingRow[] | undefined) ?? [];
+    // recomputeAccounts owns the balance identity; never re-derive it here.
+    return { accounts: recomputeAccounts(raw, holdings), holdings };
+  } catch {
+    console.error(JSON.stringify({ event: 'account_refresh_failed', fn: 'autopilot-turn', clientId }));
+    return null;
+  }
+}
+
 async function fetchHoldings(clientId: string): Promise<HoldingRow[]> {
   try {
     const result = await docClient.send(new GetCommand({
@@ -875,7 +910,7 @@ When all three fields are confirmed, return this EXACT structure with proposedAc
 
 ⚠ Never set shouldExitAutopilot=true unless all three fields are present in proposedAction.`;
 
-const PLACE_PURCHASE_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) => {
+const PLACE_PURCHASE_PROMPT = (profile: ClientProfile, holdings: HoldingRow[], accountsAreLive: boolean) => {
   const multiAccount = profile.accounts.length > 1;
   const accountSection = multiAccount
     ? `ACCOUNT — which account to purchase into\n  Options: ${profile.accounts.map(a => `${a.type} (${a.id})`).join(', ')}\n\n`
@@ -885,6 +920,10 @@ const PLACE_PURCHASE_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) =
   // taxable account: inside an IRA nothing is taxed on sale, so basis is never
   // reported (kb.ts q-cb-003). Telling those cases apart is why this prompt reads
   // holdings at all -- it did not before.
+  // The server states the cash facts; the model never derives them. Three live chats
+  // proved it cannot: it quoted a holding's value as cash, then a figure from this
+  // prompt's own examples, then recited the balance identity inside out.
+  const cashBlock = describeCashAvailability(profile.accounts, holdings, accountsAreLive);
   const taxableAccounts = profile.accounts.filter(a => /taxable/i.test(a.type));
   const heldForBasis = formatHoldings(holdings, profile.accounts);
   const costBasisSection = taxableAccounts.length > 0
@@ -938,34 +977,7 @@ FUNDING SOURCE — one of:
   • Linked bank account — new money, debited from their bank on file
   • Cash in account — uninvested cash already sitting in that account
 
-  ACCOUNT VALUES: an account's total value = money invested in funds + uninvested cash.
-  The cash figure is PART of the total, never additional to it. Never present an
-  account's total as though it were cash, and never add the two together.
-
-  NEVER QUOTE A FIGURE FROM THIS PROMPT'S EXAMPLES. Every worked example here uses
-  <placeholders> precisely because concrete numbers get repeated back to clients as
-  though they were the client's own. If a dollar figure did not come from THIS client's
-  account data or from something they said in THIS chat, it is not a figure you may say.
-
-  WHERE THE CASH NUMBER COMES FROM: the account line above ("total incl. $X cash") for
-  the account THEY chose, or get_accounts. Nowhere else. A FUND POSITION'S VALUE IS NOT CASH -- the positions listed
-  under COST BASIS METHOD below, and anything get_holdings returns, are money already
-  invested in funds. Quoting one of those as "available in cash" is wrong, and it is wrong
-  in a way that sounds right, because it is a real dollar figure from the same account.
-  Before you state a cash figure, check it against the account line. If you cannot find a
-  cash figure for the account they chose, call get_accounts -- do not reach for the
-  nearest number you have seen.
-
-  Before offering "Cash in account", CHECK the cash actually available in the account
-  they chose — it is in the account list above, and get_accounts reports it per account.
-  • If cash covers the purchase, offer both sources normally.
-  • If it does NOT, say plainly how much cash is there and offer the alternatives:
-    fund it from the linked bank account instead, or buy a smaller amount from cash.
-    Shape of it (substitute the REAL figures — never these placeholders, and never a
-    number from this prompt's examples): "You have $<cash in that account> available in
-    cash there — would you like to use that, or fund the full $<amount they asked for>
-    from your linked bank account?"
-  • If the account has no cash at all, don't offer the option; just use the bank.
+${cashBlock}
 
   ONE SOURCE PER PURCHASE -- this is not a preference, it is what the system can do.
   A purchase is funded entirely from the bank OR entirely from cash. There is no split.
@@ -973,18 +985,9 @@ FUNDING SOURCE — one of:
   offer, agree to, or confirm such an arrangement -- not as a convenience, not "just
   this once". A client who asks for it has asked for something that does not exist.
 
-  If the client asks to split it (e.g. "use all the idle cash and take the rest from my
-  bank"), say plainly that a purchase draws from a single source, and give them the two
-  real choices, with the numbers:
-    - the full amount from the linked bank account, leaving the cash where it is, or
-    - a smaller purchase, up to the cash available, funded from cash.
-  Shape of it (substitute the REAL figures): "Each purchase draws from one source, so I
-  can't split it across both.
-  I can either put the full $<amount they asked for> through from your linked bank
-  account, or buy $<cash in that account> -- what's sitting in cash. Which would you
-  prefer?"
-  Then collect their choice. Never record a split as the funding source, and never
-  recap one back to them as though it were going to happen.
+  If the client asks to split it, say so plainly and give them the two real choices with
+  the real figures: the full amount from the linked bank account, or a smaller purchase
+  funded from the cash that is actually there.
 
   Do NOT propose a cash-funded purchase larger than the available cash. It will be
   rejected when the agent submits it, and the client will have been told otherwise.
@@ -2109,7 +2112,12 @@ async function identifyTaskWithLLM(
 }
 
 /** Returns the specialized expert prompt for a known task, or falls back to the generic template. */
-async function buildTaskSystemPrompt(profile: ClientProfile, taskId: string): Promise<string> {
+async function buildTaskSystemPrompt(
+  profile: ClientProfile,
+  taskId: string,
+  accountsAreLive = true,
+  liveHoldings?: HoldingRow[],
+): Promise<string> {
   switch (taskId) {
     case 'update-contact-info':           return UPDATE_CONTACT_INFO_PROMPT(profile);
     case 'update-beneficiaries': {
@@ -2121,14 +2129,14 @@ async function buildTaskSystemPrompt(profile: ClientProfile, taskId: string): Pr
     case 'place-purchase': {
       // Reads holdings so it can tell a purchase that OPENS a position from one that
       // adds to an existing one -- that distinction gates the cost basis election.
-      return PLACE_PURCHASE_PROMPT(profile, await fetchHoldings(profile.clientId));
+      return PLACE_PURCHASE_PROMPT(profile, (liveHoldings ?? await fetchHoldings(profile.clientId)), accountsAreLive);
     }
     case 'place-sale': {
       // Selling and exchanging operate on what the client ALREADY owns.
-      return PLACE_SALE_PROMPT(profile, await fetchHoldings(profile.clientId));
+      return PLACE_SALE_PROMPT(profile, (liveHoldings ?? await fetchHoldings(profile.clientId)));
     }
     case 'exchange-funds': {
-      return EXCHANGE_FUNDS_PROMPT(profile, await fetchHoldings(profile.clientId));
+      return EXCHANGE_FUNDS_PROMPT(profile, (liveHoldings ?? await fetchHoldings(profile.clientId)));
     }
     case 'toggle-drip':                   return TOGGLE_DRIP_PROMPT(profile);
     case 'setup-auto-invest':             return SETUP_AUTO_INVEST_PROMPT(profile);
@@ -2624,7 +2632,7 @@ export const handler = async (
       return locateEvidence(transcript, proposedAction);
     }
 
-    const profile: ClientProfile = clientProfile ?? {
+    const postedProfile: ClientProfile = clientProfile ?? {
       clientId: 'demo-client-001',
       name: 'Alex Johnson',
       phone: '4842384838',
@@ -2632,6 +2640,23 @@ export const handler = async (
       totalBalance: 45230,
       recentChatHistory: [],
     };
+
+    // Balances come from the database, not from the caller. This one override lands
+    // before every scope branch, so all ~20 `summarizeAccounts(profile.accounts)` prompt
+    // headers and all 19 task experts see live figures from a single line.
+    //
+    // ONLY accounts/totalBalance are replaced: `intents`, `pronouns` and
+    // `recentChatHistory` exist only in the posted profile and are not in DynamoDB.
+    const liveAccounts = await fetchAccounts(postedProfile.clientId);
+    const accountsAreLive = liveAccounts !== null;
+    const profile: ClientProfile = liveAccounts
+      ? { ...postedProfile, accounts: liveAccounts.accounts, totalBalance: portfolioTotal(liveAccounts.accounts) }
+      : postedProfile;
+
+    // Empty string on the happy path, so a successful read changes nothing about the 19
+    // prompts. On failure every expert is told to state no figures at all — including
+    // the ones on its own header line, which are the stale ones.
+    const staleAccountsWarning = accountsAreLive ? '' : '\n\n' + describeCashAvailability([], [], false);
 
     const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
 
@@ -2725,7 +2750,7 @@ export const handler = async (
           });
         }
 
-        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
+        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId, accountsAreLive, liveAccounts?.holdings) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile) + staleAccountsWarning;
         const p2ContactId = transcript[0]?.content?.slice(0, 8);
         const p2Executor = createToolExecutor(profile.clientId, { contactId: p2ContactId });
         let taskResponse = '';
@@ -2821,7 +2846,7 @@ export const handler = async (
         if (resolvedTask) {
           // Phase 1: task identified — LLM expert handles the first turn
           taskIdentifiedForResponse = resolvedTask.id;
-          const p1SystemPrompt = await buildTaskSystemPrompt(profile, resolvedTask.id) + EXIT_MESSAGE_INSTRUCTION;
+          const p1SystemPrompt = await buildTaskSystemPrompt(profile, resolvedTask.id, accountsAreLive, liveAccounts?.holdings) + EXIT_MESSAGE_INSTRUCTION;
 
           let p1Response = '';
           let p1ShouldExit = false;
@@ -2833,7 +2858,7 @@ export const handler = async (
             const p1ContactId = transcript[0]?.content?.slice(0, 8);
             const p1Executor = createToolExecutor(profile.clientId, { contactId: p1ContactId });
             const result = await invokeWithTools(
-              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile),
+              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile) + staleAccountsWarning,
               [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
               ALL_CLIENT_TOOLS,
               p1Executor,
@@ -2905,7 +2930,7 @@ export const handler = async (
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
-    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
+    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile) + staleAccountsWarning;
     const contactId = transcript[0]?.content?.slice(0, 8);
     const executor = createToolExecutor(profile.clientId, { contactId });
 
