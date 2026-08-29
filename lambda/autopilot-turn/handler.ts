@@ -979,6 +979,12 @@ FUNDING SOURCE — one of:
 
 ${cashBlock}
 
+  DON'T ASK WHAT THEY ALREADY ANSWERED. If the client set the amount BY the cash -- "all of
+  it", "all the cash", "invest the whole cash balance", "use everything that's sitting
+  there" -- they have named the funding source in the same breath. It is cash. Record it,
+  confirm it in the recap, and move on. Asking "cash or bank?" straight after they said
+  "all of the cash" reads as though you weren't listening.
+
   ONE SOURCE PER PURCHASE -- this is not a preference, it is what the system can do.
   A purchase is funded entirely from the bank OR entirely from cash. There is no split.
   You cannot draw part from cash and the remainder from the bank, and you must never
@@ -1016,19 +1022,27 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When complete:
+When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "place-purchase",
-  "taskName": "Buy / Make a Contribution",
-  "summary": "Purchase of $[amount] of [fund] in ${profile.name}'s [account], funded via [source]",
-  "fields": [
-    {"key": "accountId",      "label": "Account",          "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
-    {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
-    {"key": "amount",         "label": "Purchase amount",  "value": "[dollar amount]"},
-    {"key": "fundingSource",  "label": "Funding source",   "value": "[EXACTLY ONE of: Linked bank account / Cash in account -- never both, never a split]"},
-    {"key": "costBasisMethod", "label": "Cost basis method", "value": "[Average cost / Specific-lot identification / FIFO (first-in, first-out)] -- OMIT this field entirely unless you actually asked for it under the COST BASIS METHOD rule above; when you DID ask, your recap must have named it"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "place-purchase",
+    "taskName": "Buy / Make a Contribution",
+    "summary": "Purchase of $[amount] of [fund] in ${profile.name}'s [account], funded via [source]",
+    "fields": [
+      {"key": "accountId",      "label": "Account",          "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
+      {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
+      {"key": "amount",         "label": "Purchase amount",  "value": "[dollar amount]"},
+      {"key": "fundingSource",  "label": "Funding source",   "value": "[EXACTLY ONE of: Linked bank account / Cash in account -- never both, never a split]"},
+      {"key": "costBasisMethod", "label": "Cost basis method", "value": "[Average cost / Specific-lot identification / FIFO (first-in, first-out)]"}
+    ]
+  }
 }
+
+Include costBasisMethod ONLY if you actually asked for it under the COST BASIS METHOD rule
+above — omit the whole entry otherwise. If you did ask, your recap must already have named it.
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
 };
@@ -1282,16 +1296,21 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When complete:
+When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "toggle-drip",
-  "taskName": "Change Dividend Reinvestment (DRIP)",
-  "summary": "Dividend reinvestment [on/off] for [fund] in ${profile.name}'s [account]",
-  "fields": [
-    {"key": "accountId",    "label": "Account",            "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
-    {"key": "fund",         "label": "Fund",               "value": "[ticker symbol]"},
-    {"key": "dripEnabled",  "label": "Enable or disable",  "value": "[Turn ON (reinvest) / Turn OFF (receive as cash)]"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "toggle-drip",
+    "taskName": "Change Dividend Reinvestment (DRIP)",
+    "summary": "Dividend reinvestment [on/off] for [fund] in ${profile.name}'s [account]",
+    "fields": [
+      {"key": "accountId",    "label": "Account",            "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
+      {"key": "fund",         "label": "Fund",               "value": "[ticker symbol]"},
+      {"key": "dripEnabled",  "label": "Enable or disable",  "value": "[Turn ON (reinvest) / Turn OFF (receive as cash)]"}
+    ]
+  }
 }
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
@@ -1800,17 +1819,22 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When complete:
+When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "initiate-rollover",
-  "taskName": "Roll Over From Another Institution",
-  "summary": "Rollover of ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
-  "fields": [
-    {"key": "sourceInstitution",  "label": "Source institution",       "value": "[institution name / description]"},
-    {"key": "sourceAccountType",  "label": "Source account type",      "value": "[Traditional 401(k) / Roth 401(k) / 403(b) / Traditional IRA / Other]"},
-    {"key": "estimatedAmount",    "label": "Estimated rollover amount", "value": "[dollar amount or unknown]"},
-    {"key": "targetAccountId",    "label": "Receiving account",         "value": "[the bare account id, e.g. acc-002 — NOT the label]"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "initiate-rollover",
+    "taskName": "Roll Over From Another Institution",
+    "summary": "Rollover of ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
+    "fields": [
+      {"key": "sourceInstitution",  "label": "Source institution",       "value": "[institution name / description]"},
+      {"key": "sourceAccountType",  "label": "Source account type",      "value": "[Traditional 401(k) / Roth 401(k) / 403(b) / Traditional IRA / Other]"},
+      {"key": "estimatedAmount",    "label": "Estimated rollover amount", "value": "[dollar amount or unknown]"},
+      {"key": "targetAccountId",    "label": "Receiving account",         "value": "[the bare account id, e.g. acc-002 — NOT the label]"}
+    ]
+  }
 }
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
@@ -1864,16 +1888,21 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When all three are collected:
+When all three are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "roth-conversion",
-  "taskName": "Convert to Roth IRA",
-  "summary": "Roth conversion of [amount] from ${profile.name}'s [fromAccountId] for tax year [taxYear]",
-  "fields": [
-    {"key": "fromAccountId",  "label": "Source account",       "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
-    {"key": "amount",         "label": "Conversion amount",    "value": "[dollar amount or full balance]"},
-    {"key": "taxYear",        "label": "Tax year",             "value": "[2025 / 2026]"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "roth-conversion",
+    "taskName": "Convert to Roth IRA",
+    "summary": "Roth conversion of [amount] from ${profile.name}'s [fromAccountId] for tax year [taxYear]",
+    "fields": [
+      {"key": "fromAccountId",  "label": "Source account",       "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
+      {"key": "amount",         "label": "Conversion amount",    "value": "[dollar amount or full balance]"},
+      {"key": "taxYear",        "label": "Tax year",             "value": "[2025 / 2026]"}
+    ]
+  }
 }
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated with all three values.`;
