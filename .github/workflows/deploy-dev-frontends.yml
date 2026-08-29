@@ -1,0 +1,124 @@
+# Deploy the SPAs to the DEV environment, on demand, from any branch.
+#
+# WHY THIS EXISTS
+# The backend has had a dev environment for a long time — `cd cdk && npm run deploy:dev`
+# pushes Lambdas to BobsLambdaStack-dev from whatever branch you are on. The frontends
+# had no equivalent: every deploy-*.yml fires only on `push: branches: [main]`, and
+# docs/PROCESS.md lists the dev frontend as "npm run dev (local)".
+#
+# That is fine when the person writing the code and the person testing it share a
+# checkout. It fails silently when they do not: a reviewer running `npm run dev` from
+# their own checkout sees THEIR branch, not yours, and the page looks identical either
+# way. We lost two days to exactly that — backend fixes were live on dev while the
+# matching frontend work sat on a branch nobody had checked out.
+#
+# So: pick a branch, pick an app, get a URL.
+#   agent    -> https://ferrarajc.github.io/chatmaxxing/agent-dev/
+#   customer -> https://ferrarajc.github.io/chatmaxxing/dev/
+#
+# Both are built against the DEV API and dev tables. Production lives at
+# /chatmaxxing/agent/ and /chatmaxxing/ and is never touched by this workflow:
+# destination_dir is hardcoded to the -dev paths and keep_files preserves everything else.
+
+name: Deploy Dev Frontends
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Which app to publish to dev'
+        required: true
+        default: 'agent'
+        type: choice
+        options: [agent, customer, both]
+
+permissions:
+  contents: write
+
+# Same group the production deploys use, so a dev publish can never race a prod one
+# onto the shared gh-pages branch.
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      # ── Agent app ────────────────────────────────────────────────────────────
+      - name: Install agent-app
+        if: inputs.app == 'agent' || inputs.app == 'both'
+        run: npm ci --workspace agent-app
+
+      - name: Build agent-app for dev
+        if: inputs.app == 'agent' || inputs.app == 'both'
+        working-directory: agent-app
+        env:
+          VITE_GIT_SHA: ${{ github.sha }}   # lights up window.__BUILD__ (see src/main.tsx)
+        run: |
+          # The dev API / Connect values already live in the committed .env.development,
+          # which is the source of truth. Sourcing it beats copying the URLs into this
+          # file, where they would quietly drift. `set -a` exports every assignment.
+          set -a; . ./.env.development; set +a
+          npx tsc -b
+          # --base on the CLI, deliberately: editing vite.config.ts would match
+          # 'agent-app/**' and trigger the PRODUCTION deploy workflow just for adding a
+          # dev target. --mode production keeps the bundle production-shaped; only the
+          # env values differ.
+          npx vite build --mode production --base=/chatmaxxing/agent-dev/
+
+      - name: Publish agent-app to /agent-dev/
+        if: inputs.app == 'agent' || inputs.app == 'both'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: agent-app/dist
+          destination_dir: agent-dev
+          keep_files: true   # never disturb prod at / and /agent/
+          commit_message: 'dev: agent-app from ${{ github.ref_name }} @ ${{ github.sha }}'
+
+      # ── Customer app ─────────────────────────────────────────────────────────
+      - name: Install customer-app
+        if: inputs.app == 'customer' || inputs.app == 'both'
+        run: npm ci --workspace customer-app
+
+      - name: Build customer-app for dev
+        if: inputs.app == 'customer' || inputs.app == 'both'
+        working-directory: customer-app
+        env:
+          VITE_GIT_SHA: ${{ github.sha }}
+        run: |
+          set -a; . ./.env.development; set +a
+          npx tsc -b
+          npx vite build --mode production --base=/chatmaxxing/dev/
+
+      - name: Publish customer-app to /dev/
+        if: inputs.app == 'customer' || inputs.app == 'both'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: customer-app/dist
+          destination_dir: dev
+          keep_files: true
+          commit_message: 'dev: customer-app from ${{ github.ref_name }} @ ${{ github.sha }}'
+
+      - name: Where it landed
+        run: |
+          echo "Branch : ${{ github.ref_name }}"
+          echo "Commit : ${{ github.sha }}"
+          echo "App    : ${{ inputs.app }}"
+          echo ""
+          echo "Agent    https://ferrarajc.github.io/chatmaxxing/agent-dev/"
+          echo "Customer https://ferrarajc.github.io/chatmaxxing/dev/"
+          echo ""
+          echo "Both point at the DEV API and dev tables."
+          echo "Confirm what is live: open devtools and read window.__BUILD__ —"
+          echo "it should equal ${{ github.sha }}."
