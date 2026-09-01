@@ -4,6 +4,7 @@ import { ALL_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
 import { isAdviceRequest } from '../shared/advice-guard';
 import { stripInternalStatus } from '../shared/reply-hygiene';
 import {
+  Account,
   ChatMessage,
   ClientProfile,
   RmdData,
@@ -13,6 +14,7 @@ import {
   jsonResponse,
 } from '../shared/types';
 import { TASKS, matchTaskByIntent, filterFields } from '../shared/tasks';
+import { recomputeAccounts, portfolioTotal, describeCashAvailability } from '../shared/account-math';
 import { FUND_PICKLIST } from '../shared/fund-catalog';
 import { fromZonedTime } from 'date-fns-tz';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
@@ -200,7 +202,7 @@ FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutop
    suggestedScope: "callback"
 
 2. Trade execution (e.g. "buy", "sell", "place an order", "redeem", "liquidate"):
-   response: "Trades can't be processed through chat — for security and compliance reasons they require a dedicated trading channel. You can place orders directly at bobrsmutualfunds.com/trade, or I can schedule a callback with a licensed broker. Which works better?"
+   response: "Trades can't be processed through chat — for security and compliance reasons they require a dedicated trading channel. You can place orders yourself at [Buy a Fund](/contribute), or I can schedule a callback with a licensed broker. Which works better?"
    suggestedScope: "callback"
 
 3. Fraud / identity theft / unauthorized account activity:
@@ -208,7 +210,7 @@ FORBIDDEN TOPICS — when any of the following is triggered, set shouldExitAutop
    shouldExitAutopilot: true  ← escalate immediately; no suggestedScope needed
 
 4. Inheriting an account / deceased account holder:
-   response: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team — they handle the paperwork and can walk you through every step. I can schedule a callback with a specialist, or you can find information at bobrsmutualfunds.com/inheritance. Which would you prefer?"
+   response: "I'm so sorry for your loss. Inheritance requests require our dedicated specialist team — they handle the paperwork and can walk you through every step. I can schedule a callback with a specialist, or you can read more at [Inheriting an Account](/help/inheritance). Which would you prefer?"
    suggestedScope: "callback"
 
 For any of the above: set shouldExitAutopilot=true and set suggestedScope as shown. Use the scripted response (minor phrasing adjustments are fine). Do NOT attempt to answer these topics yourself.
@@ -421,6 +423,30 @@ For any of the above: set shouldExitAutopilot=true and set suggestedScope as sho
 
 RESPONSE OPENINGS — never begin a response with a phrase that paraphrases the client's question back at them. Forbidden openers include (but are not limited to): "I understand you're looking to...", "I see you're interested in...", "I understand you're asking about...", "I can see you'd like to...", "It sounds like you want to...", "I understand you'd like to...", "I see that you want to...", "Of course, I can help you with...". These are stilted and become grating over the course of a conversation. Start directly with the answer, the next question, or the action.
 
+
+FUND QUESTIONS, AND THE LINE YOU DO NOT CROSS
+The client is inside the Bob's Mutual Funds portal, so you can send them to a page. Use a
+markdown link on a relative path -- [Fund Research](/research) -- never "look on our
+website", and never a bobsmutualfunds.com URL. The pages worth knowing here:
+  - Fund research, the full lineup with performance and holdings: /research
+  - One fund's own page, when they name a ticker: /research/fund/TICKER (e.g. /research/fund/BF500)
+  - What each cost basis method means: /help/cost-basis
+  - Expense ratios and fees: /help/fees
+  - How a trade is placed and when it settles: /help/place-trade
+
+ANSWER their factual questions about funds -- what a fund invests in, its expense ratio,
+its objective, how it has performed, what it holds, how two funds differ on those facts.
+Call get_funds for real numbers rather than recalling them. This is service, and refusing
+it is unhelpful.
+
+NEVER RECOMMEND ONE. Do not say which fund is better, safer, a good fit, what you would
+do, what most clients pick, or what suits their age, goal or risk tolerance. Do not
+volunteer a shortlist, and do not rank them. That is investment advice, it requires a
+licensed advisor, and the line is crossed by a nudge just as surely as by a hard sell.
+Comparing two funds on published facts is fine; concluding which one they should buy is
+not. If they press for a recommendation, follow the FORBIDDEN TOPICS rule above and offer
+the callback -- and point them at [Fund Research](/research) meanwhile.
+
 ${TASK_FIELD_RULES}`;
 
 const UPDATE_CONTACT_INFO_PROMPT = (profile: ClientProfile) =>
@@ -507,6 +533,39 @@ interface HoldingRow { name: string; ticker: string; accountId: string; shares: 
  * `ClientProfile.holdings` is optional and the agent-app profile carries balances only,
  * so the positions have to be read here — same pattern as fetchBeneficiaries.
  */
+/**
+ * The client's REAL accounts, read at the top of every turn.
+ *
+ * There was no equivalent of this until now, and the omission was load-bearing. The
+ * handler took `clientProfile` off the request body and used it verbatim, and the agent
+ * app posts a HARDCODED literal (agent-app/src/data/clientProfiles.ts) that nothing ever
+ * refreshes. So a single prompt carried the client's positions read live from DynamoDB
+ * and their balances read from a constant frozen at seed time. A client was told
+ * "$67,890 in total in your Taxable Account" when the table said $68,890 — the
+ * difference being a purchase they had made minutes earlier, in that chat.
+ *
+ * Returns null on failure rather than an empty array: "no accounts" and "we could not
+ * read the accounts" must not collapse into the same value, because the caller tells the
+ * model to stay silent about figures in the second case.
+ */
+async function fetchAccounts(clientId: string): Promise<{ accounts: Account[]; holdings: HoldingRow[] } | null> {
+  try {
+    const result = await docClient.send(new GetCommand({
+      TableName: process.env.CLIENTS_TABLE!,
+      Key: { clientId },
+      ProjectionExpression: 'accounts, holdings',
+    }));
+    const raw = result.Item?.accounts as Account[] | undefined;
+    if (!raw?.length) return null;
+    const holdings = (result.Item?.holdings as HoldingRow[] | undefined) ?? [];
+    // recomputeAccounts owns the balance identity; never re-derive it here.
+    return { accounts: recomputeAccounts(raw, holdings), holdings };
+  } catch {
+    console.error(JSON.stringify({ event: 'account_refresh_failed', fn: 'autopilot-turn', clientId }));
+    return null;
+  }
+}
+
 async function fetchHoldings(clientId: string): Promise<HoldingRow[]> {
   try {
     const result = await docClient.send(new GetCommand({
@@ -851,11 +910,53 @@ When all three fields are confirmed, return this EXACT structure with proposedAc
 
 ⚠ Never set shouldExitAutopilot=true unless all three fields are present in proposedAction.`;
 
-const PLACE_PURCHASE_PROMPT = (profile: ClientProfile) => {
+const PLACE_PURCHASE_PROMPT = (profile: ClientProfile, holdings: HoldingRow[], accountsAreLive: boolean) => {
   const multiAccount = profile.accounts.length > 1;
   const accountSection = multiAccount
     ? `ACCOUNT — which account to purchase into\n  Options: ${profile.accounts.map(a => `${a.type} (${a.id})`).join(', ')}\n\n`
     : `(Account pre-selected: ${profile.accounts[0]?.type ?? 'on file'} — do NOT ask for it.)\n\n`;
+
+  // A cost basis election happens when a purchase OPENS a position, and only in a
+  // taxable account: inside an IRA nothing is taxed on sale, so basis is never
+  // reported (kb.ts q-cb-003). Telling those cases apart is why this prompt reads
+  // holdings at all -- it did not before.
+  // The server states the cash facts; the model never derives them. Three live chats
+  // proved it cannot: it quoted a holding's value as cash, then a figure from this
+  // prompt's own examples, then recited the balance identity inside out.
+  const cashBlock = describeCashAvailability(profile.accounts, holdings, accountsAreLive);
+  const taxableAccounts = profile.accounts.filter(a => /taxable/i.test(a.type));
+  const heldForBasis = formatHoldings(holdings, profile.accounts);
+  const costBasisSection = taxableAccounts.length > 0
+    ? `COST BASIS METHOD -- required ONLY when BOTH of these are true:
+    (a) the account being purchased into is a TAXABLE account
+        (this client's taxable accounts: ${taxableAccounts.map(a => `${a.type} (${a.id})`).join(', ')}), AND
+    (b) this purchase OPENS a position -- they do NOT already hold that fund in that account.
+
+  Their current positions, for deciding (b) -- these are INVESTED balances, NOT cash:
+${heldForBasis || '  (nothing on file -- treat any purchase as opening a new position)'}
+
+  When both are true, ask which method they want, offering exactly these three:
+    - Average cost -- averages the price of all shares in the fund (Bob's default for mutual funds)
+    - Specific-lot identification -- they choose which shares are sold, each time they sell
+    - FIFO (first-in, first-out) -- oldest shares are sold first
+  If they don't know or don't mind, say average cost is our default for mutual funds and
+  use that. Explain plainly what each one does if asked. Do NOT suggest which is better
+  for them: that is a tax-strategy recommendation you are not permitted to make. You may
+  link [Cost Basis Methods](/help/cost-basis).
+
+  ASK FOR IT BEFORE YOU RECAP. It is a field of this purchase, not a postscript. If you
+  reach the recap turn without it, you have collected too little -- ask for it, then
+  recap once with the method included. Never confirm a recap and then ask for another
+  field: the client has already told you the summary was right.
+
+  When (a) or (b) is false, do NOT ask. Adding to a position they already hold uses the
+  method already on file, and in a retirement account the question is meaningless --
+  asking it there is wrong, not merely noisy.
+`
+    : `COST BASIS METHOD -- do NOT ask for it. This client holds no taxable account, and
+  inside a retirement account no sale is taxed, so no basis method is ever reported. If
+  the client raises it, explain that briefly and link [Cost Basis Methods](/help/cost-basis).
+`;
 
   return `You are a live financial services agent at Bob's Mutual Funds in an active chat with ${profile.name}.
 Client accounts: ${summarizeAccounts(profile.accounts)}.
@@ -867,8 +968,27 @@ You are handling a BUY / MAKE A CONTRIBUTION request.
 WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
-${accountSection}FUND — one of: ${FUND_PICKLIST}
-  If the client uses a partial name (e.g. "the growth fund"), map it to the correct ticker.
+${accountSection}FUND — which fund to buy. Ask; do NOT recite or sample the lineup.
+
+  Work down these in order:
+  1. ASSUME THEY KNOW WHICH FUND THEY WANT. That is the ordinary case. Ask which one, and
+     take the ticker or the name they give you.
+  2. If they ask what they already hold, answer from their real positions (listed under
+     COST BASIS METHOD below). They may hold nothing in that account -- say so plainly and
+     go back to (1).
+  3. ONLY if they say they don't know which fund they want, point them at
+     [Fund Research](/research): they can compare the full lineup there, or name any fund
+     and you will look up its published facts for them.
+
+  Do NOT offer a few funds as "options like ...", and do NOT name a handful to get them
+  started. Three funds out of thirty-six is a shortlist, and a shortlist is a
+  recommendation wearing a disguise -- the same rule the destination side of an exchange
+  follows.
+
+  FOR RESOLVING WHAT THE CLIENT SAYS — a lookup table, never a menu to read out:
+  ${FUND_PICKLIST}
+  Map a partial name to its ticker ("the growth fund" -> BFGR). If what they say matches
+  nothing in the lineup, say so and ask them to confirm the name.
 
 PURCHASE AMOUNT — a specific dollar amount (e.g. "$5,000")
 
@@ -876,22 +996,28 @@ FUNDING SOURCE — one of:
   • Linked bank account — new money, debited from their bank on file
   • Cash in account — uninvested cash already sitting in that account
 
-  ACCOUNT VALUES: an account's total value = money invested in funds + uninvested cash.
-  The cash figure is PART of the total, never additional to it. Never present an
-  account's total as though it were cash, and never add the two together.
+${cashBlock}
 
-  Before offering "Cash in account", CHECK the cash actually available in the account
-  they chose — it is in the account list above, and get_accounts reports it per account.
-  • If cash covers the purchase, offer both sources normally.
-  • If it does NOT, say plainly how much cash is there and offer the alternatives:
-    fund it from the linked bank account instead, or buy a smaller amount from cash.
-    For example: "You have $877 available in cash in that account — would you like to
-    use that, or fund the full $4,800 from your linked bank account?"
-  • If the account has no cash at all, don't offer the option; just use the bank.
+  DON'T ASK WHAT THEY ALREADY ANSWERED. If the client set the amount BY the cash -- "all of
+  it", "all the cash", "invest the whole cash balance", "use everything that's sitting
+  there" -- they have named the funding source in the same breath. It is cash. Record it,
+  confirm it in the recap, and move on. Asking "cash or bank?" straight after they said
+  "all of the cash" reads as though you weren't listening.
+
+  ONE SOURCE PER PURCHASE -- this is not a preference, it is what the system can do.
+  A purchase is funded entirely from the bank OR entirely from cash. There is no split.
+  You cannot draw part from cash and the remainder from the bank, and you must never
+  offer, agree to, or confirm such an arrangement -- not as a convenience, not "just
+  this once". A client who asks for it has asked for something that does not exist.
+
+  If the client asks to split it, say so plainly and give them the two real choices with
+  the real figures: the full amount from the linked bank account, or a smaller purchase
+  funded from the cash that is actually there.
 
   Do NOT propose a cash-funded purchase larger than the available cash. It will be
   rejected when the agent submits it, and the client will have been told otherwise.
 
+${costBasisSection}
 ════════════════════════════════════
 HOW TO HANDLE THIS CONVERSATION
 ════════════════════════════════════
@@ -915,18 +1041,27 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When complete:
+When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "place-purchase",
-  "taskName": "Buy / Make a Contribution",
-  "summary": "Purchase of $[amount] of [fund] in ${profile.name}'s [account], funded via [source]",
-  "fields": [
-    {"key": "accountId",      "label": "Account",          "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
-    {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
-    {"key": "amount",         "label": "Purchase amount",  "value": "[dollar amount]"},
-    {"key": "fundingSource",  "label": "Funding source",   "value": "[Linked bank account / Cash in account]"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "place-purchase",
+    "taskName": "Buy / Make a Contribution",
+    "summary": "Purchase of $[amount] of [fund] in ${profile.name}'s [account], funded via [source]",
+    "fields": [
+      {"key": "accountId",      "label": "Account",          "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
+      {"key": "fund",           "label": "Fund",             "value": "[ticker symbol]"},
+      {"key": "amount",         "label": "Purchase amount",  "value": "[dollar amount]"},
+      {"key": "fundingSource",  "label": "Funding source",   "value": "[EXACTLY ONE of: Linked bank account / Cash in account -- never both, never a split]"},
+      {"key": "costBasisMethod", "label": "Cost basis method", "value": "[Average cost / Specific-lot identification / FIFO (first-in, first-out)]"}
+    ]
+  }
 }
+
+Include costBasisMethod ONLY if you actually asked for it under the COST BASIS METHOD rule
+above — omit the whole entry otherwise. If you did ask, your recap must already have named it.
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
 };
@@ -1016,8 +1151,10 @@ const EXCHANGE_FUNDS_PROMPT = (profile: ClientProfile, holdings: HoldingRow[]) =
     ? `ACCOUNT — which account to exchange within\n  Options: ${profile.accounts.map(a => `${a.type} (${a.id})`).join(', ')}\n\n`
     : `(Account pre-selected: ${profile.accounts[0]?.type ?? 'on file'} — do NOT ask for it.)\n\n`;
 
-  // The SOURCE side of an exchange is constrained to what they hold; the destination
-  // is genuinely a choice from the whole lineup.
+  // Both sides are constrained now. The source is what they hold. The destination used
+  // to be the whole 36-fund lineup, which turned "move my money" into a catalogue
+  // reading; it now defaults to their other positions and only reaches for the research
+  // page when the client says they don't know what they want.
   const held = formatHoldings(holdings, profile.accounts);
   const sourceSection = held
     ? `FUND TO EXCHANGE OUT OF — the client can only exchange OUT of a fund they hold.\nThese are their current positions — offer ONLY from this list:\n\n${held}\n`
@@ -1034,12 +1171,39 @@ WHAT YOU NEED TO COLLECT
 ════════════════════════════════════
 
 ${accountSection}${sourceSection}
-FUND TO EXCHANGE INTO — one of: ${FUND_PICKLIST}
-  The destination fund (money moves into this fund). Must be different from the source.
+FUND TO EXCHANGE INTO -- the destination. Must be different from the source.
+
+  Do NOT list the Bob's lineup. Reciting 36 funds at someone who asked to move money
+  is not helpful, and it reads as a menu you are inviting them to pick from.
+
+  Work down these in order:
+  1. ASSUME THEY ARE MOVING INTO A FUND THEY ALREADY OWN. That is the ordinary case.
+     Offer their other positions in that account, by name, and ask which one.
+  2. If they say they want a fund they don't currently hold, ASSUME THEY KNOW WHICH ONE.
+     Ask which fund, and take the ticker or name they give you. Do not offer a list.
+  3. ONLY if they say they don't know which fund they want, point them at the research
+     page: [Fund Research](/research). Say they can compare the full lineup there and
+     come back, or that you can look up specifics on any fund they name.
+     Do NOT narrow the field for them, and do NOT name a few "popular" or "common"
+     choices -- a shortlist is a recommendation wearing a disguise.
 
 AMOUNT TO EXCHANGE — one of:
   • A specific dollar amount
   • "Full balance" or "everything in that fund"
+
+  YOU CANNOT EXCHANGE MORE THAN THE SOURCE POSITION IS WORTH. The position values are
+  listed above. An exchange moves money that is already in that fund -- it cannot reach
+  into cash, into another fund, or into their bank to make up a shortfall.
+
+  If they ask for more than the source holds, say so plainly with the real number and
+  offer the two things that actually exist: exchange the full value of that position, or
+  a smaller amount. Shape of it (substitute the REAL position and figures): "That <fund>
+  position is worth $<its value>, so I can't move $<what they asked for> out of it. I can
+  move the whole $<its value>, or any amount under it -- which would you like?"
+  second exchange: handle it under ONE FUND IN, ONE FUND OUT below.
+
+  Never accept, recap, or submit an amount larger than the source position. It will be
+  rejected when the agent submits it, and the client will have been told it was fine.
 
 ════════════════════════════════════
 HOW TO HANDLE THIS CONVERSATION
@@ -1050,6 +1214,24 @@ Collect naturally in any order. Ask ONE question per turn.
 Read the full transcript — do not re-ask for something already provided.
 
 If the source and destination fund are the same, point this out and ask for clarification.
+
+ONE FUND IN, ONE FUND OUT -- until the client tells you otherwise.
+Ask your questions as though this is a single fund-to-fund move: "which fund would you
+like to move money out of", "which fund should it go into". Do not raise the possibility
+of splitting across several funds, and do not ask whether they want to. The overwhelming
+majority of exchanges are one-to-one and the question only muddies it.
+
+If the CLIENT says otherwise -- several sources, several destinations, or both -- that is
+a legitimate thing to want, so take it seriously and work it through with them. Each
+exchange you submit moves money between ONE source fund and ONE destination fund, so a
+multi-fund request becomes a set of exchanges. Get the specific dollar amount for each
+pairing, then recap the whole set plainly so they can check it, e.g.:
+  in the shape of "So that's two exchanges: $<amount> from <fund A> into <fund C>, and
+  $<amount> from <fund B> into <fund C>." -- their real funds and amounts, never these
+  placeholders.
+Handle the FIRST pairing in this task and say clearly that you'll set up the others
+straight after. Never imply the whole set goes through as a single transaction, and never
+invent a split the client did not ask for.
 
 When all fields are collected:
 → Set shouldExitAutopilot=true and populate proposedAction
@@ -1133,16 +1315,21 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When complete:
+When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "toggle-drip",
-  "taskName": "Change Dividend Reinvestment (DRIP)",
-  "summary": "Dividend reinvestment [on/off] for [fund] in ${profile.name}'s [account]",
-  "fields": [
-    {"key": "accountId",    "label": "Account",            "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
-    {"key": "fund",         "label": "Fund",               "value": "[ticker symbol]"},
-    {"key": "dripEnabled",  "label": "Enable or disable",  "value": "[Turn ON (reinvest) / Turn OFF (receive as cash)]"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "toggle-drip",
+    "taskName": "Change Dividend Reinvestment (DRIP)",
+    "summary": "Dividend reinvestment [on/off] for [fund] in ${profile.name}'s [account]",
+    "fields": [
+      {"key": "accountId",    "label": "Account",            "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
+      {"key": "fund",         "label": "Fund",               "value": "[ticker symbol]"},
+      {"key": "dripEnabled",  "label": "Enable or disable",  "value": "[Turn ON (reinvest) / Turn OFF (receive as cash)]"}
+    ]
+  }
 }
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
@@ -1651,17 +1838,22 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When complete:
+When all fields are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "initiate-rollover",
-  "taskName": "Roll Over From Another Institution",
-  "summary": "Rollover of ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
-  "fields": [
-    {"key": "sourceInstitution",  "label": "Source institution",       "value": "[institution name / description]"},
-    {"key": "sourceAccountType",  "label": "Source account type",      "value": "[Traditional 401(k) / Roth 401(k) / 403(b) / Traditional IRA / Other]"},
-    {"key": "estimatedAmount",    "label": "Estimated rollover amount", "value": "[dollar amount or unknown]"},
-    {"key": "targetAccountId",    "label": "Receiving account",         "value": "[the bare account id, e.g. acc-002 — NOT the label]"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "initiate-rollover",
+    "taskName": "Roll Over From Another Institution",
+    "summary": "Rollover of ~$[amount] from [sourceInstitution] ([sourceAccountType]) into ${profile.name}'s [account]",
+    "fields": [
+      {"key": "sourceInstitution",  "label": "Source institution",       "value": "[institution name / description]"},
+      {"key": "sourceAccountType",  "label": "Source account type",      "value": "[Traditional 401(k) / Roth 401(k) / 403(b) / Traditional IRA / Other]"},
+      {"key": "estimatedAmount",    "label": "Estimated rollover amount", "value": "[dollar amount or unknown]"},
+      {"key": "targetAccountId",    "label": "Receiving account",         "value": "[the bare account id, e.g. acc-002 — NOT the label]"}
+    ]
+  }
 }
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated.`;
@@ -1715,16 +1907,21 @@ RESPONSE — return ONLY valid JSON
   "proposedAction": null
 }
 
-When all three are collected:
+When all three are confirmed, return this EXACT structure with proposedAction nested inside (copy the key names exactly):
 {
-  "taskId": "roth-conversion",
-  "taskName": "Convert to Roth IRA",
-  "summary": "Roth conversion of [amount] from ${profile.name}'s [fromAccountId] for tax year [taxYear]",
-  "fields": [
-    {"key": "fromAccountId",  "label": "Source account",       "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
-    {"key": "amount",         "label": "Conversion amount",    "value": "[dollar amount or full balance]"},
-    {"key": "taxYear",        "label": "Tax year",             "value": "[2025 / 2026]"}
-  ]
+  "response": "Got it. That's all the information I need. Just a moment while I prepare this for you.",
+  "shouldExitAutopilot": true,
+  "taskIdentified": null,
+  "proposedAction": {
+    "taskId": "roth-conversion",
+    "taskName": "Convert to Roth IRA",
+    "summary": "Roth conversion of [amount] from ${profile.name}'s [fromAccountId] for tax year [taxYear]",
+    "fields": [
+      {"key": "fromAccountId",  "label": "Source account",       "value": "[the bare account id, e.g. acc-002 — NOT the label]"},
+      {"key": "amount",         "label": "Conversion amount",    "value": "[dollar amount or full balance]"},
+      {"key": "taxYear",        "label": "Tax year",             "value": "[2025 / 2026]"}
+    ]
+  }
 }
 
 ⚠ Never set shouldExitAutopilot=true unless proposedAction is fully populated with all three values.`;
@@ -1963,7 +2160,12 @@ async function identifyTaskWithLLM(
 }
 
 /** Returns the specialized expert prompt for a known task, or falls back to the generic template. */
-async function buildTaskSystemPrompt(profile: ClientProfile, taskId: string): Promise<string> {
+async function buildTaskSystemPrompt(
+  profile: ClientProfile,
+  taskId: string,
+  accountsAreLive = true,
+  liveHoldings?: HoldingRow[],
+): Promise<string> {
   switch (taskId) {
     case 'update-contact-info':           return UPDATE_CONTACT_INFO_PROMPT(profile);
     case 'update-beneficiaries': {
@@ -1972,13 +2174,17 @@ async function buildTaskSystemPrompt(profile: ClientProfile, taskId: string): Pr
     }
     case 'add-account-access':            return ADD_ACCOUNT_ACCESS_PROMPT(profile);
     case 'open-account':                  return OPEN_ACCOUNT_PROMPT(profile);
-    case 'place-purchase':                return PLACE_PURCHASE_PROMPT(profile);
+    case 'place-purchase': {
+      // Reads holdings so it can tell a purchase that OPENS a position from one that
+      // adds to an existing one -- that distinction gates the cost basis election.
+      return PLACE_PURCHASE_PROMPT(profile, (liveHoldings ?? await fetchHoldings(profile.clientId)), accountsAreLive);
+    }
     case 'place-sale': {
       // Selling and exchanging operate on what the client ALREADY owns.
-      return PLACE_SALE_PROMPT(profile, await fetchHoldings(profile.clientId));
+      return PLACE_SALE_PROMPT(profile, (liveHoldings ?? await fetchHoldings(profile.clientId)));
     }
     case 'exchange-funds': {
-      return EXCHANGE_FUNDS_PROMPT(profile, await fetchHoldings(profile.clientId));
+      return EXCHANGE_FUNDS_PROMPT(profile, (liveHoldings ?? await fetchHoldings(profile.clientId)));
     }
     case 'toggle-drip':                   return TOGGLE_DRIP_PROMPT(profile);
     case 'setup-auto-invest':             return SETUP_AUTO_INVEST_PROMPT(profile);
@@ -2122,6 +2328,10 @@ Action pages (in-app, relative links):
 - Download tax documents: /account/tax-documents
 - Open a new account: /open-account
 - View portfolio: /portfolio
+- Buy a fund / make a contribution: /contribute (add ?account=<id> to preselect an account)
+- Buy one specific fund: /research/fund/TICKER/buy (e.g. /research/fund/BF500/buy)
+- Research the fund lineup (performance, holdings, expense ratios): /research
+- One fund's own page: /research/fund/TICKER (e.g. /research/fund/BF500)
 
 In-app resource pages (relative links):
 - Estate planning & beneficiary guidance: /resources/estate-planning
@@ -2470,7 +2680,7 @@ export const handler = async (
       return locateEvidence(transcript, proposedAction);
     }
 
-    const profile: ClientProfile = clientProfile ?? {
+    const postedProfile: ClientProfile = clientProfile ?? {
       clientId: 'demo-client-001',
       name: 'Alex Johnson',
       phone: '4842384838',
@@ -2478,6 +2688,23 @@ export const handler = async (
       totalBalance: 45230,
       recentChatHistory: [],
     };
+
+    // Balances come from the database, not from the caller. This one override lands
+    // before every scope branch, so all ~20 `summarizeAccounts(profile.accounts)` prompt
+    // headers and all 19 task experts see live figures from a single line.
+    //
+    // ONLY accounts/totalBalance are replaced: `intents`, `pronouns` and
+    // `recentChatHistory` exist only in the posted profile and are not in DynamoDB.
+    const liveAccounts = await fetchAccounts(postedProfile.clientId);
+    const accountsAreLive = liveAccounts !== null;
+    const profile: ClientProfile = liveAccounts
+      ? { ...postedProfile, accounts: liveAccounts.accounts, totalBalance: portfolioTotal(liveAccounts.accounts) }
+      : postedProfile;
+
+    // Empty string on the happy path, so a successful read changes nothing about the 19
+    // prompts. On failure every expert is told to state no figures at all — including
+    // the ones on its own header line, which are the stale ones.
+    const staleAccountsWarning = accountsAreLive ? '' : '\n\n' + describeCashAvailability([], [], false);
 
     const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
 
@@ -2571,7 +2798,7 @@ export const handler = async (
           });
         }
 
-        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
+        const taskSystemPrompt = await buildTaskSystemPrompt(profile, activeTaskId, accountsAreLive, liveAccounts?.holdings) + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile) + staleAccountsWarning;
         const p2ContactId = transcript[0]?.content?.slice(0, 8);
         const p2Executor = createToolExecutor(profile.clientId, { contactId: p2ContactId });
         let taskResponse = '';
@@ -2667,7 +2894,7 @@ export const handler = async (
         if (resolvedTask) {
           // Phase 1: task identified — LLM expert handles the first turn
           taskIdentifiedForResponse = resolvedTask.id;
-          const p1SystemPrompt = await buildTaskSystemPrompt(profile, resolvedTask.id) + EXIT_MESSAGE_INSTRUCTION;
+          const p1SystemPrompt = await buildTaskSystemPrompt(profile, resolvedTask.id, accountsAreLive, liveAccounts?.holdings) + EXIT_MESSAGE_INSTRUCTION;
 
           let p1Response = '';
           let p1ShouldExit = false;
@@ -2679,7 +2906,7 @@ export const handler = async (
             const p1ContactId = transcript[0]?.content?.slice(0, 8);
             const p1Executor = createToolExecutor(profile.clientId, { contactId: p1ContactId });
             const result = await invokeWithTools(
-              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile),
+              p1SystemPrompt + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile) + staleAccountsWarning,
               [{ role: 'user', content: formatTranscriptForBedrock(transcript) }],
               ALL_CLIENT_TOOLS,
               p1Executor,
@@ -2751,7 +2978,7 @@ export const handler = async (
         systemPrompt = FULL_AUTO_PROMPT(profile, currentIntent ?? 'general inquiry', extractLinkedPaths(transcript), currentPage);
     }
 
-    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile);
+    const augmentedSystemPrompt = systemPrompt + EXIT_MESSAGE_INSTRUCTION + HALLUCINATION_PROTECTION_RULE + CONTRIBUTION_DATA_RULE + pronounRule(profile) + staleAccountsWarning;
     const contactId = transcript[0]?.content?.slice(0, 8);
     const executor = createToolExecutor(profile.clientId, { contactId });
 

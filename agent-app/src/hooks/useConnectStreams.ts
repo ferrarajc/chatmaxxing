@@ -517,6 +517,8 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
               clearCustomerTyping(contactId);
               const leftSlot = useAgentStore.getState().getSlot(contactId);
               if (leftSlot?.status === 'active') {
+                // Nobody is listening, so there is nothing to suggest either.
+                useAgentStore.getState().setSuggestion(contactId, null, null);
                 useAgentStore.getState().patchSlot(contactId, {
                   customerDisconnected: true,
                   customerTyping: false,
@@ -527,8 +529,6 @@ export function useConnectStreams(ccpContainerRef: React.RefObject<HTMLDivElemen
                   autopilotPaused: false,
                   autopilotSendAt: null,
                   autopilotPausedRemainingMs: null,
-                  suggestedScope: null,
-                  suggestedTaskId: null,
                   // A Type 3 action sent to the client can no longer be submitted.
                   ...(leftSlot.awaitingClientApproval ? { awaitingClientApproval: false } : {}),
                 });

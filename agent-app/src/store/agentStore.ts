@@ -32,7 +32,21 @@ interface AgentStore {
     initialMessages?: ChatMessage[]
   ) => number | null;
 
-  patchSlot: (contactId: string, patch: Partial<ContactSlot>) => void;
+  /**
+   * The ✈ suggestion is ONE fact, so it is written as one.
+   *
+   * These two fields used to be settable independently through patchSlot, and four
+   * separate call sites set the scope without the task: the greeting effect (hardcoded
+   * 'get-intent'), the autopilot-turn response, the idle timer, and a failed NBR
+   * refresh. The result the agent saw was a bare "Get intent" on a client who had
+   * opened with "I'd like to buy a fund" — and, in the other direction, a stale task
+   * name rendered beside an unrelated scope.
+   *
+   * patchSlot is narrowed below so the pair CANNOT drift apart again; a scope of null
+   * always clears the task with it.
+   */
+  setSuggestion: (contactId: string, scope: AutopilotScope | null, taskId: string | null) => void;
+  patchSlot: (contactId: string, patch: Partial<Omit<ContactSlot, 'suggestedScope' | 'suggestedTaskId'>>) => void;
   appendMessage: (contactId: string, msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   /** Append a new suggested reply to the history; honors auto-advance / sets the new-badge. */
   addSuggestion: (contactId: string, text: string, source: Suggestion['source']) => void;
@@ -125,6 +139,15 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     };
     set({ slots });
     return idx;
+  },
+
+  setSuggestion: (contactId, scope, taskId) => {
+    const slots = get().slots.map(s =>
+      s?.contactId === contactId
+        ? { ...s, suggestedScope: scope, suggestedTaskId: scope ? taskId : null }
+        : s,
+    ) as Slots;
+    set({ slots });
   },
 
   patchSlot: (contactId, patch) => {

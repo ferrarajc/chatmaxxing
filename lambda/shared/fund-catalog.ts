@@ -33,3 +33,14 @@ export const FUND_PICKLIST: string = FUNDS.map(f => `${f.ticker} (${f.name})`).j
  */
 export const FUND_PRICES: Record<string, { name: string; price: number }> =
   Object.fromEntries(FUNDS.map(f => [f.ticker, { name: f.name, price: f.seedNav }]));
+
+/**
+ * Every tradeable ticker, DERIVED from the catalog.
+ *
+ * `tasks.ts` used to hard-code the ORIGINAL SIX on four separate fields
+ * (place-purchase.fund, place-sale.fund, exchange-funds.fromFund/.toFund) while
+ * FUND_PICKLIST offered all 36 in the bespoke prompts — the registry and the
+ * conversation disagreed about what the client could even ask for. Same root cause
+ * as the FUND_PRICES gap above, in a different field.
+ */
+export const FUND_TICKERS: string[] = FUNDS.map(f => f.ticker);

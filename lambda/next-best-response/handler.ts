@@ -1,8 +1,7 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { invokeWithTools, invokeNovaMicro, parseJsonFromBedrock } from '../shared/bedrock-client';
 import { NBR_CLIENT_TOOLS, createToolExecutor } from '../shared/client-tools';
-import { isAdviceRequest } from '../shared/advice-guard';
-import { matchTaskByIntent } from '../shared/tasks';
+import { resolveSuggestion } from '../shared/suggest-scope';
 import {
   ChatMessage,
   ClientProfile,
@@ -17,8 +16,6 @@ import {
 const RESOURCE_LIST = KNOWLEDGE_BASE.map(r => `${r.id}: ${r.title}`).join('\n');
 
 // Deterministic detectors. Advice still routes to a callback; a TRADE does not — see the
-// guardrail near the end of the handler for why TRADE_RE is now only a last resort.
-const TRADE_RE = /\b(buy|sell|purchase|trade|place.?order|liquidat|redeem)\b/i;
 
 // Mirrors CONTRIBUTION_DATA_RULE in autopilot-turn so an agent's suggested reply reaches
 // for the same tool, and never suggests asking a client for their age.
@@ -39,6 +36,13 @@ Draft ONE concise, professional message the AGENT should send next to ${firstNam
 single most useful point, not an exhaustive rundown. Write it AS THE AGENT (a Bob's representative)
 speaking TO ${firstName}. NEVER write in the client's voice or answer the agent's own question on the
 client's behalf (e.g. do NOT begin with "Yes, that's correct"). Do not include greetings or sign-offs.
+
+HARD RULE — do NOT offer a callback, a licensed broker, or a "dedicated trading channel" for an
+ordinary buy, sell, exchange, contribution or withdrawal. Those are handled right here in chat by a
+task automation, and the agent is about to start one. Suggesting a callback for them contradicts the
+action being offered alongside your text and sends the client away for something we do now. Draft the
+next step of the TRANSACTION instead — which account, which fund, how much. (Personalized investment
+ADVICE is the exception: that genuinely does need a licensed advisor.)
 
 HARD RULE — never send an empty placeholder whose only substance is an offer to help more, e.g.
 "let me know if you have any questions", "feel free to ask", "is there anything else I can help
@@ -255,6 +259,16 @@ export const handler = async (
     if (mode === 'change-reply') return changeReply(transcript, profile, direction, currentSuggestion, kbIndex);
     if (mode === 'magic-rewrite') return magicRewrite(currentSuggestion, style);
 
+    // Fired the moment a contact is accepted, so the agent sees the right expert on the
+    // paper-plane before the client has said anything on the live socket. No LLM call:
+    // returns in milliseconds and costs nothing.
+    if (mode === 'scope-only') {
+      return jsonResponse(200, {
+        suggestedText: '', resources: [], toolsUsed: [],
+        ...resolveSuggestion(transcript, profile.accounts.map(a => a.type), null),
+      });
+    }
+
     let suggestedText = '';
     let suggestedScope: string | null = null;
     let resources: Resource[] = [];
@@ -293,44 +307,11 @@ export const handler = async (
     }
 
     // ── Deterministic scope/task guardrail ──────────────────────────────────
-    //
-    // ADVICE still goes to a callback: recommending investments needs a licensed
-    // advisor and we cannot do it here.
-    //
-    // TRADES NO LONGER DO. `TRADE_RE` used to force suggestedScope='callback' for any
-    // message containing buy/sell/redeem, which dates from when trades genuinely could
-    // not be handled in chat. They can now — `place-purchase` and `place-sale` are two
-    // of the 19 task experts. So a client saying "I'd like to sell some shares" was met
-    // with a suggestion to schedule a callback, when the right suggestion was sitting
-    // in the ✈ menu all along.
-    //
-    // Instead, run the SAME keyword matcher autopilot uses to identify a task
-    // (matchTaskByIntent) and suggest that expert by id. The agent app already knows
-    // how to start a specific task — onActivateAutopilot(scope, taskId) — it just was
-    // never given one to start.
-    const lastCustomerMsg = [...transcript].reverse().find(m => m.role === 'CUSTOMER')?.content ?? '';
-    let suggestedTaskId: string | null = null;
-
-    if (isAdviceRequest(lastCustomerMsg)) {
-      suggestedScope = 'callback';
-    } else {
-      // Match on the latest message first, then the recent customer side of the
-      // conversation, so "the taxable account" right after "I want to sell" still lands.
-      const recentCustomer = transcript
-        .filter(m => m.role === 'CUSTOMER').slice(-3).map(m => m.content).join('  ');
-      const accountTypes = profile.accounts.map(a => a.type);
-      const matched = matchTaskByIntent(lastCustomerMsg, accountTypes)
-        ?? matchTaskByIntent(recentCustomer, accountTypes);
-
-      if (matched) {
-        suggestedScope = 'get-intent';
-        suggestedTaskId = matched.id;
-      } else if (TRADE_RE.test(lastCustomerMsg)) {
-        // A trade word with no task match — fall back to the old behavior rather than
-        // leaving the agent with nothing.
-        suggestedScope = 'callback';
-      }
-    }
+    // Same resolver the `scope-only` mode uses, so the suggestion the agent sees on
+    // accept and the one they see mid-chat can never disagree.
+    const { suggestedScope: resolvedScope, suggestedTaskId } =
+      resolveSuggestion(transcript, profile.accounts.map(a => a.type), suggestedScope);
+    suggestedScope = resolvedScope;
 
     return jsonResponse(200, { suggestedText, resources, suggestedScope, suggestedTaskId, toolsUsed });
   } catch (err) {
