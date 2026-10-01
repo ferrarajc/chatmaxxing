@@ -1,0 +1,269 @@
+@section selling | Selling | Selling (redeeming) fund shares: partial and full sales, how proceeds are delivered, settlement, holds, signature guarantees, large sales, sales in IRAs, taxes, and the chat sale procedure.
+
+@page redemptions-overview | Selling shares: overview
+@summary How a sale (redemption) works, the information it needs, where the proceeds go, and how it differs in IRAs.
+
+## Terms
+
+"Selling" and "redeeming" mean the same thing for a mutual fund: the fund buys back the client's shares at that day's NAV. Use whichever word the client uses; default to "sell".
+
+## What every sale needs
+
+1. **Account** and **fund**.
+2. **Amount**: a dollar amount, a number of shares, or "all shares" (a full redemption). See [[partial-full-redemptions]].
+3. **Where the proceeds go**: stay in the account as cash, go to the linked bank by ACH, by wire, or by check. See [[redemption-proceeds-delivery]].
+
+## Lifecycle
+
+1. The order is priced at the NAV for the trade date (that day if received in good order before 4:00 PM ET).
+2. Proceeds settle T+1 into the account's cash.
+3. If the client asked for the money to be sent out, it leaves the account: ACH arrives in the bank in 2–3 business days, wires the same day if requested before 2:00 PM ET, checks by mail in 5–7 business days.
+
+## Ways to sell
+
+Online (Account → Transactions → Sell), mobile app, chat (the Sell Fund Shares task; see [[place-sale-task]]), phone, or a written request with a signature (required in some cases; see [[medallion-signature-guarantee]]).
+
+## IRAs are different
+
+Selling inside an IRA does not, by itself, take money out: proceeds stay in the IRA as cash and there is no tax. Taking money out of an IRA is a **distribution**, with tax withholding and possible penalties. See [[selling-in-iras]].
+
+## Costs
+
+No redemption fees and no transaction fees on any BobsFunds fund. Outgoing wires cost $25; overnight check delivery costs $25.
+
+@page partial-full-redemptions | Partial and full redemptions
+@summary Selling a dollar amount, a number of shares, or everything, and what to watch for with each.
+
+## Dollar amount
+
+The most common sale. The client names an amount ("sell $5,000"); the number of shares is calculated at the NAV. Because the NAV is not known in advance, the client receives exactly the dollar amount requested, and the number of shares varies.
+
+If the client needs a specific **net** amount from an IRA after tax withholding, the gross sale must be larger. For example, to receive $9,000 after 10% federal withholding, the gross distribution must be $10,000. See [[tax-withholding-retirement]].
+
+## Number of shares
+
+The client names a share count ("sell 50 shares"). The dollar amount depends on the NAV.
+
+## Full redemption
+
+"Sell everything" or "full redemption" sells all shares of that fund in that account. Notes:
+
+- Any dividend declared but not yet paid at the time of sale arrives later as a small cash amount.
+- Automatic investments into that fund continue unless cancelled; ask whether the client wants to stop them.
+- If the fund is the last holding, the account will hold only cash; ask what the client wants to do with it.
+
+## Selling more than the holding
+
+A dollar sale larger than the holding's value cannot be processed. If the client asks to sell "$10,000 of BFBI" and holds $8,250, tell them the current value and ask whether they want a full redemption instead.
+
+## Selling from several funds
+
+Each fund is a separate sale. If a client says "take $10,000 out of my account", ask which fund(s) to sell, or whether to sell proportionally across all holdings. Choosing which fund to sell is the client's decision; do not recommend.
+
+@page redemption-proceeds-delivery | Where sale proceeds go
+@summary The options for receiving proceeds (cash in account, ACH, wire, check), timing, and the rules for each.
+
+## Options
+
+| Option | Timing | Cost | Notes |
+|---|---|---|---|
+| Keep as cash in the account | Available T+1 | Free | Can be reinvested later |
+| ACH to linked bank | 2–3 business days after the trade | Free | Bank must be linked and verified; 10-day rule for newly linked banks |
+| Wire to linked bank | Same day if requested before 2:00 PM ET (after the sale settles) | $25 | Minimum $1,000 |
+| Check by standard mail | 5–7 business days | Free | Mailed to the address of record |
+| Check by overnight delivery | 1–2 business days | $25 | Street address required |
+
+## Rules
+
+- Proceeds go only to the account owner: their linked bank or their address of record. Payment to a third party, or to an address that is not the address of record, requires a written request with a medallion signature guarantee. See [[medallion-signature-guarantee]].
+- Checks are payable to the registered owner(s). For a joint account, the check is payable to all owners.
+- If the address changed in the last 15 days, a check can't be mailed there without a signature guarantee.
+- If the bank was linked in the last 10 days, an electronic payment needs a verification call.
+
+## Timing from sale to cash
+
+A sale placed before 4:00 PM ET on Monday prices Monday, settles Tuesday, and an ACH lands in the bank about Wednesday or Thursday. A wire requested Tuesday before 2:00 PM ET arrives Tuesday. Tell clients realistic dates and to allow for bank holidays.
+
+## Holds
+
+If the shares were bought recently by ACH or check, proceeds may be held until the purchase payment clears. See [[redemption-holds]].
+
+@page settlement-timing | Settlement and when money is available
+@summary What T+1 settlement means, when sale proceeds become available, and how to give clients realistic dates.
+
+## Settlement
+
+Mutual fund trades settle on **T+1**: one business day after the trade date. Settlement is when the trade is final and the cash or shares officially change hands.
+
+## Availability
+
+| Event | When |
+|---|---|
+| Sale priced | Trade date (T) |
+| Cash available in account for reinvestment | T (exchanges) or T+1 (purchases with sale proceeds) |
+| Cash available to send out | T+1 |
+| ACH arrives at bank | About T+3 to T+4 |
+| Wire arrives | T+1 if requested before 2:00 PM ET on T+1 |
+| Check arrives | About T+6 to T+8 by mail |
+
+## Business days
+
+Weekends, market holidays, and bank holidays are not business days. A sale placed Friday after 4:00 PM ET is priced Monday. On bank holidays when markets are open (Columbus Day, Veterans Day), trades price but ACH and wires do not move.
+
+## Giving dates
+
+Give a range and say "business days". "If you sell today before 4 PM Eastern, the money should reach your bank by Thursday or Friday." Never promise a specific date for money arriving at another institution; we control when it leaves, not when the bank posts it.
+
+@page redemption-holds | Holds on redemption proceeds
+@summary Why proceeds from recently purchased shares may be held, for how long, and other holds that can affect a sale.
+
+## Uncollected funds hold
+
+When shares are purchased by ACH or check, the payment takes time to clear. If the client sells those shares before the payment clears, the sale is processed, but the **proceeds are held in the account** until the payment clears, up to **7 business days** after the purchase. This protects the funds and other shareholders from losses on returned payments.
+
+During the hold:
+
+- The client can exchange into another fund in the same account.
+- The client cannot withdraw the proceeds.
+- Wire purchases are not subject to this hold.
+
+## Other holds
+
+| Hold | Cause | How it is lifted |
+|---|---|---|
+| Newly linked bank | Bank linked within 10 days | A verification call |
+| Recent address change | Address changed within 15 days | Signature-guaranteed request, or wait |
+| Protective/fraud hold | Suspected fraud or exploitation | Fraud or Senior Investor Protection team |
+| Estate hold | Death of the owner reported | Estate Services, after documentation |
+| Legal hold | Court order, levy, garnishment | Legal department |
+
+## Talking to clients
+
+Explain holds as protection, give the expected release date, and do not speculate about fraud or legal holds. For protective, estate, or legal holds, route to the responsible team. See [[fraud-holds-money-movement]].
+
+@page medallion-signature-guarantee | Medallion signature guarantees
+@summary When a medallion signature guarantee is required, what it is, and where clients can get one.
+
+## What it is
+
+A medallion signature guarantee is a special stamp from a bank, credit union, or broker-dealer that guarantees a signature is genuine and the signer has authority. It protects against forged instructions. It is **not** the same as a notary stamp; a notarization is not accepted in place of a medallion guarantee.
+
+## When it is required
+
+- A redemption paid by check for **more than $100,000**.
+- Proceeds payable to anyone other than the registered owner(s), or sent to an address other than the address of record.
+- Proceeds sent to a bank account not in the owner's name.
+- A check mailed to an address changed within the last **15 days**.
+- Transfers of shares to another person or a different registration (for example, from a deceased owner's account to beneficiaries in some cases).
+- Some registration changes and estate transactions.
+
+## Where to get one
+
+Clients can get a medallion guarantee at their own bank, credit union, or brokerage where they have an account. They should bring photo ID and the unsigned document, and sign in front of the officer. Some banks provide them only to existing customers or above a minimum relationship; advise clients to call ahead.
+
+## Alternatives
+
+Often there is an easier path: sending proceeds to a verified linked bank by ACH or wire does not require a guarantee, and waiting out the 15-day address-change window avoids it for checks.
+
+@page large-redemptions | Large redemptions
+@summary Handling sales of large amounts: verification, delivery, and the fund's right to pay in kind.
+
+## Extra care
+
+For sales over $250,000, or that would sell most of the client's assets:
+
+- Re-verify identity even in an authenticated chat, especially if the request comes with recent contact or bank changes. See [[identity-verification]].
+- Confirm the purpose if the client volunteers it; be alert for scams ("my new friend needs help", "I'm moving it to a safe account"). See [[elder-financial-exploitation]].
+- Confirm delivery: wire or ACH to a long-standing linked bank is safest.
+
+## Redemptions in kind
+
+The funds reserve the right, described in the prospectus, to pay very large redemptions (over $250,000 or 1% of a fund's assets in a 90-day period) partly in securities instead of cash, to protect remaining shareholders. In practice this is rarely used for individual clients. If asked, explain it factually and refer to the prospectus.
+
+## Timing
+
+Large sales are processed like any other; the NAV and settlement rules are the same. ACH is limited to $100,000 per day, so larger amounts should go by wire.
+
+## Taxes
+
+A large sale in a taxable account can produce a large capital gain. Do not discourage the sale, but if the client asks about taxes, explain how gains are calculated and suggest they consult a tax professional. See [[redemption-tax-basics]].
+
+@page selling-in-iras | Selling in IRAs and taking money out
+@summary The difference between selling inside an IRA (no tax) and withdrawing from an IRA (a distribution), and how to handle each in chat.
+
+## Selling inside the IRA
+
+When a client sells a fund in an IRA and keeps the proceeds in the IRA as cash, or exchanges into another fund, nothing is taxed. There is no 1099-B for IRA trades. Clients sometimes worry that selling in their IRA triggers taxes; reassure them it does not.
+
+## Taking money out
+
+Moving money from an IRA to the client's bank or a check is a **distribution**. Distributions from a Traditional or SEP IRA are taxable income, may be subject to a 10% penalty before age 59½, and have federal withholding of 10% by default. Roth distributions follow different rules. Use the **Request a Distribution** task, not the Sell task, when the client wants the money out. See [[request-withdrawal-task]] and [[ira-distributions-overview]].
+
+## Combining the two
+
+If the IRA holds no cash, a distribution requires selling shares first. The distribution task handles this: the client says how much they want and from which account, and shares are sold as needed. If the client wants a specific fund sold for the distribution, note it.
+
+## Moving IRA money to another IRA
+
+Transferring to another IRA custodian is neither a sale for tax purposes nor a distribution if done as a direct transfer. See [[ira-trustee-transfers]].
+
+@page place-sale-task | Procedure: Sell Fund Shares (chat)
+@summary Step-by-step chat procedure for a sale, the fields collected, and the checks before approval.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | One of the client's accounts (asked if more than one) |
+| Fund to sell | A fund the client holds in that account |
+| Amount or shares | A dollar amount, or "full redemption" |
+
+Proceeds stay in the account as cash unless the client asks for them to be sent out.
+
+## Procedure
+
+1. Confirm the request: account, fund, amount, and what should happen to the money.
+2. If this is an IRA and the client wants the money out, use **Request a Distribution** instead. See [[selling-in-iras]].
+3. If the client wants to move the money into another fund in the same account, use **Exchange Between Funds**. See [[exchange-funds-task]].
+4. Let the task expert collect details. The expert offers only funds the client actually holds in that account.
+5. Check the Proposed Action:
+   - The fund is held in that account, and the amount is no more than its value.
+   - "All" or "everything" is recorded as a full redemption.
+   - Account and fund match the transcript (use the locate buttons).
+6. Submit. The client receives a green confirmation card.
+7. If the client wants proceeds sent out, explain the delivery and timing (ACH 2–3 business days after settlement, wire, or check). See [[redemption-proceeds-delivery]].
+
+## Things not to do
+
+- Do not ask the client why they are selling. It is their decision, and asking can feel intrusive. Only ask if needed to choose the right task (distribution versus sale) or if you see exploitation red flags.
+- Do not comment on whether selling is wise, even in a falling market. If the client asks, see [[market-downturn-conversations]].
+
+## After submission
+
+Point out anything that continues: an automatic investment into the fund just sold, for example. Offer to pause or change it.
+
+@page redemption-tax-basics | Taxes on sales in taxable accounts
+@summary How capital gains and losses arise when a client sells in a taxable account, and how much you may explain.
+
+## The basics
+
+In a taxable account, selling or exchanging shares realizes a **capital gain or loss**: the sale proceeds minus the **cost basis** of the shares sold.
+
+- Shares held **more than one year** produce **long-term** gains or losses, taxed at lower rates (0%, 15%, or 20% depending on income, plus 3.8% net investment income tax for some high earners).
+- Shares held **one year or less** produce **short-term** gains, taxed as ordinary income.
+
+## Cost basis
+
+Basis is what the client paid for the shares, including reinvested dividends. We track basis for shares bought since 2012 (covered shares) and report it on Form 1099-B. Our default method is average cost; clients can choose FIFO or specific identification before a sale. See [[cost-basis-methods]].
+
+## Exchanges are sales
+
+An exchange in a taxable account is a sale of one fund and a purchase of another, so it can produce a gain or loss. See [[exchanges-tax]].
+
+## Losses
+
+Losses offset gains, and up to $3,000 of net loss a year can offset ordinary income, with the rest carried forward. Buying the same fund within 30 days before or after a loss sale can trigger the wash-sale rule. See [[wash-sales]].
+
+## What you can and cannot say
+
+You may explain these rules and show the client their unrealized gain or loss and cost basis in the portal (Account → Holdings → Cost Basis). You may not tell the client how a sale will affect their taxes or whether they should sell for tax reasons. See [[tax-advice-boundary]].

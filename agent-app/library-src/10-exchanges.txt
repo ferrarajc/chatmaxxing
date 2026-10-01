@@ -1,0 +1,164 @@
+@section exchanges | Exchanges | Moving money between funds within an account: the rules, limits, frequent-trading policy, tax effects, rebalancing requests, and the chat exchange procedure.
+
+@page exchanges-overview | Exchanges overview
+@summary What an exchange is, how it is priced, what it can and cannot do, and how it differs from a sale and a purchase.
+
+## Definition
+
+An exchange moves money from one BobsFunds fund to another **within the same account**. It is a sale of the first fund and a purchase of the second, processed together at the same day's NAVs, so the money is never out of the market overnight.
+
+## Rules
+
+- Both funds must be in the same account. Moving money between two accounts (for example, from a taxable account to a Roth IRA) is not an exchange. See [[exchange-rules-limits]].
+- The exchange is priced at both funds' NAVs for the trade date (that day if before 4:00 PM ET).
+- There is no fee and no minimum beyond $1.
+- An exchange can be for a dollar amount, a number of shares, or all shares of the "from" fund.
+- An exchange into a new fund opens a new position; an exchange into a fund already held adds to it.
+
+## Taxes
+
+- **IRAs**: an exchange has no tax effect.
+- **Taxable accounts**: an exchange is a sale and can create a capital gain or loss. See [[exchanges-tax]].
+
+## Channels
+
+Online (Transactions → Exchange), mobile app, chat (see [[exchange-funds-task]]), or phone.
+
+## Exchanges and the frequent-trading policy
+
+Exchanges count toward round trips. See [[frequent-trading-policy]].
+
+@page exchange-rules-limits | Exchange rules and limits
+@summary What can be exchanged, between which accounts, and the situations where an exchange isn't possible.
+
+## Allowed
+
+- Any BobsFunds fund to any other BobsFunds fund in the same account.
+- Partial or full exchanges.
+- Several exchanges on the same day (each is a separate transaction).
+
+## Not allowed or not an exchange
+
+| Request | Why not | What to do instead |
+|---|---|---|
+| Move money from a taxable account to an IRA | Different accounts and tax types | Sell in the taxable account and make an IRA contribution (subject to limits) |
+| Move money from an IRA to a taxable account | That is a distribution | Request a distribution |
+| Move from a Traditional IRA to a Roth IRA | That is a conversion | See [[roth-conversion-overview]] |
+| Move between two of the client's taxable accounts | Different accounts | A journal transfer between accounts (Account Services), or sell and buy |
+| Exchange into another company's fund | We hold only BobsFunds | Not available |
+| Exchange while purchase payment is pending | Allowed within the account | The redemption hold still applies to withdrawals |
+
+## Restrictions
+
+A client restricted under the frequent-trading policy cannot exchange into the restricted fund for 30 days. A foreign address can block exchanges into funds as new purchases. See [[non-us-persons]].
+
+@page frequent-trading-policy | Frequent trading (market timing) policy
+@summary How the funds limit short-term round trips, what counts, the 30-day block, and what's exempt.
+
+## Why the policy exists
+
+Frequent short-term trading in and out of a fund raises costs for long-term shareholders and can dilute their returns. The funds' prospectuses describe a policy to discourage it.
+
+## The rule
+
+A **round trip** is a purchase or exchange into a fund followed by a sale or exchange out of the same fund within **30 calendar days**. After a round trip, the client is **blocked from buying or exchanging into that fund for 30 calendar days** (in that account and any account with the same owner).
+
+## What is exempt
+
+- Automatic investment plans and systematic withdrawal plans.
+- Dividend and capital gain reinvestments.
+- Required minimum distributions.
+- Redemptions to pay account fees.
+- Transactions in BFST (Short-Term Treasury), which is designed for short-term use.
+- Corrections of errors made by Bob's Mutual Funds.
+
+## In chat
+
+If a client asks to buy back into a fund they sold within 30 days, check whether the earlier trade created a round trip. If the system blocks the purchase, explain:
+
+"Our funds limit short-term trading to protect long-term shareholders. Because you bought and then sold this fund within 30 days, new purchases into it are paused until [date]. You can still buy any other fund."
+
+Do not help clients work around the policy (for example, buying in a different account). Repeated attempts to time the market may lead to wider trading restrictions.
+
+## Talking about market timing
+
+Clients who trade frequently in response to news may be anxious. Avoid commentary on their strategy; if they want guidance, offer a callback. See [[market-downturn-conversations]].
+
+@page exchanges-tax | Tax effects of exchanges
+@summary Why exchanges in taxable accounts are taxable sales, and how to explain this without giving tax advice.
+
+## Taxable accounts
+
+An exchange is treated as a sale of the "from" fund. If the shares are worth more than their cost basis, the client realizes a capital gain; if less, a loss. The exchange appears on Form 1099-B for the year. See [[redemption-tax-basics]].
+
+Clients are often surprised by this, because the money stayed invested. Explain it before submitting an exchange in a taxable account if the client seems unaware: "Just so you know, in a taxable account an exchange counts as a sale for tax purposes, so it may result in a capital gain or loss."
+
+## IRAs
+
+Exchanges inside a Traditional, Roth, SEP, or inherited IRA have no tax effect.
+
+## Wash sales
+
+If an exchange sells shares at a loss and the client buys the same fund (or a "substantially identical" one) within 30 days before or after, part or all of the loss may be disallowed under the wash-sale rule. Whether two different index funds are substantially identical is a tax question for the client's advisor. See [[wash-sales]].
+
+## Cost basis method
+
+The cost basis method chosen (average cost by default) determines which shares' basis is used. Clients who want to choose specific lots must set specific identification before the exchange. See [[cost-basis-methods]].
+
+@page exchange-funds-task | Procedure: Exchange Between Funds (chat)
+@summary Step-by-step chat procedure for an exchange, the fields collected, and the checks before approving.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | One of the client's accounts (asked if more than one) |
+| Fund to exchange out of | A fund held in that account |
+| Fund to exchange into | Any BobsFunds fund |
+| Amount to exchange | A dollar amount, or the full balance of the "from" fund |
+
+## Procedure
+
+1. Confirm the request in one sentence: "You'd like to move $3,000 from BFGR into BFBI in your Traditional IRA. Is that right?"
+2. Let the task expert collect the details, or choose Exchange Between Funds from the task menu.
+3. Check the Proposed Action:
+   - "From" fund is held in the account and the amount is no more than its value.
+   - "To" fund is the one the client described. Watch out for similar names (BFST Short-Term Treasury versus BFSTC Short-Term Corporate versus BFSTP Consumer Staples).
+   - "From" and "to" are not the same fund.
+   - In a taxable account, the client knows an exchange is a taxable sale. See [[exchanges-tax]].
+   - The exchange does not violate the frequent-trading policy. See [[frequent-trading-policy]].
+4. Submit. The client receives a green confirmation card.
+5. Tell the client the exchange will be priced at today's NAVs (if before 4:00 PM ET).
+
+## Requests that aren't exchanges
+
+- Moving between accounts: see [[exchange-rules-limits]].
+- "Rebalance my account": see [[rebalancing-requests]].
+- "Move everything to safety": an emotional request in a falling market. Process it if it is clearly what the client wants, without commentary; if they ask your opinion, see [[market-downturn-conversations]].
+
+@page rebalancing-requests | Rebalancing requests
+@summary How to help a client who wants to rebalance: what you can calculate, what you can't recommend, and how to process the exchanges.
+
+## What rebalancing means
+
+Rebalancing is selling some of what has grown and buying some of what has lagged, to return a portfolio to a chosen mix (for example, 60% stock funds and 40% bond funds). See [[rebalancing]] for the educational explanation.
+
+## What you can do
+
+- If the client states their **own** target mix, you can show them their current mix from the holdings and calculate the exchanges needed to reach their target. That is arithmetic, not advice.
+- Process the exchanges they choose, one exchange per Proposed Action.
+- Explain that exchanges in a taxable account can create capital gains.
+
+## What you cannot do
+
+- Choose the target mix for them, or say whether their mix is appropriate.
+- Recommend which funds to rebalance into.
+- Recommend how often to rebalance.
+
+## Example
+
+The client says: "I want to be 70% BF500 and 30% BFBI. I have $85,000 in BF500 and $15,000 in BFBI." Total $100,000; target $70,000 and $30,000. You can say: "To reach 70/30, you'd exchange $15,000 from BF500 into BFBI. Would you like me to set that up?"
+
+## Wrap-up
+
+Use the Rebalancing Discussion wrap-up code. If the client wanted advice on the mix, offer a callback and use Investment Advice.

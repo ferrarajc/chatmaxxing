@@ -120,6 +120,7 @@ chatmaxxing/
 | `supervisor-stats` | **Supervisor Dashboard read API.** GET `/supervisor-stats?window=today\|7d\|30d\|all[&division=][&view=insights][&refresh=1]`. Stats view (no LLM, <1s): scans `bobs-agents` + metadata-only `bobs-transcripts` + `bobs-callbacks` (60s module cache), **blends** the seeded fictional weekly buckets with REAL transcript rows attributed by `agentUsername`, returns totals/divisions/wrapUpMix/volume/agents/recent. Insights view: 2 LLM calls (digest+topics over the window's real rows + precomputed metrics; agent themes for the top 15 by volume), module-cached 10 min per window+division, each call independently try/caught so failures degrade to partial payloads (dashboard numbers never wait on or break from the LLM). No containment metric — bot-only chats are never saved (honesty footnote in payload `note`). | Yes — 2 calls via `invokeNovaMicro` (gpt-4o-mini) |
 | `reset-agents` | Seed `bobs-agents` from `shared/agent-roster.ts` (82 agents: 9 REAL Connect users by their real usernames + 73 fictional, across 7 wealth-management divisions with FINRA licenses) + `shared/agent-history.ts` (deterministic ~78 weekly buckets/agent, anchored to the CURRENT week — re-run before demos so today/7d windows stay populated). GET `/reset-agents?key=bobs-reset-2025`, idempotent. | No |
 | `verify` | Real email/SMS verification for the My Account hub. POST `/verify` `{action,clientId,target,code?}`; `send-*-code` stores a hashed 6-digit code (TTL 10 min, `bobs-verification-codes`) and sends via **Amazon SES** (email) / **AWS End User Messaging SMS** (text); `confirm-*-code` flips `emailVerified` or the matching `phones[].verified`. Sender identity via SSM `bobs-ses-sender` / `bobs-sms-origination` (resolved at deploy like the OpenAI key; value `unset`/blank ⇒ graceful "not configured") | No |
+| `agent-library-rag` | **RAG over the Agent Knowledge Library** (see section below). POST `/agent-library/ask` `{question, topK?}` → `{answer, citations, retrieved, timings}`; GET `/agent-library/status`. Bundles `chunks.json` (generated); hybrid BM25 + embedding retrieval (RRF); embeddings (`text-embedding-3-large`, 1024 dims) computed by the function itself on first use and cached in an S3 bucket keyed by the chunks' content hash — a cache miss returns 503 `{status:'indexing'}` and builds via async self-invoke | Yes — OpenAI embeddings + `gpt-4o` (`OPENAI_MODEL_LIBRARY_RAG`) |
 
 ---
 
@@ -366,6 +367,26 @@ read only by the `verify` Lambda; rows auto-expire via the `expiresAt` TTL so co
 - Demo access code: `BOBS2025`
 
 ---
+
+## Agent Knowledge Library + RAG
+
+An internal reference library for chat agents (~377 plain-HTML pages, 31 sections) plus a
+question-answering service over it.
+
+- **Source**: `agent-app/library-src/*.txt` — a small line markup (`@section`, `@page`,
+  `@summary`, `##`, lists, `|` tables, `>` callouts, `[[slug]]` cross-links; full spec at the top
+  of `scripts/agent-library/build.mjs`). The 36 fund profile pages are **generated** from
+  `customer-app/src/data/funds.ts` by `scripts/agent-library/funds-section.mjs`, so they can't drift.
+- **Build**: `node scripts/agent-library/build.mjs` (Node 22.6+) → `agent-app/public/library/**`
+  (committed; ships with the agent app at `/chatmaxxing/agent/library/`, dev at `/agent-dev/library/`)
+  and `lambda/agent-library-rag/chunks.json`. Fails on any broken `[[slug]]`. **Re-run after every
+  content edit and commit both outputs**; the next backend deploy re-indexes automatically (the S3
+  cache key is the chunks' content hash).
+- **Test UI**: `library/ask.html` (source `scripts/agent-library/ask.html`) — prod/dev backend toggle,
+  cited answer, and a debug panel with every retrieved chunk's cosine/BM25 ranks.
+- **Facts are canonical**: the library's quick-reference card (`start/quick-reference`) fixes hours,
+  fees, cutoffs, limits. Some older customer help pages (`customer-app/public/resources/*`) carry stale
+  2025 figures (e.g. BFGR 0.25% expense ratio; the catalog says 0.04%).
 
 ## Heqya — Quality Evaluation System
 

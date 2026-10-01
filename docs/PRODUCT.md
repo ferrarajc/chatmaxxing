@@ -164,6 +164,8 @@ Every execution returns a `referenceNumber` (format: `REF-XXXXXX`) for traceabil
 
 **Predict Questions (`predict-questions`):** Given the current conversation, suggests the 3 most likely questions the client might ask next. Each suggested question can be injected into the agent's chat input with one click.
 
+**Agent Knowledge Library (internal):** A definitive reference for chat agents: about 377 plain HTML pages in 31 sections covering every account type, service task, money-movement rule, IRA/RMD/rollover/tax topic, compliance boundary, and script, plus a generated profile page for each of the 36 funds. Published with the agent app at `/agent/library/`. An **"Ask the library"** page answers free-form questions from the library alone, with numbered citations to the pages it used (hybrid keyword + semantic retrieval, `agent-library-rag` Lambda). Not yet wired into the AI support panel or the autopilot prompts.
+
 **Next-Best Response (`next-best-response`):** Suggests a concise one-to-two sentence reply for the agent's next turn, plus an autopilot scope recommendation. Displayed in the AI support panel as a draft the agent can adopt, edit, or ignore.
 
 ---

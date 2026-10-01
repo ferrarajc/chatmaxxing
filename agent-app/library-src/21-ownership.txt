@@ -1,0 +1,219 @@
+@section ownership | Ownership Changes & Life Events | Divorce, QDROs, gifts of shares, trust retitling, custodial accounts reaching the age of majority, the change-of-ownership process, and marriage.
+
+@page divorce-transfers | Divorce and account transfers
+@summary How assets are divided in a divorce: IRAs, taxable accounts, joint accounts, and what documents we need.
+
+## IRAs: transfer incident to divorce
+
+An IRA can be divided between spouses without tax only under a **divorce decree or separation agreement**. The decree must direct the transfer. We then transfer the specified amount (or percentage) from one spouse's IRA directly into an IRA in the other spouse's name. Done this way, it is not a distribution and not taxable to either spouse. Afterward, the receiving spouse owns that IRA.
+
+A client who withdraws money from their IRA and gives it to their ex-spouse has made a taxable distribution, not a divorce transfer.
+
+## QDROs are for employer plans
+
+A **Qualified Domestic Relations Order** (QDRO) divides an employer plan such as a 401(k). IRAs do not need a QDRO; a decree suffices. Clients often use the terms interchangeably. See [[qdro-vs-divorce-decree]].
+
+## Taxable accounts
+
+Individual taxable accounts are transferred per the decree, in kind, to the receiving spouse's account. Transfers between spouses incident to divorce are not taxable; the cost basis carries over.
+
+## Joint accounts
+
+Removing a former spouse from a joint account requires both owners' signatures, or the decree directing the change. Usually the assets are moved into individual accounts for each.
+
+## Documents
+
+- A certified copy of the divorce decree (or the relevant pages, plus the signature and judge's pages).
+- Our Divorce Transfer form, signed by the account owner (or the decree must be specific enough to act on without it).
+- An account at Bob's in the receiving spouse's name (we can help them open one).
+
+## Beneficiaries
+
+After a divorce, clients often need to update beneficiaries. In some states, divorce automatically revokes an ex-spouse designation for certain assets, but clients should not rely on that. Suggest a review. See [[beneficiary-life-events]].
+
+## In chat
+
+Explain the process, send the form, and route to Account Services. Be neutral and discreet; do not discuss one spouse's accounts with the other.
+
+@page qdro-vs-divorce-decree | QDRO versus divorce decree
+@summary The difference between a QDRO and a divorce decree, and which one each account type needs.
+
+## Comparison
+
+| | QDRO | Divorce decree / separation agreement |
+|---|---|---|
+| Used for | Employer plans: 401(k), 403(b), pensions | IRAs and taxable accounts |
+| Issued by | A court, approved by the plan administrator | A court |
+| What it does | Assigns part of the plan to an "alternate payee" | Divides marital property |
+| Tax effect | Alternate payee can roll to their IRA tax-free | IRA transfer incident to divorce is tax-free |
+
+## Special QDRO rule
+
+An alternate payee spouse receiving a distribution from an employer plan under a QDRO can take it in cash **without** the 10% early-withdrawal penalty (it is still taxable). Once rolled into an IRA, the IRA penalty rules apply. Mention this neutrally to a client receiving QDRO money who may need cash.
+
+## At Bob's
+
+We do not administer employer plans, so we do not process QDROs. We receive rollovers of QDRO distributions into IRAs. We process IRA divisions under divorce decrees.
+
+## Example
+
+A client's divorce decree awards her half of her ex-husband's 401(k) and $50,000 from his IRA at Bob's. The 401(k) portion needs a QDRO approved by the plan; once paid, she can roll it into her own IRA at Bob's. The IRA portion is transferred directly under the decree into her IRA at Bob's. Neither is taxable to her at the time.
+
+@page gifting-shares | Gifting shares to another person
+@summary How clients give fund shares to someone else, tax considerations, and the paperwork.
+
+## How it works
+
+A client can transfer shares from their taxable account to another person's taxable account (at Bob's) in kind. The recipient receives the shares with the giver's cost basis (carryover basis), with special rules if the value has fallen below basis.
+
+## Requirements
+
+- The recipient must have, or open, an account at Bob's.
+- The giver completes the Gift/Transfer of Shares form, with a medallion signature guarantee.
+- For gifts to a minor, the recipient account is a custodial account. See [[custodial-accounts]].
+
+## Taxes
+
+Gifts are not taxable to the recipient. The giver may need to file a gift tax return if gifts to one person exceed the annual exclusion ($19,000 per recipient for 2025 and 2026), though tax is rarely owed. Refer details to a tax advisor.
+
+## IRAs
+
+IRA assets cannot be gifted. A client would have to take a taxable distribution first.
+
+## Gifts to charity
+
+Clients can donate shares from a taxable account to a charity's brokerage account, typically to avoid capital gains on appreciated shares. The charity provides its account details; the client completes the transfer form. For IRA giving, see [[qualified-charitable-distributions]].
+
+## Example
+
+A grandfather gives 50 shares of BF500 from his taxable account to his granddaughter's custodial account. The shares move in kind with his cost basis. He completes the gift form with a medallion signature guarantee.
+
+@page trust-reregistration | Retitling accounts to a trust
+@summary Moving taxable accounts into a revocable living trust, changing trustees, and what can't go into a trust.
+
+## Moving an account into a trust
+
+When a client creates a revocable living trust, their estate attorney may advise retitling taxable accounts in the trust's name. The process:
+
+1. Open a trust account at Bob's (see [[opening-trust-accounts]]).
+2. Complete the transfer form to move shares in kind from the individual (or joint) account to the trust account.
+3. Account Services reviews the trust certification.
+
+For a revocable trust using the grantor's SSN, this is not a taxable event, and the cost basis carries over.
+
+## IRAs can't be retitled
+
+An IRA must be owned by an individual. To coordinate an IRA with a trust, the client names the trust as beneficiary. See [[trusts-estates-as-beneficiaries]].
+
+## Changing trustees
+
+When a trustee dies, resigns, or is added, Account Services needs:
+
+- An updated Certification of Trust or the trust amendment naming the current trustees.
+- A death certificate (if a trustee died).
+- ID for any new trustee.
+
+## In chat
+
+Explain the steps and route to Account Services. Questions about whether to use a trust go to an estate planning attorney.
+
+## Example
+
+A couple creates the "Patel Family Revocable Trust" and wants their joint account in it. They open a trust account at Bob's, provide the Certification of Trust, and transfer the shares in kind. Their SSN remains the tax ID, so nothing is taxable.
+
+@page custodial-age-of-majority | When a custodial account's minor comes of age
+@summary What happens when a UTMA/UGMA beneficiary reaches the age of termination, and the custodian's obligations.
+
+## The rule
+
+A custodial account must be turned over to the beneficiary when they reach the **age of termination** set by the account's state law (commonly 18 or 21; some states allow the custodian to elect up to 25 when the account is created).
+
+## Process
+
+1. About 60 days before the termination age, we notify the custodian and the beneficiary.
+2. The beneficiary opens an individual account in their own name (or we convert the account), verifying their identity.
+3. The assets move to the beneficiary's account in kind.
+4. The custodian's access ends.
+
+## If the custodian does nothing
+
+The obligation exists regardless. Once the beneficiary reaches the termination age, the beneficiary can provide proof of age and identity and request the transfer.
+
+## Custodian concerns
+
+Custodians sometimes worry about a young adult receiving the money. The gift is irrevocable; the account legally belongs to the beneficiary. Custodians cannot extend control beyond the termination age. Explain kindly and factually.
+
+## Custodial Roth IRAs
+
+When the owner of a custodial Roth IRA reaches the age of majority, the custodian's role ends and the owner takes control of their own Roth IRA.
+
+## Example
+
+A UTMA account under Pennsylvania law terminates at 21. When the beneficiary turns 21, we notify the custodian and the young adult, who opens an individual account and receives the shares.
+
+@page change-of-ownership-process | The change-of-ownership process
+@summary The general steps for any change of ownership: death, divorce, trust, or gift, and who handles each.
+
+## When it applies
+
+Any time assets move from one owner or registration to another:
+
+- Death of an account holder (Estate Services). See [[death-notification]].
+- Divorce (Account Services). See [[divorce-transfers]].
+- Transfer to or between trusts (Account Services). See [[trust-reregistration]].
+- Gifts of shares (Account Services). See [[gifting-shares]].
+- Custodial termination (Account Services). See [[custodial-age-of-majority]].
+- Legal name change, which is not a change of ownership but uses similar paperwork. See [[legal-name-change]].
+
+## General steps
+
+1. The client or claimant contacts us.
+2. We identify the type of change and send a personalized document checklist.
+3. The client submits documents (secure upload, mail).
+4. The responsible team reviews; we may ask for missing items.
+5. Assets are transferred, usually 5–10 business days after documents are complete.
+6. Written confirmation is sent.
+
+## In chat
+
+Your job is to identify the type of change, explain the general process, send the right form, and route to the responsible team, with a clear next step for the client.
+
+## Example
+
+A client says, "My mother died, and my brother and I are her beneficiaries." That is a death-related change handled by Estate Services. A client who says, "I want to put my account in my trust" is handled by Account Services. Identifying the type early sends the client to the right team the first time.
+
+@page marriage-life-events | Marriage and other happy life events
+@summary Account housekeeping clients often want after marriage, a new child, a new job, or retirement.
+
+## Marriage
+
+- Name change, if any. See [[legal-name-change]].
+- Review beneficiaries. See [[beneficiary-life-events]].
+- Consider adding a spouse as joint owner or authorized user. See [[account-registration-changes]] and [[authorized-users-access-levels]].
+- Spousal IRA contributions become possible if one spouse has little income. See [[spousal-ira-contributions]].
+
+## New child or grandchild
+
+- Review beneficiaries.
+- Custodial accounts for the child. See [[custodial-accounts]].
+
+## New job
+
+- Rolling over the old employer's 401(k) is an option. See [[rollover-401k]].
+- A workplace plan may affect Traditional IRA deductibility. See [[traditional-ira-deductibility]].
+
+## Retirement
+
+- Systematic withdrawals for income. See [[systematic-withdrawals-overview]].
+- RMDs approaching. See [[rmd-overview]].
+- Rollover of workplace plans.
+
+## How to raise these
+
+Mention one relevant service, naturally, as a helpful reminder: "Congratulations on the wedding! If you'd like, I can show you how to update your beneficiaries." Never pressure, never advise. See [[cross-sell-and-proactive-service]].
+
+## Example conversation
+
+Client: "I got married last month and changed my last name."
+
+Agent: "Congratulations! For the name change, you'll upload our name change form and a copy of your marriage certificate. And since your Roth IRA lists your sister as beneficiary, would you like to review that too?"

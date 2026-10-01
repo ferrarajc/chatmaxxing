@@ -1,0 +1,392 @@
+@section buying | Buying | Purchasing fund shares: cutoffs and pricing, funding sources, minimums, purchases by check, wire, and ACH, purchases in IRAs, confirmations, returned payments, and the chat purchase procedure.
+
+@page purchases-overview | Purchases overview
+@summary How a fund purchase works from order to settlement, the ways to place one, and the information every purchase needs.
+
+## The basics
+
+A purchase buys shares of a BobsFunds fund in one of the client's accounts. Every purchase needs four things:
+
+1. **Account**: which of the client's accounts the shares go into.
+2. **Fund**: which of the 36 funds. See [[fund-lineup-overview]].
+3. **Amount**: in dollars (most common) or shares.
+4. **Funding source**: where the money comes from (linked bank, cash already in the account, a check, or a wire).
+
+For IRAs, a purchase funded with new money from outside is also a **contribution**, and needs a tax year. See [[purchasing-in-iras]].
+
+## Ways to buy
+
+| Channel | Notes |
+|---|---|
+| Online | Account page → Transactions → Buy |
+| Mobile app | Trade → Buy |
+| Chat | The Buy / Make a Contribution task; agent approves the Proposed Action. See [[place-purchase-task]] |
+| Phone | The licensed brokerage desk or a service representative |
+| Automatic investment plan | Recurring purchases. See [[automatic-investing-overview]] |
+| Mail | A check with instructions. See [[purchase-by-check]] |
+
+## Lifecycle
+
+1. **Order received.** If received in good order before 4:00 PM ET on a business day, it is priced at that day's NAV; otherwise at the next business day's NAV. See [[trade-cutoff-nav]].
+2. **Priced.** After the close, the NAV is calculated and shares are credited to three decimal places.
+3. **Confirmed.** A trade confirmation is available the next business day. See [[purchase-confirmations]].
+4. **Settled.** Mutual fund trades settle T+1. For ACH-funded purchases, the bank debit occurs within 2–3 business days.
+
+## Costs
+
+There is no purchase fee, no sales load, and no minimum beyond $1. See [[investment-minimums]].
+
+## What "in good order" means
+
+An order is in good order when it includes everything needed to process it: a valid account, a valid fund, a clear amount, an available funding source, and, for IRAs, the contribution type and year. Orders missing information are not priced until the information is supplied.
+
+@page trade-cutoff-nav | Trade cutoff and NAV pricing
+@summary The 4:00 PM Eastern cutoff, how weekends and holidays affect pricing, and how to answer "what price will I get?"
+
+## The rule
+
+Mutual funds are priced once per business day at the close of the New York Stock Exchange, normally **4:00 PM Eastern Time**.
+
+- Orders received in good order **before** 4:00 PM ET on a business day receive **that day's** NAV.
+- Orders received **at or after** 4:00 PM ET, or on a weekend or market holiday, receive the **next business day's** NAV.
+- On early-close days (the day after Thanksgiving and Christmas Eve), the cutoff is **1:00 PM ET**. See [[holiday-calendar-2026]].
+
+This is called forward pricing and is required by SEC rules: no one can buy or sell at a price that is already known.
+
+## What counts as "received"
+
+- **Online and app**: the timestamp when the client clicks Confirm.
+- **Chat**: the time the agent submits the approved Proposed Action, not when the client first asked. If a client asks at 3:52 PM, tell them the order must be submitted before 4:00 PM to get today's price, and work promptly; do not rush the confirmation steps.
+- **Phone**: when the representative enters the order.
+- **Mail**: when the check and instructions arrive at the processing center.
+- **Wire**: when the wire is received and matched to the account.
+
+## Common questions
+
+### "What price will I get?"
+"Your order will be priced at the closing NAV calculated after 4:00 PM Eastern today, which isn't known until after the close. You'll see the exact price on your confirmation tomorrow."
+
+### "Can I buy at today's lower price?"
+Only if the order is received before the cutoff. There is no way to lock in a price earlier in the day.
+
+### "Can I cancel an order?"
+An order can be cancelled before the 4:00 PM ET cutoff of the day it will be priced. After that, it is final; an unwanted purchase must be sold as a separate transaction (which may be subject to the frequent-trading policy). Online orders can be cancelled from the Pending Orders view; chat or phone orders by contacting us before the cutoff.
+
+### Time zones
+Always convert: 4:00 PM ET is 1:00 PM in California and 10:00 AM in Hawaii (during daylight saving time; 11:00 AM in standard time).
+
+## Worked timeline
+
+| Order placed | Priced at | Shares visible | Settles |
+|---|---|---|---|
+| Monday 10:00 AM ET | Monday's NAV | Monday evening | Tuesday |
+| Monday 4:15 PM ET | Tuesday's NAV | Tuesday evening | Wednesday |
+| Friday 5:00 PM ET | Monday's NAV | Monday evening | Tuesday |
+| Saturday | Monday's NAV | Monday evening | Tuesday |
+| Thanksgiving Thursday | Friday's NAV (cutoff 1:00 PM ET that day) | Friday evening | Monday |
+
+## Exchanges
+
+Both sides of an exchange use the same day's NAVs, so the client is never out of the market.
+
+@page purchase-funding-sources | Funding sources for purchases
+@summary The ways a purchase can be paid for, how cash in the account works, and the checks to make before choosing a source.
+
+## Sources
+
+| Source | When the money is used | Notes |
+|---|---|---|
+| Linked bank account (ACH) | Shares priced on trade date; bank debited within 2–3 business days | Most common; $100,000 daily limit |
+| Cash in the account | Immediately | Only the uninvested cash portion is available |
+| Wire | When the wire arrives | See [[purchase-by-wire]] |
+| Check | When the check arrives | See [[purchase-by-check]] |
+| Proceeds of a same-day sale | Exchange instead | Moving money between funds in one account is an exchange. See [[exchanges-overview]] |
+
+## Cash in the account
+
+An account's total value is its uninvested cash plus the market value of its fund holdings. Cash comes from deposits not yet invested, dividends paid in cash, and sale proceeds left in the account. The client info panel and the portal show cash separately (for example "total incl. $877 cash").
+
+When a client says "use the money in my account", check what they mean:
+
+- If they mean the cash, confirm the cash balance covers the purchase. A $2,000 purchase from cash fails if the account holds only $877 in cash, even if the total value is $4,800.
+- If they mean money that is invested in another fund, that is an **exchange**, not a cash purchase.
+
+Uninvested cash earns no return in the account. Clients sometimes leave cash by mistake after a deposit; point it out neutrally.
+
+## Linked bank
+
+The bank account must be linked and verified. If the client has several, confirm which. Purchases from a bank linked in the last few days are allowed. If the client has no linked bank, they must link one first (see [[linked-bank-accounts]]) or use a check or wire.
+
+## IRAs
+
+Money from a bank into an IRA is a **contribution**. Cash already in the IRA (from earlier contributions, dividends, or sales) can be invested without counting again toward the limit. See [[purchasing-in-iras]].
+
+@page investment-minimums | Investment minimums
+@summary Minimums for opening accounts, buying funds, automatic investments, and other transactions.
+
+## Minimums
+
+| Item | Minimum |
+|---|---|
+| Open an account | $0 (fund later) |
+| Initial purchase in any fund | $1 |
+| Additional purchases | $1 |
+| Automatic investment plan | $50 per fund per investment |
+| Exchange | $1 |
+| Systematic withdrawal plan | $50 per withdrawal |
+| Outgoing wire | $1,000 |
+
+## Fractional shares
+
+Purchases are made in dollars and credited in fractional shares to three decimal places, so the client never needs to buy whole shares.
+
+## Older documents
+
+Some older materials quoted $1,000 or $3,000 minimums for certain funds. Those minimums no longer apply; all BobsFunds funds have a $1 minimum.
+
+## Why the minimums are so low
+
+Bob's Mutual Funds set $1 minimums so that anyone can start investing and so that small amounts (for example, leftover cash after a sale) can be fully invested. Clients sometimes ask whether a small purchase is "worth it"; there are no transaction fees, so a small purchase costs nothing extra.
+
+## Automatic investment minimum
+
+The $50 minimum for automatic plans exists because each plan runs an ACH debit; very small recurring debits have a higher rate of returns and errors.
+
+## Outgoing wire minimum
+
+Wires cost $25 and are intended for larger amounts; smaller withdrawals go by ACH (free) or check.
+
+## Questions
+
+### "Can I buy a fraction of a share?"
+Yes. Purchases are made in dollars and credited to three decimal places.
+
+### "Is there a minimum balance to keep the account open?"
+No. Only an account with a zero balance for 12 months is closed automatically.
+
+@page purchase-by-check | Purchases by check
+@summary Acceptable checks, how to send them, when they are invested, and the hold on redeeming shares bought by check.
+
+## Acceptable checks
+
+- Personal checks drawn on a U.S. bank in U.S. dollars, payable to **Bob's Mutual Funds**.
+- Cashier's checks and official bank checks payable to Bob's Mutual Funds.
+- Checks from another financial institution payable to Bob's Mutual Funds for the benefit of the client (for rollovers and transfers).
+
+## Not accepted
+
+- Cash, money orders, traveler's checks, and starter checks (checks without a preprinted name and address).
+- Third-party checks (a check made out to the client and endorsed over to us).
+- Checks drawn on foreign banks.
+- Credit card convenience checks.
+
+Unacceptable checks are returned to the sender.
+
+## How to send
+
+Mail to Bob's Mutual Funds, PO Box 2025, Malvern, PA 19355 (or the overnight address). Include the account number on the memo line and a note saying which fund(s) and amounts. For IRAs, the note must say contribution and tax year, rollover, or transfer. Without fund instructions, the money is held as cash in the account.
+
+## When it is invested
+
+At the NAV on the business day the check is received in good order at the processing center (before 4:00 PM ET).
+
+## Redemption hold
+
+Shares bought by check can be sold immediately, but the proceeds of that sale are not paid out until the check has cleared, up to **7 business days** after purchase. This prevents losses from bad checks. Exchanges within the account are allowed during the hold. See [[redemption-holds]].
+
+@page purchase-by-wire | Purchases by wire
+@summary Wiring money to buy shares: the instructions, timing, and what the client must tell their bank.
+
+## Instructions
+
+The client gives their bank:
+
+| Field | Value |
+|---|---|
+| Receiving bank | First National Bank of Funds (FNBF) |
+| ABA routing number | 031000503 |
+| For credit to | Bob's Mutual Funds |
+| Beneficiary account | The client's Bob's account number |
+| Beneficiary name | The client's full name as registered on the account |
+| Reference | Fund ticker(s), and for IRAs "contribution 2026" (or the year), "rollover", or "transfer" |
+
+Wire instructions never change by email. If a client receives an email with "updated" wire instructions, it is fraudulent. See [[phishing-scams]].
+
+## Timing
+
+Wires received and matched to an account before 4:00 PM ET are invested at that day's NAV. Wires that arrive after 4:00 PM ET, or that cannot be matched (wrong account number, name mismatch), are invested on the next business day once matched. We do not charge for incoming wires; the client's bank may.
+
+## Large or urgent purchases
+
+Wires have no dollar limit and are the fastest way to deposit large amounts or to meet a deadline (for example, an IRA contribution on April 15). Suggest the client call their bank early in the day.
+
+## Advance notice
+
+For wires over $250,000, ask the client to notify us in advance (a secure message or chat) with the amount and expected date, so Money Movement Operations can watch for it.
+
+@page purchase-by-ach | Purchases by bank transfer (ACH)
+@summary How ACH-funded purchases work, the timing between order and bank debit, limits, and the redemption hold.
+
+## How it works
+
+When a client buys with a linked bank account:
+
+1. The order is priced at the NAV for the trade date (that day if before 4:00 PM ET).
+2. The shares are credited to the account right away.
+3. The bank account is debited within 2–3 business days.
+
+The client sees the shares immediately, even before the money leaves their bank.
+
+## Limits
+
+$100,000 per day per account. Larger purchases can be split across days or made by wire.
+
+## Redemption hold
+
+Shares bought by ACH can be sold or exchanged at any time, but the proceeds of a sale are not paid out of the account until the ACH debit has cleared, up to **7 business days** after the purchase. See [[redemption-holds]].
+
+## Insufficient funds
+
+If the bank returns the debit (insufficient funds, closed account), the purchase is cancelled and any loss from a decline in NAV is charged to the account. A $20 returned-payment fee applies. Repeated returns can lead to ACH purchases being restricted. See [[returned-items]].
+
+## Example
+
+Monday 2:00 PM ET: a client buys $5,000 of BFTM from their linked bank. The purchase is priced at Monday's NAV; shares appear Monday evening. The bank is debited by Wednesday or Thursday. If the client sells those shares on Tuesday, the sale is processed but the proceeds stay in the account until the ACH clears (up to 7 business days from the purchase).
+
+## Several purchases in one day
+
+Each purchase counts toward the $100,000 daily limit for the account.
+
+@page purchasing-in-iras | Purchases in IRAs
+@summary How buying in an IRA differs: contributions versus investing existing cash, tax years, limits, and rollovers.
+
+## Two kinds of IRA purchase
+
+1. **Investing cash already in the IRA**, from earlier contributions, rollovers, dividends, or sales. This is not a new contribution and does not count toward the annual limit.
+2. **New money from outside** (a bank, a check, a wire). This is a **contribution** (or a rollover or transfer, if the money comes from another retirement account). Contributions count toward the annual limit and need a tax year.
+
+When a client says "buy $3,000 of BF500 in my Roth", ask where the money is coming from.
+
+## Checks for contributions
+
+- **Limit**: the 2026 limit is $7,500 ($8,600 at 50+), shared across all Traditional and Roth IRAs at every firm. The contributions summary in the info panel shows contributions at Bob's for the year. See [[contributions-summary-card]].
+- **Tax year**: from January 1 to April 15, a contribution can be for the current or the prior year. Ask. See [[prior-year-contributions]].
+- **Roth income limits**: if the client mentions income above the phase-out, a direct Roth contribution may not be allowed. See [[roth-income-limits]].
+- **Age**: there is no maximum age for contributions; the client needs earned income (or a working spouse).
+
+If a proposed contribution would exceed the remaining limit, tell the client before submitting. Excess contributions incur a 6% excise tax each year until corrected. See [[excess-contributions]].
+
+## SEP-IRAs
+
+New money into a SEP-IRA is an employer contribution, which has different limits (25% of compensation up to $72,000 for 2026) and deadlines. See [[sep-contributions]].
+
+## Rollovers and transfers
+
+Money from a 401(k) or another IRA is not a contribution and is not limited. It must be coded correctly. See [[rollovers-overview]].
+
+@page purchase-confirmations | Purchase confirmations
+@summary What a trade confirmation shows, when it is available, and how clients find it.
+
+## Timing
+
+A confirmation is produced for every purchase, sale, and exchange, available the business day after the trade is priced. Paperless clients get an email notification; others receive it by mail within a few days.
+
+## Contents
+
+- Trade date and settlement date.
+- Account and fund.
+- Dollar amount, NAV (price per share), and shares bought.
+- Funding source.
+- For IRAs: whether it was a contribution (and the tax year), a rollover, or a transfer.
+- A reference number.
+
+## Chat confirmations
+
+When an agent submits a purchase in chat, the client immediately sees a green confirmation card with a reference number (format `REF-XXXXXX`). This confirms the order was placed. The formal trade confirmation with the NAV follows after pricing.
+
+## Automatic investments
+
+Automatic investments are confirmed on the quarterly statement rather than with individual confirmations, unless the client chooses individual confirmations in Preferences.
+
+## Corrections
+
+If a confirmation is wrong (wrong fund, wrong amount, wrong tax year on a contribution), the client should tell us right away. See [[error-corrections]].
+
+## Example
+
+"Bought 4.579 shares of BobsFunds 500 Index (BF500) at $218.40 on 09/15/2026 for $1,000.00 in Roth IRA (2026 contribution), funded from bank ••4421. Settlement 09/16/2026. Confirmation 2026091500418."
+
+## Questions
+
+### "Why don't I have a confirmation for my automatic investment?"
+Automatic investments appear on statements, unless the client opts in to individual confirmations.
+
+### "Can I get a confirmation reissued?"
+All confirmations are at My Account → Statements & Documents.
+
+@page returned-purchases | Returned and failed purchases
+@summary Why purchases fail or are reversed, what happens to the shares, and what the client owes.
+
+## Reasons
+
+- The bank returns the ACH debit (insufficient funds, closed account, account not authorized for debits).
+- A check is returned unpaid.
+- The order was not in good order and could not be completed (for example, an IRA contribution without a tax year).
+- The purchase would have exceeded a limit (such as the daily ACH limit).
+
+## What happens
+
+When a payment is returned:
+
+1. The purchase is cancelled and the shares removed.
+2. If the NAV fell between the purchase and the cancellation, the loss is charged to the client's account. If it rose, the gain stays with the fund.
+3. A $20 returned-payment fee is charged.
+4. The client receives a notice.
+5. After two returned payments in 12 months, ACH and check purchases may be restricted for 90 days, leaving wires as the purchase method.
+
+## Automatic investments
+
+A returned automatic investment is cancelled the same way. The plan stays active, so the next investment will be attempted. If the bank account is closed, the client should update the plan. See [[auto-invest-failures]].
+
+## Talking to clients
+
+Be matter-of-fact and nonjudgmental: "The bank returned the payment for your March 3 purchase, so that purchase was reversed." Offer to help them place the purchase again once funds are available.
+
+@page place-purchase-task | Procedure: Buy / Make a Contribution (chat)
+@summary Step-by-step chat procedure for a fund purchase, every field the task collects, and the checks to make before approving.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | One of the client's accounts (asked only if they have more than one) |
+| Fund | Any of the 36 BobsFunds tickers |
+| Purchase amount | Dollar amount |
+| Funding source | Linked bank account, or Cash in account |
+
+## Procedure
+
+1. Confirm what the client wants in one sentence: account, fund, amount.
+2. Let the task expert collect the details, or choose "Buy / Make a Contribution" from the task menu.
+3. Watch for these issues while details are collected:
+   - **Unclear fund**: "the S&P fund" means BF500; "the bond fund" is ambiguous (there are eight). Confirm the ticker and name.
+   - **Advice requests**: if the client asks which fund to buy, the expert offers a callback. Do not suggest a fund.
+   - **Amount format**: amounts such as "$4,800" or "4.8k" must be read correctly. Confirm the exact figure in the recap.
+4. When the Proposed Action appears, check:
+   - The account is the one the client named (use the locate button).
+   - The fund ticker matches the fund the client described.
+   - **Cash funding**: the amount is no more than the account's cash balance (not the total value).
+   - **IRA with bank funding**: this is a contribution. Is it within the remaining limit? Which tax year (January–April)? If the task did not capture the tax year, ask and note it.
+   - **Time**: if close to 4:00 PM ET, tell the client which day's NAV applies.
+5. Submit. The client receives a green confirmation card with a reference number.
+6. Close the loop: "Your $2,000 purchase of BF500 in your Roth IRA is placed. It will be priced at today's closing NAV, and the money will come from your bank in 2–3 business days."
+
+## Common errors to avoid
+
+- Funding a purchase from "cash" when the client meant to move money from another fund (that's an exchange).
+- Treating a rollover deposit as a contribution.
+- Placing the order in the wrong account when the client has two accounts of the same type.
+
+## When the purchase fails
+
+If submission returns an error, check the account's recent transactions to see whether it was placed before retrying. See [[transaction-statuses]].

@@ -1,0 +1,285 @@
+@section company | Company & Contact Directory | Who we are, how clients reach us, our hours and holidays, mailing addresses, and which internal team handles what.
+
+@page company-overview | About Bob's Mutual Funds
+@summary The firm's history, philosophy, product lineup, and regulatory status, for answering "who are you" questions.
+
+## Who we are
+
+Bob's Mutual Funds is a mutual fund company and brokerage serving individual investors. We offer a lineup of 36 low-cost BobsFunds mutual funds and the accounts to hold them in: individual and joint taxable accounts, custodial accounts for minors, trust accounts, Traditional, Roth, SEP, and inherited IRAs. Clients invest online through the client portal, by phone, and through chat with our virtual assistant and service agents.
+
+The firm was founded by Bob, an investor with sixty years in the markets whose views appear in the "Bob's View" opinion columns in the client Library. Our philosophy is straightforward: low costs, broad diversification, and patience are the most reliable drivers of long-term results.
+
+## What we offer
+
+- **36 mutual funds** across U.S. stocks, sector stocks, international stocks, and bonds, nearly all index funds with expense ratios from 0.03% to 0.13%. See [[fund-lineup-overview]].
+- **No account fees**: no maintenance fee, no IRA custodial fee, and $0 to buy, sell, or exchange BobsFunds funds.
+- **Self-service tools**: online account opening, automatic investing, dividend reinvestment, beneficiary management, tax documents, an RMD calculator, and a retirement calculator.
+- **Education**: the Library of how-to guides and opinion columns, and a podcast.
+
+## What we do not offer
+
+We do not offer individual stocks, ETFs, options, other firms' mutual funds, bank accounts, credit cards, loans, insurance, 401(k) plan administration, 529 plans, or HSAs. We do not provide individualized investment advice through service channels. See [[products-not-offered]].
+
+## Regulatory status
+
+Bob's Mutual Funds is a registered broker-dealer and a member of FINRA and SIPC. The BobsFunds funds are registered investment companies. Our service is subject to FINRA rules, SEC regulations, and federal privacy and anti-money-laundering laws. For SIPC questions see [[sipc-coverage]].
+
+## Answering "are you a real company / are you safe?"
+
+Clients sometimes ask whether their money is safe with us. You can say: client assets are held in the client's name, separate from the firm's own assets; fund assets are held by an independent custodian; we are a FINRA and SIPC member. Do not say investments are "safe" or "guaranteed": fund values go up and down with markets.
+
+@page contact-channels | How clients can contact us
+@summary Every way a client can reach Bob's Mutual Funds, what each channel is best for, and how to refer clients between channels.
+
+## Channels
+
+| Channel | Availability | Best for |
+|---|---|---|
+| Virtual assistant (chat) | 24/7 | Quick answers, links to self-service pages, starting a task, scheduling a callback |
+| Live chat with an agent | Monday–Friday 8:00 AM–8:00 PM ET | Account questions and service tasks |
+| Phone: 1-800-BOB-FUND (1-800-262-3863) | Monday–Friday 8:00 AM–8:00 PM ET; Saturday 9:00 AM–5:00 PM ET | Anything, including identity problems and locked-out clients |
+| Licensed brokerage desk (phone; say "place a trade") | Monday–Friday 8:00 AM–7:30 PM ET | Trades by phone with a licensed broker |
+| Estate Services (phone; say "inherited account") | Monday–Friday 8:00 AM–7:30 PM ET | Reporting a death, inherited accounts |
+| Scheduled callback | Booked through chat | Advice-related conversations, specialist calls, follow-ups |
+| Secure message | Sent any time from My Account → Messages | Non-urgent requests with attachments; reply within 1 business day (3 for complex) |
+| Mail | See [[mailing-addresses]] | Checks, forms with original signatures, legal documents |
+
+## Choosing a channel for the client
+
+- If the client is locked out of online access, chat cannot help them authenticate. Give them the phone number.
+- If the client needs to send documents (death certificate, trust certification), they can upload through a secure message or the document upload page, or mail certified copies.
+- If the client needs licensed advice, schedule a callback.
+- If the client prefers to talk, offer a callback rather than asking them to call and wait.
+
+## Language and accessibility
+
+Phone service is available in Spanish, and interpretation for other languages can be arranged. Clients who are deaf or hard of hearing can use their preferred relay service to call our main number. See [[language-services]] and [[accessibility-accommodations]].
+
+@page support-hours | Support hours
+@summary Hours for each service channel, when the markets are open, and what happens to requests made after hours.
+
+## Service hours (Eastern Time)
+
+| Service | Monday–Friday | Saturday | Sunday |
+|---|---|---|---|
+| Virtual assistant | 24 hours | 24 hours | 24 hours |
+| Live chat agents | 8:00 AM–8:00 PM | Closed | Closed |
+| Phone service | 8:00 AM–8:00 PM | 9:00 AM–5:00 PM | Closed |
+| Licensed brokerage desk | 8:00 AM–7:30 PM | Closed | Closed |
+| Estate Services | 8:00 AM–7:30 PM | Closed | Closed |
+| Online portal | 24 hours (brief maintenance windows Sundays 1:00–3:00 AM) | | |
+
+All service lines are closed on the holidays in [[holiday-calendar-2026]].
+
+## Market hours and trading
+
+Mutual funds price once a day after the New York Stock Exchange closes at 4:00 PM ET. Orders can be entered online or through chat at any time, but they receive the NAV of the next close. An order placed Saturday morning receives Monday's NAV (or the next business day's). See [[trade-cutoff-nav]].
+
+## After-hours requests
+
+- Requests the virtual assistant cannot complete after hours can be turned into a scheduled callback.
+- Secure messages sent after hours are answered on the next business day.
+- Trades entered after 4:00 PM ET are processed at the next business day's NAV.
+
+## Time zones
+
+All our hours and cutoffs are Eastern Time. For a client in another time zone, convert explicitly: "Our 4:00 PM Eastern cutoff is 1:00 PM your time in California."
+
+@page mailing-addresses | Mailing addresses
+@summary Where clients send checks, forms, and documents by regular mail and overnight delivery.
+
+## Addresses
+
+| Purpose | Address |
+|---|---|
+| Regular mail (checks, forms, correspondence) | Bob's Mutual Funds, PO Box 2025, Malvern, PA 19355 |
+| Overnight or courier delivery | Bob's Mutual Funds, Client Services Center, 1 Bob's Way, Malvern, PA 19355 |
+
+Overnight carriers cannot deliver to a PO Box, so always give the street address for overnight or courier shipments.
+
+## What to include
+
+- **Checks**: payable to "Bob's Mutual Funds". Write the account number on the memo line. Include a note or deposit slip saying which account and fund to invest in; without instructions, the money is held as cash in the account. See [[purchase-by-check]].
+- **Forms**: the completed, signed form. Use the latest version from the portal's Forms page.
+- **Documents**: certified copies (not originals) of death certificates, court documents, and similar. Originals will not be returned unless requested.
+
+## Processing
+
+Mail is processed on the business day it is received at the processing center. Checks received in good order before 4:00 PM ET are invested at that day's NAV. Mail can take several days to arrive; for time-sensitive deposits (such as a last-minute IRA contribution), suggest an electronic transfer instead.
+
+@page holiday-calendar-2026 | Holiday calendar 2026
+@summary Market closures, service-center closures, and early closes for 2026, and what they mean for trades and money movement.
+
+## Market and service holidays
+
+On these days the New York Stock Exchange is closed, BobsFunds funds do not price, and our service lines (chat agents and phone) are closed. The virtual assistant and online portal remain available.
+
+| Holiday | 2026 date |
+|---|---|
+| New Year's Day | Thursday, January 1 |
+| Martin Luther King Jr. Day | Monday, January 19 |
+| Presidents' Day | Monday, February 16 |
+| Good Friday | Friday, April 3 (markets closed; phone service open 8:00 AM–5:00 PM, live chat closed) |
+| Memorial Day | Monday, May 25 |
+| Juneteenth | Friday, June 19 |
+| Independence Day (observed) | Friday, July 3 |
+| Labor Day | Monday, September 7 |
+| Thanksgiving Day | Thursday, November 26 |
+| Christmas Day | Friday, December 25 |
+
+## Early closes
+
+On **Friday, November 27** (the day after Thanksgiving) and **Thursday, December 24** (Christmas Eve), the stock market closes at 1:00 PM ET. The trade cutoff on those days is **1:00 PM ET**: orders received after 1:00 PM receive the next business day's NAV. Our service lines close at 3:00 PM ET.
+
+## Bank holidays
+
+Columbus Day (Monday, October 12) and Veterans Day (Wednesday, November 11) are bank holidays but not market holidays. Funds price and trades process normally, but ACH transfers and wires do not move on those days, so money movement is delayed by one business day.
+
+## Talking to clients
+
+Year-end deadlines (RMDs, Roth conversions, tax-loss sales) must be completed by the last business day of the year, which in 2026 is Thursday, December 31. Encourage clients to act well before the holiday week, since processing volume is heavy and mail is slow.
+
+@page department-directory | Internal department directory
+@summary Which internal team handles what, and how chat agents route work to each.
+
+## Teams
+
+| Team | Handles | How to route |
+|---|---|---|
+| Client Services (you) | General service, tasks available in chat | — |
+| Licensed Brokerage Desk | Trades by phone, licensed discussions | Client calls 1-800-BOB-FUND, says "place a trade"; or schedule a callback |
+| Retirement Specialists | Complex IRA questions, rollovers with complications, RMD planning questions, excess contributions | Callback or warm transfer via team lead |
+| Estate Services | Deaths, inherited accounts, estate accounts, change of ownership | Phone line ("inherited account") or callback; see [[death-notification]] |
+| Account Services | Registration changes, trust and custodial accounts, POA review, forms processing | Secure message or internal referral |
+| Fraud and Security | Unauthorized activity, account takeover, phishing, protective holds | Immediate escalation via team lead; see [[account-takeover]] |
+| Senior Investor Protection | Suspected elder exploitation, diminished capacity | Immediate escalation; see [[elder-financial-exploitation]] |
+| Money Movement Operations | Wires, returned items, check issues, stop payments | Internal referral via team lead |
+| Tax Reporting | Corrected tax forms, cost basis corrections | Internal referral; see [[corrected-tax-forms]] |
+| Compliance | Formal complaints, regulatory questions | See [[complaints-handling]] |
+| Legal | Subpoenas, court orders, attorney requests | Never handle in chat; route via team lead |
+| Privacy Office | Data access, deletion, and privacy rights requests | Via team lead |
+| Client Records | Old transcripts, statement copies older than 7 years | Via team lead |
+
+## How to choose
+
+When you are unsure which team owns a request, ask your team lead rather than guessing. A wrong referral costs the client time. Always tell the client which team will contact them and when. See [[specialist-teams]].
+
+@page secure-messaging | Secure messages
+@summary How clients send secure messages and documents, response times, and when to recommend a secure message over chat.
+
+## What it is
+
+Secure messaging lets authenticated clients send a message to Client Services from My Account → Messages. Messages are encrypted and stored in the client's message center. Clients can attach documents (PDF, JPG, or PNG, up to 10 MB each).
+
+## Response times
+
+- Standard requests: within **1 business day**.
+- Complex account issues: within **3 business days**.
+- Clients receive an email notification when a reply is waiting; the reply itself is only in the secure message center.
+
+## When to recommend it
+
+- The client needs to send a document (a trust certification, a death certificate copy, a divorce decree).
+- The request needs research that will take longer than a chat.
+- The client wants a written record of the answer.
+
+## Limits
+
+Secure messages are not for urgent matters. Fraud reports, locked-out clients, and time-sensitive trades should use chat or phone. We never ask for passwords by secure message.
+
+## Example uses
+
+- Sending a copy of a divorce decree for an IRA transfer.
+- Asking for a cost basis history that requires research.
+- Following up on an open request with a written trail.
+
+## What agents see
+
+Secure messages arrive in a separate service queue. If a client mentions in chat that they sent a secure message, you can check whether it has been answered and summarize the reply.
+
+## Security
+
+Clients should never email documents to staff. Secure messaging and the document upload page are the safe channels.
+
+@page website-navigation | Client portal navigation map
+@summary Where things are in the client portal, so you can direct clients precisely.
+
+## Main areas
+
+| What the client wants | Where it is |
+|---|---|
+| Balances and holdings | Portfolio (home after sign-in) |
+| One account's details, holdings, IRA contribution summary | Portfolio → select the account |
+| Buy, sell, exchange | Account page → Transactions → Buy / Sell / Exchange |
+| Automatic investments | My Account → Automatic Investments |
+| Dividend reinvestment settings | My Account → Dividend Preferences |
+| Beneficiaries | My Account → Beneficiaries |
+| Linked bank accounts | My Account → Linked Bank Accounts |
+| Statements, confirmations, tax forms | My Account → Statements & Documents; My Account → Tax Documents |
+| Paperless and communication preferences | My Account → Preferences |
+| Password, 2FA, trusted devices | My Account → Security |
+| Email, phone, mailing address | My Account → Profile |
+| Authorized users | My Account → Account Access |
+| Trusted contact | My Account → Profile → Trusted Contact |
+| Cost basis method | My Account → Tax Settings |
+| RMD settings | Retirement account page → RMD Settings |
+| Transfer assets in (ACAT) | My Account → Transfer Assets |
+| Open a new account | Open an Account (top navigation) |
+| Fund research | Research → fund lineup → fund page |
+| Help articles | Help (footer) and the Library |
+| Secure messages | My Account → Messages |
+
+## Linking in chat
+
+The virtual assistant and agents can send clickable links to portal pages (for example, the beneficiaries page) that open inside the client's session. Prefer sending a link to describing a menu path.
+
+@page mobile-app | The mobile app
+@summary What clients can do in the Bob's Mutual Funds mobile app and common app issues.
+
+## Features
+
+The mobile app (iOS and Android) supports viewing balances and holdings, buying, selling, and exchanging funds, managing automatic investments, depositing by ACH, viewing statements and tax documents, secure messages, chat, and sign-in approvals for 2FA. Account opening, beneficiary changes, and some forms are best done in the web portal.
+
+## Common issues
+
+| Issue | Suggestion |
+|---|---|
+| App won't open or crashes | Update to the latest version; restart the device |
+| Biometric sign-in stopped working | Sign in with password once; re-enable Face ID / fingerprint in app settings |
+| Not receiving sign-in approval prompts | Check notification permissions; ensure the device is still trusted |
+| Balances look different from the website | Pull to refresh; values update after each day's NAV |
+
+If an issue persists, collect the device type, app version, and a description, and log it as a Technical Issue. See [[chat-technical-issues]].
+
+## Signing in
+
+The app supports biometric sign-in (Face ID, fingerprint) after the first password sign-in. The device must be a trusted device. If the client gets a new phone, they sign in with their password and 2FA on the new device, then enable biometrics.
+
+## Mobile check deposit
+
+Checks up to $50,000 can be deposited in the app by photographing both sides. Endorse with the signature and "For mobile deposit to Bob's Mutual Funds only". Keep the paper check for 14 days, then destroy it. See [[checks-received]].
+
+## Notifications
+
+Push notifications can be enabled for trade confirmations, deposits, and security alerts in the app's settings.
+
+@page sipc-coverage | SIPC and the safety of client assets
+@summary What SIPC protects and does not protect, and how to answer questions about the safety of client assets.
+
+## What SIPC is
+
+The Securities Investor Protection Corporation (SIPC) protects customers of member broker-dealers if the firm fails financially and client securities or cash are missing. Coverage is up to $500,000 per customer per capacity, including up to $250,000 for cash.
+
+## What SIPC does not cover
+
+SIPC does not protect against market losses. If a fund's value declines, that is investment risk, not a loss covered by SIPC. SIPC also does not cover fraud by third parties outside the firm.
+
+## How client assets are protected
+
+- Client fund shares are registered in the client's name on the fund's records.
+- Fund assets are held by an independent custodian bank, separate from Bob's Mutual Funds' corporate assets.
+- Our broker-dealer is subject to SEC customer protection rules that require segregation of client assets.
+
+## How to answer
+
+"Your fund shares are held in your name, and the funds' assets are held by an independent custodian, separate from our company's money. We're also a member of SIPC, which protects customers if a brokerage firm fails, up to $500,000. SIPC doesn't protect against market ups and downs." Provide the SIPC website (sipc.org) if they want more detail.

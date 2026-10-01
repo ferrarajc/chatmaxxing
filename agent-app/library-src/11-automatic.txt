@@ -1,0 +1,292 @@
+@section automatic | Automatic Investing & Withdrawals | Recurring purchases (automatic investment plans) and recurring withdrawals (systematic withdrawal plans): setup, changes, pauses, failures, and IRA considerations.
+
+@page automatic-investing-overview | Automatic investment plans
+@summary How recurring purchases work, minimums, frequencies, and what clients can set up online versus in chat.
+
+## What it is
+
+An automatic investment plan (also called a systematic investment plan or "auto-invest") buys a fixed dollar amount of a fund on a regular schedule, funded from the client's linked bank account. It is the simplest way to invest consistently, and it applies dollar-cost averaging automatically. See [[dollar-cost-averaging]].
+
+## Plan details
+
+| Setting | Options |
+|---|---|
+| Fund | Any BobsFunds fund; one fund per plan (a client can have several plans) |
+| Amount | Minimum $50 per investment |
+| Frequency | Online: weekly, every two weeks, monthly, or quarterly. Chat: monthly or quarterly |
+| Day | Day of the month 1–28 for monthly and quarterly plans (29–31 are not offered so plans run every month) |
+| Funding | A linked, verified bank account |
+| Start date, optional end date | Set by the client |
+
+## How it runs
+
+On the scheduled day (or the next business day if it falls on a weekend or holiday), the purchase is placed and priced at that day's NAV. The bank is debited 2–3 business days later. Automatic investments appear on statements rather than in individual confirmations unless the client opts in.
+
+## Changes and cancellations
+
+Changes, pauses, and cancellations must be made at least **3 business days** before the next scheduled date to affect that investment. See [[modifying-auto-invest]] and [[pausing-auto-invest]].
+
+## IRAs
+
+Automatic investments into an IRA are contributions for the year in which they are made, counted toward the annual limit. See [[auto-invest-ira-limits]].
+
+## In chat
+
+Three tasks cover automatic investing: Set Up Automatic Investment ([[setup-auto-invest-task]]), Modify Auto-Invest Schedule ([[modifying-auto-invest]]), and Pause or Resume Auto-Invest ([[pausing-auto-invest]]). Weekly and every-two-weeks plans must be set up online.
+
+@page setup-auto-invest-task | Procedure: Set Up Automatic Investment (chat)
+@summary Step-by-step chat procedure for creating a recurring investment, the fields collected, and the checks before approval.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | One of the client's accounts (asked if more than one) |
+| Fund | Any BobsFunds fund |
+| Investment amount | Dollar amount, at least $50 |
+| Frequency | Monthly or Quarterly |
+| Day of month | 1–28 |
+
+## Procedure
+
+1. Confirm the client has a linked, verified bank account. Without one, the plan cannot run. See [[linked-bank-accounts]].
+2. Let the task expert collect the details.
+3. Check the Proposed Action:
+   - Amount is at least $50.
+   - Day is between 1 and 28. If the client asks for the 30th or "the last day", explain the 1–28 range and ask them to choose.
+   - For quarterly plans, confirm which months the client expects: quarterly plans run every three months starting with the first scheduled date.
+   - For IRAs: annualize the plan (monthly × 12, or quarterly × 4) plus any other contributions this year. If the plan would exceed the client's limit, say so. See [[auto-invest-ira-limits]].
+   - If the client already has a plan into the same fund, ask whether they want a second plan or to change the existing one.
+4. Submit. The plan is saved immediately; tell the client the first investment date.
+
+## What to tell the client
+
+"You're set: $200 into BF500 in your Roth IRA on the 15th of every month, starting October 15. The money comes from your linked bank, and you can change or pause it any time at least three business days before an investment date."
+
+## If the client wants weekly or every two weeks
+
+Explain that those frequencies can be set up online at My Account → Automatic Investments, or offer a monthly plan instead.
+
+@page modifying-auto-invest | Procedure: Modify an automatic investment
+@summary Changing the amount, frequency, or day of an existing plan, and how to identify which plan the client means.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Which schedule | A description of the existing plan ("the monthly $500 into BF500 in my Roth IRA") |
+| New investment amount | Dollar amount, at least $50 |
+| New frequency | Monthly, Quarterly, or Keep the same |
+| Day of month | 1–28, or keep the current day |
+
+## Identifying the plan
+
+Clients often have more than one plan. Before the task is approved, make sure the plan being changed is the one the client described: match the account, fund, amount, and frequency against the client's plans (visible at My Account → Automatic Investments, and in the profile). If the description fits more than one plan, ask. Changing the wrong plan is a serious error.
+
+## Timing
+
+Changes made at least 3 business days before the next scheduled investment apply to that investment. Changes made later apply from the following investment. Tell the client which.
+
+## Checks
+
+- New amount at least $50.
+- For IRAs, the new annualized amount plus other contributions stays within the limit. See [[auto-invest-ira-limits]].
+- If the client wants to change the fund, the plan must be replaced: set up a new plan into the new fund and cancel (or pause) the old one. Explain this.
+- If the client wants to change the bank account, that is done online at My Account → Automatic Investments.
+
+## After submitting
+
+Confirm the full new schedule in plain words, including the next date.
+
+@page pausing-auto-invest | Procedure: Pause or resume an automatic investment
+@summary Temporarily stopping or restarting a plan, the difference between pausing and cancelling, and timing.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Which schedule | A description of the plan |
+| Pause or resume | Pause, or Resume |
+
+## Pause versus cancel
+
+- **Pausing** stops investments but keeps the plan's settings so it can be resumed with one step. Use it for temporary needs (a tight month, a job change).
+- **Cancelling** deletes the plan. Use it when the client does not intend to restart.
+
+If the client says "stop my auto-invest", ask whether they want to pause it or cancel it.
+
+## Timing
+
+A pause takes effect for investments at least 3 business days away. An investment within 3 business days may still occur. When resuming, the next investment occurs on the plan's next scheduled day that is at least 3 business days away.
+
+## Identifying the plan
+
+As with modifications, match the plan description against the client's actual plans and ask if more than one fits. Pausing the wrong plan means a missed investment the client expected.
+
+## Skipping a single investment
+
+To skip one investment, the client can pause and then resume after the date passes, or skip it online at My Account → Automatic Investments, which offers a one-time skip.
+
+@page auto-invest-failures | When an automatic investment doesn't run
+@summary Why scheduled investments fail or are reversed, and how to fix the cause.
+
+## Common causes
+
+| Cause | What the client sees | Fix |
+|---|---|---|
+| The plan is paused | No investment | Resume the plan |
+| The bank returned the debit (insufficient funds) | The purchase appears, then is reversed; a $20 returned-payment fee | Ensure funds are available; the plan continues next period |
+| The bank account was closed | Purchase reversed; the plan keeps failing | Link a new bank and update the plan |
+| The change was made fewer than 3 business days before the date | Old amount invested | Explain timing; the new amount applies next time |
+| The scheduled day fell on a weekend or holiday | The investment ran the next business day | Explain the rule |
+| IRA contribution limit reached | Investment rejected | Explain the limit; pause until the next tax year |
+| Frequent-trading block | Rare; automatic plans are exempt | Escalate if it occurs |
+| Foreign address on file | Investment blocked | See [[non-us-persons]] |
+
+## Diagnosing
+
+1. Check the plan's status and settings.
+2. Check recent transactions for a reversal.
+3. Check the bank link status.
+4. Check the IRA contributions summary for IRAs.
+
+## Talking to the client
+
+Explain the cause simply and fix what can be fixed in the chat. If a returned payment caused a fee and the cause was our error (for example, a plan that should have been paused), escalate for a fee reversal. See [[fee-disputes]].
+
+@page auto-invest-ira-limits | Automatic investing in IRAs
+@summary How recurring IRA investments count toward contribution limits, what happens at the limit, and the tax year of each investment.
+
+## Each investment is a contribution
+
+Every automatic investment into a Traditional or Roth IRA from a bank is a contribution for the **current calendar year**. Automatic investments made between January 1 and April 15 count toward the **current year**, not the prior year. Clients who want to make prior-year contributions must make a separate one-time contribution designated for the prior year.
+
+## Limits
+
+The 2026 limit is $7,500, or $8,600 at age 50 or older, across all of the client's IRAs. Common plans:
+
+| Plan | Annual total |
+|---|---|
+| $625 monthly | $7,500 |
+| $716 monthly (50+) | $8,592 |
+| $1,875 quarterly | $7,500 |
+| $500 monthly | $6,000 |
+
+## What happens at the limit
+
+When an automatic investment would take the client's contributions at Bob's over their limit for the year, the investment is rejected and the client is notified. We can only see contributions at Bob's; contributions at other firms also count, and the client is responsible for the total. See [[excess-contributions]].
+
+## Mid-year starts
+
+A client starting in July with $625 monthly will contribute only $3,750 this year. If they want to reach the full limit, they can add a one-time contribution. Explain the arithmetic; do not tell them they should max out.
+
+## SEP-IRAs
+
+Automatic investments into a SEP-IRA are uncommon because SEP contributions are employer contributions that depend on business income. Clients usually make one or a few contributions per year.
+
+@page systematic-withdrawals-overview | Systematic withdrawal plans
+@summary How recurring withdrawals work, frequencies, delivery, which shares are sold, and taxes.
+
+## What it is
+
+A systematic withdrawal plan (SWP) sells a fixed dollar amount from the client's account on a schedule and sends the money to their bank or by check. Retirees use it to create a regular "paycheck" from their savings.
+
+## Plan details
+
+| Setting | Options |
+|---|---|
+| Amount | Minimum $50 per withdrawal |
+| Frequency | Monthly, quarterly, or annually |
+| Start date | The first withdrawal date |
+| Delivery | Direct deposit (ACH) to a linked bank, or check by mail |
+| Funds to sell | Proportionally across holdings, or from specific funds the client chooses |
+| Tax withholding (IRAs) | Federal (default 10% for Traditional and SEP IRAs) and state |
+
+## Taxes
+
+- **Taxable accounts**: each withdrawal sells shares and can produce capital gains or losses, reported on Form 1099-B.
+- **Traditional and SEP IRAs**: each withdrawal is a taxable distribution, reported on Form 1099-R, with federal withholding unless the client elects 0%.
+- **Roth IRAs**: withdrawals of contributions are tax-free; earnings depend on whether the distribution is qualified. See [[roth-distribution-rules]].
+
+## A note on sustainability
+
+Withdrawals that exceed the account's returns will gradually use up the principal. You may describe this arithmetic neutrally if the client asks how long the money will last, but planning a sustainable withdrawal rate is advice; offer a callback.
+
+## RMDs
+
+A client who must take RMDs can use a SWP sized to meet their RMD, or the dedicated RMD settings, which calculate the amount automatically. See [[rmd-settings-task]].
+
+@page setup-swp-task | Procedure: Set Up Recurring Distributions (chat)
+@summary Step-by-step chat procedure for a systematic withdrawal plan, the fields collected, and the checks before approval.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | One of the client's accounts |
+| Amount per withdrawal | Dollar amount, at least $50 |
+| Frequency | Monthly, Quarterly, Annually |
+| Start date | The first withdrawal date |
+| Delivery method | Direct deposit (ACH), Check by mail |
+
+## Procedure
+
+1. Confirm the account and that the client wants a recurring (not one-time) withdrawal. For one-time, use [[request-withdrawal-task]].
+2. For direct deposit, confirm a linked, verified bank account. Newly linked banks (within 10 days) require a verification call before the first payment.
+3. Let the task expert collect the details.
+4. Check the Proposed Action:
+   - Amount is at least $50 and not more than the account's value.
+   - The start date is at least 3 business days away.
+   - For Traditional and SEP IRAs: ask about federal withholding (default 10%) if the task did not capture it, and note the client's choice.
+   - For clients under 59½ with a Traditional or SEP IRA: mention the 10% early-withdrawal penalty may apply unless an exception does. See [[early-withdrawal-penalty]].
+   - Which funds to sell: proportionally by default; note any instruction otherwise.
+5. Submit. Confirm the schedule in plain words.
+
+## What to tell the client
+
+"Starting November 1, $1,500 will be sold from your Traditional IRA each month and deposited to your bank, usually within 2–3 business days. We'll withhold 10% for federal taxes, so you'll receive $1,350 each month."
+
+@page swp-in-iras | Systematic withdrawals from IRAs
+@summary Special considerations for recurring IRA withdrawals: withholding, penalties, RMD interaction, and 72(t) plans.
+
+## Withholding
+
+Each withdrawal from a Traditional or SEP IRA is subject to 10% federal withholding by default. The client can elect any percentage from 0% to 100%. Some states require withholding when federal tax is withheld. See [[tax-withholding-retirement]] and [[state-withholding]].
+
+## Early withdrawals
+
+For clients under 59½, withdrawals are subject to the 10% additional tax unless an exception applies. A specially structured series of withdrawals, called substantially equal periodic payments (72(t)), can avoid the penalty but has strict rules. Clients asking about 72(t) should be referred to a retirement specialist. See [[sepp-72t]].
+
+## Interaction with RMDs
+
+Withdrawals during the year count toward the client's RMD for that year. If a client has a systematic withdrawal plan and also RMD settings, make sure they understand the total they will receive. If the withdrawals already satisfy the RMD, the RMD service will distribute only any shortfall in December. See [[rmd-overview]].
+
+## Roth IRAs
+
+Systematic withdrawals from a Roth IRA come first from contributions (tax- and penalty-free), then conversions, then earnings. Withholding is not required by default on Roth distributions.
+
+@page managing-multiple-schedules | Managing several automatic plans
+@summary How to help clients who have many automatic investment or withdrawal plans keep them straight.
+
+## Seeing the plans
+
+All plans are listed at My Account → Automatic Investments, showing account, fund, amount, frequency, day, bank, and status (active or paused). Each plan has an identifier.
+
+## Common situations
+
+- **Two plans into the same fund on different days** (for example, payday on the 1st and 15th). Both are valid. When the client asks to change "my BF500 plan", ask which.
+- **A plan into a fund the client no longer holds**. Plans continue even after a full redemption; ask whether to keep it.
+- **Plans across several accounts** (Roth and taxable). Make sure the IRA plans fit within the limit.
+- **Investment and withdrawal plans in the same account**. This is unusual and can be accidental; point it out neutrally.
+
+## Consolidating
+
+Clients who want to simplify can cancel several plans and set up one larger plan. Each change is a separate task in chat.
+
+## Annual review
+
+Encourage clients to review their plans at least once a year, and especially when the IRA contribution limit changes each January.
+
+## Example
+
+A client has: $300 monthly into BF500 (Roth, the 1st), $300 monthly into BF500 (Roth, the 15th), and $200 quarterly into BFBI (taxable). The two Roth plans total $7,200 a year, within the $7,500 limit if they make no other Roth contributions. When the client says "change my BF500 plan", ask which.

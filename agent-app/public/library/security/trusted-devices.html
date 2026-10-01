@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trusted devices | Agent Knowledge Library</title>
+<meta name="description" content="What a trusted device is, how clients manage them, and when to remove one.">
+<link rel="stylesheet" href="../library.css">
+</head>
+<body>
+<header>
+<p class="banner">Bob's Mutual Funds &middot; Agent Knowledge Library &middot; Internal use only</p>
+<nav class="crumbs"><a href="../index.html">Library</a> &rsaquo; <a href="index.html">Identity, Privacy &amp; Security</a> &rsaquo; Trusted devices</nav>
+<nav class="tools"><a href="../index.html">Library home</a> &middot; <a href="../a-z.html">A&ndash;Z index</a> &middot; <a href="../ask.html">Ask the library</a></nav>
+</header>
+<main>
+<h1>Trusted devices</h1>
+<p class="meta">Section: <a href="index.html">Identity, Privacy &amp; Security</a> &middot; Page ID: <code>trusted-devices</code></p>
+<p class="summary">What a trusted device is, how clients manage them, and when to remove one.</p>
+<nav class="toc"><p>On this page</p><ul><li><a href="#definition">Definition</a></li><li><a href="#managing-devices">Managing devices</a></li><li><a href="#when-to-recommend-removing-devices">When to recommend removing devices</a></li><li><a href="#how-clients-see-their-devices">How clients see their devices</a></li><li><a href="#example">Example</a></li><li><a href="#shared-computers">Shared computers</a></li><li><a href="#relationship-to-2fa">Relationship to 2FA</a></li></ul></nav>
+<h2 id="definition">Definition</h2>
+<p>When a client signs in and completes 2FA on a device, they can mark it as trusted. For 30 days, sign-ins from that device skip the 2FA prompt. Trusted status ends after 30 days, or immediately if removed.</p>
+<h2 id="managing-devices">Managing devices</h2>
+<p>Clients can see and remove trusted devices at My Account → Security → Trusted Devices. Through chat, the Update Security Settings task includes &quot;Remove trusted device&quot;. See <a href="update-security-task.html">Procedure: Update Security Settings</a>.</p>
+<h2 id="when-to-recommend-removing-devices">When to recommend removing devices</h2>
+<ul>
+  <li>A device was lost, stolen, sold, or given away.</li>
+  <li>The client signed in on a shared or public computer.</li>
+  <li>The client suspects someone else has accessed the account.</li>
+</ul>
+<p>In a suspected compromise, remove all trusted devices and reset the password.</p>
+<h2 id="how-clients-see-their-devices">How clients see their devices</h2>
+<p>The Trusted Devices list shows each device's type (for example &quot;iPhone, Bob's app&quot; or &quot;Windows, Chrome&quot;), the approximate location of its last sign-in, and when it was last used. Clients who don't recognize a device should remove it and reset their password.</p>
+<h2 id="example">Example</h2>
+<p>Client: &quot;I sold my old phone. Should I do anything?&quot;</p>
+<p>Agent: &quot;Good thinking. Since that phone was a trusted device, I'd recommend removing it so it can't skip the security code. You can do it at My Account → Security → Trusted Devices, or I can remove it for you now.&quot;</p>
+<h2 id="shared-computers">Shared computers</h2>
+<p>Clients should never mark a shared or public computer as trusted, and should sign out fully when finished.</p>
+<h2 id="relationship-to-2fa">Relationship to 2FA</h2>
+<p>Removing a trusted device does not disable 2FA; it means that device must complete 2FA again at the next sign-in. See <a href="two-factor-auth.html">Two-factor authentication (2FA)</a>.</p>
+<nav class="pager"><a href="account-lockouts.html">&larr; Locked accounts</a><a href="update-security-task.html">Procedure: Update Security Settings &rarr;</a></nav>
+</main>
+<footer>
+<p>Internal reference for Bob's Mutual Funds service agents. Do not send this page or its URL to clients; share the client-facing help page instead. Last reviewed September 2026.</p>
+</footer>
+</body>
+</html>

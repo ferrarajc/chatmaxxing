@@ -1,0 +1,275 @@
+@section statements-fees | Statements & Fees | Account statements, trade confirmations, the statement schedule, document access and retention, the full fee schedule, paper fees, wire fees, and fee disputes.
+
+@page statements-overview | Account statements
+@summary What a statement shows, how to read each section, and common client questions.
+
+## Sections of a statement
+
+1. **Account summary**: beginning value, deposits, withdrawals, change in value, ending value for the period.
+2. **Holdings**: each fund, shares, NAV, value, and the cash balance.
+3. **Activity**: every transaction in the period (purchases, sales, exchanges, distributions, fees).
+4. **Income summary**: dividends and capital gains year to date.
+5. **IRA information** (for IRAs): contributions by tax year, distributions, withholding, the year's RMD if applicable.
+6. **Cost basis summary** (taxable accounts): unrealized gains and losses.
+7. **Messages**: notices about policy changes and upcoming deadlines.
+
+## Common questions
+
+### "Why is the change in value negative when I added money?"
+Market changes can exceed deposits. The summary separates deposits from the market change.
+
+### "My statement balance differs from the website."
+The statement shows the value at the statement date; the website shows the latest value. See [[balance-discrepancy]].
+
+### "Where's my cash?"
+Cash appears as its own line in Holdings.
+
+## Example: reading the summary
+
+| Line | Amount |
+|---|---|
+| Beginning value (July 1) | $42,180.55 |
+| Deposits | $600.00 |
+| Withdrawals | $0.00 |
+| Dividends and distributions | $118.42 |
+| Change in market value | −$912.10 |
+| Ending value (September 30) | $41,986.87 |
+
+Dividends that were reinvested appear both as income and as purchases; they do not change the total value by themselves.
+
+## IRA section
+
+For IRAs, the statement shows contributions by tax year so clients can track their limits, and any RMD due for the year with the amount already distributed.
+
+## Personal performance
+
+Quarterly statements show the client's personal rate of return for the quarter, year to date, and since the account opened, which can differ from the funds' published returns because of timing of deposits and withdrawals.
+
+@page trade-confirmations | Trade confirmations
+@summary When confirmations are sent, what they contain, and when automatic transactions are confirmed on statements instead.
+
+## When
+
+A confirmation is produced for every purchase, sale, and exchange, available the business day after the trade. Automatic investments, systematic withdrawals, and dividend reinvestments are confirmed on the statement instead (unless the client opts for individual confirmations).
+
+## Contents
+
+Trade date, settlement date, account, fund, transaction type, dollar amount, NAV, shares, funding source or proceeds destination, IRA contribution year or distribution details, and a reference number.
+
+## Review
+
+Clients should review confirmations promptly and report errors right away; prompt reporting makes corrections simpler. See [[error-corrections]].
+
+## Reading a confirmation
+
+A client looking at a confirmation for a $1,000 purchase of BF500 sees: trade date (the pricing date), settlement date (one business day later), amount $1,000.00, NAV $218.40, shares 4.579, funding "Linked bank ••4421", and for an IRA "2026 contribution".
+
+## Confirmations versus chat confirmation cards
+
+The green card the client receives in chat confirms the order was placed and gives the reference number. The trade confirmation, available the next business day, shows the price and shares. Both are records; the trade confirmation is the official one.
+
+## Paper or paperless
+
+Confirmations follow the client's document delivery preference. Clients who want text alerts for each trade can enable them at My Account → Preferences.
+
+@page statement-schedule | Statement schedule
+@summary When each type of statement and report is produced.
+
+## Schedule
+
+| Document | Frequency | Available |
+|---|---|---|
+| Account statement | Quarterly; monthly for any month with activity | Within 5 business days after period end |
+| Annual statement | Yearly | January |
+| Trade confirmations | Per trade | Next business day |
+| Performance report | Quarterly | Online only |
+| Tax forms | Annually | See [[tax-form-calendar]] |
+| RMD notice | Annually | January |
+| Fund shareholder reports | Semiannual and annual | As published |
+
+## Activity triggering monthly statements
+
+Purchases, sales, exchanges, deposits, withdrawals. Dividend reinvestments alone do not trigger a monthly statement.
+
+## Common questions
+
+### "When will my September statement be ready?"
+Quarterly statements are available within 5 business days after the quarter ends, so early October for the September quarter.
+
+### "I didn't get a monthly statement."
+Monthly statements are produced only for months with activity other than dividend reinvestment. A quiet month rolls into the quarterly statement.
+
+### "Can I get statements more often?"
+Clients can view current balances and activity online any time. Statement frequency itself is not adjustable.
+
+### "Do I get a separate statement for each account?"
+Clients with several accounts receive a consolidated statement covering all accounts registered to them under the same profile, with a section for each account.
+
+@page document-retention-access | Finding and keeping documents
+@summary Where clients find documents online, how long they stay, and how to get older copies.
+
+## Online
+
+My Account → Statements & Documents, with filters for account, year, and document type. Tax forms also appear under My Account → Tax Documents. Everything is downloadable as PDF.
+
+## Retention
+
+Statements, confirmations, and tax forms remain online for **7 years**. Older documents can be requested from Client Records (typically within 10 business days).
+
+## Closed accounts
+
+Documents for closed accounts remain accessible online for 7 years, as long as the client has an active login (or can enroll).
+
+## Clients' own records
+
+Encourage clients to keep year-end statements and tax forms and records of IRA contributions and nondeductible basis indefinitely. This is general good practice, not tax advice.
+
+## Downloading in bulk
+
+Clients can download a year's statements together as a ZIP file from My Account → Statements & Documents → Download all for year.
+
+## Sharing with an accountant
+
+Rather than forwarding documents, clients can add their accountant as a view-only authorized user or an interested party for duplicate statements. See [[duplicate-statements]].
+
+## Documents for an estate
+
+Executors may need statements for the deceased's accounts, including date-of-death values. Estate Services provides these once the executor's authority is documented.
+
+@page fee-schedule | Fee schedule
+@summary Every fee Bob's Mutual Funds charges, and the fees we don't charge.
+
+## Fees we don't charge
+
+| Item | Fee |
+|---|---|
+| Account opening, maintenance, or closing | None |
+| IRA annual custodial fee | None |
+| Buying, selling, or exchanging BobsFunds funds | $0 |
+| Sales loads (front-end, back-end) and 12b-1 fees | None |
+| Redemption fees | None |
+| Incoming wires | None (the sending bank may charge) |
+| ACH transfers | None |
+| Outgoing ACAT transfers | None |
+| Stop payment on a check we issued | None |
+
+## Fees we charge
+
+| Service | Fee |
+|---|---|
+| Outgoing wire | $25 |
+| Overnight check delivery | $25 |
+| Paper statement fee | $2 per month per account (waived; see below) |
+| Returned payment (ACH or check) | $20 |
+
+## Fund expenses
+
+Each fund has an expense ratio (0.03% to 0.13%), deducted inside the fund, not charged to the account. See [[expense-ratios]].
+
+## Paper statement fee waivers
+
+Waived for paperless delivery, clients aged 75 or older, and accounts with balances over $250,000. See [[paper-fees]].
+
+## Explaining "no fees"
+
+When clients ask what they pay, a complete answer is: "There are no account fees and no transaction fees for our funds. The only ongoing cost is each fund's expense ratio, which is built into the fund's price. A few optional services have fees, like $25 for an outgoing wire."
+
+## Fees at other institutions
+
+The client's bank may charge for wires it sends or receives, and other firms may charge transfer-out fees when a client moves assets to us. We do not reimburse other firms' fees.
+
+## Changes to fees
+
+Any change to our fee schedule is announced at least 30 days in advance on statements and by notice. If a client says they were charged a fee they didn't expect, check the schedule and see [[fee-disputes]].
+
+@page paper-fees | Paper statement fee
+@summary The $2 monthly paper statement fee, who pays it, the waivers, and how to help clients avoid it.
+
+## The fee
+
+$2 per month per account for clients who receive statements by mail. It is charged quarterly ($6) from the account's cash or, if there is no cash, by selling a small amount of the largest holding.
+
+## Waivers
+
+- Paperless delivery of statements.
+- Clients aged 75 or older.
+- Accounts with a balance over $250,000.
+- Accounts with an accessibility accommodation for printed documents.
+
+## Avoiding it
+
+Switching to paperless at My Account → Preferences stops the fee from the next quarter. See [[paperless-delivery]].
+
+## Refunds
+
+If a client qualified for a waiver that was not applied (for example, they turned 75), refund the fees through a fee adjustment request (team lead approval). See [[fee-disputes]].
+
+## Example
+
+A client with two accounts, both receiving paper statements, pays $2 × 2 accounts × 3 months = $12 per quarter. Switching to paperless stops it from the next quarter.
+
+## How the fee appears
+
+It appears in the account activity as "Paper statement fee" each quarter, and on the statement.
+
+## Clients who prefer paper
+
+Some clients prefer paper and are willing to pay; that is their choice. Don't pressure them. Mention the waivers in case they qualify (age 75+, balances over $250,000).
+
+@page wire-fees | Wire fees
+@summary The outgoing wire fee, when it is charged, and when it may be waived.
+
+## The fee
+
+$25 per outgoing wire, deducted from the wired amount (a $10,000 wire delivers $9,975) unless the client asks for it to be charged separately to cash in the account.
+
+## Incoming wires
+
+We do not charge for incoming wires. The client's bank (and any intermediary bank for international wires) may charge.
+
+## Waivers
+
+The fee may be waived when:
+
+- The wire is needed to correct our error.
+- A returned wire was caused by our error.
+
+Waivers require team lead approval. Repeated requests to waive for convenience are not granted; suggest ACH (free) when timing allows.
+
+## Example
+
+A client sells $10,000 and requests a wire. The wire delivers $9,975 to their bank. If they want $10,000 to arrive, they can wire $10,025 or ask for the fee to be taken from cash in the account.
+
+## Free alternatives
+
+ACH is free and arrives in 2–3 business days. When a client's need isn't urgent, mention it.
+
+@page fee-disputes | Fee disputes and adjustments
+@summary How to handle a client who disputes a fee, when fees can be refunded, and the approval process.
+
+## Steps
+
+1. Identify the fee: type, amount, date, account.
+2. Determine whether it was charged correctly under the fee schedule. See [[fee-schedule]].
+3. If charged in error (a waiver not applied, a fee caused by our mistake), request a refund through a fee adjustment (team lead approval) and tell the client the expected timeline (credited within 3 business days).
+4. If charged correctly, explain the fee and how to avoid it in the future. Your team lead may approve a one-time courtesy refund in some circumstances; do not promise one.
+
+## Wrap-up
+
+Use Fee Dispute.
+
+## Fund expenses
+
+Expense ratios are not refundable fees; they are fund operating costs disclosed in the prospectus.
+
+## Example
+
+Client: "Why was I charged $20?"
+
+Agent: "That's a returned-payment fee. On March 3, your bank returned the $500 automatic investment into BF500 for insufficient funds, so the purchase was reversed and the fee applied."
+
+If the client says the bank account had money, ask them to check with their bank for the return reason. If the return was our error (for example, we debited the wrong bank account), request a refund.
+
+## Courtesy refunds
+
+Team leads may approve a one-time courtesy refund of a returned-payment fee or paper fee for a long-standing client with no prior refunds. Never promise one before approval.
