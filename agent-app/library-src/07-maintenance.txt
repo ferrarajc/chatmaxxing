@@ -1,0 +1,449 @@
+@section maintenance | Account Maintenance | Keeping accounts current: contact details, names, authorized users, powers of attorney, bank links, delivery preferences, registration changes, and closing accounts.
+
+@page contact-info-updates | Procedure: Update Contact Information
+@summary Chat procedure for changing a client's phone number, email address, or mailing address, with the fraud checks that go with it.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| What to update | Phone number, Email address, Mailing address |
+| New value | The new phone number, email address, or full mailing address |
+
+## Why contact changes are sensitive
+
+A change of email, phone, or address is the first step in most account takeovers: a fraudster changes the contact details so that security alerts and password reset links go to them, then moves money. That is why we send a notice to both the old and the new contact point, and why some money movement is restricted for a short period after a change.
+
+## Procedure
+
+1. Confirm the chat is authenticated and nothing suggests a third party. If the client is also asking to move money or add a bank in the same conversation, re-verify identity first. See [[identity-verification]].
+2. Let the task expert collect what to update and the new value, or start the task from the task menu.
+3. Read the new value back exactly as collected:
+   - **Phone**: all ten digits, and whether it is mobile (needed for text-message 2FA).
+   - **Email**: spell out unusual parts. A typo means the client stops receiving statements and reset links.
+   - **Address**: street, unit, city, state, ZIP. A PO Box can be a mailing address but not a residential address.
+4. Get a clear confirmation, review the Proposed Action, and submit.
+5. Tell the client what happens next (below).
+
+## What happens next
+
+- **Email**: a verification code is sent to the new address. The client confirms it at My Account → Profile; until verified, statements and alerts continue to the old address. A notice of the change goes to the old address.
+- **Phone**: the new number must be verified by a code before it can be used for 2FA text messages.
+- **Address**: takes effect immediately for mail. A notice goes to both the old and new addresses.
+
+## Restrictions after a change
+
+- For **15 days** after an address change, redemption checks cannot be mailed to the new address without a medallion signature guarantee. See [[medallion-signature-guarantee]].
+- For **10 days** after an email or phone change, a newly linked bank account cannot receive electronic redemptions without a verification call.
+
+These rules protect clients. Explain them as protection: "Because your address just changed, for the next 15 days we'll need extra verification to mail a check there. That protects you if someone else ever tried to change your address."
+
+## Moving between states
+
+An address change to a new state can affect state tax withholding on IRA distributions and the account's state of residence for UTMA accounts. Mention this if the client has scheduled distributions. See [[state-withholding]].
+
+@page address-changes | Address changes: special situations
+@summary Seasonal addresses, temporary addresses, returned mail, military addresses, and moves abroad.
+
+## Seasonal and temporary addresses
+
+Clients who split the year between two homes (for example, summer in Maine, winter in Florida) can add a **seasonal address** with start and end dates at My Account → Profile. Mail goes to the seasonal address during those dates and reverts automatically. The legal (residential) address does not change, so state tax withholding follows the legal address.
+
+A temporary address for a single month (travel, hospital stay) can be set the same way.
+
+## Returned mail
+
+If mail is returned as undeliverable, the account is flagged "address unknown":
+
+- Further mail is suspended.
+- Checks are not mailed.
+- After a long period of returned mail and no client contact, the account may become subject to state unclaimed property rules. See [[dormant-accounts-escheatment]].
+
+When a flagged client contacts us, verify identity and update the address; the flag clears.
+
+## Military addresses
+
+APO, FPO, and DPO addresses are accepted as U.S. addresses. They do not restrict purchases. Service members may also keep a stateside legal address.
+
+## Moving abroad
+
+A foreign address may restrict new purchases. See [[non-us-persons]]. Route to Account Services.
+
+## Multiple accounts
+
+An address change applies to all of the client's accounts where they are the owner. For joint accounts, changing the address changes it for all owners; confirm that is intended, and if the joint owners now live apart, the account can only have one address of record. Each owner's own profile address is separate.
+
+@page email-phone-changes | Email and phone changes
+@summary Verification of new email addresses and phone numbers, and what goes to each contact point.
+
+## Email
+
+The email address on file is used for:
+
+- Sign-in (most clients sign in with their email).
+- Password reset links.
+- Security alerts.
+- Statement, confirmation, and tax form notifications for paperless clients.
+- Secure message notifications.
+
+When the email changes, a code is sent to the new address and must be confirmed. Until it is confirmed, the old address remains active. A change notice goes to the old address. If a client receives a change notice they did not request, see [[account-takeover]].
+
+## Phone
+
+Clients may have several phone numbers (mobile, home, work). The mobile number marked for security is used for 2FA codes. Each number shows a verified or unverified status in the client info panel. A new number must be verified by a one-time code before it can receive 2FA codes.
+
+## The client lost access to their old email or phone
+
+If the client is signed in, they can update details themselves and verify the new ones. If they are locked out because codes go to an old phone or reset emails go to a closed email account, they must call 1-800-BOB-FUND to verify their identity by phone. Chat cannot authenticate a locked-out client.
+
+## Communication preferences
+
+Email and text notification preferences (which messages to receive by text, for example trade confirmations) are at My Account → Preferences. Security alerts cannot be turned off. See [[communication-preferences]].
+
+@page legal-name-change | Legal name changes
+@summary How clients change their name after marriage, divorce, or court order, and why it isn't a chat task.
+
+## Requirements
+
+A name change must match the client's legal name on file with the Social Security Administration, because we report tax information under name and SSN. The client must provide:
+
+- A completed Name Change form (from the Forms page), and
+- A copy of the legal document: marriage certificate, divorce decree that restores a former name, or court order.
+
+Some registrations (trusts, custodial accounts) may need additional paperwork.
+
+## Process
+
+1. The client uploads the form and document through a secure message or the document upload page, or mails them.
+2. Account Services updates the name on all of the client's accounts, usually within 3 business days.
+3. The client receives confirmation; their sign-in does not change.
+
+## Why it cannot be done in chat
+
+Updating the name requires reviewing a legal document. The Update Contact Information task does not handle names. Explain the steps and send the link to the form.
+
+## Tips for clients
+
+- Update their name with the Social Security Administration first. A mismatch between our records and the SSA can cause a TIN-mismatch notice and backup withholding. See [[w9-backup-withholding]].
+- Linked bank accounts must still be in the client's name; if the bank account name changes too, they may need to re-link it.
+- Beneficiaries the client named are unaffected, but a client changing their name after marriage or divorce often wants to review beneficiaries too. See [[beneficiary-life-events]].
+
+@page authorized-users-access-levels | Authorized users and access levels
+@summary The three access levels, what each allows, and the chat procedure for adding an authorized user (which the owner must approve).
+
+## Access levels
+
+| Level | Can see accounts | Can trade and exchange | Can move money | Can change ownership, beneficiaries, open or close accounts |
+|---|---|---|---|---|
+| View-only | Yes | No | No | No |
+| Limited access | Yes | Yes | Only back to the owner's linked bank | No |
+| Full access | Yes | Yes | Yes, including to outside accounts | Yes, including closing accounts |
+
+Authorized users sign in with their own credentials. They can be added to some or all of the owner's accounts. For joint accounts, all owners must approve.
+
+## Typical uses
+
+- **View-only**: an accountant, an adult child keeping an eye on a parent's accounts, a financial advisor at another firm.
+- **Limited access**: a spouse who manages investments.
+- **Full access**: rarely appropriate; usually someone with legal authority anyway. Mention a power of attorney as an alternative for someone who will manage finances if the owner becomes incapacitated. See [[power-of-attorney]].
+
+## Chat procedure (Add Authorized Account User)
+
+| Field | Format |
+|---|---|
+| Person's full name | First and last name |
+| Person's email address | Used to invite them to create a login |
+| Access level | View-only, Limited access, Full access |
+
+1. The account owner must be the one in the chat. A request from the would-be user ("add me to my mother's account") cannot proceed.
+2. Explain the three levels clearly. The task expert explains them too, but make sure the owner understands what Full access allows.
+3. When the Proposed Action appears, click **Send to client**. This is a client-submitted task: the owner must approve it in their own chat window. See [[client-submitted-actions]].
+4. When the owner submits, the invited person receives an email to create their login and verify their identity. Access starts once they finish.
+
+## Red flags
+
+Be alert if the owner seems pressured, if the new user is someone the owner met recently, or if Full access is requested for a new acquaintance. Ask open questions and escalate if concerned. See [[elder-financial-exploitation]].
+
+## Removing or changing access
+
+The owner can remove an authorized user or change the level at My Account → Account Access at any time. Removal is immediate.
+
+@page power-of-attorney | Power of attorney
+@summary Accepting a power of attorney, what the agent under a POA can do, durable versus springing POAs, and how to handle requests.
+
+## What it is
+
+A power of attorney (POA) is a legal document in which a person (the principal) authorizes another person (the agent or attorney-in-fact) to act for them. Our clients most often use a POA so a trusted person can manage their finances if they become unable to.
+
+## Types
+
+| Type | Effective | Notes |
+|---|---|---|
+| Durable | Immediately, and continues if the principal becomes incapacitated | Most common for financial planning |
+| Springing | Only when a stated event occurs (usually incapacity, certified by a physician) | We also need the certification that the event occurred |
+| Non-durable (general or limited) | Immediately; ends if the principal becomes incapacitated | Often for a specific transaction |
+
+Every POA ends when the principal dies. After death, only the executor or administrator can act.
+
+## Submitting a POA
+
+The agent submits:
+
+- A copy of the signed and notarized POA document, and
+- Our POA Acceptance form, signed by the agent, and
+- The agent's identification.
+
+Account Services reviews the document (typically 3–5 business days) to confirm it grants authority over brokerage or investment accounts. Once accepted, the agent can obtain their own login with permissions matching the POA.
+
+## What the agent can do
+
+Whatever the document authorizes, usually: view accounts, trade, take distributions, and move money for the principal's benefit. Most POAs do **not** allow the agent to change beneficiaries or make gifts to themselves unless explicitly stated. Account Services records limits when accepting the POA.
+
+## In chat
+
+- If the agent's POA is on file and they are signed in with their own credentials, treat them as the authorized party within the POA's limits.
+- If the POA is not on file, you cannot act on the agent's instructions. Explain the submission process.
+- Watch for exploitation: a newly submitted POA followed by large withdrawals to the agent is a red flag. See [[elder-financial-exploitation]].
+
+## IRAs
+
+An agent under a POA can request IRA distributions for the principal if the POA allows it. Distributions are taxed to the principal.
+
+@page linked-bank-accounts | Linking bank accounts
+@summary How clients link a bank account for transfers, the two verification methods, ownership rules, and timing.
+
+## Why link a bank
+
+A linked bank account lets the client move money electronically: purchases funded by ACH, automatic investment plans, redemptions sent by ACH, and IRA distributions by direct deposit.
+
+## How to link
+
+At My Account → Linked Bank Accounts → Add Account, the client either:
+
+1. **Instant verification**: signs in to their bank through a secure connection service; the account is verified immediately. Available for most U.S. banks.
+2. **Micro-deposits**: enters the routing and account numbers; we send two small deposits (under $1) within **1–2 business days**; the client confirms the amounts in the portal. The deposits are then withdrawn.
+
+## Ownership rules
+
+- The bank account must be in the name of at least one owner of the Bob's account. We do not link third-party bank accounts.
+- For joint Bob's accounts, a bank account in either owner's name is acceptable.
+- For trust accounts, the bank account should be in the trust's name or a trustee's name.
+- For custodial accounts, the custodian's or the minor's bank account.
+
+## Limits and timing
+
+- ACH transfers take 2–3 business days and are limited to $100,000 per day per account.
+- For **10 calendar days** after a bank is linked, electronic redemptions to that bank require a verification call. Purchases from it are allowed.
+- A client can have up to five linked bank accounts.
+
+## Troubleshooting
+
+See [[cannot-link-bank]] and [[bank-linking-verification]].
+
+@page removing-bank-accounts | Removing or replacing a linked bank account
+@summary What happens when a client removes a bank account, and how to avoid breaking automatic plans.
+
+## Before removing
+
+Check whether the bank account funds anything:
+
+- Automatic investment plans.
+- Systematic withdrawals or RMD direct deposits.
+- Dividend payments in cash to the bank.
+
+If it does, those plans must be moved to another linked bank first, or they will fail. The portal warns the client before removal.
+
+## Steps
+
+1. Link and verify the new bank account. See [[linked-bank-accounts]].
+2. Update each automatic plan to use the new bank (My Account → Automatic Investments; RMD Settings; Dividend Preferences).
+3. Remove the old bank at My Account → Linked Bank Accounts.
+
+## Closed bank accounts
+
+If a client closed their bank account without updating us, the next ACH debit or credit will be returned. Returned purchases are reversed and may incur a $20 returned-payment fee; returned redemption proceeds come back to the account as cash and are re-sent once a new bank is set up. See [[returned-items]].
+
+## In chat
+
+Removing a bank account is done online by the client. If a client cannot access the portal, Account Services can remove it after verification. Changing banks is a common precursor to fraud; if a client is changing banks and requesting a large redemption in the same chat, re-verify identity.
+
+@page paperless-delivery | Paperless delivery
+@summary How e-delivery works for statements, confirmations, tax forms, and regulatory documents, and the paper statement fee.
+
+## What goes paperless
+
+Clients can choose electronic delivery for:
+
+- Account statements
+- Trade confirmations
+- Tax forms
+- Fund reports and prospectuses
+- General correspondence
+
+Each can be set separately at My Account → Preferences, but most clients choose "all documents".
+
+## How it works
+
+When a new document is ready, we email a notification (from noreply@bobsmutualfunds.com) with no personal information in the email. The client signs in to view the document at My Account → Statements & Documents. Documents stay online for 7 years.
+
+## Benefits to mention
+
+- Documents arrive about 5–7 days sooner than mail.
+- The $2 per month paper statement fee is waived.
+- Less risk of mail theft.
+
+## Paper statement fee
+
+Clients who receive paper statements are charged $2 per month per account. The fee is waived for clients who choose paperless, for clients aged 75 and older, and for accounts with balances above $250,000. See [[paper-fees]].
+
+## Switching back to paper
+
+Clients can switch back to paper at any time. Tax forms requested by mail are sent within 5 business days.
+
+## Bounced emails
+
+If notification emails bounce, we switch the client back to paper automatically and notify them by mail, so they do not miss documents.
+
+@page duplicate-statements | Duplicate statements and interested parties
+@summary How a client can have copies of statements sent to an accountant, advisor, or family member.
+
+## Interested parties
+
+A client can name an **interested party** to receive copies of statements and confirmations by mail or email. Common interested parties are accountants, attorneys, outside financial advisors, and adult children. An interested party receives copies only; they cannot see the account online or act on it.
+
+## How to set up
+
+The client adds an interested party at My Account → Preferences → Duplicate Statements, providing the person's name and mailing or email address. In chat, explain where to do this. For a person who needs online visibility, suggest a view-only authorized user instead. See [[authorized-users-access-levels]].
+
+## Removal
+
+The client can remove an interested party at any time; it takes effect for the next statement.
+
+## One-time copies
+
+For a one-time copy of a past statement, the client can download it at My Account → Statements & Documents (7 years available). Older copies can be requested from Client Records through your team lead.
+
+## Example
+
+Client: "My accountant wants copies of my statements."
+
+Agent: "You can set her up as an interested party at My Account → Preferences → Duplicate Statements, and she'll get a copy of each statement automatically. If she needs to log in and see your accounts herself, you could add her as a view-only authorized user instead."
+
+## Privacy
+
+Interested parties receive the full statement, including balances and transactions. Make sure the client understands what will be shared.
+
+@page account-registration-changes | Registration changes
+@summary Changing how an account is owned: adding or removing owners, retitling to a trust, and why most changes require a new account.
+
+## What a registration is
+
+The registration is the legal ownership of an account: who owns it and in what capacity (individual, joint, custodian, trustee, IRA owner). It determines who can act, how it is taxed, and what happens at death.
+
+## Common changes
+
+| Change | How it is done |
+|---|---|
+| Individual to joint (add a spouse) | Open a joint account; transfer shares in kind from the individual account by journal |
+| Joint to individual (remove an owner) | All owners sign a transfer instruction (or provide a court order) |
+| Individual to trust | Open a trust account; transfer shares in kind. See [[trust-reregistration]] |
+| Custodial to the former minor | At the age of termination. See [[custodial-age-of-majority]] |
+| Joint to survivor after death | Death certificate. See [[joint-survivorship]] |
+| IRA to another person | Not possible except in divorce (transfer incident to divorce) or death. See [[divorce-transfers]] |
+
+## Taxes
+
+Moving shares in kind between registrations with the same tax owner (for example, individual to a revocable trust using the same SSN) is not a sale. Moving shares to a different person is a gift and not a sale either, but gift-tax rules may apply; refer the client to a tax professional. Selling and repurchasing would be a taxable sale, so in-kind transfer is the norm.
+
+## In chat
+
+Registration changes are not chat tasks because they need signatures and often documents. Explain the process, send the client the Account Registration Change form, and route to Account Services if the client has questions about documents.
+
+@page closing-an-account | Closing an account
+@summary How a client closes an account, what happens to the money, taxes and penalties, and retention conversations.
+
+## How to close
+
+1. The client sells all holdings in the account (a full redemption) or transfers them to another account or firm.
+2. The proceeds are paid out by ACH, check, or wire, or moved to another Bob's account.
+3. Once the balance is zero and no transactions are pending, the client requests closure at My Account → Account Settings → Close Account, or Account Services closes it on request.
+
+Accounts with a zero balance for 12 months are closed automatically.
+
+## IRAs
+
+Closing an IRA means taking a full distribution (taxable, possibly penalized) or transferring it to another IRA custodian (not taxable). Make sure the client knows the difference. A client moving their IRA to another firm should start the transfer from the new firm rather than taking a distribution. See [[acat-outgoing]] and [[ira-distributions-overview]].
+
+## Things to check
+
+- Pending automatic investments or withdrawals: they should be cancelled.
+- Dividends declared but not yet paid: a small residual may arrive after closing; we mail a check for it.
+- Taxes: a sale in a taxable account may produce a gain or loss; the client will receive a 1099-B. IRA distributions produce a 1099-R.
+- Tax forms for the year will still be produced and delivered.
+
+## Retention conversations
+
+It is appropriate to ask, once and without pressure, why the client is leaving, and to address any service issue. Do not argue, delay, or make closing difficult. If the client is leaving because of a complaint, handle it as a complaint. See [[complaints-handling]].
+
+## Fees
+
+We do not charge an account closing fee or an outgoing transfer fee. An outgoing wire for the proceeds costs $25.
+
+@page dormant-accounts-escheatment | Dormant accounts and unclaimed property
+@summary When accounts become dormant, how state unclaimed property laws apply, and how clients reclaim escheated assets.
+
+## Dormancy
+
+An account is considered dormant when the owner has had no contact with us for a period set by state law, usually three to five years. Contact includes signing in, placing a transaction, calling, or responding to mail. Automatic investments and dividend reinvestments generally do not count as owner contact.
+
+## Escheatment
+
+Each state requires financial firms to turn over (escheat) dormant property to the state's unclaimed property program. Before escheating, we mail a due-diligence letter to the last known address. If the owner does not respond, the shares are liquidated or transferred to the state.
+
+## Preventing it
+
+Clients prevent dormancy simply by signing in at least once a year or by keeping their address current. Returned mail accelerates the process. See [[address-changes]].
+
+## Reclaiming
+
+A client whose assets were escheated can reclaim them from the state's unclaimed property office (searchable at missingmoney.com). If the shares were liquidated, the state returns the cash value at the time of liquidation, not current value. We can provide documentation of the escheatment through Account Services.
+
+## Retirement accounts
+
+IRAs are escheated less often because of their long-term nature, but the same contact rules apply in most states.
+
+@page communication-preferences | Communication preferences
+@summary Which notifications clients can control, how to change them, and which ones are mandatory.
+
+## What clients can control
+
+At My Account → Preferences, clients choose:
+
+- **Delivery method** for documents: paperless or paper. See [[paperless-delivery]].
+- **Text alerts** for trade confirmations, deposits, and withdrawals.
+- **Marketing and educational emails**: the newsletter, Library articles, the podcast.
+- **Seasonal address** for mail.
+- **Interested parties** for duplicate statements.
+
+## Mandatory communications
+
+The following cannot be turned off:
+
+- Security alerts (password, contact detail, bank, and access changes).
+- Trade confirmations (they can be delivered electronically but not suppressed).
+- Regulatory notices, privacy notices, and prospectuses (deliverable electronically).
+- Tax forms.
+
+## Do-not-contact requests
+
+Clients who do not want marketing calls or emails can opt out of all marketing. We do not make sales calls. A client who received an unexpected call from someone claiming to be from Bob's should be warned about impersonation scams. See [[phishing-scams]].
+
+## Example
+
+Client: "I get too many emails from you."
+
+Agent: "I can help with that. Marketing emails like our newsletter and podcast announcements can be turned off at My Account → Preferences. Security alerts and document notices will still come, because they protect your account and tell you when statements are ready."
+
+## Text alerts
+
+Clients can opt in to text alerts for trades, deposits, and withdrawals. Standard message rates may apply. Texts never include full account numbers.

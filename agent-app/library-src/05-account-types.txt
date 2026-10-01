@@ -1,0 +1,402 @@
+@section account-types | Account Types | Every account registration we offer, how each is taxed and owned, and the products we do not offer.
+
+@page account-types-overview | Account types compared
+@summary A side-by-side comparison of every account type we offer: who owns it, how it's taxed, and its key rules.
+
+## The lineup
+
+| Account type | Owner | Tax treatment | Contributions | Withdrawals |
+|---|---|---|---|---|
+| Individual (taxable) | One person | Dividends and gains taxed each year | Unlimited | Any time, any amount |
+| Joint (taxable) | Two or more people | Taxed to owners | Unlimited | Per registration rules |
+| Custodial (UTMA/UGMA) | A minor; managed by a custodian | Taxed to the minor (kiddie tax may apply) | Irrevocable gifts | Only for the minor's benefit |
+| Trust | A trust; managed by trustees | Per the trust's tax status | Unlimited | Per the trust document |
+| Traditional IRA | One person | Tax-deferred; contributions may be deductible | Annual limit; earned income required | Taxed as income; 10% penalty before 59½ unless excepted; RMDs from 73/75 |
+| Roth IRA | One person | Tax-free qualified withdrawals | Annual limit; income limits | Contributions any time tax- and penalty-free; earnings rules apply |
+| SEP-IRA | One person (self-employed or employee of a small business) | Like a Traditional IRA | Employer contributions up to 25% of compensation | Like a Traditional IRA |
+| Inherited IRA | A beneficiary | Like the original IRA type | None | Under inherited IRA rules |
+| Estate account | An estate; managed by the executor | Estate tax return | Estate assets only | To settle the estate |
+
+Minimum to open any account is $1, and no account has a maintenance fee.
+
+## How to help a client choose
+
+Choosing an account type is a planning decision. You may explain the differences factually, using the table and the detailed pages, but you may not tell the client which one to open. A client who wants a recommendation should be offered a callback with a licensed professional. See [[choosing-account-type-conversations]].
+
+## Detailed pages
+
+- [[individual-account]]
+- [[joint-accounts]]
+- [[custodial-accounts]]
+- [[trust-accounts]]
+- [[traditional-ira]]
+- [[roth-ira]]
+- [[sep-ira]]
+- [[spousal-ira]]
+- [[inherited-ira]]
+- [[estate-accounts]]
+- [[products-not-offered]]
+
+@page individual-account | Individual (taxable) accounts
+@summary The basic brokerage account owned by one person: features, taxes, and common questions.
+
+## What it is
+
+An individual account is a taxable account owned by one person. It is the most flexible account we offer: no contribution limits, no income limits, no age restrictions on withdrawals, and no required distributions. The portal labels it "Taxable" or "Individual Taxable".
+
+## Taxes
+
+Because the account is taxable, the owner pays tax each year on:
+
+- **Dividends** paid by the funds, whether received in cash or reinvested. Many are "qualified dividends" taxed at lower capital-gains rates. See [[qualified-dividends]].
+- **Capital gain distributions** paid by the funds.
+- **Capital gains or losses** when the owner sells or exchanges shares. See [[cost-basis-methods]].
+
+We report this income on the consolidated Form 1099 each year. See [[form-1099-div]] and [[form-1099-b]].
+
+## Transfer on death
+
+An individual account can carry a transfer-on-death (TOD) registration naming beneficiaries, so the assets pass directly to them without probate. See [[transfer-on-death]].
+
+## Common questions
+
+### Can I take money out any time?
+Yes. Sell shares and have the proceeds sent to the linked bank by ACH, by wire, or by check. Selling may create a taxable gain or loss.
+
+### Is there a limit on how much I can put in?
+No. Daily ACH deposits are limited to $100,000 per account; larger deposits can be made by wire. See [[transfer-limits]].
+
+### Can I convert it to an IRA?
+No. An individual account cannot be converted into an IRA. The client can sell shares and use the cash to make an IRA contribution, subject to IRA limits, but the sale may be taxable.
+
+### Can I add my spouse?
+Adding an owner is a registration change, effectively moving the assets to a new joint account. See [[account-registration-changes]].
+
+@page joint-accounts | Joint accounts
+@summary Joint registrations we offer, how ownership passes at death, and what each owner can do.
+
+## Registrations
+
+| Registration | At the death of one owner | Notes |
+|---|---|---|
+| Joint Tenants with Rights of Survivorship (JTWROS) | Passes automatically to the surviving owner(s) | Our default and most common joint registration |
+| Tenants in Common (TIC) | The deceased owner's share passes to their estate | Shares may be unequal; must be specified |
+| Community Property | Per state law | Available only for married owners in community-property states |
+
+## Who can do what
+
+- Either owner can view the account, buy, sell, and exchange.
+- Redemption proceeds are paid to all owners jointly, or to a bank account registered to at least one owner.
+- Changes to the registration (adding or removing an owner), closing the account, and adding an authorized user require **all** owners' consent.
+- Each owner signs in with their own credentials.
+
+## Taxes
+
+The account is reported under the primary owner's Social Security number (the first owner listed). Owners may split the reported income between themselves on their own returns; that is a matter for their tax advisor.
+
+## Death of a joint owner
+
+For JTWROS, the survivor sends a certified death certificate and the account is re-registered in the survivor's name. See [[joint-survivorship]].
+
+## Divorce
+
+Removing an ex-spouse requires the consent of both owners or a court order. See [[divorce-transfers]].
+
+## Common questions
+
+### Can a joint account have a beneficiary?
+A JTWROS account can have a TOD registration that takes effect after the last surviving owner dies. See [[transfer-on-death]].
+
+### Can one owner remove the other?
+Not alone. Both owners must sign, unless a court order directs the change.
+
+@page custodial-accounts | Custodial accounts (UTMA/UGMA)
+@summary Accounts held for a minor under the Uniform Transfers/Gifts to Minors Acts: ownership, control, taxes, and the age of termination.
+
+## What they are
+
+A custodial account holds assets that legally belong to a minor, managed by an adult custodian until the minor reaches the age of termination set by their state (usually 18 or 21; some states allow up to 25). We open these under the Uniform Transfers to Minors Act (UTMA) or, in states that use it, the Uniform Gifts to Minors Act (UGMA).
+
+## Key rules
+
+- **Gifts are irrevocable.** Money put in belongs to the child. The custodian cannot take it back.
+- **The custodian controls the account** and must use it only for the minor's benefit (not for basic support the parent is legally obligated to provide).
+- **One minor, one custodian** per account. A successor custodian can be named.
+- **At the age of termination**, the custodian must transfer the account to the former minor. See [[custodial-age-of-majority]].
+- **Taxes**: income is reported under the minor's SSN. The "kiddie tax" may tax a child's unearned income above a threshold at the parents' rate; refer specifics to a tax professional.
+
+## Who can do what
+
+The custodian signs in and manages the account. The minor has no online access until the account is transferred. Grandparents or others may contribute by check or by bank transfer arranged with the custodian.
+
+## Common questions
+
+### Can a custodial account be a Roth IRA?
+A minor with earned income can have a Roth IRA managed by a custodian. That is a custodial Roth IRA, opened as a Roth IRA with a minor owner. Contributions cannot exceed the minor's earned income for the year.
+
+### Can I move UTMA money into a 529 plan?
+We do not offer 529 plans. A custodian can liquidate a UTMA and move proceeds to a UTMA-owned 529 at another firm; this is a sale and may be taxable.
+
+### The custodian died. What happens?
+The successor custodian, if named, takes over. Otherwise a successor is appointed under state law. Route to Account Services.
+
+@page traditional-ira | Traditional IRA
+@summary How the Traditional IRA works: contributions, deductibility, tax-deferred growth, withdrawals, and RMDs.
+
+## Overview
+
+A Traditional IRA is an individual retirement account where investments grow tax-deferred. Contributions may be tax-deductible depending on income and workplace plan coverage. Withdrawals are taxed as ordinary income. Most money rolled over from pre-tax 401(k) and 403(b) plans goes into a Traditional IRA.
+
+## Contributions
+
+- Anyone with earned income (or a spouse with earned income) can contribute; there is no upper age limit.
+- Annual limit for 2026: $7,500, plus a $1,100 catch-up at age 50 or older. The limit is shared with Roth IRA contributions. See [[ira-contribution-limits]].
+- Contributions for a tax year can be made until the tax-filing deadline of the next year (April 15). See [[contribution-deadlines]].
+- Deductibility depends on income if the client or their spouse is covered by a workplace plan. See [[traditional-ira-deductibility]].
+
+## Withdrawals
+
+- Withdrawals are taxed as ordinary income (except any nondeductible "basis", which the client tracks on IRS Form 8606).
+- Withdrawals before age 59½ incur a 10% additional tax unless an exception applies. See [[early-withdrawal-penalty]] and [[penalty-exceptions]].
+- We withhold 10% federal tax by default unless the client elects otherwise. See [[tax-withholding-retirement]].
+
+## Required minimum distributions
+
+Owners must begin RMDs at age 73 (born 1951–1959) or 75 (born 1960 or later). See [[rmd-overview]].
+
+## Converting to Roth
+
+All or part of a Traditional IRA can be converted to a Roth IRA; the converted pre-tax amount is taxable income. See [[roth-conversion-overview]].
+
+## Common questions
+
+### Is a Traditional IRA better than a Roth?
+That is a planning question. Explain the difference (tax break now versus tax-free later) and refer to a licensed professional for a recommendation.
+
+### Can I have both a Traditional and a Roth IRA?
+Yes. The annual contribution limit applies to the combined total.
+
+@page roth-ira | Roth IRA
+@summary How the Roth IRA works: after-tax contributions, income limits, tax-free qualified withdrawals, and no RMDs for the owner.
+
+## Overview
+
+A Roth IRA is funded with after-tax money. Qualified withdrawals, including all earnings, are completely tax-free. The original owner never has to take required minimum distributions.
+
+## Contributions
+
+- Requires earned income (or a working spouse for a spousal Roth).
+- 2026 limit: $7,500, plus $1,100 catch-up at 50+; shared with Traditional IRA contributions.
+- Eligibility to contribute directly phases out at higher incomes. See [[roth-income-limits]].
+- No age limit for contributions.
+
+## Withdrawals
+
+Roth withdrawals follow ordering rules: contributions come out first, then conversions, then earnings.
+
+- **Contributions** can be withdrawn at any time, for any reason, with no tax or penalty.
+- **Earnings** are tax-free and penalty-free in a **qualified distribution**: the client is 59½ or older (or disabled, or the distribution is to a beneficiary, or up to $10,000 lifetime for a first home purchase) **and** the first Roth IRA was opened at least five tax years ago.
+- Non-qualified withdrawals of earnings may be taxed and penalized.
+
+See [[roth-distribution-rules]] and [[roth-five-year-rules]].
+
+## No RMDs
+
+Roth IRA owners are never required to take RMDs. Beneficiaries who inherit a Roth IRA are subject to inherited IRA rules. See [[inherited-ira]].
+
+## Common questions
+
+### My income is too high. Can I still have a Roth?
+They cannot contribute directly above the phase-out range, but they can convert Traditional IRA money to Roth regardless of income. Some clients use a "backdoor Roth"; see [[backdoor-roth]] for the factual explanation and the advice boundary.
+
+### When does my 5-year clock start?
+On January 1 of the tax year of the first contribution to any Roth IRA. A 2025 contribution made in March 2026 starts the clock on January 1, 2025.
+
+@page sep-ira | SEP-IRA
+@summary The Simplified Employee Pension IRA for self-employed people and small businesses: who can open one, contribution rules, and deadlines.
+
+## Who it is for
+
+A SEP-IRA lets self-employed individuals and small-business owners make tax-deductible retirement contributions for themselves and their eligible employees. Freelancers, consultants, sole proprietors, partners, and owners of small corporations use them.
+
+## Contributions
+
+- Contributions are made by the **employer** (for a sole proprietor, that is the client acting as their own employer).
+- The maximum is **25% of compensation** (for a self-employed person, effectively about 20% of net self-employment earnings after the deduction for half of self-employment tax), up to **$72,000 for 2026** ($70,000 for 2025). Compensation above $360,000 (2026) is disregarded.
+- If the business has eligible employees, it must contribute the same percentage of pay for each eligible employee as for the owner.
+- Contributions are discretionary: the business can contribute nothing in a lean year.
+- The deadline is the business's tax-filing deadline, **including extensions**. See [[sep-contributions]].
+
+## Other rules
+
+- Withdrawals, taxes, the 10% early-withdrawal penalty, and RMDs work the same as a Traditional IRA.
+- SEP-IRA balances can be converted to Roth.
+- A SEP-IRA owner may also have a Traditional or Roth IRA and make regular IRA contributions to it, subject to the regular limits.
+
+## Opening a SEP-IRA
+
+The client opens a SEP-IRA for themselves online or through chat. Businesses with employees must also adopt a SEP plan document (IRS Form 5305-SEP); employees each open their own SEP-IRA. See [[opening-iras]].
+
+## Common questions
+
+### How much can I put in my SEP?
+The calculation depends on the client's net self-employment income and is a tax question. Explain the 25%-of-compensation rule and the dollar cap, and suggest they confirm the exact figure with their tax preparer.
+
+### Should I use a SEP or a Solo 401(k)?
+We do not offer Solo 401(k) plans. The client Library has a factual comparison article (SEP-IRA vs. Solo 401(k)); you may send it, but the choice is a planning decision.
+
+@page spousal-ira | Spousal IRA
+@summary How a spouse without earned income can contribute to an IRA based on the working spouse's income.
+
+## The rule
+
+Normally an IRA contribution requires earned income. A married couple filing a joint return can make IRA contributions for a spouse with little or no earned income, based on the working spouse's income. This is commonly called a spousal IRA. It is not a separate account type: it is a regular Traditional or Roth IRA owned by the non-working spouse.
+
+## Limits
+
+- Each spouse may contribute up to the annual limit ($7,500 in 2026, plus $1,100 catch-up if 50+).
+- The couple's combined IRA contributions cannot exceed the couple's combined taxable compensation.
+- Roth eligibility uses the couple's joint modified adjusted gross income. See [[roth-income-limits]].
+
+## Ownership
+
+The IRA belongs entirely to the spouse in whose name it is opened, even though the money came from the working spouse. The account owner names their own beneficiaries.
+
+## How to open
+
+The non-working spouse opens a Traditional or Roth IRA in their own name. The working spouse can fund it from a joint bank account. When contributing, the client should designate the tax year.
+
+@page inherited-ira | Inherited IRA
+@summary The account that holds IRA assets for a beneficiary after the owner dies, and how its distribution rules depend on the beneficiary type.
+
+## What it is
+
+When an IRA owner dies, beneficiaries usually move their share into an inherited IRA (sometimes called a beneficiary IRA) titled, for example, "Jane Smith, deceased (date), FBO John Smith, beneficiary". The assets stay tax-deferred (or tax-free for an inherited Roth) while the beneficiary takes distributions under special rules. No new contributions are allowed.
+
+## Distribution rules depend on the beneficiary
+
+| Beneficiary | Main options |
+|---|---|
+| Surviving spouse | Treat as their own IRA, roll over to their own IRA, or keep as an inherited IRA |
+| Eligible designated beneficiary (minor child of the owner, disabled, chronically ill, or not more than 10 years younger than the owner) | Distributions over life expectancy (a minor child switches to the 10-year rule at 21) |
+| Other individual (designated beneficiary) | Must empty the account by the end of the 10th year after death; annual RMDs in years 1–9 if the owner had started RMDs |
+| Estate, charity, or non-qualifying trust | 5-year rule if the owner died before RMDs began; otherwise over the owner's remaining life expectancy |
+
+Details: [[surviving-spouse-options]], [[non-spouse-beneficiaries]], [[eligible-designated-beneficiaries]], [[inherited-ira-rmds]].
+
+## Taxes and penalties
+
+Distributions from an inherited Traditional IRA are taxable income but are **never** subject to the 10% early-withdrawal penalty, whatever the beneficiary's age. Inherited Roth distributions are generally tax-free if the original owner's Roth had met the five-year requirement.
+
+## Setting one up
+
+Inherited IRAs are set up by Estate Services after the death is reported and documentation is received. Chat agents should not open inherited IRAs through the regular account-opening task. See [[death-notification]].
+
+@page trust-accounts | Trust accounts
+@summary Accounts owned by a trust: what we need to open one, who can act, and how trust accounts are taxed.
+
+## Overview
+
+A trust account is registered in the name of a trust, for example "Margaret Lee and David Lee, Trustees of the Lee Family Trust dated 03/14/2019". The trustees manage the account according to the trust document. Most trusts we see are revocable living trusts used in estate planning.
+
+## Opening
+
+To open a trust account we need:
+
+- A **Certification of Trust** (also called Trustee Certification), or the trust document's pages showing the trust's name and date, the trustees' names and powers, and the signature pages.
+- Identification for each trustee.
+- The trust's taxpayer ID: for a revocable trust, usually the grantor's SSN; for an irrevocable trust, an EIN.
+
+Trust accounts cannot be opened through the chat account-opening task. Clients start the application online (Open an Account → Trust) or by form, and Account Services reviews the documents. See [[opening-trust-accounts]].
+
+## Who can act
+
+Trustees named on the account act for the trust. If there are co-trustees, the trust document says whether one can act alone or all must sign. Account Services records this when the account is opened. Beneficiaries of the trust have no access unless they are also trustees.
+
+## Taxes
+
+A revocable trust's income is usually reported under the grantor's SSN and taxed to them. An irrevocable trust files its own tax return. This is a question for the client's tax advisor.
+
+## Trust as an IRA beneficiary
+
+A trust can be named as the beneficiary of an IRA, which raises complex distribution rules. See [[trusts-estates-as-beneficiaries]].
+
+## Changing trustees
+
+If a trustee dies, resigns, or is added, Account Services needs an updated Certification of Trust or amendment. See [[trust-reregistration]].
+
+@page estate-accounts | Estate accounts
+@summary Accounts opened in the name of a deceased person's estate to settle their affairs.
+
+## When an estate account is used
+
+When an account owner dies without a surviving joint owner, TOD registration, or named beneficiary (for non-IRA accounts), the assets pass through the estate. The executor (named in the will) or administrator (appointed by the court) opens an estate account, registered for example "Estate of Robert Chen, Linda Chen, Executor", to collect and distribute the assets.
+
+## Requirements
+
+- Certified death certificate.
+- **Letters Testamentary** (for an executor) or **Letters of Administration** (for an administrator), issued by the court, usually dated within the last 60 days.
+- An EIN for the estate.
+- Identification for the executor.
+
+Smaller estates may qualify for a simplified process using a small-estate affidavit. See [[small-estates]].
+
+## Handling
+
+Estate accounts are opened and managed by Estate Services. Chat agents should express condolences, explain the general process, and connect the executor with Estate Services. See [[death-notification]] and [[estate-documentation]].
+
+## Example
+
+A client's mother died without a will naming beneficiaries on her taxable account. The court appoints the client as administrator. The client provides Letters of Administration, the death certificate, and an estate EIN; Estate Services opens an estate account, moves the shares into it, and the client later distributes the assets to heirs as the court directs.
+
+## Taxes
+
+Income earned by the estate account after death is reported under the estate's EIN and on the estate's tax return.
+
+@page products-not-offered | Products and services we don't offer
+@summary What Bob's Mutual Funds does not offer, and how to respond when a client asks for it.
+
+## Not offered
+
+| Product or service | What to tell the client |
+|---|---|
+| Individual stocks, ETFs, bonds, options | We offer BobsFunds mutual funds only. Many of our funds track the same indexes as popular ETFs. |
+| Other companies' mutual funds | We hold only BobsFunds funds. If a client transfers in other funds, they must be sold at the other firm first. See [[acat-incoming]]. |
+| Money market fund / cash sweep with interest | Uninvested cash is held in the account without interest. Our Short-Term Treasury fund (BFST) is a low-risk bond fund, but it is not a money market fund and can lose value. |
+| Bank accounts, debit cards, checkwriting | Not offered. |
+| 401(k) plan administration, Solo 401(k) | Not offered. We accept rollovers from 401(k) plans. |
+| SIMPLE IRA | Not offered. A SIMPLE IRA can be rolled to a Traditional IRA after the 2-year participation period. |
+| 529 education plans, Coverdell ESAs | Not offered. |
+| HSAs | Not offered. |
+| Annuities, insurance | Not offered. |
+| Margin loans, borrowing against an account | Not offered. IRA assets can never be pledged as collateral. |
+| Managed accounts, financial planning | Not offered through service channels; clients who want advice are referred to a licensed professional by callback. |
+| Cryptocurrency | Not offered. |
+
+## How to respond
+
+Be direct and helpful. "We don't offer individual stocks; our accounts hold BobsFunds mutual funds. If you're looking for broad stock market exposure, I can tell you about our index funds." Describe our funds factually; do not suggest that a fund is a good substitute for the client's specific goal (that would be advice).
+
+@page choosing-account-type-conversations | Talking about which account to open
+@summary How to help a client compare account types without crossing into advice.
+
+## The situation
+
+Clients often ask "Should I open a Roth or a Traditional IRA?" or "What account should I use to save for my kids?" These are planning questions. You can help a great deal without making a recommendation.
+
+## What you can do
+
+- Explain each account type's rules factually: who can contribute, limits, tax treatment, access to money.
+- Ask neutral questions that help the client apply the rules themselves: "Do you have earned income this year?" "Are you covered by a retirement plan at work?" These clarify eligibility, not suitability.
+- Point out eligibility facts: "Based on the income you mentioned, a direct Roth contribution would be limited this year."
+- Send the relevant client-facing articles.
+
+## What you cannot do
+
+- Say which account is better for the client.
+- Predict their future tax bracket or say "you'll save money" with one option.
+- Recommend a split between account types.
+
+## Script
+
+"Both are great tools, and the right one depends on your tax situation now versus in retirement, which is a planning question I'm not able to answer for you. I can walk you through how each one works, or I can set up a call with a licensed professional who can look at your situation. Which would you prefer?" See [[advice-decline-scripts]].

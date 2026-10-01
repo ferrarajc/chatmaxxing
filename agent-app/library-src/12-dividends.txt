@@ -1,0 +1,254 @@
+@section dividends | Dividends & Fund Distributions | How funds pay dividends and capital gains, the distribution calendar, reinvestment (DRIP), record and ex-dividend dates, cash delivery, and taxes.
+
+@page distributions-overview | Fund distributions overview
+@summary Why funds pay distributions, the two kinds, how often, and what happens to the money.
+
+## Why funds distribute
+
+A mutual fund collects dividends and interest from the securities it holds and realizes gains when it sells securities at a profit. Under tax law, a fund must pass substantially all of that income and those net gains to shareholders each year. These payments are called **distributions**.
+
+## Two kinds
+
+| Kind | Source | Typical timing |
+|---|---|---|
+| Dividends (income distributions) | Dividends from stocks; interest from bonds | Monthly (bond funds), quarterly (most U.S. stock funds), semiannually (international funds) |
+| Capital gain distributions | Net gains the fund realized from selling securities | Usually once a year, in December; some years none |
+
+Index funds with low turnover usually distribute few capital gains. See [[capital-gains-distributions]].
+
+## What happens to the money
+
+Each client chooses, per fund:
+
+- **Reinvest** (DRIP, the default): the distribution buys more shares of the same fund at that day's NAV. See [[drip]].
+- **Cash to the account**: the distribution is added to the account's cash balance.
+- **Cash to the bank**: the distribution is sent to the linked bank by ACH.
+
+## Effect on price
+
+On the ex-dividend date, the NAV drops by the distribution amount. The client's total value does not change because of the distribution itself. See [[ex-dividend-dates]].
+
+## Where clients see them
+
+Distributions appear in the account's transaction history and on statements. Annual totals are reported on Form 1099-DIV for taxable accounts. See [[dividend-taxes]].
+
+@page distribution-calendar | Distribution calendar
+@summary When each group of funds pays distributions, with recent example dates.
+
+## Schedule by fund group
+
+| Fund group | Dividend frequency | Typical pay dates |
+|---|---|---|
+| Fixed income (BFBI, BFST, BFITT, BFLTT, BFSTC, BFITC, BFLTC) | Monthly | Around the 7th of each month |
+| U.S. equity and sector funds | Quarterly | Late March, late June, late September, late December |
+| International (BFIN, BFDEV, BFEMG, BFEUR, BFPAC) | Semiannually | Mid-June and mid-December |
+| Capital gains (all funds, if any) | Annually | Late December |
+
+## Recent examples
+
+| Fund | Date | Type | Per share |
+|---|---|---|---|
+| BF500 | 2026-03-25 | Dividend | $1.636 |
+| BF500 | 2025-12-23 | Capital gain | $0.291 |
+| BFBI | 2026-04-07 | Dividend | $0.176 |
+| BFIN | 2025-12-15 | Dividend | $0.617 |
+| BFST | 2026-04-07 | Dividend | $0.223 |
+
+Each fund's profile page lists its recent distributions. See [[fund-lineup-overview]].
+
+## Year-end estimates
+
+In November, the funds publish estimated December capital gain distributions on the portal's Distributions page. Clients with taxable accounts sometimes ask about these when considering a purchase in late year. See [[buying-the-dividend]].
+
+## Amounts vary
+
+Dividend amounts change from period to period with the income the fund earns. Past distributions do not guarantee future ones.
+
+@page drip | Dividend reinvestment (DRIP)
+@summary How automatic reinvestment works, the default setting, taxes on reinvested dividends, and how to change it.
+
+## How it works
+
+With dividend reinvestment on, each distribution is used to buy more shares of the same fund, at the NAV on the reinvestment date, with no fee. Example: a client holds 500 shares of BF500; the fund pays $0.45 per share ($225); at a NAV of $218.40, DRIP buys 1.030 additional shares.
+
+## Default
+
+Reinvestment is **on by default** for every fund in every new account. Clients can turn it off per fund.
+
+## Changing the setting
+
+- Online: My Account → Dividend Preferences, per fund and account.
+- Chat: the Change Dividend Reinvestment task. See [[toggle-drip-task]].
+
+A change applies to distributions with a record date after the change is processed. If a distribution's record date has already passed, that payment follows the old setting.
+
+## Taxes
+
+In a taxable account, reinvested distributions are taxable in the year paid, exactly like cash distributions. Each reinvestment adds to the client's cost basis, which we track and report. In IRAs, reinvested distributions are not taxed. See [[dividend-taxes]].
+
+## Common questions
+
+### "Why did I get a 1099-DIV if I never received cash?"
+Because reinvested dividends are taxable in a taxable account. The reinvested amount increased their cost basis, so they will not be taxed on it again when they sell.
+
+### "Can I reinvest dividends from one fund into a different fund?"
+Online, clients can direct distributions from one fund into another fund in the same account (cross-reinvestment) at My Account → Dividend Preferences. The chat task only turns same-fund reinvestment on or off.
+
+@page toggle-drip-task | Procedure: Change Dividend Reinvestment (chat)
+@summary Step-by-step chat procedure for turning dividend reinvestment on or off for a fund.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | One of the client's accounts |
+| Fund | A fund held in that account |
+| Enable or disable | Turn ON (reinvest), or Turn OFF (receive as cash) |
+
+## Procedure
+
+1. Confirm the account and fund. If the client wants to change all funds, each fund is a separate task; or direct them to Dividend Preferences online to change all at once.
+2. If turning off, ask where the cash should go: to the account's cash balance (default) or to the linked bank. Note the answer.
+3. Review the Proposed Action and submit.
+4. Tell the client when it takes effect: "This applies to BFBI's next dividend. If a dividend's record date has already passed, that one will still be reinvested."
+
+## Related questions
+
+- A client turning off DRIP in retirement to receive income may also want a systematic withdrawal plan. Mention it as an option, not a recommendation. See [[systematic-withdrawals-overview]].
+- A client asking whether they should reinvest is asking for advice. Explain how each option works and offer a callback if they want guidance.
+
+@page capital-gains-distributions | Capital gain distributions
+@summary Why funds distribute capital gains, how index funds keep them low, and how they're taxed.
+
+## What they are
+
+When a fund sells securities for more than it paid, it realizes a capital gain. After offsetting losses, net realized gains must be distributed to shareholders, usually in December. Distributions are classified as:
+
+- **Long-term capital gain distributions**, from securities the fund held more than a year, taxed at long-term capital gain rates regardless of how long the client has owned the fund.
+- **Short-term capital gain distributions**, from securities held a year or less, which are reported as ordinary dividends.
+
+## Why index funds distribute little
+
+Index funds trade only when their index changes, so they realize few gains. Many years they distribute none. Bond funds may distribute small gains when bonds are sold before maturity. Sector funds can distribute more when their index rebalances.
+
+## Effect on the client
+
+- A capital gain distribution lowers the NAV by the amount paid. The client's value is unchanged, but in a taxable account they owe tax on the distribution.
+- In an IRA, there is no tax effect.
+
+## Questions
+
+### "Why do I owe tax on gains when the fund lost value this year?"
+A fund can realize gains on securities it sold even in a year its overall value fell. The distribution reflects realized gains, not the fund's return.
+
+### "Can I avoid the December distribution?"
+Whether to time purchases around distributions is a tax planning decision. You can explain how distributions work and where the estimates are published. See [[buying-the-dividend]].
+
+@page ex-dividend-dates | Record, ex-dividend, reinvestment, and pay dates
+@summary The dates in a distribution, which one determines who gets paid, and why the NAV drops.
+
+## The dates
+
+| Date | Meaning |
+|---|---|
+| Record date | Shareholders on the fund's records at this date receive the distribution |
+| Ex-dividend date | The date the NAV is reduced by the distribution amount. For mutual funds, usually the record date or the next business day |
+| Reinvestment date | The date DRIP shares are purchased, usually the ex-date |
+| Payable date | The date cash distributions are paid |
+
+## Who gets paid
+
+A client who owns shares on the record date receives the distribution. A client who buys on or after the ex-dividend date does not receive that distribution. A client who sells on or after the ex-date still receives it.
+
+## The NAV drop
+
+On the ex-dividend date, the NAV falls by the amount distributed, in addition to any market movement. Example: BF500 NAV is $220.00; it distributes $1.636; on the ex-date, before market movement, the NAV is $218.364. The shareholder now has $218.364 per share plus $1.636 per share in cash or reinvested shares: still $220.00.
+
+## Explaining it
+
+Clients who see a drop on a distribution date may think they lost money. "The fund paid a dividend of $1.64 per share that day, so the share price dropped by that amount. You received the dividend, reinvested as additional shares, so your total value wasn't reduced by the payment." See [[fund-value-dropped]].
+
+@page buying-the-dividend | "Buying the dividend"
+@summary Why some clients avoid buying shortly before a distribution in taxable accounts, and how to discuss it neutrally.
+
+## The concept
+
+If a client buys a fund in a taxable account just before the ex-dividend date, they receive the distribution right away and owe tax on it, even though the distribution simply returned part of what they paid (the NAV drops by the same amount). This is sometimes called "buying the dividend". It mostly matters for large December capital gain distributions.
+
+## What it does not affect
+
+- It does not affect IRAs.
+- It does not change the client's total value.
+- It does not matter much for small quarterly dividends.
+
+## How to discuss it
+
+If a client asks, explain the mechanics and point to the published distribution estimates and dates. Do not tell the client to delay or proceed with a purchase. Example:
+
+"BF500 is expected to pay a capital gain distribution on December 22. If you buy before then in a taxable account, you'll receive that distribution and it will be taxable this year, though your total value is the same. Some investors time purchases around this. Whether that matters for you is a tax question."
+
+## Example
+
+A client invests $50,000 in BFMCG in a taxable account on December 18. On December 22 the fund distributes $2.00 per share as a capital gain (about 0.75% of the NAV). The client receives about $377 in distributions, taxable this year, and the NAV drops by the same amount. Their total value is unchanged; the difference is the tax timing.
+
+@page dividend-cash-delivery | Receiving dividends as cash
+@summary How cash distributions are delivered, timing, and common questions from income-focused clients.
+
+## Options
+
+When reinvestment is off, a distribution is either:
+
+- **Added to the account's cash balance** on the payable date. It stays there until the client invests or withdraws it.
+- **Sent to the linked bank** by ACH, arriving 2–3 business days after the payable date.
+
+Distributions are not paid by check, except a final small distribution after an account is closed.
+
+## Income-focused clients
+
+Retirees often turn off reinvestment on bond funds to receive monthly income. Point out, factually, that:
+
+- Bond fund dividends vary month to month.
+- Amounts are not guaranteed.
+- A systematic withdrawal plan provides a fixed amount, if that's what they want. See [[systematic-withdrawals-overview]].
+
+## Small amounts
+
+Distributions under $10 sent to the bank are accumulated and sent once they reach $10, or at year end.
+
+## IRAs
+
+Cash distributions in an IRA stay in the IRA as cash. Sending them to the bank would be an IRA distribution, which has tax consequences; IRA distribution preferences are handled through the distribution tasks, not dividend preferences.
+
+## Example
+
+A retiree holds $200,000 in BFBI with reinvestment off and cash to bank. Each month around the 7th, about $600–$650 arrives in their bank two to three business days later. The amount varies.
+
+## Switching back to reinvestment
+
+Clients can turn reinvestment back on at any time; it takes effect for the next distribution whose record date is after the change.
+
+@page dividend-taxes | How fund distributions are taxed
+@summary The tax treatment of ordinary dividends, qualified dividends, capital gain distributions, and interest from Treasury funds.
+
+## Taxable accounts
+
+| Type | How it's taxed (federal) | Where reported |
+|---|---|---|
+| Qualified dividends | Long-term capital gain rates (0%, 15%, 20%) | 1099-DIV box 1b |
+| Ordinary (nonqualified) dividends, including bond fund income and short-term gains | Ordinary income rates | 1099-DIV box 1a |
+| Long-term capital gain distributions | Long-term capital gain rates | 1099-DIV box 2a |
+| Foreign tax paid by international funds | May be claimed as a credit or deduction | 1099-DIV box 7 |
+
+Distributions are taxable whether paid in cash or reinvested.
+
+## Treasury fund interest
+
+Interest from U.S. Treasury securities is exempt from state and local income tax in most states. Our Treasury funds (BFST, BFITT, BFLTT) and part of BFBI earn Treasury interest, and we publish the percentage each year so clients can claim the state exemption. See [[treasury-interest-state-tax]].
+
+## IRAs
+
+Distributions inside an IRA are not taxed when paid. Traditional IRA withdrawals are taxed later as ordinary income regardless of the source of the money.
+
+## What you can say
+
+Explain the categories and where they appear on the 1099-DIV. Do not calculate the client's tax or advise how to report. See [[form-1099-div]] and [[tax-advice-boundary]].
