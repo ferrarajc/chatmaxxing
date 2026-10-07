@@ -1,6 +1,11 @@
 {
-  "generatedAt": 1791296692703,
-  "exportedAt": 1791296718693,
+  "generatedAt": 1791384082523,
+  "exportedAt": 1791384106789,
   "count": 36,
-  "fundsFailedLastRun": []
+  "fundsFailedLastRun": [
+    {
+      "ticker": "BFDIS",
+      "error": "Error: YF chart VCR: HTTP 502"
+    }
+  ]
 }
