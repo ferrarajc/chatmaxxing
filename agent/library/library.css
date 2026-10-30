@@ -1,0 +1,54 @@
+/* Agent Knowledge Library: deliberately plain. One column, system fonts, no images. */
+:root {
+  --text: #1d2330;
+  --muted: #5b6474;
+  --bg: #ffffff;
+  --rule: #d9dde4;
+  --link: #1f4fa3;
+  --accent-bg: #f3f5f8;
+  --note-bg: #fff8e1;
+  --note-rule: #e0b100;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #e4e7ec;
+    --muted: #a3abb8;
+    --bg: #14171c;
+    --rule: #2f3540;
+    --link: #8cb4ff;
+    --accent-bg: #1c2027;
+    --note-bg: #2a2412;
+    --note-rule: #b38f00;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto;
+  max-width: 50rem;
+  padding: 0 16px 48px;
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+header { border-bottom: 1px solid var(--rule); padding: 12px 0; margin-bottom: 8px; }
+.banner { margin: 0 0 6px; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--muted); text-transform: uppercase; }
+.crumbs, .tools { font-size: 14px; color: var(--muted); }
+.tools { margin-top: 4px; }
+a { color: var(--link); }
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 24px 0 4px; }
+h2 { font-size: 1.35rem; margin: 32px 0 8px; padding-top: 8px; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.08rem; margin: 22px 0 6px; }
+.meta { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.summary { font-size: 1.05rem; background: var(--accent-bg); padding: 12px 14px; border-radius: 6px; }
+.toc { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 14px; margin: 16px 0; font-size: 14px; }
+.toc p { margin: 0 0 4px; font-weight: 600; }
+.toc ul { margin: 0; padding-left: 18px; }
+blockquote { margin: 16px 0; padding: 10px 14px; background: var(--note-bg); border-left: 4px solid var(--note-rule); border-radius: 4px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0 16px; font-size: 15px; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--rule); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--accent-bg); }
+code { font-size: .92em; background: var(--accent-bg); padding: 1px 4px; border-radius: 3px; }
+.pager { display: flex; justify-content: space-between; gap: 16px; margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 14px; }
+.count { color: var(--muted); font-size: 14px; }
+.sections li, .pagelist li { margin-bottom: 10px; }
+footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }

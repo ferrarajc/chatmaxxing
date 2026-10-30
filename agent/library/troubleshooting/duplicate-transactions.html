@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duplicate or unexpected transactions | Agent Knowledge Library</title>
+<meta name="description" content="Handling transactions that appear twice or that the client doesn't recognize.">
+<link rel="stylesheet" href="../library.css">
+</head>
+<body>
+<header>
+<p class="banner">Bob's Mutual Funds &middot; Agent Knowledge Library &middot; Internal use only</p>
+<nav class="crumbs"><a href="../index.html">Library</a> &rsaquo; <a href="index.html">Troubleshooting</a> &rsaquo; Duplicate or unexpected transactions</nav>
+<nav class="tools"><a href="../index.html">Library home</a> &middot; <a href="../a-z.html">A&ndash;Z index</a> &middot; <a href="../ask.html">Ask the library</a></nav>
+</header>
+<main>
+<h1>Duplicate or unexpected transactions</h1>
+<p class="meta">Section: <a href="index.html">Troubleshooting</a> &middot; Page ID: <code>duplicate-transactions</code></p>
+<p class="summary">Handling transactions that appear twice or that the client doesn't recognize.</p>
+<nav class="toc"><p>On this page</p><ul><li><a href="#duplicates">Duplicates</a></li><li><a href="#unrecognized-transactions">Unrecognized transactions</a></li><li><a href="#things-that-look-like-duplicates-but-aren-t">Things that look like duplicates but aren't</a></li><li><a href="#when-it-is-a-real-duplicate">When it is a real duplicate</a></li></ul></nav>
+<h2 id="duplicates">Duplicates</h2>
+<ol>
+  <li>Confirm whether there are truly two transactions (same amount, fund, date) or one transaction shown in two places (for example, a purchase and its matching bank debit).</li>
+  <li>If two orders were placed (for example, a client clicked twice online, or both an online and a chat order), see <a href="pending-transactions.html">Pending and in-process activity</a>.</li>
+  <li>If a system error created a duplicate, escalate as an error. See <a href="../compliance/error-corrections.html">Correcting errors (as-of trades)</a>.</li>
+</ol>
+<h2 id="unrecognized-transactions">Unrecognized transactions</h2>
+<p>Common legitimate causes: dividend reinvestments, automatic investments, RMD payments, fees, a joint owner's or authorized user's action. Check the transaction type and who initiated it.</p>
+<p>If the client still doesn't recognize it, treat it as possible unauthorized activity. See <a href="../security/account-takeover.html">Suspected account takeover or unauthorized activity</a>.</p>
+<h2 id="things-that-look-like-duplicates-but-aren-t">Things that look like duplicates but aren't</h2>
+<table>
+  <thead><tr><th>Looks like</th><th>Actually</th></tr></thead>
+  <tbody>
+    <tr><td>Two purchases of the same amount on the same day</td><td>One online, one from an automatic plan</td></tr>
+    <tr><td>A purchase and a matching &quot;deposit&quot; line</td><td>The ACH deposit and the purchase it funded</td></tr>
+    <tr><td>Two dividend lines</td><td>A dividend and its reinvestment</td></tr>
+    <tr><td>Two withdrawals</td><td>A gross distribution and its tax withholding line</td></tr>
+    <tr><td>The same transaction on two statements</td><td>A transaction near the statement cutoff, shown as pending then completed</td></tr>
+  </tbody>
+</table>
+<h2 id="when-it-is-a-real-duplicate">When it is a real duplicate</h2>
+<p>If the client placed the same order twice (for example, once online and once in chat), and both have priced, the client can sell the extra shares at the current NAV. If the duplicate was caused by our system or by an agent submitting twice, escalate for an as-of correction so the client bears no market loss. See <a href="../compliance/error-corrections.html">Correcting errors (as-of trades)</a>.</p>
+<nav class="pager"><a href="pending-transactions.html">&larr; Pending and in-process activity</a><a href="missing-check.html">&quot;I never got my check&quot; &rarr;</a></nav>
+</main>
+<footer>
+<p>Internal reference for Bob's Mutual Funds service agents. Do not send this page or its URL to clients; share the client-facing help page instead. Last reviewed September 2026.</p>
+</footer>
+</body>
+</html>

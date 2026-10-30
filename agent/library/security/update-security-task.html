@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Procedure: Update Security Settings | Agent Knowledge Library</title>
+<meta name="description" content="Chat procedure for password changes, enabling 2FA, changing 2FA methods, and removing trusted devices.">
+<link rel="stylesheet" href="../library.css">
+</head>
+<body>
+<header>
+<p class="banner">Bob's Mutual Funds &middot; Agent Knowledge Library &middot; Internal use only</p>
+<nav class="crumbs"><a href="../index.html">Library</a> &rsaquo; <a href="index.html">Identity, Privacy &amp; Security</a> &rsaquo; Procedure: Update Security Settings</nav>
+<nav class="tools"><a href="../index.html">Library home</a> &middot; <a href="../a-z.html">A&ndash;Z index</a> &middot; <a href="../ask.html">Ask the library</a></nav>
+</header>
+<main>
+<h1>Procedure: Update Security Settings</h1>
+<p class="meta">Section: <a href="index.html">Identity, Privacy &amp; Security</a> &middot; Page ID: <code>update-security-task</code></p>
+<p class="summary">Chat procedure for password changes, enabling 2FA, changing 2FA methods, and removing trusted devices.</p>
+<nav class="toc"><p>On this page</p><ul><li><a href="#what-the-task-collects">What the task collects</a></li><li><a href="#procedure">Procedure</a></li><li><a href="#things-to-watch-for">Things to watch for</a></li></ul></nav>
+<h2 id="what-the-task-collects">What the task collects</h2>
+<table>
+  <thead><tr><th>Field</th><th>Options</th></tr></thead>
+  <tbody>
+    <tr><td>What to update</td><td>Change password; Enable 2FA; Disable 2FA (processed as a method change); Remove trusted device</td></tr>
+  </tbody>
+</table>
+<h2 id="procedure">Procedure</h2>
+<ol>
+  <li>Confirm the client is authenticated and the request is coming from the owner. Security changes are high risk; if anything seems off, re-verify. See <a href="identity-verification.html">Verifying client identity</a>.</li>
+  <li>Let the task expert collect the action, or choose it from the task menu.</li>
+  <li>Review the Proposed Action and submit.</li>
+  <li>Explain what happens next:</li>
+</ol>
+<p>- <strong>Change password</strong>: a secure link is sent to the email on file; the client sets the new password themselves. We never see it. - <strong>Enable 2FA</strong>: the client completes setup at My Account → Security (scan a QR code or verify a phone number). - <strong>Disable 2FA</strong>: 2FA is required, so explain that we can switch the method rather than remove it, and guide them to My Account → Security. - <strong>Remove trusted device</strong>: the device must complete 2FA on its next sign-in.</p>
+<h2 id="things-to-watch-for">Things to watch for</h2>
+<ul>
+  <li>A request to change security settings immediately before or after a request to change contact details or move money is a fraud signal. Pause and verify.</li>
+  <li>If a client says they are locked out, they are not authenticated, so they cannot use this task. Direct them to <a href="password-reset.html">Password resets</a> or <a href="account-lockouts.html">Locked accounts</a>.</li>
+</ul>
+<nav class="pager"><a href="trusted-devices.html">&larr; Trusted devices</a><a href="username-recovery.html">Forgotten usernames and sign-in problems &rarr;</a></nav>
+</main>
+<footer>
+<p>Internal reference for Bob's Mutual Funds service agents. Do not send this page or its URL to clients; share the client-facing help page instead. Last reviewed September 2026.</p>
+</footer>
+</body>
+</html>
