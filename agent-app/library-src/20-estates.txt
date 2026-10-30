@@ -1,0 +1,360 @@
+@section estates | Death, Estates & Inheritance | What to do when a client dies: notification, compassionate communication, documentation, account holds, spouse and non-spouse beneficiary options, inherited taxable accounts, joint survivorship, small estates, and timelines.
+
+@page death-notification | When someone reports a death
+@summary The first-contact procedure when a family member, executor, or beneficiary tells you an account holder has died.
+
+## Your role
+
+When someone reports that a client has died, your job is to respond with compassion, take the essential information, explain the next steps simply, and connect them with Estate Services. You do not settle the estate in chat.
+
+## Steps
+
+1. **Express condolences** sincerely and briefly. See [[bereavement-communication]].
+2. **Identify the caller's role**: spouse, child, executor, beneficiary, joint owner, attorney. Do not share any account information yet; they are not the account owner.
+3. **Collect basic information**: the deceased's full name, and if known, their account number or the last four digits of their SSN, and the date of death. The caller's name, relationship, and contact details.
+4. **Explain what happens next**:
+   - "We'll place a hold on the account to protect it while we review documentation." See [[account-freeze]].
+   - "Our Estate Services team will contact you within 2 business days to guide you through the process."
+   - "You'll generally need a certified copy of the death certificate. Depending on the account, other documents may be needed; Estate Services will send a personalized checklist." See [[estate-documentation]].
+5. **Route** the notification to Estate Services (through the death-notification referral), or offer a callback, or give the Estate Services phone route (1-800-BOB-FUND, say "inherited account").
+6. **Document** in ACW with the Estate Planning wrap-up code.
+
+## What you can say about the accounts
+
+Nothing specific until documentation establishes the caller's right to know. You may describe the general process for each account type ("For retirement accounts, the named beneficiaries will have options for how to receive their share") without confirming what accounts exist or who the beneficiaries are.
+
+## Joint owners
+
+If the person reporting the death is a joint owner of the account and is themselves a verified client, they may discuss the joint account. See [[joint-survivorship]].
+
+## Never
+
+- Never ask for documents in chat by having the person paste them.
+- Never pressure for a quick decision about inherited assets.
+- Never suggest the family move money before documentation is complete.
+
+@page bereavement-communication | Communicating with grieving clients
+@summary How to write to someone who has lost a loved one: tone, pacing, words to use and avoid.
+
+## Principles
+
+- **Acknowledge first.** Before anything procedural: "I'm so sorry for the loss of your mother."
+- **Slow down.** Shorter messages, fewer questions at a time, and no autopilot.
+- **Use plain words.** Say "died" or "passed away" (mirror the client's words). Avoid euphemisms that confuse and jargon like "decedent" or "beneficial owner".
+- **Explain the next step, not every step.** A grieving person can absorb one or two actions. Put the rest in writing (a secure message or the checklist from Estate Services).
+- **Let them set the pace.** If they need to stop, offer a callback.
+
+## Words that help
+
+- "Take whatever time you need."
+- "You don't need to decide anything today."
+- "I'll make sure Estate Services has everything you've told me, so you won't have to repeat it."
+- "Is there anything else I can help with right now?"
+
+## Words to avoid
+
+- "I know how you feel."
+- "At least they lived a long life."
+- "Per our policy..."
+- Anything about investment performance or "what to do with the money".
+
+## When the caller is also a client
+
+If a grieving client asks about their own accounts (for example, a surviving spouse), help them as usual, gently. They may have urgent needs (paying bills); answer clearly and connect them with Estate Services for the deceased's accounts.
+
+## Look after yourself
+
+These conversations can be hard. Take a moment after the chat if you need it, and talk with your team lead.
+
+@page estate-documentation | Documents needed after a death
+@summary The documents Estate Services typically requires, by account type and claimant.
+
+## Always
+
+- A **certified copy of the death certificate** (a photocopy is not enough; certified copies are available from the county or state vital records office or the funeral home).
+- **Government-issued photo ID** for each person claiming assets.
+
+## By situation
+
+| Situation | Additional documents |
+|---|---|
+| Beneficiary of an IRA | Beneficiary claim form (provided by Estate Services); inherited IRA application or distribution election |
+| TOD beneficiary of a taxable account | Beneficiary claim form; new account application |
+| Surviving joint owner (JTWROS) | Affidavit of domicile (some cases); re-registration form |
+| Executor or administrator (estate account) | Letters Testamentary or Letters of Administration, certified, generally dated within 60 days; estate EIN; estate account application |
+| Small estate (no probate) | Small-estate affidavit as permitted by state law. See [[small-estates]] |
+| Trust owned the account | Certification of trust showing the successor trustee |
+| Medallion signature guarantee | For some transfers of assets to beneficiaries or between registrations |
+
+## How to submit
+
+Upload through a secure message or the document upload page, or mail certified copies to the PO Box (or overnight to the street address). We do not need originals. Estate Services sends a personalized checklist within 1–2 business days of first contact.
+
+## Timeline
+
+Once documentation is complete, transfers typically finish in 5–10 business days. Complex estates or disputes take longer. See [[estate-timelines]].
+
+@page account-freeze | Account holds after a death
+@summary What happens to an account when a death is reported: the hold, what stops, and what continues.
+
+## The hold
+
+When we learn of an account owner's death, we place an **estate hold** on the deceased's individually owned accounts. The hold protects the assets until we confirm who is entitled to them.
+
+## What stops
+
+- Online access for the deceased's login.
+- Withdrawals, transfers, and new transactions.
+- Automatic investments and systematic withdrawals.
+- Checks in process may be stopped if not yet cashed.
+
+## What continues
+
+- The investments remain invested; the account value continues to move with the market.
+- Dividends continue to be paid and reinvested (or held as cash).
+- Statements continue to be produced.
+
+## Social Security and pension deposits
+
+If government benefits were deposited after the date of death into a bank account (not usually with us), the government may reclaim them; that is between the family and the bank.
+
+## Joint accounts
+
+JTWROS accounts are not frozen for the surviving owner beyond what is needed to process the re-registration, though large withdrawals may be reviewed. See [[joint-survivorship]].
+
+## Releasing the hold
+
+Estate Services lifts the hold for each account as assets are transferred to the rightful beneficiaries or estate.
+
+## Example explanation
+
+"We've placed a hold on your father's accounts, which is standard while we confirm who is entitled to them. His investments stay invested, and dividends continue to be paid into the account. Once Estate Services has the documents, they'll release the assets to the beneficiaries."
+
+## Pending transactions at death
+
+Automatic plans stop. Trades the deceased placed before death that already priced are completed. Withdrawals in process may be stopped; Estate Services decides.
+
+@page surviving-spouse-options | Options for a surviving spouse
+@summary The choices available to a spouse who inherits an IRA, and the considerations for each.
+
+## The options
+
+| Option | What it means | Key considerations |
+|---|---|---|
+| Treat as own (spousal transfer) | The IRA becomes the spouse's own IRA | Own RMD rules; withdrawals before 59½ are subject to the 10% penalty |
+| Roll over to own IRA | Move the assets into the spouse's existing IRA | Same as treating as own |
+| Inherited (beneficiary) IRA | Keep as an inherited IRA | Withdrawals at any age without the 10% penalty; RMD rules for spouse beneficiaries, which may allow delaying until the deceased would have reached RMD age |
+| Disclaim | Refuse the inheritance within 9 months | Passes to contingent beneficiaries; must not have taken any of it |
+| Lump-sum distribution | Take everything | Taxable (except Roth); no penalty |
+
+A spouse can also start with an inherited IRA and later treat it as their own.
+
+## Why the choice matters
+
+A younger surviving spouse who may need the money before 59½ may prefer an inherited IRA to avoid the penalty, while a spouse who doesn't need it may prefer treating it as their own to delay RMDs. These are planning considerations. Explain the options; do not recommend.
+
+## Roth IRAs
+
+A spouse who treats an inherited Roth IRA as their own has no RMDs. As an inherited Roth, RMD rules apply.
+
+## Process
+
+Estate Services handles the election and paperwork. In chat, explain the options and connect the spouse with Estate Services or a Retirement Specialist callback.
+
+@page non-spouse-beneficiaries | Options for non-spouse beneficiaries
+@summary The 10-year rule and other options for individuals who inherit an IRA and are not the owner's spouse.
+
+## The 10-year rule
+
+Most non-spouse individual beneficiaries of owners who died after 2019 are **designated beneficiaries** subject to the 10-year rule: the inherited IRA must be fully distributed by December 31 of the 10th year after the year of death. If the owner had started RMDs, the beneficiary also takes annual RMDs in years 1–9. See [[inherited-ira-rmds]].
+
+## Options
+
+- **Inherited IRA**: transfer the beneficiary's share into an inherited IRA in their name; withdraw on their own schedule within the rules. Distributions are taxable (for Traditional) but never subject to the 10% penalty.
+- **Lump sum**: take everything at once; fully taxable in that year (for Traditional).
+- **Disclaim**: refuse within 9 months, so it passes to the next beneficiary.
+
+A non-spouse beneficiary **cannot** roll an inherited IRA into their own IRA or make contributions to it, and cannot convert it to a Roth.
+
+## Multiple beneficiaries
+
+Each beneficiary's share can be split into a separate inherited IRA by December 31 of the year after death, so each beneficiary manages their own share.
+
+## Eligible designated beneficiaries
+
+Some beneficiaries qualify for life-expectancy payments instead. See [[eligible-designated-beneficiaries]].
+
+## In chat
+
+Explain the 10-year rule and options in general terms and route to Estate Services. Planning how to spread withdrawals over 10 years is advice; refer to a tax advisor or a licensed professional.
+
+@page eligible-designated-beneficiaries | Eligible designated beneficiaries
+@summary Who qualifies to stretch inherited IRA distributions over their life expectancy, and the special rule for minor children.
+
+## Categories
+
+An eligible designated beneficiary (EDB) is:
+
+1. The owner's **surviving spouse**.
+2. The owner's **minor child** (under 21). When the child turns 21, the 10-year rule begins.
+3. A **disabled** individual (as defined by the IRS).
+4. A **chronically ill** individual.
+5. An individual **not more than 10 years younger** than the owner (for example, a sibling close in age).
+
+Certain trusts for disabled or chronically ill beneficiaries can also qualify.
+
+## What EDBs can do
+
+Take annual RMDs over their own single life expectancy, instead of emptying the account within 10 years. They can always take more than the minimum.
+
+## Documentation
+
+Disability or chronic illness status requires documentation. Estate Services collects it.
+
+## Grandchildren
+
+A grandchild is not an EDB on the basis of being a minor (only the owner's own minor children qualify). Grandchildren are subject to the 10-year rule.
+
+## Examples
+
+- A 68-year-old sister inheriting from her 72-year-old brother: not more than 10 years younger, so an EDB.
+- A 45-year-old son inheriting from his 75-year-old mother: not an EDB unless disabled or chronically ill; 10-year rule.
+- A 12-year-old daughter of the owner: an EDB until 21, then the 10-year rule.
+
+## Choosing life expectancy or 10 years
+
+Some EDBs may elect the 10-year rule instead, which can be simpler. That choice is planning; refer to Estate Services and a tax advisor.
+
+@page inherited-taxable-accounts | Inheriting taxable accounts
+@summary How individual taxable accounts pass at death, the step-up in cost basis, and what beneficiaries receive.
+
+## How they pass
+
+| Registration | Passes to |
+|---|---|
+| Individual with TOD beneficiaries | The TOD beneficiaries directly, no probate |
+| Individual without TOD | The estate, through probate (or small-estate process) |
+| JTWROS | The surviving joint owner |
+| Tenants in common | The deceased's share to their estate |
+| Trust | Successor trustee per the trust |
+
+## Step-up in basis
+
+Shares in a taxable account generally receive a new cost basis equal to their fair market value on the **date of death**. Gains during the deceased's lifetime are never taxed as capital gains. Estate Services records date-of-death values for the beneficiaries' cost basis. For JTWROS accounts between spouses, typically half the account receives a step-up (rules differ in community property states). Refer tax specifics to a tax advisor.
+
+## Receiving the assets
+
+Beneficiaries open a taxable account at Bob's (or another firm) and receive the shares in kind. There is no requirement to sell and no distribution timeline.
+
+## IRAs are different
+
+Inherited IRAs do not receive a step-up; distributions are taxed as income (Traditional) or tax-free (qualified Roth).
+
+## Example
+
+A father bought BF500 shares for $40,000 years ago; they were worth $150,000 when he died. His daughter, the TOD beneficiary, receives them with a $150,000 basis. If she sells for $152,000, her gain is $2,000, not $112,000.
+
+## Date-of-death valuation
+
+Estate Services records the NAV on the date of death (or an alternate valuation date if the executor elects one for estate tax purposes).
+
+@page joint-survivorship | Surviving joint owners
+@summary What a surviving joint owner needs to do, and how JTWROS and tenants-in-common accounts differ at death.
+
+## JTWROS
+
+When one owner of a Joint Tenants with Rights of Survivorship account dies, the account belongs to the surviving owner(s) automatically. To re-register:
+
+1. The survivor provides a certified death certificate.
+2. Estate Services re-registers the account in the survivor's name (or opens a new individual account and moves the assets).
+3. The survivor should review TOD beneficiaries and automatic plans.
+
+The surviving owner can usually continue to use the account during the process, though some transactions may be reviewed.
+
+## Tenants in common
+
+The deceased owner's share passes to their estate (or TOD beneficiaries if registered). The surviving owner keeps their own share. The account is split once the executor provides documentation.
+
+## Surviving spouse who is also a beneficiary
+
+Often the surviving joint owner is also the beneficiary of the deceased's IRAs. Help with both: the joint account re-registration and the IRA options. See [[surviving-spouse-options]].
+
+## In chat
+
+A surviving joint owner who is a verified client can discuss the joint account. Offer condolences and route the re-registration to Estate Services.
+
+## Example
+
+Spouses own a JTWROS account. One dies. The survivor sends a certified death certificate; the account is re-registered in the survivor's name within about a week of receiving the documents. Meanwhile, the survivor can continue to view the account and generally transact.
+
+## Automatic plans
+
+Automatic investments from a bank account in the deceased's name may need to be changed to the survivor's bank.
+
+@page small-estates | Small estates and affidavits
+@summary How assets of a small estate may be released without full probate, and when Estate Services can accept an affidavit.
+
+## What it is
+
+Most states allow assets of a small estate (below a dollar threshold set by the state, often $25,000 to $200,000) to be collected without formal probate, using a **small-estate affidavit** signed by the person entitled to the assets.
+
+## When we accept one
+
+Estate Services may accept a small-estate affidavit for accounts that pass through the estate (no beneficiary, no TOD, no surviving joint owner), when:
+
+- The total of the deceased's assets (as defined by state law) is under the state's threshold.
+- The waiting period required by the state has passed (often 30–45 days after death).
+- The affidavit is in the form the state requires, signed and notarized, with a medallion signature guarantee where required.
+
+## IRAs
+
+IRAs with named beneficiaries never need probate or an affidavit. IRAs payable to the estate may, depending on the amount.
+
+## In chat
+
+Explain that a simplified process may be available for small estates and that Estate Services will advise. Do not tell the family which process to use.
+
+## Example
+
+A man dies with a $12,000 individual taxable account and no TOD. His state allows small-estate affidavits under $50,000 after 30 days. His daughter completes the state's affidavit, has it notarized and medallion guaranteed, and submits it with a death certificate. Estate Services transfers the account.
+
+@page estate-timelines | Estate settlement timelines
+@summary How long each part of an estate settlement typically takes and how to set expectations.
+
+## Typical timeline
+
+| Step | Typical time |
+|---|---|
+| Death reported, hold placed | Same day |
+| Estate Services first contact | Within 2 business days |
+| Personalized document checklist sent | Within 1–2 business days of first contact |
+| Gathering documents (family side) | Days to weeks; death certificates can take 1–3 weeks |
+| Review of complete documents | 3–5 business days |
+| Transfer of assets once approved | 5–10 business days |
+| Probate (if needed) | Months, set by the court |
+
+## Factors that extend it
+
+- Missing or uncertified documents.
+- Multiple beneficiaries who must each respond.
+- Beneficiaries who are minors, incapacitated, or cannot be located.
+- Disputes among beneficiaries or legal challenges.
+- Trusts with complex terms.
+
+## Setting expectations
+
+Give the family the next step and a realistic range, and let them know Estate Services will keep them informed. Do not promise a completion date.
+
+## Example
+
+| Day | Event |
+|---|---|
+| Day 1 | Daughter reports her mother's death in chat |
+| Day 2 | Estate Services calls and emails a checklist |
+| Day 12 | Daughter uploads certified death certificate and claim forms |
+| Day 16 | Review complete |
+| Day 22 | Inherited IRA established and funded |
+
+## Keeping families informed
+
+Estate Services provides updates, but families sometimes contact chat for status. You can check whether documents have been received and the case status, and give the expected next step.

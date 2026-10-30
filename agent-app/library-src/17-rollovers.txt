@@ -1,0 +1,438 @@
+@section rollovers | Rollovers & Transfers | Moving retirement money and accounts between institutions: direct and indirect rollovers, the one-per-year rule, 401(k), Roth 401(k), 403(b), 457 and after-tax money, rollover checks, ACAT transfers in and out, IRA transfers, and tracking.
+
+@page rollovers-overview | Rollovers and transfers: overview
+@summary The difference between rollovers and transfers, which to use when, and how each is taxed and reported.
+
+## Terms
+
+| Term | What it is | Example |
+|---|---|---|
+| Direct rollover | Money moves from an employer plan straight to an IRA, payable to the new custodian | 401(k) at a former employer → Bob's Traditional IRA |
+| Indirect (60-day) rollover | The client receives the money and redeposits it within 60 days | A 401(k) check payable to the client, deposited at Bob's |
+| Trustee-to-trustee transfer | Money moves between two IRAs of the same type at different firms, never paid to the client | Traditional IRA at another firm → Bob's Traditional IRA |
+| ACAT transfer | An industry system for moving brokerage accounts (taxable or IRA) between firms, in cash or in kind | Taxable brokerage account → Bob's individual account |
+
+## Tax treatment
+
+- Direct rollovers and trustee-to-trustee transfers are **not taxable** and have **no withholding**.
+- Indirect rollovers are not taxable **if** completed within 60 days and the client makes up any withholding. See [[indirect-rollovers]].
+- None of these count toward the annual IRA contribution limit.
+
+## Matching account types
+
+Pre-tax money goes to a Traditional IRA; Roth money goes to a Roth IRA. Rolling pre-tax money into a Roth IRA is a conversion and is taxable. See [[roth-401k-rollover]] and [[roth-conversion-overview]].
+
+## How clients start
+
+- **From an employer plan**: the client contacts the plan administrator and requests a direct rollover to Bob's Mutual Funds. We help with our receiving details. In chat, use [[initiate-rollover-task]].
+- **From another IRA or brokerage account**: the client starts the transfer **with us** (My Account → Transfer Assets), and we request the assets from the other firm. See [[acat-incoming]].
+
+## Timelines
+
+Direct rollovers: 5–15 business days after the plan processes the request. ACAT transfers: 5–7 business days. Non-ACAT transfers: 2–4 weeks.
+
+@page direct-rollovers | Direct rollovers
+@summary How a direct rollover from an employer plan works, the information the plan needs, and why it's preferred.
+
+## How it works
+
+1. The client opens (or identifies) the receiving IRA at Bob's: a Traditional IRA for pre-tax money, a Roth IRA for Roth money.
+2. The client contacts the former employer's plan administrator (by phone or the plan's website) and requests a **direct rollover** to Bob's Mutual Funds.
+3. The plan sends the money by check or wire, payable to **"Bob's Mutual Funds FBO [client name]"**, referencing the client's IRA account number.
+4. We deposit it as a rollover contribution and invest it as the client directs (or hold it as cash until they choose).
+
+## What the plan will ask for
+
+| Item | What to provide |
+|---|---|
+| Receiving institution | Bob's Mutual Funds |
+| Payee | Bob's Mutual Funds FBO [client's full name] |
+| Account number | The client's Bob's IRA account number |
+| Account type | Traditional IRA or Roth IRA |
+| Mailing address for checks | Bob's Mutual Funds, PO Box 2025, Malvern, PA 19355 (or the overnight address) |
+| Wire instructions | First National Bank of Funds, ABA 031000503, for credit to the client's account |
+| Letter of acceptance | Some plans require one; request it from Retirement Specialists |
+
+## Why direct is preferred
+
+- No 20% mandatory withholding.
+- No 60-day deadline risk.
+- No risk of losing the one-rollover-per-year allowance (which applies only to IRA-to-IRA indirect rollovers anyway).
+
+## Checks mailed to the client
+
+Some plans send the "direct rollover" check to the participant, still payable to Bob's FBO the client. That is still a direct rollover: the client simply forwards the check to us, with their account number. See [[rollover-checks]].
+
+@page indirect-rollovers | Indirect (60-day) rollovers
+@summary How a 60-day rollover works, the 20% withholding trap, and how to complete one.
+
+## How it works
+
+The client receives a distribution paid to them personally and deposits it into an IRA within **60 days** of receiving it. If completed in time, the distribution is not taxed.
+
+## The withholding trap (employer plans)
+
+When an employer plan pays an eligible rollover distribution to the participant, it must withhold **20%** for federal tax. To roll over the full amount, the client must deposit 100%, making up the 20% from other money. If they deposit only the 80% they received, the 20% is treated as a taxable distribution (and possibly penalized if under 59½). They get the withheld 20% back as a credit when they file their return.
+
+Example: a $50,000 distribution; the plan withholds $10,000 and pays $40,000. To avoid tax, the client deposits $50,000 within 60 days ($40,000 plus $10,000 of their own money).
+
+## IRA-to-IRA indirect rollovers
+
+From an IRA, withholding is 10% by default (the client may elect 0%). Only **one** IRA-to-IRA indirect rollover is allowed in any 12-month period. See [[one-rollover-per-year]].
+
+## Missing the 60 days
+
+The amount becomes a taxable distribution. The IRS allows self-certification for a waiver in specific circumstances (for example, a financial institution error, serious illness, or a death in the family) using a model letter. A client who missed the deadline should consult a tax advisor; Retirement Specialists can accept a self-certification letter.
+
+## How to deposit
+
+The client deposits the money as a **rollover**, not a contribution. In chat, make sure any deposit described as a rollover is coded correctly; a rollover coded as a contribution can create an excess contribution.
+
+@page one-rollover-per-year | The one-rollover-per-year rule
+@summary The limit on IRA-to-IRA 60-day rollovers, what it does not apply to, and what happens if it's broken.
+
+## The rule
+
+A client may make only **one IRA-to-IRA indirect (60-day) rollover in any 12-month period**, counting all of their Traditional, Roth, SEP, and SIMPLE IRAs together.
+
+## What it does not apply to
+
+- Trustee-to-trustee transfers between IRAs (unlimited).
+- Direct rollovers from employer plans to IRAs (unlimited).
+- Indirect rollovers from employer plans to IRAs.
+- Roth conversions.
+
+## Breaking the rule
+
+A second IRA-to-IRA indirect rollover within 12 months is not a valid rollover. The distribution is taxable (and possibly penalized), and the redeposit is an excess contribution subject to 6% per year until removed. See [[excess-contributions]].
+
+## In chat
+
+If a client took an IRA distribution and wants to put it back, ask whether they have done an IRA-to-IRA 60-day rollover in the last 12 months. If yes, explain the rule and refer to Retirement Specialists before accepting the deposit as a rollover.
+
+## Example
+
+A client takes $20,000 from their Traditional IRA in February and redeposits it in March: a valid 60-day rollover. In November they take $15,000 from a different IRA and want to redeposit it in December. That is a second IRA-to-IRA indirect rollover within 12 months and isn't allowed. The $15,000 is a taxable distribution, and redepositing it would create an excess contribution.
+
+## How to avoid it
+
+Clients moving IRA money between institutions should use trustee-to-trustee transfers, which are unlimited. See [[ira-trustee-transfers]].
+
+@page rollover-401k | Rolling over a 401(k)
+@summary The step-by-step process for moving a former employer's 401(k) into a Bob's IRA, and the questions clients ask.
+
+## Steps
+
+1. **Check the account type**: pre-tax money → Traditional IRA; Roth 401(k) money → Roth IRA; after-tax contributions can go to a Roth IRA (see [[after-tax-401k-money]]). Many 401(k)s have more than one type.
+2. **Open the receiving IRA(s)** at Bob's if the client doesn't have them. See [[open-account-task]].
+3. **Start the rollover** in chat with [[initiate-rollover-task]], which records the expected rollover and gives the client our receiving details.
+4. **Contact the plan**: the client calls the plan administrator or uses its website to request a direct rollover, giving our details. See [[direct-rollovers]].
+5. **The plan sends the money**: typically within 5–15 business days.
+6. **Invest**: when the money arrives, it is invested as the client directed, or held as cash for the client to invest.
+
+## Common questions
+
+### "Do I have to roll it over?"
+No. Leaving it in the plan, rolling to an IRA, moving it to a new employer's plan, or cashing out are all options with different consequences. Explaining the options is fine; recommending one is advice. Offer a callback for guidance.
+
+### "Will I be taxed?"
+Not on a direct rollover of pre-tax money to a Traditional IRA or Roth money to a Roth IRA.
+
+### "Can I roll over while I still work there?"
+Usually not, though some plans allow "in-service" rollovers at 59½. The plan decides.
+
+### "My 401(k) has company stock."
+Employer stock can have special tax treatment (net unrealized appreciation) that is lost if rolled into an IRA. Refer the client to a tax advisor before they roll over company stock.
+
+### "I'm 55 and might need the money."
+The age-55 separation-from-service penalty exception applies to the 401(k), not to an IRA. See [[penalty-exceptions]].
+
+@page roth-401k-rollover | Rolling over a Roth 401(k)
+@summary Moving Roth 401(k) money into a Roth IRA, the five-year clock, and mixed accounts.
+
+## Where it goes
+
+Roth 401(k) (designated Roth) money must go to a **Roth IRA** to remain Roth. It can never go to a Traditional IRA.
+
+## The five-year clock
+
+The Roth 401(k)'s participation period does **not** carry over to the Roth IRA. Whether earnings are qualified in the Roth IRA depends on the Roth IRA five-year clock, which starts with the client's first Roth IRA contribution or conversion. A client who has never had a Roth IRA starts a new clock with the rollover. See [[roth-five-year-rules]].
+
+## Mixed accounts
+
+Most plans with Roth money also hold pre-tax money (including employer matches, which were historically pre-tax). The plan usually sends two checks: one for the Roth portion (to the Roth IRA) and one for the pre-tax portion (to the Traditional IRA). Make sure both receiving accounts exist and the client gives the plan both account numbers.
+
+## RMDs
+
+Roth 401(k)s no longer require RMDs for the owner (since 2024), and Roth IRAs never do.
+
+## Example
+
+A client's former employer plan holds $60,000 pre-tax and $25,000 Roth. The plan sends two checks: $60,000 to the client's Traditional IRA and $25,000 to their Roth IRA. If the client has no Roth IRA, open one first. See [[open-account-task]].
+
+## Employer match
+
+Employer matching contributions were traditionally pre-tax, even when the employee contributed to the Roth 401(k). Newer plans may allow Roth matching. The plan's statement shows which is which.
+
+@page rollover-403b-457 | Rolling over 403(b) and 457 plans
+@summary Rollovers from 403(b) and governmental 457(b) plans, and the special consideration for 457 money.
+
+## 403(b)
+
+403(b) plans (offered by schools, hospitals, and nonprofits) roll over just like 401(k)s: pre-tax to a Traditional IRA, Roth to a Roth IRA, by direct rollover. Some 403(b)s are held in annuity contracts, which may have surrender charges; the client should check with the provider.
+
+## Governmental 457(b)
+
+Governmental 457(b) plans can be rolled into an IRA. One important difference: distributions from a governmental 457(b) are **not subject to the 10% early-withdrawal penalty** at any age after separation from service. Once rolled into an IRA, the money becomes subject to the IRA penalty rules. A client under 59½ who may need the money should know this before rolling over; mention it neutrally.
+
+## Non-governmental 457(b)
+
+Non-governmental 457(b) plans (offered by some nonprofits to executives) generally cannot be rolled into an IRA. The client should check with their plan.
+
+## Process
+
+The same as a 401(k): [[rollover-401k]] and [[initiate-rollover-task]].
+
+## Example
+
+A 54-year-old teacher who left their school district has a governmental 457(b) and a 403(b). They can take money from the 457(b) now without the 10% penalty. If they roll the 457(b) into an IRA, withdrawals before 59½ would face the penalty. This is a fact to share, not a recommendation.
+
+## Annuity contracts
+
+Some 403(b) accounts are annuities with surrender periods. The provider may charge a fee for leaving early. The client should check before requesting the rollover.
+
+@page after-tax-401k-money | After-tax 401(k) money
+@summary How after-tax (non-Roth) contributions in a 401(k) can be split between a Roth IRA and a Traditional IRA.
+
+## What it is
+
+Some 401(k) plans allow **after-tax** contributions, separate from pre-tax and Roth contributions. The contributions have already been taxed; the earnings on them have not.
+
+## Splitting the rollover
+
+Under IRS rules, a client rolling over a distribution that includes after-tax contributions can direct:
+
+- The **after-tax contributions** (basis) to a **Roth IRA**, tax-free, and
+- The **pre-tax amounts** (including earnings on the after-tax money) to a **Traditional IRA**, tax-free.
+
+This must be arranged with the plan, which issues separate checks, and the client must provide both account numbers.
+
+## Why it matters
+
+Getting after-tax money into a Roth IRA lets future earnings grow tax-free. Done incorrectly (for example, the whole amount to a Traditional IRA), the after-tax basis must be tracked on Form 8606 forever.
+
+## In chat
+
+Explain that the split is possible and that the plan administrator handles the allocation. Refer complex cases to Retirement Specialists. Do not advise whether to do it.
+
+## Example
+
+A client has a 401(k) with $300,000: $250,000 pre-tax, $40,000 of after-tax contributions, and $10,000 of earnings on the after-tax contributions. They can direct $40,000 to a Roth IRA and $260,000 (pre-tax plus the earnings) to a Traditional IRA, tax-free.
+
+## Questions to send to the plan
+
+Clients should ask their plan for a breakdown of pre-tax, Roth, and after-tax balances, and whether it will issue separate checks for each destination.
+
+@page rollover-checks | Handling rollover checks
+@summary What to do with rollover checks made payable to Bob's, to the client, or to the old plan, and how to send them.
+
+## Check payable to Bob's Mutual Funds FBO the client
+
+This is a direct rollover. The client mails the check to us with:
+
+- Their Bob's IRA account number written on the check (or a note).
+- A note saying "direct rollover" and which account and fund(s) to invest in.
+
+## Check payable to the client personally
+
+This is an indirect rollover, with 20% likely withheld. The client can:
+
+1. Deposit it in their bank and send us a check for the full original amount (making up the withholding) within 60 days, or
+2. Endorse it to us: "Pay to the order of Bob's Mutual Funds FBO [name], account [number]", sign it, and mail it with a note marked "rollover". They should send any make-up amount separately.
+
+See [[indirect-rollovers]].
+
+## Check payable to the old plan or another firm
+
+We cannot deposit it. The client must contact the issuer to reissue it.
+
+## Deadlines
+
+Indirect rollovers must be **deposited** with us within 60 days of the client receiving the distribution. Allow mail time.
+
+## Tracking
+
+Once we receive the check, it appears in the account as a pending rollover and is invested on the day it is processed. See [[rollover-status-tracking]].
+
+## Example note to include with a check
+
+"Direct rollover from Acme Corp 401(k). Deposit into Traditional IRA account 4419-8823 for Jane Smith. Invest 100% in BFTM."
+
+## If the check is lost
+
+The plan issued the check, so the plan must stop payment and reissue it. If it was an indirect rollover, the 60-day clock still runs from when the client received the original distribution; the IRS may grant relief for lost checks through self-certification.
+
+@page initiate-rollover-task | Procedure: Roll Over From Another Institution (chat)
+@summary Step-by-step chat procedure to start an incoming rollover, the fields collected, and what to tell the client.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Source institution | The plan or firm, e.g. "Fidelity 401(k) from my last employer" |
+| Source account type | Traditional 401(k), Roth 401(k), 403(b), Traditional IRA, Other |
+| Estimated amount | Approximate dollar amount |
+| Receiving account | The client's Bob's IRA |
+
+## Procedure
+
+1. Confirm the receiving account matches the money type: Traditional 401(k), 403(b), or Traditional IRA → Traditional IRA; Roth 401(k) → Roth IRA. If the client has no suitable IRA, open one first with [[open-account-task]].
+2. Let the task expert collect the details.
+3. Check the Proposed Action, especially the account-type match. A Roth 401(k) rolled into a Traditional IRA is not allowed; pre-tax money into a Roth IRA is a taxable conversion.
+4. For a **Traditional IRA from another firm**, this is a transfer, which we request from the other firm. Explain that the client may need to complete a Transfer of Assets form or sign electronically. See [[ira-trustee-transfers]].
+5. Submit. The task records the expected rollover so the incoming money is matched and coded correctly.
+6. Give the client our receiving details (see [[direct-rollovers]]) and explain the next step: they must request the rollover from their plan.
+
+## What to tell the client
+
+"I've set up the rollover on our side. Next, contact your former employer's plan and ask for a direct rollover to Bob's Mutual Funds, payable to 'Bob's Mutual Funds FBO [your name]', with your Traditional IRA account number. Once they send it, it typically arrives within 5–15 business days, and you'll see it in your account."
+
+## Bonus opportunity
+
+Rollover conversations may show a bonus opportunity badge. Focus on accuracy and clarity; never pressure a client to roll over.
+
+@page acat-incoming | Incoming ACAT transfers
+@summary Moving a brokerage account or IRA from another firm to Bob's, in kind or in cash, and what can go wrong.
+
+## What ACAT is
+
+ACAT (Automated Customer Account Transfer) is the industry system for moving brokerage accounts between firms. The **receiving** firm (us) starts it.
+
+## Steps
+
+1. The client opens or identifies a Bob's account with the **same registration** as the account being moved (same owner names, same SSN, same account type: individual to individual, Roth IRA to Roth IRA).
+2. The client completes the Transfer of Assets request at My Account → Transfer Assets, attaching a recent statement from the other firm.
+3. We submit the ACAT request. The other firm validates it within about 1 business day.
+4. Assets move, usually within **5–7 business days**.
+
+## In kind or cash
+
+- **Cash**: the other firm sells the holdings and sends cash. In a taxable account, the sale is taxable.
+- **In kind**: holdings move as-is. We can hold only BobsFunds funds, so other firms' funds, stocks, and ETFs **cannot** be received in kind. The client must sell them at the other firm first (a taxable sale in a taxable account), or ask for a cash transfer.
+
+## Common problems
+
+| Problem | Fix |
+|---|---|
+| Name or SSN mismatch | Registrations must match exactly; open a matching account |
+| Account type mismatch | IRA must go to the same IRA type |
+| Non-transferable holdings | Sell at the other firm or transfer cash |
+| Other firm charges a transfer fee | Their fee; we do not reimburse |
+| Margin balance or pending trades | Must be resolved at the other firm |
+| Partial transfer requested by ACAT | Some firms require a non-ACAT partial transfer form instead |
+
+## Tracking
+
+The client can see status at My Account → Transfer Assets. See [[rollover-status-tracking]].
+
+@page acat-outgoing | Outgoing transfers to another firm
+@summary How clients move assets from Bob's to another firm, what we do, and retention guidance.
+
+## How it works
+
+The **receiving** firm starts the transfer. The client opens an account at the new firm and requests the transfer there. The new firm sends an ACAT request to us; we validate it and release the assets, usually within **5–7 business days**.
+
+## In kind or cash
+
+BobsFunds funds can only be held at firms that offer them. If the new firm cannot hold them, the transfer will be in cash: we sell the shares (taxable in a taxable account) and send the proceeds.
+
+## What we need
+
+Nothing from the client in most cases. We validate that the registration and SSN match. If there is a mismatch, we reject the request and the new firm must correct it.
+
+## Fees
+
+We do not charge an outgoing transfer fee.
+
+## IRAs
+
+An IRA transfer to another custodian by ACAT or trustee-to-trustee transfer is not a distribution and is not taxable. A client who instead requests a distribution and redeposits it makes an indirect rollover (with withholding and the one-per-year limit). Encourage clients to use a direct transfer.
+
+## Retention
+
+Ask once, without pressure, whether there is anything we could do better, and handle any complaint properly. Do not delay or discourage a transfer. See [[closing-an-account]].
+
+## Partial transfers
+
+A client can transfer part of an account (for example, one fund) through a partial ACAT, started by the receiving firm with the specific assets listed.
+
+## Automatic plans
+
+Before an outgoing transfer, cancel automatic investments and systematic withdrawals on the account, so they don't fail or create activity after the transfer.
+
+## Example
+
+"Your new firm will send us the transfer request. Once we receive it, it usually completes within 5 to 7 business days. If they can't hold BobsFunds funds, the shares will be sold and sent as cash, which can be taxable in a taxable account."
+
+@page ira-trustee-transfers | IRA-to-IRA transfers
+@summary Trustee-to-trustee transfers between IRAs at different firms, including non-ACAT transfers and same-firm moves.
+
+## What it is
+
+A trustee-to-trustee transfer moves IRA assets directly between custodians, without paying them to the client. It is not a distribution, not taxable, not reported as a rollover for the one-per-year rule, and has no withholding.
+
+## Into Bob's
+
+The client starts it with us at My Account → Transfer Assets, choosing their Bob's IRA of the same type. For firms on ACAT, it moves through ACAT (5–7 business days). For banks, credit unions, and insurance companies not on ACAT, we send a transfer request form to the other institution, which mails or wires the money (2–4 weeks). Some institutions require a medallion signature guarantee or their own form.
+
+## Certificates of deposit
+
+An IRA CD at a bank may not be transferable until maturity without penalty. The client should time the transfer with the CD's maturity.
+
+## Between two of the client's IRAs at Bob's
+
+Moving money from one of the client's Traditional IRAs to another of their Traditional IRAs at Bob's is an internal transfer (journal). It is not a distribution. Moving from a Traditional to a Roth IRA is a conversion. See [[roth-conversion-overview]].
+
+## Types must match
+
+Traditional to Traditional, Roth to Roth, SEP to SEP or Traditional, inherited to inherited (same original owner and beneficiary).
+
+## Example
+
+A client has a Traditional IRA at a local bank holding CDs, maturing in March. They open a Traditional IRA at Bob's and start the transfer from My Account → Transfer Assets, choosing "at maturity". We send the bank our transfer request; the bank sends a check payable to Bob's FBO the client after the CD matures.
+
+## Common delays
+
+Banks often require their own transfer forms, signature guarantees, or a copy of the client's statement. Clients can speed things up by calling their bank to ask what's needed.
+
+@page rollover-status-tracking | Tracking rollovers and transfers
+@summary How clients and agents see the status of incoming money, and what to do when it's late.
+
+## Where to look
+
+- **Client**: My Account → Transfer Assets shows each transfer's status. Rollovers appear as pending deposits once recorded.
+- **Agent**: the client's recent transactions and pending activity.
+
+## Statuses
+
+| Status | Meaning |
+|---|---|
+| Requested | We have the request (rollover recorded or ACAT submitted) |
+| In review at other firm | Waiting for the delivering firm to validate |
+| Rejected | The other firm rejected it; the reason is shown (often a registration mismatch) |
+| In transit | Assets or a check are on the way |
+| Received | Funds arrived and were deposited |
+| Complete | Funds invested or held as cash per instructions |
+
+## When it's late
+
+| Situation | Action |
+|---|---|
+| Employer plan rollover not received after 15 business days | Client should confirm with the plan that it was sent, how (check or wire), and the date; ask for a check number or tracking |
+| ACAT not complete after 7 business days | Check for a rejection; Money Movement Operations can contact the other firm |
+| Check sent to the client by mistake | See [[rollover-checks]] |
+| Rejected ACAT | Explain the reason; usually the client needs a matching account or a statement |
+
+## Communicate realistic timelines
+
+We control only what happens after the money arrives. Say "typically" and give the client the next checkpoint: "If it hasn't arrived by the 20th, contact the plan to confirm it was sent, and let us know."

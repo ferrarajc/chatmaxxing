@@ -1,0 +1,349 @@
+@section scripts | Scripts & Templates | Ready-to-adapt language for greetings, verification, holds, bereavement, complaints, declining advice, closings, market volatility, fraud, technical issues, confirmation recaps, and handoffs.
+
+@page greeting-scripts | Greetings
+@summary Opening messages for new, escalated, and continued chats.
+
+## Principles
+
+Greet by name, show you know why they're here, and move to the task. The suggested greeting is drafted from the intent; edit as needed.
+
+## Templates
+
+**Escalated from the virtual assistant (intent known):**
+"Hi Maria, I'm Jordan. I see you'd like to roll over a 401(k) from a previous employer. I can help with that. Do you already have an IRA with us you'd like it to go into?"
+
+**Intent unclear:**
+"Hi Sam, I'm Jordan from Bob's Mutual Funds. How can I help you today?"
+
+**Continued chat:**
+"Welcome back, David. Last time we set up your monthly investment into BF500. How can I help today?"
+
+**After a wait:**
+"Hi Priya, thanks for your patience. I'm Jordan, and I'm here to help with your RMD question."
+
+## Avoid
+
+"How may I assist you?" when the intent is already known. Long introductions. Asking the client to repeat what they told the virtual assistant.
+
+## Matching the client's energy
+
+If the client's first message to the virtual assistant was terse or frustrated, keep your greeting short and get to the point. If they were chatty, a little warmth goes a long way.
+
+## Using pronouns and names
+
+Use the name the client uses for themselves in the chat. If their profile lists pronouns, use them when referring to the client in notes or handoffs.
+
+@page verification-scripts | Verification
+@summary Language for additional identity verification that feels protective, not suspicious.
+
+## Templates
+
+**Before a high-risk request:**
+"Before I make this change, I need to verify a couple of details to protect your account. Could you tell me the ZIP code on file and the last four digits of your Social Security number?"
+
+**Third party:**
+"I'm glad to help with general questions. For account-specific information, I can only speak with the account owner or someone they've authorized. If your mother would like you to have access, she can add you as an authorized user."
+
+**Verification failed:**
+"For your security, I'm not able to make changes in chat right now. Please call us at 1-800-BOB-FUND so we can verify your identity by phone."
+
+## Avoid
+
+Saying which detail was wrong. Reading out personal information for the client to confirm.
+
+## Example: a request to change email and withdraw
+
+"I can help with both. Because you're updating your email and taking money out in the same conversation, I need to verify a couple of extra details first. This is to protect your account. Could you tell me your date of birth and the ZIP code we have on file?"
+
+## Example: the owner is present and asks you to speak with a family member
+
+"I'm happy to talk with your son about your account while you're here in the chat. Just so I have it on record, you'd like me to discuss your account with him today, is that right?"
+
+@page hold-delay-scripts | Holds and delays
+@summary Messages for when you need time to research or a process takes longer than expected.
+
+## Templates
+
+**Researching:**
+"Good question. I want to give you an exact answer, so let me check. This will take about two minutes."
+
+**Still checking:**
+"Thanks for bearing with me. I'm still confirming this and should have an answer in a minute or two."
+
+**Need to follow up later:**
+"I want to get this exactly right, so I'm going to confirm with our retirement specialists. You'll hear back from me by secure message by 3:00 PM Eastern tomorrow."
+
+**Process delay (for example, a transfer):**
+"I can see the transfer request is still with your previous firm. These usually complete within 5 to 7 business days. If it hasn't arrived by Friday, let us know and we'll follow up with them."
+
+## Avoid
+
+Disappearing without a message. Vague promises ("soon"). Blaming other teams.
+
+## Long waits
+
+If research will take more than 5 minutes, give the client a choice: "This will take a bit longer to confirm. Would you like to wait, or should I send you the answer by secure message within the hour?"
+
+## Explaining delays outside our control
+
+"Your previous employer's plan has to release the money first. Once they send it, it typically arrives within 5 to 15 business days. I'll note your account so we watch for it."
+
+@page bereavement-scripts | Bereavement
+@summary Compassionate language for conversations about a death.
+
+## Templates
+
+**Opening:**
+"I'm so sorry for the loss of your father. I'm here to help, and we'll take this one step at a time."
+
+**Explaining next steps:**
+"Here's what happens next: we'll protect your father's accounts while we review documents, and our Estate Services team will contact you within two business days. They'll send a checklist of what's needed, which usually starts with a certified copy of the death certificate. You don't need to decide anything today."
+
+**Information you can't share yet:**
+"I understand you'd like to know what's in the account. Once Estate Services has the documents confirming your role, they'll be able to go over everything with you."
+
+**Closing:**
+"Please take care of yourself. If anything comes up before Estate Services reaches you, you can message us any time."
+
+See [[bereavement-communication]].
+
+## When the caller is also grieving the client's spouse
+
+"I'm so sorry about Robert. I know this is a lot to handle. Let's take care of what's most urgent for you today, and we'll connect you with our Estate Services team for the rest."
+
+## When the client needs money urgently
+
+"I understand you need funds for expenses right now. Let's look at your own accounts first. For Robert's accounts, Estate Services can explain what can be released and how quickly."
+
+## When the caller is upset by a requirement
+
+"I know asking for a death certificate feels like one more burden right now. It's how we make sure his assets go exactly where he intended, and it protects you and your family."
+
+@page complaint-scripts | Complaints and de-escalation
+@summary Language for acknowledging frustration, gathering facts, logging complaints, and escalating.
+
+## Templates
+
+**Acknowledge:**
+"I'm sorry this happened, and I understand why you're frustrated. I want to make this right, so let me make sure I understand exactly what happened."
+
+**Gather facts:**
+"Can you tell me when you placed the order and what you expected to happen?"
+
+**Fix within your authority:**
+"I see the problem: the automatic investment wasn't paused as you asked. I've paused it now, and I've requested a refund of the $20 returned-payment fee."
+
+**Log a complaint:**
+"I've recorded your complaint so our team can review it. You'll receive a response within five business days."
+
+**Supervisor request:**
+"Of course. I'll get a supervisor for you right away."
+
+## Avoid
+
+"Calm down." Arguing. Admitting legal fault or promising compensation without approval. Blaming the client or another team.
+
+See [[complaints-handling]].
+
+## Example: a fee complaint
+
+Client: "This is ridiculous. You charged me $20 for nothing."
+
+Agent: "I understand, and I'm sorry this was frustrating. Let me look at what happened. The fee is for a returned automatic investment on March 3. Your bank returned it marked 'account closed'. If that account was closed, let's update your plan to your current bank so it doesn't happen again. I can also ask whether we can waive this one."
+
+## Example: a service complaint
+
+Client: "I've been waiting three weeks for my transfer and nobody calls me back."
+
+Agent: "I'm sorry. Three weeks is too long, and you shouldn't have to chase us. I'm recording this as a complaint so it's reviewed, and I'm checking the transfer status right now."
+
+@page advice-decline-scripts | Declining advice requests
+@summary Language that declines investment advice warmly and offers real help instead.
+
+## Templates
+
+**General:**
+"That's an important decision, and it depends on your whole financial picture, so I'm not able to recommend a specific investment. I can explain how the options work, or set up a call with one of our licensed professionals who can give you personalized guidance. Which would you prefer?"
+
+**"What would you do?":**
+"I appreciate you asking! I'm not able to give personal recommendations, but I can walk you through the facts on each fund side by side."
+
+**Choosing between funds:**
+"Here's how BF500 and BFTM compare on cost, holdings, and history. Which fits your goals is something a licensed professional can help you decide; I'm happy to set up that call."
+
+**Timing the market:**
+"No one can reliably predict where markets will go next. I can share how the fund has behaved historically, and if you'd like guidance on your strategy, I can schedule a call with a licensed professional."
+
+**Roth vs. Traditional:**
+"Both have advantages, and the right choice depends on your tax situation now versus in retirement. I can explain how each works, or arrange a call with a licensed professional."
+
+See [[investment-advice-boundary]].
+
+@page closing-scripts | Closing a chat
+@summary Messages for ending chats, including summaries of what was done and next steps.
+
+## Templates
+
+**After a completed task:**
+"You're all set: your $2,000 purchase of BF500 is placed (reference REF-48213). It'll be priced at today's close. Is there anything else I can help with?"
+
+**Final close:**
+"Thanks for chatting with us today, Maria. Have a great afternoon."
+
+**After a referral:**
+"Your call with a licensed professional is set for Thursday at 2:00 PM Eastern. They'll have a summary of today's conversation. Thanks for reaching out!"
+
+**Idle client:**
+"It looks like you may have stepped away. I'll close this chat for now, but you can start a new one any time, and you can continue this conversation from the chat menu for the next week."
+
+## Closing after a multi-task chat
+
+"Here's a summary of what we did today: your beneficiary on the Roth IRA is updated (REF-48213), your monthly investment into BF500 increased to $300 starting October 15 (REF-48214), and your tax form request is submitted (REF-48215). Anything else I can help with?"
+
+## Closing a difficult chat
+
+"Thank you for your patience today. I know this wasn't easy. Estate Services will contact you within two business days, and you can reach us any time in the meantime."
+
+@page market-volatility-scripts | Market volatility
+@summary Language for anxious clients during market declines.
+
+## Templates
+
+**Acknowledge:**
+"It's completely understandable to feel uneasy when you see your balance drop."
+
+**Explain factually:**
+"Stock funds broadly declined this week, and BF500 follows the 500 largest U.S. companies, so it moved with them."
+
+**Context:**
+"Markets have gone through many declines; for example, BF500 fell 18.2% in 2022 and then rose 26.3% in 2023. Of course, past performance doesn't guarantee future results."
+
+**Offer options:**
+"If you'd like to talk through your strategy, I can schedule a call with a licensed professional. If you've decided on a change, I can help you make it."
+
+## Avoid
+
+"It'll come back." "Don't sell." "Now's a buying opportunity." Any prediction.
+
+See [[market-downturn-conversations]].
+
+## Client asks "Should I sell?"
+
+"That's a personal decision, and I can't recommend whether to sell. What I can do is explain how a sale would work, including any tax effects, or set up a call with a licensed professional who can talk through your plan. Which would help most?"
+
+## Client is clearly distressed
+
+Slow down. Lead with empathy, offer the callback, and do not rush any transaction. If the client still wants to sell, confirm clearly and process it.
+
+@page fraud-scripts | Fraud and security concerns
+@summary Language for clients reporting suspicious activity or scams.
+
+## Templates
+
+**Client reports unauthorized activity:**
+"Thank you for letting us know right away. I'm going to help you secure your account now and get our security team involved."
+
+**Phishing:**
+"That email didn't come from us. We'll never ask for your password or a security code. Please don't click any links in it. If you entered your password anywhere, let's reset it now."
+
+**Pausing a suspicious request:**
+"This request needs an additional security review before it can be completed. Our security team will contact you at the phone number on file, usually within one business day."
+
+**Wire scam warning:**
+"Our wire instructions never change by email. If you received a message saying they changed, please don't send money to that account."
+
+See [[account-takeover]] and [[phishing-scams]].
+
+## Client already sent money to a scammer
+
+"I'm sorry this happened. Let's act quickly. I'm escalating to our security team now to see what can be done, and I'd recommend you also contact your bank right away and report the scam to the authorities."
+
+## Client can't tell whether a call was from us
+
+"If you're ever unsure whether a call is really from us, hang up and call 1-800-BOB-FUND directly. We'll never be offended."
+
+@page technical-issue-scripts | Technical issues
+@summary Language for helping clients with website, app, or chat problems.
+
+## Templates
+
+**First steps:**
+"Sorry for the trouble. Could you try refreshing the page, or opening it in a private window? That often clears it up."
+
+**Workaround:**
+"While we look into that, I can make the change for you here in chat. Would that help?"
+
+**Escalation:**
+"I've reported this to our technical team with the details you gave me. Thanks for your patience."
+
+See [[website-errors]].
+
+## Gathering details
+
+"So our technical team can fix this, could you tell me what device and browser you're using, and what exactly you see on the screen when it happens?"
+
+## When the client is frustrated
+
+"I'm sorry the website is giving you trouble, especially when you're trying to get something done. Let me take care of it for you here, and I'll report the problem."
+
+## Example: the app crashes when opening statements
+
+"Thanks for letting me know. While our team looks into it, you can view and download the same statements on the website at My Account → Statements & Documents. I'll log the app issue with the details you gave me."
+
+@page confirmation-recap-scripts | Confirmation recaps
+@summary How to recap a task before submitting so the client's confirmation is clear and complete.
+
+## The rule
+
+Before any action is submitted, recap every material detail in one message and get a clear yes. The evidence highlighting uses this confirmed recap.
+
+## Templates
+
+**Purchase:**
+"To confirm: buy $2,000 of BobsFunds 500 Index (BF500) in your Roth IRA, funded from your linked bank account ending in 4421, as a 2026 contribution. Shall I place it?"
+
+**Sale:**
+"To confirm: sell $5,000 of BobsFunds Growth (BFGR) in your taxable account, with the proceeds kept as cash in the account. Is that right?"
+
+**Exchange:**
+"To confirm: exchange $3,000 from BFGR into BobsFunds Bond Income (BFBI) in your Traditional IRA. Shall I go ahead?"
+
+**Beneficiary:**
+"To confirm, after this change your Roth IRA's primary beneficiaries will be David Chen (spouse) at 60% and Maria Chen (daughter) at 40%, with no secondary beneficiaries. Is that correct?"
+
+**Distribution:**
+"To confirm: withdraw $5,000 from your Traditional IRA, withhold 10% federal tax, and deposit $4,500 to your linked bank. Shall I submit it?"
+
+## Avoid
+
+Recapping only part of the details. Treating "ok" to a different question as confirmation. Submitting after the client changes a detail without a fresh recap.
+
+@page transfer-handoff-scripts | Handoffs and referrals
+@summary Language for routing a client to another team or a callback.
+
+## Templates
+
+**Specialist team:**
+"Our retirement specialists handle excess contribution corrections, because they calculate the exact earnings. I've sent them your details, and they'll contact you within one business day."
+
+**Callback:**
+"I've scheduled a call for Tuesday at 10:00 AM Eastern (7:00 AM your time) at the number ending in 0192. You'll get a confirmation shortly."
+
+**Phone route:**
+"For this, please call 1-800-BOB-FUND and say 'inherited account'. You'll reach our estate team directly, Monday to Friday, 8:00 AM to 7:30 PM Eastern."
+
+## Example: Estate Services by callback
+
+"I'll arrange for our Estate Services team to call you. Would tomorrow morning work, around 10:00 AM Eastern? They'll have everything you've told me today."
+
+## Example: licensed professional
+
+"For advice on how to invest your rollover, I'll schedule a call with one of our licensed professionals. They'll be able to look at your full situation. What day works best?"
+
+## Example: Retirement Specialists
+
+"Correcting an excess contribution involves calculating the exact earnings, so our retirement specialists handle it. I've sent them your account and the amount, and they'll contact you within one business day to confirm the numbers before anything is withdrawn."
+
+## Example: Fraud team
+
+"I've escalated this to our security team as a priority. They'll call you at the number on file, usually within one business day, and they may contact you sooner."

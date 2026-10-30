@@ -1,0 +1,319 @@
+@section rmd | Required Minimum Distributions | RMD ages, how the amount is calculated, the Uniform Lifetime Table, first-year timing, aggregation, missed RMDs, RMD settings, QCDs, and inherited IRA RMDs.
+
+@page rmd-overview | RMDs: overview
+@summary What required minimum distributions are, who must take them, the deadlines, and how Bob's Mutual Funds helps.
+
+## What an RMD is
+
+Tax-deferred retirement money cannot stay tax-deferred forever. Once an IRA owner reaches their RMD age, they must withdraw at least a minimum amount each year, the **required minimum distribution**, and pay income tax on it.
+
+## Which accounts
+
+| Account | RMDs for the owner? |
+|---|---|
+| Traditional IRA | Yes |
+| SEP-IRA | Yes, even if still working |
+| SIMPLE IRA | Yes (we don't offer SIMPLE IRAs) |
+| Roth IRA | No, during the original owner's lifetime |
+| Inherited IRAs (any type, including Roth) | Yes, under beneficiary rules. See [[inherited-ira-rmds]] |
+| Taxable accounts | No |
+
+## When they start
+
+RMD age depends on birth year: **73** for people born 1951–1959, **75** for people born 1960 or later. See [[rmd-ages]].
+
+## Deadlines
+
+- **First RMD**: by **April 1** of the year after the client reaches RMD age. See [[first-rmd-timing]].
+- **Every later RMD**: by **December 31** of each year.
+
+## The amount
+
+Prior December 31 balance divided by a life-expectancy factor from the IRS Uniform Lifetime Table. See [[rmd-calculation]].
+
+## What we do
+
+- Each January we calculate the RMD for every IRA at Bob's that requires one and notify the client.
+- The client's RMD settings can pay it automatically: annually in December, or monthly or quarterly. See [[rmd-settings-task]].
+- The retirement account page shows the year's RMD, the amount already distributed, and the remaining amount.
+
+## Penalty
+
+Missing an RMD triggers a 25% excise tax on the shortfall, reduced to 10% if corrected promptly. See [[missed-rmd]].
+
+@page rmd-ages | RMD starting ages
+@summary The RMD starting age by birth year under current law, with examples.
+
+## The table
+
+| Born | RMD starting age |
+|---|---|
+| Before July 1, 1949 | 70½ (already taking RMDs) |
+| July 1, 1949 – 1950 | 72 (already taking RMDs) |
+| 1951 – 1959 | 73 |
+| 1960 or later | 75 |
+
+## Examples
+
+- Born in 1953: turned 73 in 2026. First RMD is for 2026, due by April 1, 2027.
+- Born in 1958: turns 73 in 2031. No RMD until then.
+- Born in 1961: turns 75 in 2036.
+
+## Still working
+
+The "still working" exception that delays RMDs applies only to an employer plan at the employer the client still works for. It does **not** apply to IRAs, including SEP-IRAs. A 74-year-old still working must take RMDs from their IRAs.
+
+## In chat
+
+Use the client's date of birth from the profile. "Since you were born in 1953, your RMD age is 73, so your first RMD is for 2026. You have until April 1, 2027 to take it, though if you wait, you'll take two RMDs in 2027."
+
+## Clients already taking RMDs
+
+Clients born before 1951 have already started RMDs under older rules (70½ or 72). They continue annually; their starting age no longer matters.
+
+## The 2033 change
+
+People born in 1960 or later start at 75. The first of them reach 75 in 2035.
+
+## Roth IRA owners
+
+Roth IRA owners never have RMDs, whatever their age.
+
+@page rmd-calculation | How the RMD is calculated
+@summary The formula, the balance used, which table applies, and worked examples.
+
+## The formula
+
+**RMD = account balance on December 31 of the prior year ÷ distribution period (life-expectancy factor) for the client's age at the end of the current year.**
+
+The factor comes from the IRS **Uniform Lifetime Table** for most owners. See [[uniform-lifetime-table]].
+
+## Exception: a much younger spouse
+
+If the client's spouse is the **sole** primary beneficiary for the entire year and is **more than 10 years younger**, the IRS Joint and Last Survivor table applies, which gives a smaller RMD. Our calculation uses the joint table when the beneficiary designation and dates of birth on file support it. If a client says their spouse is much younger and the RMD seems too high, check the beneficiary designation.
+
+## Worked examples
+
+- Age 75 at year end, December 31 balance $400,000. Factor 24.6. RMD = $400,000 ÷ 24.6 = **$16,260.16**.
+- Age 80, balance $250,000. Factor 20.2. RMD = **$12,376.24**.
+- Age 73 (first year), balance $612,000. Factor 26.5. RMD = **$23,094.34**.
+
+## Adjustments to the balance
+
+The prior year-end balance is increased for any rollover or transfer that was in transit over year end (sent from another account before December 31, received after) and for recharacterizations. Retirement Specialists handle these adjustments.
+
+## Each IRA calculated separately
+
+The RMD is calculated separately for each IRA. The client can then take the total from any one or more of their IRAs. See [[rmd-aggregation]].
+
+## What we show
+
+The account page and client info panel show our calculation for each IRA at Bob's. If the client believes it is wrong, check the date of birth and beneficiary on file, and refer to Retirement Specialists for review.
+
+@page uniform-lifetime-table | Uniform Lifetime Table
+@summary The IRS life-expectancy factors used to calculate most owners' RMDs, ages 72 to 100.
+
+## Factors (in effect since 2022)
+
+| Age | Factor | Age | Factor |
+|---|---|---|---|
+| 72 | 27.4 | 87 | 14.4 |
+| 73 | 26.5 | 88 | 13.7 |
+| 74 | 25.5 | 89 | 12.9 |
+| 75 | 24.6 | 90 | 12.2 |
+| 76 | 23.7 | 91 | 11.5 |
+| 77 | 22.9 | 92 | 10.8 |
+| 78 | 22.0 | 93 | 10.1 |
+| 79 | 21.1 | 94 | 9.5 |
+| 80 | 20.2 | 95 | 8.9 |
+| 81 | 19.4 | 96 | 8.4 |
+| 82 | 18.5 | 97 | 7.8 |
+| 83 | 17.7 | 98 | 7.3 |
+| 84 | 16.8 | 99 | 6.8 |
+| 85 | 16.0 | 100 | 6.4 |
+| 86 | 15.2 | | |
+
+Factors continue beyond 100 (the table runs to 120 and over).
+
+## How to use it
+
+Use the age the client **will be on December 31 of the distribution year**, even if they have not yet had their birthday. As a percentage, the RMD at 73 is about 3.8% of the prior year-end balance, at 80 about 5.0%, at 90 about 8.2%.
+
+## Other tables
+
+- **Joint and Last Survivor table**: for owners whose sole beneficiary is a spouse more than 10 years younger.
+- **Single Life Expectancy table**: for beneficiaries of inherited IRAs.
+
+Retirement Specialists can provide factors from these tables.
+
+## A note on outdated examples
+
+An older client-facing example used a factor of 26.5 for age 67; 26.5 is the factor for age 73. Use this table.
+
+@page first-rmd-timing | Timing the first RMD
+@summary The April 1 option for the first RMD, the two-RMDs-in-one-year consequence, and how to explain the choice.
+
+## The rule
+
+The first RMD is for the year the client reaches RMD age, but it may be delayed until **April 1 of the following year** (the "required beginning date"). Every later RMD is due by December 31.
+
+## The consequence of waiting
+
+If the client delays the first RMD into the next year, they must take **two RMDs in that year**: the delayed first one (by April 1) and the second one (by December 31). Both are taxable in that year, which may push them into a higher bracket.
+
+## Example
+
+A client born in 1953 turns 73 in 2026.
+
+- Option A: take the 2026 RMD by December 31, 2026, and the 2027 RMD by December 31, 2027.
+- Option B: take the 2026 RMD by April 1, 2027, and the 2027 RMD by December 31, 2027 (two in 2027).
+
+## Calculating the second RMD
+
+The second-year RMD is based on the December 31 balance of the first year, which is not reduced by a first-year RMD taken in the following January–March. Retirement Specialists can assist.
+
+## In chat
+
+Explain both options factually. Which to choose is a tax planning decision. "Some people take it in the first year to avoid doubling up; others have reasons to wait. A tax advisor can help you decide."
+
+@page rmd-aggregation | Aggregating RMDs across accounts
+@summary How clients with several IRAs can satisfy their RMDs, and what cannot be combined.
+
+## IRAs
+
+The RMD is calculated separately for each Traditional, SEP, and SIMPLE IRA, but the client may take the **total** from any one or more of their IRAs. Example: a client has two IRAs with RMDs of $8,000 and $4,000; they can take $12,000 from either one.
+
+This applies across firms: a client with an IRA at another firm can take that IRA's RMD from their Bob's IRA, or vice versa. We can only track distributions from accounts at Bob's.
+
+## What cannot be combined
+
+- **Employer plans** (401(k), 403(b)): each plan's RMD must come from that plan. 403(b)s can be aggregated with each other, but not with IRAs.
+- **Inherited IRAs** cannot be combined with the client's own IRAs. Inherited IRAs from the same original owner can be combined with each other.
+- **Spouses** cannot combine: each spouse satisfies their own RMDs.
+- **Roth IRAs** owned by the original owner have no RMD.
+
+## Our automatic RMD service
+
+Our RMD service distributes each IRA's RMD from that IRA. If a client wants to take one IRA's RMD from another, they can turn off the automatic RMD for one account and take a larger distribution from the other. Our year-end notices may still show an RMD outstanding on the first account; the client is responsible for the total.
+
+## Explaining it
+
+"Each IRA has its own RMD, but the IRS lets you take the total from whichever IRAs you choose. Our system tracks each account separately, so if you take it all from one, the other account will still show an RMD remaining; that's expected."
+
+@page missed-rmd | Missed RMDs and corrections
+@summary The penalty for a missed or short RMD, how to correct it, and how to request a waiver.
+
+## The penalty
+
+If the client does not withdraw the full RMD by the deadline, the shortfall is subject to a **25% excise tax**. The tax is reduced to **10%** if the client takes the missed amount and files a corrected return within the correction window (generally by the end of the second year after the year of the missed RMD).
+
+## Waiver
+
+The IRS may waive the tax if the shortfall was due to reasonable error and the client is taking steps to fix it. The client requests the waiver on Form 5329 with an explanation.
+
+## Correcting
+
+1. Take the missed RMD as soon as possible: a regular distribution request, noted as a make-up RMD for the prior year.
+2. The client files Form 5329 (and requests a waiver if appropriate).
+
+Our 1099-R reports the make-up distribution in the year it is paid; there is no special code. The client explains on their tax return.
+
+## If we caused the miss
+
+If the client had automatic RMDs set up and we failed to pay, escalate immediately to Retirement Specialists and your team lead. We will pay the RMD and provide a letter for the client's waiver request. See [[error-corrections]].
+
+## Inherited IRAs
+
+The penalty also applies to missed inherited IRA RMDs. Note that the IRS waived penalties for missed annual RMDs under the 10-year rule for 2021 through 2024; annual RMDs are required from 2025 onward.
+
+## In chat
+
+Be calm and constructive. "Missing an RMD can be fixed. The first step is to take the amount now. The IRS also allows you to request a waiver of the penalty on Form 5329. I'd suggest talking with your tax advisor about the form."
+
+@page rmd-settings-task | Procedure: Update RMD Settings (chat)
+@summary Step-by-step chat procedure for setting how and when a client receives RMDs, with withholding.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Delivery method | Direct deposit (ACH), Check by mail |
+| Frequency | Annual (December), Monthly, Quarterly |
+| Tax withholding | Federal percentage, 0% to 99%; default 10% |
+
+The account is the client's IRA subject to RMDs (asked if they have more than one).
+
+## Procedure
+
+1. Confirm the client is subject to RMDs: an owner of a Traditional or SEP IRA at RMD age, or an inherited IRA beneficiary. Roth IRA owners have no RMDs.
+2. Let the task expert collect delivery, frequency, and withholding.
+3. Check the Proposed Action:
+   - **Frequency**: annual payments occur in December; monthly and quarterly payments divide the remaining RMD over the remaining payments in the year. If the client starts monthly in October, three payments cover the year's RMD.
+   - **Withholding**: a percentage from 0% to 99%. If the client wants a dollar amount withheld, convert it to a percentage or note it for Retirement Specialists.
+   - **Delivery**: a linked, verified bank for ACH, or check to the address of record.
+4. Submit. Settings take effect for the next scheduled payment.
+5. Confirm in plain words: "Your RMD will be paid in quarterly installments, deposited to your bank, with 15% federal withholding. This year's remaining RMD is $9,400, so you'll receive two payments of $4,700 before withholding."
+
+## Notes
+
+- If the client has already taken distributions this year, they count toward the RMD; the service pays only the remaining amount.
+- The service calculates the RMD for this IRA only. Clients aggregating across IRAs should see [[rmd-aggregation]].
+- For QCDs, see [[rmd-and-qcd]]; QCDs are not set up through this task.
+
+@page rmd-and-qcd | Using QCDs to satisfy RMDs
+@summary How qualified charitable distributions count toward RMDs, timing, and coordinating with automatic RMD payments.
+
+## The rule
+
+A qualified charitable distribution made from an IRA counts toward the client's RMD for the year, up to the RMD amount, and is excluded from taxable income. Clients aged 70½ and older who give to charity often use QCDs for part or all of their RMD.
+
+## Timing matters
+
+The first dollars distributed in a year count toward the RMD. If the client takes their full RMD in cash in January and then makes a QCD in June, the QCD does not reduce the taxable amount of the January distribution. Clients who want to use QCDs for their RMD should make the QCDs before (or instead of) other distributions.
+
+## Coordinating with automatic RMDs
+
+If the client has automatic RMD payments and plans a QCD:
+
+1. They make the QCD (see [[qualified-charitable-distributions]]).
+2. The QCD counts toward the year's RMD, so the remaining automatic payments shrink automatically.
+3. If they plan to cover the whole RMD with QCDs, they can pause automatic RMD payments for the year, then confirm the QCD total meets the RMD.
+
+## Reporting
+
+The 1099-R reports the QCD as a normal distribution. The client reports the exclusion on their tax return and keeps the charity's acknowledgment.
+
+## In chat
+
+Explain the mechanics. Whether to give to charity, and how much, is the client's decision.
+
+@page inherited-ira-rmds | Inherited IRA RMDs
+@summary Distribution requirements for beneficiaries: the 10-year rule, annual RMDs in years 1–9, life-expectancy payments, and spouses.
+
+## Which rule applies
+
+| Beneficiary | Rule |
+|---|---|
+| Spouse treating the IRA as their own | Their own RMD rules |
+| Spouse keeping an inherited IRA | Life-expectancy RMDs, which may start when the deceased would have reached RMD age |
+| Eligible designated beneficiary (minor child of owner until 21, disabled, chronically ill, not more than 10 years younger) | Annual RMDs over their single life expectancy |
+| Other individual beneficiary, owner died after 2019 | 10-year rule: account must be empty by December 31 of the 10th year after death |
+| Estate, charity, or non-see-through trust | 5-year rule if the owner died before their required beginning date; otherwise the owner's remaining life expectancy |
+
+## The 10-year rule and annual RMDs
+
+Under final IRS regulations, if the original owner had already **started** RMDs (died on or after their required beginning date), a beneficiary under the 10-year rule must also take **annual RMDs in years 1–9**, based on their own single life expectancy, and empty the account by the end of year 10. If the owner died **before** their required beginning date, no annual RMDs are required during the 10 years; only the year-10 deadline applies.
+
+The IRS waived penalties for missed annual RMDs under this rule for 2021 through 2024. Annual RMDs are required from 2025.
+
+## Inherited Roth IRAs
+
+Roth owners never reach a required beginning date, so beneficiaries under the 10-year rule have no annual RMDs; they must empty the account by the end of year 10. Eligible designated beneficiaries take life-expectancy RMDs. Distributions are generally tax-free.
+
+## The year of death
+
+If the owner died during a year in which they had not yet taken their full RMD, the beneficiaries must take the remaining amount by December 31 of that year.
+
+## Our role
+
+Estate Services sets up inherited IRAs and calculates the beneficiary's RMDs. Beneficiary-specific questions about which rule applies should go to Estate Services or Retirement Specialists. See [[non-spouse-beneficiaries]] and [[eligible-designated-beneficiaries]].

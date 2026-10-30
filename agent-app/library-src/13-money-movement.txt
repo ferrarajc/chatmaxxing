@@ -1,0 +1,425 @@
+@section money-movement | Money Movement | How money moves in and out of accounts: ACH, bank linking, wires in and out, checks received and issued, lost checks, stop payments, limits, returned items, international transfers, and protective holds.
+
+@page money-movement-overview | Money movement overview
+@summary Every way money enters and leaves an account, with timing, costs, and limits on one page.
+
+## Into an account
+
+| Method | Timing | Cost | Limit |
+|---|---|---|---|
+| ACH from a linked bank | Invested on trade date; bank debited in 2–3 business days | Free | $100,000 per day |
+| Incoming wire | Same day if received before 4:00 PM ET | Free from us | None |
+| Check by mail | When received at the processing center | Free | None |
+| Transfer from another firm (ACAT) | 5–7 business days | Free from us | None |
+| Rollover from an employer plan | 5–15 business days after release | Free from us | None |
+| Automatic investment | On schedule | Free | $50 minimum |
+
+## Out of an account
+
+| Method | Timing | Cost | Notes |
+|---|---|---|---|
+| ACH to a linked bank | 2–3 business days after settlement | Free | 10-day rule for newly linked banks |
+| Outgoing wire | Same day if requested before 2:00 PM ET | $25 | $1,000 minimum |
+| Check, standard mail | 5–7 business days | Free | To the address of record |
+| Check, overnight | 1–2 business days | $25 | Street address required |
+| Transfer to another firm | Initiated by the receiving firm | Free | See [[acat-outgoing]] |
+| Systematic withdrawal | On schedule | Free | $50 minimum |
+
+## Core rules
+
+- Money leaves only to the owner (their linked bank or address of record) unless a signature-guaranteed request directs otherwise. See [[medallion-signature-guarantee]].
+- Proceeds from shares bought by ACH or check may be held up to 7 business days. See [[redemption-holds]].
+- Money from an IRA to the client is a distribution with tax consequences. See [[ira-distributions-overview]].
+- Recent contact or bank changes trigger extra verification. See [[fraud-holds-money-movement]].
+
+@page ach-transfers | ACH transfers
+@summary How electronic bank transfers work in each direction, timing, limits, and failures.
+
+## What ACH is
+
+ACH (Automated Clearing House) is the U.S. network for electronic bank transfers. It is free, reliable, and slower than a wire. We use it for purchases from a linked bank, automatic investments, redemptions to a bank, distributions by direct deposit, and cash dividends to the bank.
+
+## Timing
+
+- **Deposits (debits from the client's bank)**: the purchase is priced on the trade date; the bank is debited within 2–3 business days.
+- **Withdrawals (credits to the client's bank)**: sent the business day after the sale settles; arrives in 1–2 business days after that, typically 2–3 business days from the trade.
+
+Some banks post incoming ACH credits early in the morning; others later in the day. We cannot control the bank's posting time.
+
+## Limits
+
+- $100,000 per day per account for deposits.
+- Withdrawals by ACH have no daily limit beyond the account's available cash, but very large withdrawals should go by wire.
+
+## Failures
+
+ACH debits can be returned by the client's bank (insufficient funds, account closed, debit blocked). See [[returned-items]]. ACH credits can be returned if the bank account is closed; the money comes back to the client's Bob's account as cash.
+
+## Business days
+
+ACH does not move on weekends or bank holidays, including Columbus Day and Veterans Day when the stock market is open. See [[holiday-calendar-2026]].
+
+## ACH versus wire
+
+| | ACH | Wire |
+|---|---|---|
+| Cost | Free | Incoming free; outgoing $25 |
+| Speed | 2–3 business days | Same day |
+| Limit | $100,000 per day for deposits | None |
+| Best for | Routine deposits and withdrawals | Large or urgent amounts |
+
+## Explaining the timing to clients
+
+"When you buy with your bank, you get today's price right away, and the money comes out of your bank in two to three business days. When you sell and send money to your bank, it usually arrives two to three business days after the sale."
+
+@page bank-linking-verification | Bank verification methods
+@summary Instant verification versus micro-deposits, what the client sees, and how to fix failed verifications.
+
+## Instant verification
+
+The client selects their bank and signs in through a secure connection service. We receive confirmation that the account exists and the owner's name matches, then the bank is linked immediately. Their bank credentials are never shared with us.
+
+Instant verification may not be available for small banks and credit unions, or when the bank requires extra security steps. In that case, use micro-deposits.
+
+## Micro-deposits
+
+1. The client enters the routing number and account number (and chooses checking or savings).
+2. Within 1–2 business days, two small deposits (each under $1) appear in their bank account, labeled from Bob's Mutual Funds.
+3. The client enters the two amounts at My Account → Linked Bank Accounts.
+4. The bank is linked, and the deposits are withdrawn.
+
+The amounts must be entered within 14 days. Three wrong attempts lock the verification; the client must start again.
+
+## Name matching
+
+The bank account must belong to at least one owner of the Bob's account. If the names do not match (for example, a business account or a relative's account), verification fails. See [[linked-bank-accounts]].
+
+## Troubleshooting
+
+See [[cannot-link-bank]].
+
+## Which method to recommend
+
+Instant verification is fastest. Micro-deposits work for any U.S. bank but take a couple of days. If the client needs to invest right away and instant verification isn't available, a wire or check is faster than waiting for micro-deposits.
+
+## Security
+
+Instant verification uses read-only access to confirm the account. We never see or store the client's bank password. Clients who are uncomfortable can always use micro-deposits.
+
+@page incoming-wires | Incoming wires
+@summary Wire instructions for sending money to Bob's Mutual Funds, timing, and what to do when a wire hasn't arrived.
+
+## Instructions
+
+| Field | Value |
+|---|---|
+| Receiving bank | First National Bank of Funds (FNBF) |
+| ABA routing number | 031000503 |
+| For credit to | Bob's Mutual Funds |
+| Beneficiary account | The client's Bob's account number |
+| Beneficiary name | The client's full name as registered |
+| Reference | Fund ticker(s); for IRAs "contribution [year]", "rollover", or "transfer" |
+
+We never change wire instructions by email, text, or phone. A message claiming our instructions changed is fraud.
+
+## Timing
+
+Wires received and matched before 4:00 PM ET are credited (and invested if fund instructions are included) the same day. Later wires are credited the next business day.
+
+## The wire hasn't arrived
+
+1. Ask the client for the amount, date sent, and the **federal reference number** (IMAD/OMAD) or confirmation from their bank.
+2. Check the account's recent activity.
+3. A wire with a mismatched account number or name is held while Money Movement Operations researches it; this can take 1–2 business days.
+4. If the client's bank shows the wire as sent and it has not appeared after one business day, escalate to Money Movement Operations with the reference number.
+
+## IRA wires
+
+Wires into an IRA must be designated as a contribution (with year), a rollover, or a transfer. Undesignated IRA wires are held until the client confirms.
+
+## Example
+
+A client wires $250,000 from their bank on Tuesday morning for a purchase of BFTM in their taxable account. The wire arrives at 11:40 AM ET with the account number and name, matches, and is invested at Tuesday's NAV. If the wire had arrived at 4:20 PM ET, it would be invested at Wednesday's NAV.
+
+## Advance notice for large wires
+
+For wires over $250,000, a quick secure message or chat noting the amount and expected date helps Money Movement Operations match it promptly.
+
+@page outgoing-wires | Outgoing wires
+@summary How clients send money out by wire, the fee, cutoff, minimum, and the verification required.
+
+## Rules
+
+- Wires go only to a bank account in the owner's name that is linked and verified, unless a signature-guaranteed written request directs otherwise.
+- Fee: **$25** per wire, deducted from the proceeds.
+- Minimum: **$1,000**.
+- Cutoff: requests received before **2:00 PM ET** on a business day are sent that day, if the cash is available (settled).
+- No maximum beyond available cash.
+
+## Steps
+
+1. If the money is invested, sell first. Sale proceeds settle T+1; the wire can go out on the settlement day.
+2. Request the wire online (Transactions → Withdraw → Wire), by phone, or through chat as part of a sale or distribution.
+3. The client's bank posts the wire the same day in most cases.
+
+## Verification
+
+For a wire over $50,000, or to a bank linked within the last 30 days, a representative confirms the request with the client by phone at a number on file. Explain this in advance so the client is not surprised.
+
+## International wires
+
+We do not send wires to foreign banks. See [[international-money-movement]].
+
+## Wire recall
+
+Once sent, a wire is very difficult to recall. Confirm the destination carefully, and be alert for scams that pressure clients to wire money urgently. See [[phishing-scams]].
+
+## Example timeline
+
+Monday 11:00 AM ET: the client sells $20,000 of BF500. The sale prices at Monday's NAV and settles Tuesday. The client requests a wire; it is sent Tuesday before 2:00 PM ET and arrives at their bank Tuesday afternoon. $19,975 arrives after the $25 fee.
+
+## Wires from IRAs
+
+A wire from an IRA is a distribution. Withholding applies as usual, and the client must request it as a distribution. See [[request-withdrawal-task]].
+
+@page checks-received | Checks we receive
+@summary How deposits by check are handled: acceptable checks, endorsement, IRA designations, and timing.
+
+## Acceptable and unacceptable
+
+See [[purchase-by-check]] for the full list. In short: personal, cashier's, and official checks payable to Bob's Mutual Funds are accepted; cash, money orders, traveler's checks, starter checks, third-party checks, and foreign checks are not.
+
+## Rollover and transfer checks
+
+Checks from another financial institution for a rollover or transfer should be payable to "Bob's Mutual Funds FBO [client name]" and include the client's Bob's account number. A rollover check payable to the client personally is an indirect rollover; the client may endorse it to us ("Pay to the order of Bob's Mutual Funds FBO [name], account [number]") and must deposit it within 60 days of receiving the distribution. See [[rollover-checks]].
+
+## Timing
+
+Checks are credited at the NAV on the business day they are received in good order at the processing center before 4:00 PM ET. Mail takes several days to arrive, so the purchase date is usually several days after the client mails the check.
+
+## Redemption hold
+
+Proceeds from shares bought by check can't be withdrawn for up to 7 business days. See [[redemption-holds]].
+
+## Mobile check deposit
+
+Clients can deposit checks of up to $50,000 in the mobile app by photographing the front and back. Mobile deposits follow the same rules and holds. Write "For mobile deposit to Bob's Mutual Funds only" below the endorsement.
+
+## Example deposit note
+
+"Please deposit into account 2847-3311 (Roth IRA), 2026 contribution, invest $2,000 in BF500 and $1,000 in BFBI."
+
+## Checks from relatives
+
+A check written by a grandparent directly to Bob's Mutual Funds for a grandchild's custodial account is acceptable, because it is payable to us. A check written to the grandchild and endorsed over to us is a third-party check and is returned.
+
+@page checks-issued | Checks we issue
+@summary When we send money by check, delivery options, and who the check is payable to.
+
+## When we issue checks
+
+- Redemptions or distributions where the client chose a check.
+- Required minimum distributions by check.
+- Final residual payments after an account closes.
+- Refunds of excess contributions by check.
+
+## Delivery
+
+| Method | Timing | Cost |
+|---|---|---|
+| Standard mail | 5–7 business days | Free |
+| Overnight | 1–2 business days | $25 |
+
+Checks are mailed to the address of record. If the address changed in the last 15 days, a check cannot be mailed there without a signature guarantee.
+
+## Payee
+
+The check is payable to the registered owner(s). For a joint account, to all owners. For a custodial account, to the custodian for the minor. For an IRA distribution, to the IRA owner. Checks payable to a third party (a charity for a QCD, a new custodian for a transfer) follow specific procedures.
+
+## Check expiration
+
+Checks are void after 180 days. See [[lost-stale-checks]].
+
+## Checks for closed accounts
+
+When an account closes, any final residual dividend is paid by check to the address of record, because there is no account left to hold it.
+
+## Checks to the wrong address
+
+If a check went to an outdated address, stop payment and reissue. See [[missing-check]].
+
+@page lost-stale-checks | Lost, stolen, and uncashed checks
+@summary What to do when a client never received a check, lost it, or has an old uncashed check.
+
+## Not received
+
+1. Confirm the date issued and the address it was mailed to.
+2. Allow 10 business days for standard mail before taking action.
+3. After 10 business days, the client can request a stop payment and reissue. See [[stop-payments]].
+
+## Lost or stolen
+
+Request a stop payment immediately. Once the stop payment is confirmed, we reissue the check, by ACH if the client prefers (faster and safer). There is no fee for a stop payment and reissue on a check we mailed.
+
+## Uncashed (stale) checks
+
+Our checks are void after 180 days. If a client finds an old uncashed check, they should not deposit it. We cancel the old check and reissue the funds. Uncashed IRA distribution checks are still taxable distributions in the year issued; the 1099-R is not changed.
+
+## Escheatment
+
+Checks that remain uncashed for several years may be turned over to the state as unclaimed property. See [[dormant-accounts-escheatment]].
+
+## Example
+
+A client finds a distribution check from 14 months ago in a drawer. It is void after 180 days. We cancel it and reissue the funds by ACH or a new check. The tax reporting for the original year doesn't change, because the distribution was made when the check was issued.
+
+@page stop-payments | Stop payments
+@summary How to stop payment on a check we issued, timing, and limitations.
+
+## Requesting
+
+A stop payment on a check we issued can be requested by the payee (the client) in chat, by phone, or by secure message. Provide the check date, amount, and account. There is no fee.
+
+## Processing
+
+Money Movement Operations places the stop, usually the same business day. Once the stop is confirmed and the check is verified as not cashed, the funds are returned to the account and can be reissued.
+
+## If the check was already cashed
+
+If the check has been cashed, the stop payment fails. If the client did not cash it, this may be fraud; Money Movement Operations will start a forgery claim, which requires a signed affidavit from the client. See [[account-takeover]].
+
+## Client's own checks
+
+We cannot stop payment on a check the client wrote to us; the client must contact their bank. If their check to us was for a purchase, a stopped check is treated as a returned payment. See [[returned-items]].
+
+## Timing
+
+A stop payment is effective once placed. Allow 1–2 business days after confirming the check was not cashed before the funds are reissued, to make sure the check doesn't clear in the meantime.
+
+## Example
+
+"I've requested a stop payment on the $3,200 check issued September 2. Once it's confirmed, usually by tomorrow, we'll send the funds by ACH to your bank ending in 4421."
+
+@page transfer-limits | Transfer limits
+@summary Daily and per-transaction limits for deposits and withdrawals, and how to handle amounts above them.
+
+## Limits
+
+| Transaction | Limit |
+|---|---|
+| ACH deposit | $100,000 per account per day |
+| Mobile check deposit | $50,000 per check; $100,000 per day |
+| Outgoing wire | Minimum $1,000; no maximum beyond available cash |
+| Check by mail (outgoing) | Over $100,000 requires a signature-guaranteed request |
+| Automatic investment | Minimum $50; no maximum (IRA limits apply) |
+| Systematic withdrawal | Minimum $50 |
+
+## Larger amounts
+
+- Deposits over $100,000: use a wire, or split ACH across days.
+- Withdrawals over $100,000: use a wire to a linked bank (no signature guarantee needed), or provide a signature-guaranteed request for a check.
+
+## Limits for newly linked banks
+
+For 10 days after linking, a bank can fund purchases but cannot receive electronic withdrawals without a verification call.
+
+## Why limits exist
+
+Limits reduce fraud losses and the risk of large returned payments. They apply equally to every client.
+
+## Working within them
+
+- A client depositing $250,000 can wire it in one day or split ACH across three business days.
+- A client moving a large IRA from another firm should use a transfer or rollover, not a deposit; transfers have no limit.
+
+## Raising limits
+
+ACH limits cannot be raised on request. Use wires for larger amounts.
+
+@page returned-items | Returned payments and items
+@summary What happens when an ACH, check, or wire is returned, fees, and repeated-return restrictions.
+
+## Returned deposits
+
+When a purchase payment is returned (ACH return, bounced check):
+
+1. The purchase is reversed.
+2. Any decline in the fund's NAV since the purchase is charged to the account.
+3. A $20 returned-payment fee is charged.
+4. The client is notified by email and mail.
+
+After two returns in 12 months, ACH and check purchases are restricted for 90 days.
+
+## Returned withdrawals
+
+When money we send is returned (closed bank account, wrong details):
+
+1. The funds come back to the client's account as cash (not reinvested).
+2. We notify the client.
+3. Once the client updates their bank, we resend.
+
+No fee is charged for a returned withdrawal, but an outgoing wire fee already charged is not refunded unless the error was ours.
+
+## Return codes
+
+Money Movement Operations sees the bank's reason code (for example, "insufficient funds", "account closed", "no account", "authorization revoked"). Share the general reason with the client; they should contact their bank for details.
+
+## Example
+
+A client's $1,500 ACH purchase of BFGR on May 6 is returned on May 9 for insufficient funds. BFGR's NAV fell from $341.20 to $335.00 in between. The purchase is reversed, the client is charged the loss on the shares ($1,500 × (1 − 335.00/341.20) ≈ $27.26), plus the $20 fee.
+
+## Restricted purchases
+
+After two returns in 12 months, the account can only accept wires and checks drawn on the same bank for 90 days. Explain neutrally.
+
+@page international-money-movement | International money movement
+@summary What we can and cannot do with foreign banks, currencies, and clients abroad.
+
+## What we don't do
+
+- We do not send wires to foreign banks.
+- We do not accept checks drawn on foreign banks.
+- We do not convert currencies. All accounts are in U.S. dollars.
+
+## Incoming international wires
+
+A client abroad can send a wire from a foreign bank through the bank's U.S. correspondent to our receiving bank in U.S. dollars, using our standard instructions. Intermediary banks may deduct fees, so the amount received can be less than sent. Incoming foreign wires get additional anti-money-laundering review and may take an extra business day.
+
+## Clients moving abroad
+
+Clients need a U.S. bank account to receive electronic payments. See [[non-us-persons]].
+
+## U.S. citizens abroad
+
+Citizens living abroad often keep a U.S. bank account for transfers. Withdrawals go only to U.S. banks in the owner's name.
+
+## Incoming foreign wires
+
+The sending bank should include our receiving bank's details and the client's account number and name. Foreign wires can take an extra business day for compliance review. Intermediary fees may reduce the amount received.
+
+## Currency
+
+All accounts are in U.S. dollars. If the client sends a foreign-currency wire, the conversion happens at the sending or intermediary bank, at their rate.
+
+@page fraud-holds-money-movement | Protective holds on money movement
+@summary When and why we pause a withdrawal for review, what to tell the client, and who can release it.
+
+## When holds apply
+
+A withdrawal may be paused for review when:
+
+- Contact details changed recently, followed by a withdrawal request.
+- A new bank was linked and a large withdrawal requested soon after.
+- The request is unusual for the client (amount, destination, frequency).
+- Exploitation red flags are present. See [[elder-financial-exploitation]].
+- The Fraud team has an open investigation.
+
+Federal rules allow firms to place a temporary hold on disbursements when financial exploitation of a senior or vulnerable adult is suspected, typically for up to 15 business days, extendable.
+
+## What to tell the client
+
+Be honest without revealing fraud indicators: "This withdrawal needs an additional security review before it's released. Our security team will contact you, usually within one business day, at the phone number on file." Do not say "we think it's fraud". Do not promise release by a specific time.
+
+## Who releases holds
+
+Only the Fraud and Security team or the Senior Investor Protection team. Chat agents cannot release a hold. If the client is upset, acknowledge their frustration, explain that the review protects them, and escalate to your team lead if needed.

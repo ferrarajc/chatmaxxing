@@ -1,0 +1,535 @@
+@section concepts | Investing Concepts (Educational) | Plain-language explanations of core investing ideas that agents can share with clients as education, without crossing into advice.
+
+@page mutual-fund-basics | Mutual funds explained
+@summary What a mutual fund is, how it works, and how to explain it to a new investor.
+
+## The idea
+
+A mutual fund pools money from many investors to buy a portfolio of stocks, bonds, or both. Each investor owns shares of the fund, and the value of their shares rises and falls with the value of everything the fund owns.
+
+## Benefits clients often ask about
+
+- **Diversification**: one fund can hold hundreds or thousands of securities, so no single company's troubles dominate. See [[diversification]].
+- **Professional management**: for index funds, management means tracking an index precisely and cheaply.
+- **Low minimums**: our funds start at $1.
+- **Daily liquidity**: shares can be sold any business day at that day's NAV.
+- **Automatic features**: reinvested dividends and automatic investing.
+
+## How it differs from an ETF
+
+ETFs are also pooled funds, but they trade on an exchange throughout the day like stocks. Mutual funds trade once a day at NAV. Many index mutual funds and ETFs track the same indexes. See [[nav-pricing]].
+
+## Explaining it simply
+
+"A mutual fund is like a basket that holds many investments. When you buy a share, you own a small piece of the whole basket. Our 500 Index fund, for example, holds about 500 of the largest U.S. companies."
+
+## What not to say
+
+Avoid implying a fund can't lose money. Every fund can lose value.
+
+@page index-vs-active | Index funds and active funds
+@summary How index funds differ from actively managed funds, and why our lineup is mostly index funds.
+
+## Definitions
+
+- **Index fund**: tracks a published index (for example, the S&P 500) by holding the same securities in the same proportions. Low turnover, low cost.
+- **Actively managed fund**: a manager picks securities trying to beat a benchmark. Higher costs and turnover.
+
+## The evidence clients may have heard about
+
+Research over many decades (for example, the S&P SPIVA reports) has found that most actively managed funds trail their benchmarks over long periods, after costs. This is a general finding, not a guarantee about any fund.
+
+## Our lineup
+
+Nearly all BobsFunds funds are index funds, reflecting our founder's philosophy that low costs and broad diversification are the most reliable drivers of long-term results. The client Library has a guide, "Index Funds vs. Active Funds".
+
+## How to discuss
+
+Explain the difference. You may describe our philosophy as the firm's view. Do not say index funds are right for the client.
+
+## Characteristics compared
+
+| | Index funds | Active funds |
+|---|---|---|
+| Goal | Match an index | Beat a benchmark |
+| Costs | Usually low | Usually higher |
+| Turnover | Low | Often higher |
+| Tax efficiency (taxable accounts) | Usually higher | Often lower |
+| Predictability relative to the market | High | Varies |
+
+## Our expense ratios as context
+
+Our index funds cost 0.03%–0.13% a year. See [[expense-ratios]].
+
+## Common client question
+
+### "Can an index fund beat the market?"
+By design an index fund aims to match its index, minus small costs. It will not beat its index by much, and it won't trail by much either.
+
+@page asset-allocation | Asset allocation
+@summary The idea of dividing investments among stocks, bonds, and cash, explained neutrally.
+
+## What it is
+
+Asset allocation is how an investor divides their money among asset classes: stocks (growth potential, more volatility), bonds (income, usually less volatility), and cash. It is often described as a percentage mix, such as 60% stocks and 40% bonds.
+
+## Why it matters
+
+Studies have found that the allocation explains a large share of the variation in a portfolio's returns and volatility over time, more than individual fund selection.
+
+## Factors investors consider
+
+- Time horizon: when they need the money.
+- Risk tolerance: how they would react to a large drop.
+- Goals and other resources.
+
+## Rules of thumb
+
+Clients may mention rules of thumb such as "110 minus your age in stocks". You may acknowledge such rules exist; do not endorse one for the client.
+
+## The advice boundary
+
+Choosing an allocation for a client is advice. You may explain the concept, show their current allocation, and process changes they choose. For help choosing, offer a callback. See [[investment-advice-boundary]].
+
+## Seeing a client's current allocation
+
+The portal's Portfolio page shows the client's mix by asset class (U.S. stocks, international stocks, bonds, cash) across all accounts. You can read it to the client as a fact: "Right now you're about 72% stock funds, 23% bond funds, and 5% cash."
+
+## Funds by asset class
+
+| Asset class | Our funds |
+|---|---|
+| U.S. stocks | BF500, BFTM, style and size funds, dividend funds, sector funds |
+| International stocks | BFIN, BFDEV, BFEMG, BFEUR, BFPAC |
+| Bonds | BFST, BFSTC, BFITT, BFBI, BFITC, BFLTC, BFLTT |
+
+## Processing a client's chosen allocation
+
+If the client tells you their target, you can calculate and process the exchanges. See [[rebalancing-requests]].
+
+@page diversification | Diversification
+@summary Why spreading investments across many securities and asset classes reduces risk, and its limits.
+
+## The idea
+
+Diversification means not putting all your eggs in one basket. Holding many securities across companies, industries, countries, and asset classes reduces the impact of any one investment performing badly.
+
+## What it does and doesn't do
+
+- It reduces the risk specific to individual companies or sectors.
+- It does **not** eliminate market risk: in a broad decline, most stocks fall together.
+- It does not guarantee a profit or protect against loss.
+
+## Concentration
+
+Clients sometimes hold a single sector fund or a large position in an employer's stock. Concentration increases risk. You may explain this generally; whether to reduce it is advice.
+
+## Our funds
+
+Broad funds (BFTM with about 3,650 holdings, BFIN with about 8,500) are highly diversified within their asset class. Sector funds (BFTEC, BFENE) are concentrated by design.
+
+The client Library's "Bob's View: Diversification, The Free Lunch" column discusses the idea.
+
+## Example
+
+A client holds only BFTEC (technology). In 2022 the fund returned −29.7%. A client holding BFTM (total market) that year had technology exposure too, but diluted by every other sector, and lost −19.5%. Neither was a gain; diversification reduced, not eliminated, the decline.
+
+## Across asset classes
+
+Stocks and bonds sometimes move in opposite directions, which helps a mixed portfolio. In some years (2022 was one) both fall together. Diversification works on average over time, not every year.
+
+@page risk-and-volatility | Risk and volatility
+@summary How to explain investment risk, volatility measures, and the relationship between risk and return.
+
+## Kinds of risk
+
+- **Market risk**: the whole market falls.
+- **Interest-rate risk**: bond prices fall when rates rise.
+- **Credit risk**: a bond issuer can't pay.
+- **Currency risk**: for international investments.
+- **Concentration risk**: too much in one area.
+- **Inflation risk**: returns don't keep up with rising prices.
+- **Longevity risk**: outliving savings.
+
+## Measuring volatility
+
+- **Standard deviation**: how widely returns have varied around their average. Higher means bumpier.
+- **Beta**: how much a fund has moved relative to the market (S&P 500 = 1.0).
+- **Worst calendar year**: an intuitive measure. Fund profiles show calendar-year returns, including 2022, a difficult year for both stocks and bonds.
+
+## Risk and return
+
+Historically, investments with higher expected returns have come with higher volatility. That relationship is general, not a promise.
+
+## How to discuss
+
+Use published measures and history. Avoid "safe", "risky for you", or predictions. See [[risk-levels]].
+
+## Example: comparing volatility
+
+| Fund | Standard deviation | Worst recent year |
+|---|---|---|
+| BFST | 1.4% | −4.2% (2022) |
+| BFBI | 5.2% | −13.1% (2022) |
+| BF500 | 14.8% | −18.2% (2022) |
+| BFSCG | 22.0% | −28.4% (2022) |
+| BFENE | 26.0% | −33.5% (2020) |
+
+Higher standard deviation has meant bigger swings in both directions.
+
+## Talking about risk tolerance
+
+Clients sometimes ask "how much risk should I take?" That is advice. You can ask how they would feel about a large decline as a way to help them think about it, but you should not translate the answer into a recommendation. Offer a callback.
+
+@page bonds-and-interest-rates | Bonds and interest rates
+@summary How bonds work, why bond fund prices move inversely with interest rates, and how to explain bond fund behavior.
+
+## How bonds work
+
+A bond is a loan to a government or company. The issuer pays interest and returns the principal at maturity. Bond funds hold many bonds and constantly replace those that mature.
+
+## Prices and rates move in opposite directions
+
+When interest rates rise, newly issued bonds pay more, so existing bonds with lower rates become less valuable and their prices fall. When rates fall, existing bonds become more valuable. The longer a bond's maturity, the bigger the effect. See [[duration]].
+
+## 2022 as an example
+
+Rates rose sharply in 2022. BFBI returned −13.1% and BFLTT −29.3%, while short-term BFST returned −4.2%. Over the following years, higher rates meant higher income for the funds.
+
+## The upside of higher rates
+
+After rates rise, bond funds earn more income from new bonds, which over time can offset the price decline. This is a general mechanism, not a prediction.
+
+## Credit
+
+Treasury bonds have essentially no credit risk. Corporate bonds pay more interest to compensate for the risk that the company can't pay. BBB-rated bonds are the lowest investment-grade rating.
+
+## Explaining it
+
+"When interest rates go up, the prices of existing bonds go down, because new bonds pay more. Longer-term bond funds feel that more. Over time, the fund also earns more income as it buys new, higher-yielding bonds."
+
+@page duration | Duration
+@summary What duration measures, how to use it to explain a bond fund's rate sensitivity, and our funds' durations.
+
+## Definition
+
+Duration, in years, measures a bond fund's sensitivity to interest-rate changes. As a rule of thumb, a fund's price changes by about its duration in percent for each 1 percentage-point change in rates, in the opposite direction.
+
+## Our funds
+
+| Fund | Average duration | Approximate price change if rates rise 1 point |
+|---|---|---|
+| BFST | 1.8 years | −1.8% |
+| BFSTC | 2.6 years | −2.6% |
+| BFITT | 5.2 years | −5.2% |
+| BFBI | 6.0 years | −6.0% |
+| BFITC | 6.3 years | −6.3% |
+| BFLTC | 12.5 years | −12.5% |
+| BFLTT | 15.5 years | −15.5% |
+
+## Caveats
+
+The rule of thumb is an approximation; actual changes depend on how rates move across maturities, credit spreads, and other factors.
+
+## How to discuss
+
+Use duration to explain past behavior or sensitivity. Do not predict rate moves or recommend durations.
+
+@page dollar-cost-averaging | Dollar-cost averaging
+@summary How investing a fixed amount regularly works, its effect on average cost, and how to describe it accurately.
+
+## What it is
+
+Dollar-cost averaging (DCA) means investing a fixed dollar amount at regular intervals regardless of the price. Automatic investment plans do this automatically.
+
+## The effect
+
+A fixed amount buys more shares when prices are low and fewer when prices are high, so the average cost per share is lower than the average price over the period.
+
+| Month | Investment | NAV | Shares bought |
+|---|---|---|---|
+| 1 | $300 | $30 | 10.000 |
+| 2 | $300 | $25 | 12.000 |
+| 3 | $300 | $20 | 15.000 |
+| 4 | $300 | $25 | 12.000 |
+
+$1,200 bought 49 shares: average cost $24.49, versus an average price of $25.00.
+
+## What it doesn't do
+
+DCA does not guarantee a profit or protect against loss in a declining market. Studies show that investing a lump sum at once has historically produced higher returns more often than not, because markets have risen more often than fallen; DCA reduces the regret of investing just before a decline. That is a general observation, not advice.
+
+## How to discuss
+
+Explain the mechanics. Whether to invest a lump sum or spread it out is the client's decision.
+
+@page rebalancing | Rebalancing
+@summary What rebalancing is, why investors do it, common approaches, and the tax consideration.
+
+## What it is
+
+Over time, investments that grow faster become a bigger share of a portfolio. Rebalancing means selling some of what grew and buying what lagged, to restore the original mix.
+
+## Why investors do it
+
+To keep the portfolio's risk level consistent with their chosen allocation. Without rebalancing, a 60/40 portfolio can drift to 75/25 after a strong stock market.
+
+## Common approaches
+
+- **Calendar**: rebalance once a year.
+- **Threshold**: rebalance when an asset class drifts more than a set amount (for example, 5 percentage points).
+- **With cash flows**: direct new contributions to whatever is underweight, which avoids selling.
+
+## Taxes
+
+Rebalancing by exchange in a taxable account can create capital gains. In IRAs, there is no tax effect.
+
+## In chat
+
+See [[rebalancing-requests]] for the procedure. Calculating the trades for a client's own target is arithmetic; choosing the target is advice.
+
+## Example
+
+A client started the year at 60% stock funds ($60,000) and 40% bond funds ($40,000). Stocks rose 20% and bonds rose 2%, so they now have $72,000 in stocks (63.8%) and $40,800 in bonds (36.2%). To return to 60/40 of $112,800, they would move about $4,320 from stock funds to bond funds.
+
+## Rebalancing with new money
+
+Directing new contributions to the underweight asset avoids selling (and, in taxable accounts, avoids realizing gains). Clients can adjust automatic investment plans for this.
+
+## The advice boundary
+
+Explaining the mechanics and doing the arithmetic for a client's own target is fine; recommending a target or a schedule is advice.
+
+@page compounding | Compounding
+@summary How growth on growth works, the rule of 72, and why reinvesting distributions matters.
+
+## The idea
+
+Compounding means earning returns on previous returns. Reinvested dividends buy more shares, which earn their own dividends and growth.
+
+## Rule of 72
+
+Divide 72 by an annual growth rate to estimate how many years money takes to double: at 6%, about 12 years; at 8%, about 9 years. This is an arithmetic illustration, not a projection.
+
+## Time matters
+
+Because compounding builds on itself, time in the market has a large effect. The client Library guide "Compound Interest" illustrates this.
+
+## How to discuss
+
+Use hypothetical illustrations clearly labeled as such: "As a hypothetical example, $10,000 growing at 6% a year would be about $32,000 after 20 years. That's arithmetic, not a forecast for any fund."
+
+## Reinvested distributions and compounding
+
+For mutual funds, compounding happens mainly through reinvested distributions and growth in the value of the shares those distributions bought. With DRIP on, each dividend buys more shares, and those shares earn the next dividend. See [[drip]].
+
+## Hypothetical illustration
+
+| Years | $10,000 at 4% | $10,000 at 6% | $10,000 at 8% |
+|---|---|---|---|
+| 10 | $14,802 | $17,908 | $21,589 |
+| 20 | $21,911 | $32,071 | $46,610 |
+| 30 | $32,434 | $57,435 | $100,627 |
+
+These figures are arithmetic, assume a constant rate, and ignore taxes and costs. Real investments do not grow at a constant rate and can lose value.
+
+## Questions clients ask
+
+### "Is it too late for me to start?"
+You can explain that compounding works over any period, with longer periods producing larger effects. Whether and how much to invest is the client's decision.
+
+### "Does my money compound in a bond fund?"
+Yes, if distributions are reinvested; bond funds pay most of their return as income, so reinvestment matters even more.
+
+@page cost-impact | How costs affect returns
+@summary Why expense ratios matter over time, with an illustration, and how to discuss costs factually.
+
+## The effect
+
+Costs are deducted every year regardless of returns, so they compound against the investor. A difference of 0.5% a year sounds small but adds up over decades.
+
+## Illustration (hypothetical)
+
+$100,000 growing at 6% before costs for 30 years:
+
+| Annual cost | Ending value |
+|---|---|
+| 0.03% | about $568,000 |
+| 0.50% | about $497,000 |
+| 1.00% | about $432,000 |
+
+## Our costs
+
+Our expense ratios range from 0.03% to 0.13%, and there are no account fees or transaction fees. See [[expense-ratios]].
+
+## How to discuss
+
+You may present our costs and the arithmetic. Avoid disparaging competitors by name.
+
+## Why low costs matter more over time
+
+An expense ratio is charged every year on the whole balance, including past growth. The difference between two costs is therefore not just the fee itself but the growth those fees would have earned.
+
+## Explaining expense ratios in dollars
+
+Clients relate better to dollars than percentages:
+
+| Balance | At 0.03% | At 0.13% | At 0.50% |
+|---|---|---|---|
+| $10,000 | $3 a year | $13 a year | $50 a year |
+| $100,000 | $30 a year | $130 a year | $500 a year |
+| $500,000 | $150 a year | $650 a year | $2,500 a year |
+
+## Talking about competitors
+
+Do not name or disparage other firms. You may say our expense ratios range from 0.03% to 0.13% and that we charge no account or transaction fees, and let the client compare.
+
+@page inflation | Inflation and purchasing power
+@summary How inflation erodes money's value, how different investments have related to inflation, and how to discuss it.
+
+## The idea
+
+Inflation is the general rise in prices. Money that earns less than inflation loses purchasing power: at 3% inflation, $100 buys about $74 worth of today's goods in 10 years.
+
+## Real return
+
+A real return is the return after inflation. A 4% return with 3% inflation is about a 1% real return.
+
+## Different investments
+
+Historically, stocks have tended to outpace inflation over long periods, with volatility along the way; cash and short-term bonds have often roughly kept pace; long-term bonds have struggled when inflation rose unexpectedly. Some sectors (energy, real estate, materials) are often described as inflation-sensitive. These are general historical patterns.
+
+The client Library's "Bob's View: The Hidden Tax of Inflation" column discusses it.
+
+## How to discuss
+
+Explain the concept. Don't recommend investments as inflation protection for the client.
+
+## Examples clients relate to
+
+- At 3% inflation, prices double in about 24 years (rule of 72).
+- A retiree spending $50,000 a year today would need about $67,000 in 10 years at 3% inflation for the same lifestyle.
+- Cash earning 0% loses about 3% of its purchasing power each year at 3% inflation.
+
+## Uninvested cash
+
+Cash held uninvested in a Bob's account earns no return, so it loses purchasing power to inflation. Pointing that out neutrally is helpful; recommending what to buy is not.
+
+## Questions
+
+### "What's the best inflation hedge?"
+Explain the general patterns above and that no investment reliably protects against inflation in every period. Offer a callback for planning.
+
+@page market-downturn-conversations | Talking with clients during market downturns
+@summary How to support anxious clients when markets fall, what you can say, and what you must not say.
+
+## What clients feel
+
+Falling markets frighten people, especially those near or in retirement. Clients may want reassurance, an explanation, or to sell everything.
+
+## What you can do
+
+- **Acknowledge the feeling**: "It's completely understandable to be concerned when you see your balance drop."
+- **Explain what happened, factually**: "Stock funds across the market declined this week" or "Bond prices fell as interest rates rose."
+- **Provide context from published history**: markets have experienced many declines, including −18.2% for BF500 in 2022, and past declines have been followed by recoveries, though past performance does not guarantee future results.
+- **Point to educational resources**: the client Library's "Investing Through Market Volatility" guide and "Bob's View: The Illusion of Market Timing" column.
+- **Process what the client decides**, accurately and without commentary.
+- **Offer a callback** with a licensed professional for guidance.
+
+## What you must not do
+
+- Predict where markets are going ("It'll bounce back soon").
+- Tell the client to stay invested or to sell.
+- Minimize the loss ("It's only a paper loss").
+- Express your own fear or opinions.
+
+## If the client wants to sell everything
+
+Confirm what they want, once, clearly: "Just to confirm, you'd like to sell all of your BF500 and BFGR in your Traditional IRA and hold the proceeds as cash in the account?" Then process it. You may mention, factually, that selling locks in the current value and that in a taxable account sales can have tax consequences. Do not try to talk them out of it.
+
+## Wrap-up
+
+Use Market Question, or Investment Advice if the client was referred.
+
+@page sector-funds-concepts | Sector funds
+@summary What sector investing is, how sector funds behave, and how to describe them neutrally.
+
+## What they are
+
+Sector funds invest in one of the 11 sectors of the economy (technology, health care, financials, consumer discretionary, consumer staples, industrials, energy, materials, communication services, utilities, real estate). Our lineup has a sector fund for each.
+
+## Behavior
+
+- Sectors respond differently to economic conditions: utilities and consumer staples are often called defensive; technology and consumer discretionary are more cyclical.
+- Sector funds can be much more volatile than the broad market. BFENE returned +61% in 2022 and −33.5% in 2020.
+- A broad market fund already holds every sector in proportion to its size.
+
+## How investors use them
+
+Typically as a smaller "tilt" alongside a diversified core, not as a whole portfolio. That is a description of common practice, not a recommendation.
+
+## In chat
+
+Describe the sector and its characteristics from the fund profile. Do not comment on which sector will do well.
+
+## Our sector funds
+
+| Fund | Sector | Risk |
+|---|---|---|
+| BFTEC | Information technology | High |
+| BFHLT | Health care | Medium |
+| BFFIN | Financials | Medium–High |
+| BFDIS | Consumer discretionary | High |
+| BFSTP | Consumer staples | Low–Medium |
+| BFIND | Industrials | Medium–High |
+| BFENE | Energy | High |
+| BFMAT | Materials | Medium–High |
+| BFCOM | Communication services | Medium–High |
+| BFUTL | Utilities | Low–Medium |
+| BFREI | Real estate | Medium–High |
+
+All cost 0.09% a year except BFREI at 0.13%.
+
+## Overlap
+
+A client holding BF500 and BFTEC is already about one-third in technology through BF500 (32.4% IT), plus whatever is in BFTEC. Pointing out overlap factually is fine; telling them it's too much is advice.
+
+@page international-investing | International investing
+@summary Why investors hold international stocks, the added risks, and how our international funds differ.
+
+## Why international
+
+Companies outside the U.S. make up roughly 40% of the world's stock market value. International funds provide exposure to economies and companies not available in U.S. funds, and their returns don't move in lockstep with U.S. stocks.
+
+## Added risks
+
+- **Currency**: returns in dollars depend on exchange rates.
+- **Political and economic risk**, especially in emerging markets.
+- **Different accounting and market practices**.
+- **Foreign taxes** on dividends. See [[foreign-tax-credit]].
+
+## Our funds
+
+| Fund | Coverage |
+|---|---|
+| BFIN | Developed and emerging markets, 40+ countries |
+| BFDEV | Developed markets: Europe, Pacific, Canada |
+| BFEMG | Emerging markets: China, India, Taiwan, Brazil, and others |
+| BFEUR | Developed Europe |
+| BFPAC | Developed Asia-Pacific, led by Japan |
+
+## In chat
+
+Describe the differences. How much to hold internationally is a planning decision.
+
+## Currency example
+
+If European stocks rise 5% in euros and the euro falls 5% against the dollar, a U.S. investor in BFEUR earns roughly 0%. If both rise 5%, the investor earns roughly 10%.
+
+## Distribution timing
+
+Our international funds distribute semiannually, in June and December, so clients expecting quarterly dividends should be told this is normal.
+
+## Emerging versus developed
+
+Emerging markets (BFEMG) have historically been more volatile than developed markets (BFDEV), with a higher risk level on our scale.

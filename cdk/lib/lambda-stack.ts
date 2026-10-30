@@ -7,6 +7,7 @@ import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as path from 'path';
 import { Construct } from 'constructs';
 
@@ -715,6 +716,44 @@ export class LambdaStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.GET],
       integration: new HttpLambdaIntegration('FundMarketIntegration', fundMarketFn),
     });
+
+    // ── agent-library-rag (Q&A over the Agent Knowledge Library) ───────
+    // The library's text chunks are bundled into the function (chunks.json, emitted by
+    // scripts/agent-library/build.mjs). Embeddings are computed by the function itself
+    // on first use and cached in this bucket, keyed by the chunks' content hash — so the
+    // OpenAI key never leaves AWS and any library edit re-indexes automatically. The
+    // cache is disposable: a missing object just triggers a rebuild, hence the expiry
+    // rule (it also sweeps vectors for superseded library versions).
+    const libraryIndexBucket = new s3.Bucket(this, 'AgentLibraryIndexBucket', {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      lifecycleRules: [{ expiration: cdk.Duration.days(60) }],
+    });
+    const agentLibraryRagFn = new NodejsFunction(this, 'AgentLibraryRagFn', {
+      functionName: `bobs-agent-library-rag${sfx}`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      architecture: lambda.Architecture.X86_64,
+      handler: 'handler',
+      entry: path.join(lambdaDir, 'agent-library-rag/handler.ts'),
+      // Ask requests finish in a few seconds; the async index build (~2k chunks) needs minutes.
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 1024,
+      environment: {
+        OPENAI_API_KEY: baseEnv.OPENAI_API_KEY,
+        LIBRARY_INDEX_BUCKET: libraryIndexBucket.bucketName,
+      },
+      bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
+    });
+    libraryIndexBucket.grantReadWrite(agentLibraryRagFn);
+    // Self-invoke (async index build) via literal ARN, same as fund-data-refresh.
+    agentLibraryRagFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [`arn:aws:lambda:${this.region}:${this.account}:function:bobs-agent-library-rag${sfx}`],
+    }));
+    const agentLibraryIntegration = new HttpLambdaIntegration('AgentLibraryRagIntegration', agentLibraryRagFn);
+    api.addRoutes({ path: '/agent-library/ask', methods: [apigwv2.HttpMethod.POST], integration: agentLibraryIntegration });
+    api.addRoutes({ path: '/agent-library/status', methods: [apigwv2.HttpMethod.GET], integration: agentLibraryIntegration });
 
     // ── supervisor-stats (Supervisor Dashboard aggregates + AI insights) ─
     // AGENTS_TABLE is set per-function (not in baseEnv) so existing lambdas' deployed

@@ -1,0 +1,343 @@
+@section ira-distributions | IRA Distributions | Taking money out of IRAs: taxes, withholding, the early-withdrawal penalty and its exceptions, Roth distribution rules, qualified charitable distributions, 72(t) payments, delivery, and the chat distribution procedure.
+
+@page ira-distributions-overview | IRA distributions overview
+@summary How IRA withdrawals are taxed and reported, the key decisions in every distribution, and which page covers each situation.
+
+## What a distribution is
+
+Any money taken out of an IRA and paid to the client (or to a charity, or to anyone other than another retirement account) is a **distribution**. Distributions are reported to the IRS on Form 1099-R, issued by January 31 of the following year.
+
+## Tax treatment by IRA type
+
+| IRA type | Federal income tax | 10% additional tax before 59½ |
+|---|---|---|
+| Traditional or SEP | Taxable as ordinary income (except nondeductible basis) | Applies unless an exception applies |
+| Roth | Contributions out first, tax-free; earnings tax-free if qualified | Applies only to taxable earnings (and to conversions within 5 years) unless an exception applies |
+| Inherited (any type) | As the original IRA type | Never applies |
+
+## Decisions in every distribution
+
+1. **Amount**: gross (before withholding) or net (what the client wants to receive).
+2. **Which account and which funds to sell**.
+3. **Delivery**: direct deposit (ACH), check, wire. See [[distribution-delivery]].
+4. **Federal withholding**: default 10% for Traditional and SEP IRAs; client may choose 0%–100%. See [[tax-withholding-retirement]].
+5. **State withholding**: depends on the client's state. See [[state-withholding]].
+6. **Reason** (for reporting): normal (59½+), early, early with an exception, disability, death, and so on.
+
+## Which page to use
+
+- One-time withdrawal: [[request-withdrawal-task]].
+- Recurring withdrawals: [[setup-swp-task]].
+- Required minimum distributions: [[rmd-overview]].
+- Giving to charity from an IRA: [[qualified-charitable-distributions]].
+- Moving to another IRA: not a distribution if done directly; see [[ira-trustee-transfers]].
+- Removing an excess contribution: [[excess-contributions]].
+
+## What you can say about taxes
+
+Explain the rules above factually. Do not estimate the client's tax or advise whether to withdraw. See [[tax-advice-boundary]].
+
+@page early-withdrawal-penalty | The 10% early-withdrawal penalty
+@summary When the 10% additional tax applies, how it's calculated, and how distributions are coded.
+
+## The rule
+
+Distributions from a Traditional, SEP, or SIMPLE IRA taken before age **59½** are subject to a **10% additional tax** on the taxable amount, on top of regular income tax, unless an exception applies. For Roth IRAs, the penalty applies only to the taxable portion (earnings in a non-qualified distribution), and to converted amounts withdrawn within five years of the conversion.
+
+## Age 59½
+
+The client must actually be 59½ on the date of the distribution. A client born March 10, 1967 turns 59½ on September 10, 2026.
+
+## Who pays it
+
+The client pays the penalty on their tax return (IRS Form 5329 if claiming an exception or calculating the penalty). We do not withhold the penalty. The 10% default federal withholding is a prepayment of income tax, not the penalty; clients often confuse the two.
+
+## How we code distributions
+
+On Form 1099-R, we report the distribution with a code:
+
+- **Code 1**: early distribution, no known exception.
+- **Code 2**: early distribution, exception applies (for example, 72(t) payments or IRS levy).
+- **Code 3**: disability.
+- **Code 4**: death (inherited IRA).
+- **Code 7**: normal distribution (59½ or older).
+
+For most exceptions (medical expenses, education, first home, and others), we report code 1 because we cannot verify the exception; the client claims the exception on Form 5329. See [[penalty-exceptions]].
+
+## In chat
+
+When a client under 59½ requests a Traditional or SEP IRA distribution, mention the penalty factually: "Since you're under 59½, this withdrawal may be subject to a 10% additional tax unless an exception applies. Your tax advisor can confirm." Do not discourage the withdrawal or ask why they need the money.
+
+@page penalty-exceptions | Exceptions to the early-withdrawal penalty
+@summary The situations in which IRA withdrawals before 59½ avoid the 10% additional tax, with limits.
+
+## Exceptions for IRAs
+
+| Exception | Key limit or condition |
+|---|---|
+| Death (distributions to beneficiaries) | Always exempt |
+| Total and permanent disability | As defined by the IRS |
+| Substantially equal periodic payments (72(t)) | Strict rules; see [[sepp-72t]] |
+| Unreimbursed medical expenses | Amount above 7.5% of AGI |
+| Health insurance premiums while unemployed | After 12 consecutive weeks of unemployment compensation |
+| Qualified higher education expenses | For the client, spouse, children, or grandchildren |
+| First-time home purchase | Up to $10,000 lifetime |
+| IRS levy on the IRA | Only distributions made because of the levy |
+| Qualified reservist distributions | Called to active duty for more than 179 days |
+| Birth or adoption | Up to $5,000 per child, within one year |
+| Terminal illness | Certified by a physician |
+| Emergency personal expense | One distribution up to $1,000 per year |
+| Victim of domestic abuse | Up to $10,000 (indexed) or 50% of the account, if less |
+| Federally declared disaster | Up to $22,000 per disaster |
+
+## Exceptions that apply to employer plans but not IRAs
+
+Clients sometimes confuse these. The "separation from service at 55" exception applies to 401(k) and similar plans, **not IRAs**. A client who rolls a 401(k) into an IRA at 56 loses that exception for the rolled money. Mention this neutrally if a client aged 55–59 is discussing a rollover and plans to withdraw.
+
+## What we do
+
+We report most exception distributions with code 1, and the client claims the exception on their tax return. For disability, we can use code 3 with documentation, and for 72(t) plans, code 2. Do not tell a client they qualify for an exception; explain the list and suggest they confirm with a tax advisor.
+
+@page tax-withholding-retirement | Federal tax withholding on IRA distributions
+@summary Default withholding, how clients elect a different amount, the 20% rule for plan distributions, and gross-versus-net amounts.
+
+## IRA distributions
+
+Most IRA distributions are treated as "nonperiodic" because the client can take money on demand. For these:
+
+- The default federal withholding is **10%** of the taxable distribution.
+- The client may elect any rate from **0% to 100%** (IRS Form W-4R, or the withholding election in the distribution request).
+- A client who elects 0% is responsible for paying the tax through estimated payments or at filing; they may owe an underpayment penalty.
+
+Roth IRA distributions have no default withholding, because they are usually not taxable; clients may elect withholding.
+
+## Employer plan distributions (for context)
+
+Eligible rollover distributions from a 401(k) or similar plan paid directly to the participant have **mandatory 20%** withholding. This is why direct rollovers are preferred. See [[indirect-rollovers]].
+
+## Gross versus net
+
+- **Gross**: the client requests $10,000; 10% ($1,000) is withheld; they receive $9,000.
+- **Net**: the client wants to receive $10,000; with 10% withholding, the gross distribution is $11,111.11.
+
+Always confirm which the client means. Use the formula: gross = net ÷ (1 − total withholding rate).
+
+## RMDs
+
+The same rules apply. Clients often set withholding on RMDs to cover their total tax; the rate is their choice. See [[rmd-settings-task]].
+
+## What you can say
+
+You can explain the rules and the default. Do not suggest a withholding rate. "Many clients ask their tax advisor what rate fits their situation" is fine.
+
+@page state-withholding | State tax withholding
+@summary How state income tax withholding works on IRA distributions, mandatory states, and how the client's address affects it.
+
+## Basics
+
+State withholding is based on the client's **legal (residential) address** on file. States fall into three groups:
+
+| Group | Rule |
+|---|---|
+| No income tax on distributions | No state withholding (for example, Alaska, Florida, Nevada, South Dakota, Tennessee, Texas, Washington, Wyoming, New Hampshire) |
+| Mandatory when federal tax is withheld | State tax must be withheld if any federal tax is withheld (several states, at a rate set by the state) |
+| Voluntary | Withholding only if the client elects it |
+
+The distribution request shows the state rule for the client's address and the default or minimum rate.
+
+## Changing state withholding
+
+Clients choose state withholding within their state's rules when they request a distribution or set RMD or systematic withdrawal settings. In a mandatory state, electing 0% federal withholding usually allows 0% state withholding as well.
+
+## Moving
+
+When a client moves, future withholding follows the new state. Remind clients with recurring distributions to review their elections after a move. Seasonal addresses do not change the state.
+
+## Questions about state taxes
+
+Rules vary by state and change often. For specifics, refer the client to their state's revenue department or their tax advisor.
+
+@page roth-distribution-rules | Roth IRA distribution rules
+@summary The ordering rules, qualified distributions, and how to explain what is taxable when a client withdraws from a Roth.
+
+## Ordering rules
+
+Roth IRA withdrawals come out in this order, across all of the client's Roth IRAs combined:
+
+1. **Regular contributions**: always tax-free and penalty-free.
+2. **Conversions**, oldest first (taxable portion first within each): not taxed again, but subject to the 10% penalty if withdrawn within five years of that conversion and before 59½.
+3. **Earnings**: tax-free and penalty-free only in a qualified distribution.
+
+## Qualified distributions
+
+A distribution of earnings is qualified (completely tax-free) if:
+
+- The client's first Roth IRA contribution or conversion was made at least **five tax years** ago (see [[roth-five-year-rules]]), **and**
+- The client is **59½ or older**, disabled, using up to $10,000 for a first home, or the distribution is to a beneficiary after death.
+
+## Examples
+
+- A 45-year-old has contributed $30,000 to a Roth over six years; it's worth $42,000. They can withdraw up to $30,000 with no tax or penalty. Withdrawing more takes earnings, which would be taxable and penalized (unless an exception applies).
+- A 62-year-old who opened their first Roth eight years ago can withdraw everything tax-free.
+
+## Our records
+
+We report Roth distributions on Form 1099-R. We do not know the client's contribution basis across all their Roth IRAs (especially at other firms), so we often report the taxable amount as "not determined". The client reports the details on Form 8606.
+
+## In chat
+
+Explain the ordering and the qualified-distribution test. Do not determine whether the client's distribution will be taxable; suggest their tax advisor confirm.
+
+@page roth-five-year-rules | Roth five-year rules
+@summary The two separate five-year rules for Roth IRAs, when each clock starts, and common confusions.
+
+## Rule 1: the qualified-distribution clock
+
+For earnings to be withdrawn tax-free, five tax years must have passed since **January 1 of the year of the client's first contribution (or conversion) to any Roth IRA**. There is one clock for all of the client's Roth IRAs, and it never restarts. A 2025 contribution made in April 2026 starts the clock on January 1, 2025; the clock is satisfied on January 1, 2030.
+
+Rolling a Roth 401(k) into a Roth IRA does not carry the 401(k)'s clock over; the IRA clock depends on the IRA's own history. If the client has had any Roth IRA for five years, the rolled money is covered.
+
+## Rule 2: the conversion clock
+
+Each conversion has its own five-year clock, starting January 1 of the year of the conversion. Withdrawing the converted amount before five years have passed (and before 59½) triggers the 10% penalty on the portion that was taxable when converted. After 59½, this rule no longer matters.
+
+## Common confusions
+
+- Opening a **new** Roth IRA does not restart the first clock.
+- The five-year rule for **inherited** Roth IRAs is based on when the original owner first contributed.
+- Contributions (not earnings) can always be withdrawn without tax or penalty, regardless of either clock.
+
+## In chat
+
+Determine the client's first Roth contribution year from our records if they have only had Roths at Bob's; otherwise, ask them. Explain the rule; do not certify that a distribution will be tax-free.
+
+@page qualified-charitable-distributions | Qualified charitable distributions (QCDs)
+@summary How clients 70½ and older can give directly from an IRA to charity, the annual limit, and how we process them.
+
+## What a QCD is
+
+A qualified charitable distribution is a distribution from an IRA paid **directly to a qualified charity**. It is excluded from the client's taxable income and counts toward their RMD for the year.
+
+## Rules
+
+- The client must be **70½ or older** on the date of the distribution. (Note: this is earlier than the RMD age of 73 or 75.)
+- Annual limit: **$111,000** per person for 2026 ($108,000 for 2025), across all IRAs.
+- From Traditional, inherited, and inactive SEP IRAs. Not from active SEP plans.
+- The charity must be a qualifying 501(c)(3) public charity. Donor-advised funds and private foundations do not qualify.
+- The payment must go directly to the charity; if the client receives the money first, it is not a QCD.
+- The client cannot receive any benefit in return.
+
+## How we process QCDs
+
+QCDs are requested with the Qualified Charitable Distribution form (online at Forms or by mail), not the chat distribution task, because we must make the check payable to the charity:
+
+1. The client provides the charity's legal name, address, and tax ID, and the amount.
+2. We issue a check payable to the charity, mailed either to the charity or to the client to deliver.
+3. No tax is withheld.
+4. The 1099-R shows the full amount as a normal distribution; the client reports the QCD exclusion on their tax return. We do not report QCDs separately on the 1099-R; the client must keep the charity's acknowledgment.
+
+## In chat
+
+Explain the rules, send the form link, and help the client complete it. Do not advise whether a QCD is better than another way of giving. See [[rmd-and-qcd]].
+
+@page sepp-72t | Substantially equal periodic payments (72(t))
+@summary What a 72(t) plan is, why it's risky, and how to route clients who ask about one.
+
+## What it is
+
+Section 72(t) of the tax code allows penalty-free withdrawals from an IRA before 59½ if the client takes a series of **substantially equal periodic payments** calculated by an IRS-approved method (required minimum distribution, fixed amortization, or fixed annuitization), at least annually.
+
+## The rules that trap people
+
+- Payments must continue for **five years or until age 59½, whichever is later**.
+- Changing the payment (other than a one-time switch to the RMD method), adding money to the IRA, or taking extra withdrawals "busts" the plan: the 10% penalty applies retroactively to all payments taken before 59½, plus interest.
+- The calculation must follow IRS rules exactly.
+
+## Our role
+
+We can set up and administer a 72(t) payment schedule once the client provides the calculated amount and the method. We do not calculate 72(t) amounts or recommend a method. Distributions are coded with code 2 on Form 1099-R.
+
+## In chat
+
+Explain what a 72(t) plan is and its risks in general terms, then refer the client to a Retirement Specialist callback and suggest they work with a tax professional to calculate the payment. Do not set up a systematic withdrawal plan and describe it as a 72(t) plan.
+
+@page request-withdrawal-task | Procedure: Request a Distribution (chat)
+@summary Step-by-step chat procedure for a one-time withdrawal from any account, the fields collected, and the checks before approval.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | One of the client's accounts |
+| Amount | Dollar amount |
+| Delivery method | Direct deposit (ACH), Check by mail |
+| Tax withholding | For IRAs: federal withholding percentage (standard is 10%) |
+
+## Procedure
+
+1. Confirm the account and amount, and whether the amount is gross or net. See [[tax-withholding-retirement]].
+2. **Taxable accounts**: this is a sale plus a payout. If the client wants a specific fund sold, note it; otherwise shares are sold proportionally. Mention possible capital gains if asked.
+3. **Traditional and SEP IRAs**:
+   - Withholding: default 10%; the client may choose 0%–100%. Record the choice.
+   - Age: if under 59½, mention the 10% additional tax may apply. See [[early-withdrawal-penalty]].
+   - RMD: if the client is subject to RMDs, this withdrawal counts toward this year's RMD.
+4. **Roth IRAs**: mention that contributions come out first, tax-free; if the client asks about earnings, see [[roth-distribution-rules]].
+5. **Delivery**:
+   - ACH to a linked bank: 2–3 business days after the sale settles. The 10-day rule applies to newly linked banks.
+   - Check: mailed to the address of record, 5–7 business days. The 15-day rule applies after an address change.
+   - Wires are available for $25; if the client wants a wire, note it on the request.
+6. Check the Proposed Action: amount not more than the account value (or the available cash plus holdings), withholding recorded, delivery method recorded.
+7. Submit, and confirm the net amount and expected arrival.
+
+## Exploitation awareness
+
+Large or unusual withdrawals, especially from older clients, to new banks, or with a third party directing, deserve a pause and an open question. See [[elder-financial-exploitation]].
+
+## Script
+
+"I've requested a $5,000 withdrawal from your Traditional IRA with 10% federal withholding, so $4,500 will be deposited to your bank ending in 4421, typically within 2–3 business days. You'll receive a 1099-R for this in January."
+
+@page distribution-delivery | Delivery options for distributions
+@summary How IRA and account distributions are delivered, timing, and special payees.
+
+## Options
+
+| Option | Timing | Cost | Notes |
+|---|---|---|---|
+| Direct deposit (ACH) | 2–3 business days | Free | To a linked, verified bank in the owner's name |
+| Check by mail | 5–7 business days | Free | To the address of record |
+| Overnight check | 1–2 business days | $25 | Street address required |
+| Wire | Same day if requested by 2:00 PM ET after settlement | $25 | Minimum $1,000 |
+| Transfer to the client's taxable account at Bob's | Same day | Free | The distribution is still taxable; shares can be moved in kind |
+
+## In-kind distributions
+
+An IRA distribution can be made in shares rather than cash, moved into the client's taxable account. The fair market value on the date of distribution is taxable and becomes the cost basis in the taxable account. Clients use this to stay invested.
+
+## Special payees
+
+- **Charities** (QCDs): see [[qualified-charitable-distributions]].
+- **Third parties** (for example, paying a contractor directly): requires a signature-guaranteed request.
+- **Another retirement plan**: not a distribution if done as a direct rollover or transfer.
+
+@page distribution-reversals | Undoing a distribution
+@summary Whether a client can put money back after an IRA distribution, the 60-day rollover option, and its limits.
+
+## The 60-day rollover
+
+A client who takes a distribution from an IRA and changes their mind can redeposit it into an IRA within **60 days** of receiving it, as a rollover. If done in time, the distribution is not taxable.
+
+Limits:
+
+- Only **one** IRA-to-IRA indirect rollover is allowed in any 12-month period, across all of the client's IRAs. See [[one-rollover-per-year]].
+- Any tax withheld must be made up from other funds to roll over the full amount; otherwise the withheld portion is taxable.
+- RMDs cannot be rolled over.
+- Inherited IRA distributions cannot be rolled over (except by a spouse treating it as their own).
+
+## How to process
+
+The client deposits the money back as a **rollover** (not a contribution), designated as such. In chat, use the purchase task and make sure the deposit is coded as a rollover; or route to Retirement Specialists if unsure. The 1099-R still reports the distribution; the client reports the rollover on their return, and our Form 5498 reports the rollover contribution.
+
+## Our errors
+
+If a distribution happened because of our error (for example, the wrong account was used), we reverse it directly without using the client's 60-day rollover. Escalate to your team lead. See [[error-corrections]].

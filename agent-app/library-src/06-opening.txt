@@ -1,0 +1,285 @@
+@section opening | Opening Accounts | How new accounts are opened online and through chat, what we require, identity verification, funding, and why applications get delayed.
+
+@page opening-overview | Opening an account: overview
+@summary The ways to open an account, which account types can be opened where, and the typical timeline.
+
+## Ways to open
+
+| Path | Account types | Notes |
+|---|---|---|
+| Online (Open an Account) | Individual, joint, custodial, Traditional IRA, Roth IRA, SEP-IRA, trust | About 10 minutes; most approved instantly |
+| Chat (Open a New Account task) | Roth IRA, Traditional IRA, SEP-IRA, Taxable (individual) for existing clients | The client must already have a verified profile |
+| Paper application | All types | Mailed to the PO Box; slowest |
+| Estate Services | Inherited IRA, estate accounts | Opened as part of settling a death |
+
+## Timeline
+
+Most online applications are approved immediately after automated identity verification. A small number need more documentation and take **1–3 business days** after the documents arrive. Paper applications take 5–7 business days after receipt.
+
+## Minimums and fees
+
+The minimum to open any account is **$1**, and a client may open an account with $0 and fund it later. There are no account opening fees, maintenance fees, or IRA custodial fees.
+
+## Existing clients versus new clients
+
+An existing client with a verified profile can open an additional account in minutes, through the portal or chat, because we already have their identity information. A brand-new client must complete the full online application, including identity verification. Prospects who ask in chat should be sent to Open an Account.
+
+## Related pages
+
+- [[application-requirements]]
+- [[cip-identity-verification]]
+- [[funding-new-account]]
+- [[opening-iras]]
+- [[open-account-task]]
+
+@page application-requirements | What's needed to apply
+@summary The information and documents an applicant needs, by account type.
+
+## Every applicant
+
+- Full legal name, date of birth, residential street address (a PO Box alone is not accepted as a residential address).
+- Social Security number or Individual Taxpayer Identification Number.
+- U.S. citizenship or residency status.
+- Employment status and employer name (and whether they are affiliated with a brokerage firm or are a senior officer of a public company).
+- Email address and mobile phone number.
+- A trusted contact person (optional, requested). See [[trusted-contact-person]].
+
+## By account type
+
+| Account | Additional requirements |
+|---|---|
+| Joint | All of the above for each owner; choice of registration (JTWROS or tenants in common) |
+| Custodial | Custodian's information plus the minor's name, date of birth, SSN; state of the UTMA/UGMA |
+| Traditional / Roth IRA | Beneficiary designations (name, relationship, date of birth; SSN optional but recommended) |
+| SEP-IRA | As an IRA; employer name; whether a SEP plan document is in place |
+| Trust | Certification of Trust, trustee IDs, trust taxpayer ID |
+| Estate | Letters Testamentary or Administration, death certificate, estate EIN |
+
+## Funding information
+
+To fund electronically, the applicant links a bank account (routing and account numbers, or instant verification). They can also fund by check, wire, transfer from another firm, or rollover. See [[funding-new-account]].
+
+## Who may not open an account online
+
+- Applicants under 18 (they need a custodial account opened by an adult).
+- Non-U.S. persons without a U.S. taxpayer ID and address. See [[non-us-persons]].
+- Applicants whose identity cannot be verified automatically (they may be asked for documents).
+
+@page cip-identity-verification | Identity verification for new accounts (CIP)
+@summary Why we verify the identity of every new client, how automated verification works, and what documents we request when it fails.
+
+## The Customer Identification Program
+
+Federal anti-money-laundering rules require every financial firm to verify the identity of anyone opening an account. Our Customer Identification Program (CIP) collects name, date of birth, address, and taxpayer ID, then verifies them against independent data sources.
+
+## Automated verification
+
+For most applicants, verification happens in seconds during the online application. The applicant may be asked a few knowledge-based questions drawn from public records (for example, a previous street address).
+
+## When automated verification fails
+
+If verification fails, the application is pended and the applicant is asked to upload:
+
+- An unexpired government-issued photo ID (driver's license, state ID, or passport), and
+- A document showing their residential address if it differs from the ID (a recent utility bill, bank statement, or lease).
+
+Once documents are received, Account Services reviews them within 1–3 business days.
+
+## Common causes
+
+- A recent move, so records show an old address.
+- A name change (marriage, divorce) not yet reflected in records.
+- A typo in the SSN or date of birth.
+- A credit freeze: some identity checks use credit bureau data. A freeze does not prevent verification but may require documents.
+- Thin records for young applicants or recent immigrants.
+
+## Talking to applicants
+
+Do not say "you failed verification". Say: "We need a little more information to confirm your identity, which we do for everyone's protection. Please upload a copy of your photo ID through the link in your application." We cannot override CIP or open an account without verification.
+
+@page funding-new-account | Funding a new account
+@summary The ways to put money into a newly opened account and when the money is invested.
+
+## Funding options
+
+| Method | Timing | Notes |
+|---|---|---|
+| Bank transfer (ACH) from a linked bank | 2–3 business days | Most common; up to $100,000 per day |
+| Wire | Same day if received before 4:00 PM ET | No limit; free incoming |
+| Check | When received at the processing center | Payable to Bob's Mutual Funds |
+| Transfer from another firm (ACAT) | 5–7 business days | Taxable or IRA to like account |
+| Rollover from an employer plan | 5–15 business days after the plan releases funds | Into a Traditional or Roth IRA |
+| Exchange or transfer from another Bob's account | Same day | Between accounts with the same owner and tax type; see below |
+
+## Is the money invested automatically?
+
+At account opening the client chooses one or more funds and the amount for each. Money that arrives is invested at the NAV on the day it arrives in good order. If the client does not choose a fund, the money is held as uninvested cash in the account until they place a purchase. Remind clients who fund without choosing a fund that cash does not earn a return here.
+
+## IRA funding
+
+For an IRA, the client must say whether a deposit is a contribution (and for which tax year), a rollover, or a transfer. Contributions are subject to annual limits; rollovers and transfers are not. See [[ira-contribution-limits]] and [[rollovers-overview]].
+
+## Moving money between the client's own accounts
+
+Money can move between two of the client's taxable accounts of the same ownership by journal. Money cannot move from a taxable account into an IRA except as a contribution (subject to the limit), and from an IRA to a taxable account only as a distribution (taxable).
+
+@page opening-iras | Opening IRAs
+@summary Specific steps and checks for opening Traditional, Roth, and SEP IRAs, including beneficiaries and funding.
+
+## Choosing the type
+
+The client must choose Traditional, Roth, or SEP. If they are unsure, explain the differences factually and avoid recommending. See [[choosing-account-type-conversations]].
+
+## Steps
+
+1. Choose the IRA type.
+2. Name beneficiaries: primary and contingent, with percentages totaling 100% at each level. Beneficiaries can be added later, but we strongly encourage naming them at opening. See [[beneficiaries-overview]].
+3. Choose funding: contribution (with tax year), rollover, or transfer.
+4. Choose investments.
+5. Review and sign electronically.
+
+## Checks before funding a contribution
+
+- **Eligibility**: does the client have earned income (or a working spouse)?
+- **Limit**: will the contribution, added to the client's other IRA contributions for the year at any firm, stay within the limit? The contributions summary shows contributions at Bob's only. See [[contributions-summary-card]].
+- **Roth income**: is the client within the Roth income limits? We do not verify income; the client is responsible, but you should mention the limits if the client raises income.
+- **Tax year**: between January 1 and April 15, ask which year the contribution is for.
+
+## SEP-IRAs
+
+A self-employed client opens a SEP-IRA for themselves like any IRA. If the business has employees, it must also adopt a SEP plan (Form 5305-SEP) and contribute for eligible employees. Each employee opens their own SEP-IRA. Contributions are made by the business, not as personal contributions.
+
+## Inherited IRAs
+
+Not opened through the regular IRA flow. See [[inherited-ira]].
+
+@page opening-joint-custodial | Opening joint and custodial accounts
+@summary Steps and requirements specific to joint accounts and custodial accounts for minors.
+
+## Joint accounts
+
+- Both (or all) owners must provide their personal information and pass identity verification.
+- The first owner listed is the primary owner for tax reporting.
+- Choose the registration: JTWROS (default) or tenants in common with percentages. See [[joint-accounts]].
+- The first owner starts the online application and invites the second owner, who receives an email to complete their part and sign. The account opens when both have signed.
+- Each owner creates their own login.
+
+## Custodial accounts
+
+- Opened by an adult custodian for one minor.
+- The custodian provides their own information and the minor's name, date of birth, and SSN. The minor must have an SSN.
+- The state's UTMA or UGMA law applies, usually the minor's state of residence; this determines the age of termination.
+- The custodian may name a successor custodian.
+- Explain that gifts to a custodial account are irrevocable and belong to the child. See [[custodial-accounts]].
+
+## Custodial Roth IRA
+
+A minor with earned income can have a Roth IRA with a parent or guardian as custodian. The custodian opens it through the IRA flow, indicating the owner is a minor. Contributions cannot exceed the minor's earned income for the year. Keep records of the child's earnings (pay stubs, a log of babysitting or yard-work income).
+
+@page opening-trust-accounts | Opening trust accounts
+@summary How trust accounts are opened, the documents we need, and why they can't be opened in chat.
+
+## Process
+
+1. The trustee starts the application online (Open an Account → Trust) or downloads the trust account application.
+2. They provide trust details: exact trust name, date of the trust, type (revocable or irrevocable), taxpayer ID, and each trustee's information.
+3. They upload a **Certification of Trust** or the relevant pages of the trust document: the first page (name and date), pages naming trustees and their powers, and the signature pages.
+4. Account Services reviews the documents, usually within 1–3 business days, and the account opens.
+
+## Why not in chat
+
+The chat account-opening task opens individual accounts and IRAs for the client's own profile. Trust registrations need document review, which the chat task cannot perform. Send the client to the online trust application and explain the timeline.
+
+## Moving existing assets into a trust
+
+Clients who create a revocable living trust often want to retitle their existing taxable accounts in the trust's name. This is a registration change, not a sale, and is not a taxable event for a revocable trust where the grantor's SSN is used. See [[trust-reregistration]]. IRAs cannot be retitled to a trust; instead, a trust can be named as IRA beneficiary.
+
+@page application-status-delays | Application status and delays
+@summary How to check an application's status and the common reasons applications are held.
+
+## Checking status
+
+Applicants can see their application status by signing in with the credentials they created. Statuses:
+
+| Status | Meaning |
+|---|---|
+| Submitted | Received; automated checks running |
+| Action needed | We need documents or a signature from the applicant (or a joint owner) |
+| Under review | Account Services is reviewing documents |
+| Approved | The account is open; funding can proceed |
+| Declined | We were unable to open the account |
+
+## Common reasons for delay
+
+- Identity verification needs documents. See [[cip-identity-verification]].
+- A joint owner has not signed.
+- Trust documents are incomplete or the trustee names don't match.
+- The applicant reported affiliation with a brokerage firm, which requires a letter from their employer's compliance department.
+- The residential address is a PO Box or commercial mail drop.
+- The applicant is on a sanctions or watch list match that must be cleared (we cannot tell the applicant this). See [[ofac-sanctions]].
+
+## Declined applications
+
+If an application is declined, the applicant receives a letter. Agents cannot discuss reasons that relate to AML or sanctions screening. For other reasons (incomplete information), help the applicant reapply.
+
+@page non-us-persons | Non-U.S. persons and clients living abroad
+@summary Who can open an account, and what happens when an existing client moves outside the United States.
+
+## Eligibility
+
+We open accounts only for U.S. citizens and resident aliens with a U.S. residential address and a valid SSN or ITIN. We do not open accounts for non-resident aliens.
+
+## Clients who move abroad
+
+Existing clients who move outside the United States:
+
+- Must update their address. A foreign address may restrict the account: depending on the country, purchases (including automatic investments) may be blocked because the funds are not registered for sale there. Existing holdings may be held and sold.
+- U.S. citizens abroad remain subject to U.S. tax reporting. Non-U.S. residents may be subject to different withholding.
+- Military and diplomatic personnel with APO/FPO/DPO addresses are treated as U.S. addresses and are not restricted.
+
+Route clients moving abroad to Account Services for a review of what their account can do. Do not promise that purchases can continue.
+
+## Tax forms
+
+U.S. persons certify their status on Form W-9 at account opening. A change to non-resident status requires a Form W-8BEN and is handled by Account Services.
+
+## Example
+
+Client: "I'm moving to Portugal next year. Can I keep my account?"
+
+Agent: "Yes, you can keep your account and your existing investments. Depending on your new country, new purchases, including automatic investments, may be restricted. Once you have your new address, our Account Services team will review what your account can do. You'll also want a U.S. bank account for transfers."
+
+@page open-account-task | Procedure: Open a New Account (chat)
+@summary Chat procedure for opening a Roth IRA, Traditional IRA, SEP-IRA, or taxable account for an existing client.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account type | Roth IRA, Traditional IRA, SEP-IRA, Taxable (individual) |
+| Initial contribution | Dollar amount; $0 is allowed |
+| Funding source | Bank transfer (ACH), Check, Rollover |
+
+## Before you start
+
+- The client must be an existing, authenticated client. New clients use the online application.
+- Joint, custodial, trust, and inherited accounts cannot be opened with this task.
+
+## Checks while the details are collected
+
+- **Roth IRA**: if the client mentions their income, check it against [[roth-income-limits]]. If they are above the limit, explain that a direct contribution is not allowed; do not recommend a backdoor strategy.
+- **Any IRA with a contribution**: check the contribution against the client's remaining limit (see the contributions summary in the info panel) and ask which tax year it is for, if between January 1 and April 15.
+- **SEP-IRA**: confirm the client is self-employed or their employer has a SEP plan.
+- **Rollover funding**: the initial amount is an estimate; the rollover itself is started with [[initiate-rollover-task]] after the account opens.
+- **Check funding**: give the mailing address and tell the client to write the new account number on the check.
+
+## After submitting
+
+- The new account appears in the client's portfolio, usually immediately.
+- Remind the client to **name beneficiaries** for an IRA (link: My Account → Beneficiaries) and to **choose investments**. Money that arrives without fund instructions is held as cash.
+- For ACH funding, the transfer takes 2–3 business days.
+
+## Common mistakes
+
+- Opening a second Roth IRA when the client already has one. This is allowed, but ask whether they meant to contribute to the existing one.
+- Recording a rollover as a contribution, which could create an excess contribution. Be clear about the source of the money.

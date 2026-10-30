@@ -1,0 +1,261 @@
+@section fund-documents | Fund Documents & Performance | Prospectuses, SAIs, shareholder reports, how performance is calculated and reported, total return versus price, yields, where fund data comes from, and document requests.
+
+@page prospectus | The prospectus
+@summary What a fund prospectus contains, when clients must receive it, and how to send or explain one.
+
+## What it is
+
+The prospectus is the fund's primary legal disclosure document, filed with the SEC. Every fund has one, updated at least annually. Clients should read it before investing; we deliver it (or a summary prospectus) at the time of a client's first purchase of a fund.
+
+## What's in it
+
+- **Investment objective** and **principal strategies**: what the fund is trying to do and how.
+- **Principal risks**: market, interest-rate, credit, foreign, sector concentration, and others.
+- **Fees and expenses**: the expense ratio and any other costs (our funds have no loads or redemption fees).
+- **Performance**: a bar chart of calendar-year returns and a table comparing returns to the benchmark.
+- **Management**: the adviser and portfolio managers.
+- **Purchase and sale of shares**, including the frequent-trading policy.
+- **Distributions and taxes**.
+
+## Summary prospectus
+
+A short version (a few pages) covering the key facts, with the full prospectus available online. Clients usually receive the summary.
+
+## Where clients find it
+
+Each fund's Research page has links to the prospectus, SAI, and shareholder reports. Printed copies can be mailed free on request. See [[document-requests]].
+
+## How to use it in chat
+
+When a client asks about a fund's risks or strategy in detail, quote the fund profile in this library and send the prospectus link. Never paraphrase risk in a way that minimizes it.
+
+@page sai | Statement of Additional Information (SAI)
+@summary What the SAI contains and when clients need it.
+
+## What it is
+
+The Statement of Additional Information is a supplement to the prospectus with more detailed information: the fund's investment policies and restrictions, trustees and officers, portfolio manager compensation and fund ownership, the custodian and auditor, tax matters, and how the NAV is calculated.
+
+## Who asks for it
+
+Usually professionals: financial advisors, attorneys, or academically minded clients. It is available on each fund's Research page and by mail on request.
+
+## In chat
+
+Send the link. You don't need to explain its contents in detail; refer specific questions about governance or policies to the document.
+
+## Typical contents
+
+- Fund history and organization.
+- Investment policies, permitted investments, and fundamental restrictions (for example, limits on borrowing and concentration).
+- Board of trustees and officers, with their backgrounds and compensation.
+- Portfolio managers' other accounts, compensation structure, and fund ownership ranges.
+- Control persons and principal holders.
+- The investment adviser, distributor, custodian, transfer agent, and independent auditor.
+- Brokerage allocation and soft dollars.
+- Net asset value calculation methodology.
+- Tax status of the fund.
+- Proxy voting policies.
+
+## When it's useful
+
+Advisors doing due diligence, clients interested in governance, and questions about specific restrictions ("Can the fund use derivatives?") are answered in the SAI.
+
+@page shareholder-reports | Annual and semiannual reports
+@summary What shareholder reports show, when they're published, and how clients receive them.
+
+## What they are
+
+Each fund publishes:
+
+- An **annual report** for its fiscal year, with audited financial statements, a complete list of holdings, a management discussion of performance, and expense information.
+- A **semiannual report** for the first six months of the fiscal year, with unaudited financial statements and holdings.
+
+Shorter "tailored shareholder reports" summarize performance, expenses, and holdings in a few pages; the full financial statements are available online.
+
+## Delivery
+
+Clients who own a fund receive the tailored shareholder report by email (paperless) or mail. Households with several members owning the same fund may receive one copy (householding) unless they ask for separate copies.
+
+## In chat
+
+Send the link from the fund's Research page. Questions about holdings: the fund profile and Research page list the top holdings; the reports list everything.
+
+## Fiscal years
+
+Our funds' fiscal years end on various dates (for example, December 31 for the U.S. equity funds). The annual report covers the fiscal year; the semiannual report covers its first half.
+
+## What clients look for
+
+- **Holdings**: the full list as of the report date.
+- **Expense example**: what a $1,000 investment would have cost during the period.
+- **Management discussion**: why the fund performed as it did.
+- **Financial highlights**: per-share data over five years, including total return and expense ratio.
+
+## Householding
+
+To reduce mail, households receive one copy of a report per address. A client who wants their own copy can ask; we resume individual delivery within 30 days.
+
+@page performance-reporting | How performance is reported
+@summary Total return, standard periods, annualized versus cumulative returns, and the rules for quoting performance.
+
+## Total return
+
+Fund performance is reported as **total return**: the change in NAV plus distributions, assuming they were reinvested. It is net of the expense ratio.
+
+## Standard periods
+
+| Period | Notes |
+|---|---|
+| Year to date (YTD) | From January 1 |
+| 1 year | Trailing 12 months |
+| 3, 5, 10 years | **Annualized** (average annual return) |
+| Since inception | Annualized |
+| Calendar years | Each full year |
+
+## Annualized versus cumulative
+
+A 3-year annualized return of 8% means the fund grew at an average of 8% per year, about 26% cumulatively. Clients sometimes confuse the two; clarify which you are quoting.
+
+## Where to find current figures
+
+The fund's Research page shows YTD and trailing returns, refreshed nightly. Calendar-year returns are on each fund profile page in this library.
+
+## Rules for quoting performance
+
+- Always include the time period and the date: "As of September 30, 2026, BF500's one-year return was..."
+- Always add: "Past performance doesn't guarantee future results."
+- Quote standard periods, not cherry-picked ones.
+- Never project future returns.
+- Never compare our fund's performance to a competitor's fund in a promotional way.
+
+See [[communications-standards]].
+
+## Personal performance
+
+A client's own account performance (their personal rate of return) depends on when they invested. The portal's Performance tab shows the client's personal return. It can differ from the fund's return; that is normal.
+
+@page total-return-vs-price | Total return versus price change
+@summary Why a fund's price change understates its return, especially for funds that distribute a lot.
+
+## The difference
+
+A fund's NAV change ignores distributions. When a fund pays a distribution, its NAV drops by that amount. So:
+
+- **Price return** = change in NAV only.
+- **Total return** = change in NAV plus distributions reinvested.
+
+For bond funds, which pay out most of their return as income, price return can be near zero or negative while total return is positive.
+
+## Example
+
+BFBI's NAV starts the year at $98.30 and ends at $98.10 (price return about −0.2%). It paid about $2.10 per share in monthly dividends during the year. Its total return is about +1.9%.
+
+## Client questions
+
+### "My bond fund price hasn't moved in years."
+Explain that bond funds pay their return mostly as monthly dividends; with reinvestment on, the client owns more shares over time.
+
+### "The chart shows a drop but the return is positive."
+The chart may show NAV only. Check the total-return figures.
+
+## Stock funds too
+
+Stock funds that pay larger dividends (BFHDY, BFUTL) also show a noticeable gap between price return and total return. Growth funds (BFGR) pay small dividends, so the gap is small.
+
+## Where to see total return
+
+Fund profile return tables and the Research page's performance tab show total returns. Price charts show NAV only unless the "include distributions" option is selected.
+
+@page yields-explained | Yields
+@summary The kinds of yield quoted for funds, what each means, and how to explain that yields are not guaranteed.
+
+## Types of yield
+
+| Yield | What it measures |
+|---|---|
+| Distribution yield (trailing 12-month) | The fund's distributions over the past 12 months divided by the current NAV. Shown on fund profiles in this library |
+| SEC 30-day yield | A standardized calculation of the fund's net investment income over the last 30 days, annualized. Useful for comparing bond funds |
+| Dividend yield (for stock funds) | The income from the stocks the fund holds |
+
+## Yields vary
+
+Yields are not guaranteed and change with market rates and the fund's holdings. A bond fund's yield is not like a CD's fixed rate: the fund has no maturity, and its price changes.
+
+## Yield versus return
+
+Yield is income only. Total return includes price changes. A fund can have a 4% yield and a negative total return in a year when rates rise.
+
+## In chat
+
+Quote the yield shown with its type and date. "BFST's trailing 12-month distribution yield is 4.58%; that's what it paid over the past year relative to today's price. It isn't a guaranteed rate."
+
+## Example
+
+BFBI shows a trailing 12-month distribution yield of 3.82%. A client with $10,000 in BFBI received about $382 in dividends over the past year. This year's dividends could be higher or lower.
+
+## Why yields change
+
+As bonds in the fund mature and are replaced at current market rates, the fund's yield moves toward those rates. When rates fall, yields drift lower; when rates rise, they drift higher.
+
+@page fund-fact-data-sources | Where fund data comes from
+@summary Which fund figures are static catalog data and which are refreshed nightly, so you know what's current.
+
+## Two kinds of data
+
+| Data | Source | Updated |
+|---|---|---|
+| Name, ticker, category, expense ratio, benchmark, minimum, risk level, description | Fund catalog | When the prospectus changes |
+| Holdings count, allocations, calendar-year returns, recent distributions, yield, beta, standard deviation | Fund catalog | Periodically |
+| Current NAV, daily change, YTD and trailing returns, price charts | Nightly market data refresh | Every business night |
+
+The fund profile pages in this library are generated from the same catalog the client portal uses. For anything time-sensitive (today's price, YTD return), use the fund's Research page in the portal.
+
+## If numbers disagree
+
+If the Research page and a library page disagree on a time-sensitive figure, the Research page is more current. If they disagree on a catalog figure (expense ratio, benchmark), report it as a content issue. Older client-facing help pages may show outdated figures for the original six funds.
+
+## Nightly refresh
+
+Market data (NAV, returns, price history) refreshes every night after the markets close. If the nightly refresh is delayed, the Research page continues to show the last good data; it never shows partial or broken data.
+
+## Questions
+
+### "Why does the Research page show yesterday's price?"
+Before about 6:00 PM ET, the latest NAV is the previous business day's. Today's NAV appears after the close.
+
+### "The return on the website doesn't match my statement."
+Fund returns and the client's personal return differ. See [[performance-reporting]].
+
+@page document-requests | Requests for fund documents
+@summary How to send prospectuses, reports, and other fund documents by link or mail.
+
+## By link
+
+Every fund's Research page has links to the summary prospectus, full prospectus, SAI, and shareholder reports. Send the link in chat.
+
+## By mail
+
+Clients can request printed copies free of charge. Note the request (fund, document, mailing address on file) and route it to Client Services fulfillment; documents are mailed within 3 business days.
+
+## Other documents
+
+| Request | Where |
+|---|---|
+| Account forms (beneficiary, transfer, name change, QCD) | Forms page in the portal |
+| Privacy notice | Portal footer |
+| Fee schedule | Help → Fees |
+| Proxy materials | Mailed or emailed to shareholders when there is a vote |
+| Statements, confirmations, tax forms | My Account |
+
+## Prospectus delivery rules
+
+Clients receive a summary prospectus when they first buy a fund, and updated prospectuses annually. Electronic delivery is used for paperless clients. A client can always request a free printed copy.
+
+## Proxy materials
+
+When a fund holds a shareholder vote (for example, to elect trustees or change a fundamental policy), shareholders of record receive proxy materials and can vote online, by phone, or by mail. Questions about a specific proxy can be answered from the proxy statement.
+
+## Historical documents
+
+Prospectuses and reports for prior years are available from Client Services fulfillment on request.

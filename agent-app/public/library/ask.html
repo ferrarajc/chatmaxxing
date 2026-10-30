@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask the library | Agent Knowledge Library</title>
+<meta name="description" content="Ask the Agent Knowledge Library a question in plain English and get a cited answer.">
+<link rel="stylesheet" href="library.css">
+<style>
+  form { margin: 16px 0; }
+  textarea { width: 100%; min-height: 84px; font: inherit; padding: 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg); color: var(--text); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; }
+  button { font: inherit; padding: 8px 18px; border-radius: 6px; border: 1px solid var(--link); background: var(--link); color: var(--bg); cursor: pointer; }
+  button[disabled] { opacity: .6; cursor: wait; }
+  select, input[type=text] { font: inherit; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg); color: var(--text); }
+  .env { font-size: 14px; color: var(--muted); }
+  .samples { font-size: 14px; }
+  .samples button { background: none; color: var(--link); border: none; padding: 2px 0; text-align: left; text-decoration: underline; cursor: pointer; }
+  #answer { border: 1px solid var(--rule); border-radius: 6px; padding: 4px 16px 12px; margin-top: 16px; }
+  #answer:empty { display: none; }
+  .status { color: var(--muted); font-size: 14px; }
+  .error { color: #b3261e; }
+  sup a { text-decoration: none; font-weight: 600; }
+  .sources li { margin-bottom: 6px; }
+  details { margin-top: 12px; }
+  details pre { white-space: pre-wrap; font-size: 13px; background: var(--accent-bg); padding: 8px; border-radius: 4px; }
+  .hit { border-top: 1px solid var(--rule); padding: 8px 0; }
+  .hit .meta { margin: 0; }
+  .cited { font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+<p class="banner">Bob's Mutual Funds &middot; Agent Knowledge Library &middot; Internal use only</p>
+<nav class="crumbs"><a href="index.html">Library</a> &rsaquo; Ask the library</nav>
+<nav class="tools"><a href="index.html">Library home</a> &middot; <a href="a-z.html">A&ndash;Z index</a> &middot; <a href="ask.html">Ask the library</a></nav>
+</header>
+<main>
+<h1>Ask the library</h1>
+<p class="summary">Ask a question in plain English. The answer is written only from library pages, with numbered citations. Always open the cited page before acting on anything that moves money or changes an account.</p>
+
+<form id="ask">
+  <label for="q"><strong>Your question</strong></label>
+  <textarea id="q" name="q" maxlength="1000" placeholder="e.g. Can a client still make a 2025 Roth contribution in March 2026?" required></textarea>
+  <div class="row">
+    <button id="go" type="submit">Ask</button>
+    <span class="env">
+      <label for="env">Backend</label>
+      <select id="env">
+        <option value="https://0y3s5vq2v5.execute-api.us-east-1.amazonaws.com">Production</option>
+        <option value="https://1cppcq9q57.execute-api.us-east-1.amazonaws.com">Dev</option>
+      </select>
+      <span id="indexInfo"></span>
+    </span>
+  </div>
+</form>
+
+<div class="samples">
+  <p><strong>Try:</strong></p>
+  <ul id="sampleList"></ul>
+</div>
+
+<p id="status" class="status" role="status"></p>
+<section id="answer" aria-live="polite"></section>
+</main>
+<footer>
+<p>Internal reference for Bob's Mutual Funds service agents. Answers are generated from library content and may be incomplete; the cited library pages are authoritative.</p>
+</footer>
+
+<script>
+(() => {
+  const SAMPLES = [
+    "What's the 2026 IRA contribution limit for a 52-year-old?",
+    "A client's husband wants to check her balance. What can I tell him?",
+    "What are the wire instructions for sending money to us?",
+    "When is the first RMD due for someone born in 1953?",
+    "How do I handle a client who wants to sell everything because the market dropped?",
+    "What's the expense ratio and duration of BFLTC?",
+    "Can a Roth conversion be undone?",
+    "Someone says their father died. What do I do first?",
+  ];
+
+  const $ = id => document.getElementById(id);
+  const env = $('env');
+
+  // Default backend: dev when served from the dev site or locally, prod otherwise.
+  // ?api=<url> overrides; the last choice is remembered per browser.
+  const params = new URLSearchParams(location.search);
+  const isDevSite = location.pathname.includes('/agent-dev/') || /^(localhost|127\.)/.test(location.hostname);
+  let saved = null;
+  try { saved = localStorage.getItem('library-ask-api'); } catch {}
+  const initial = params.get('api') || saved || (isDevSite ? env.options[1].value : env.options[0].value);
+  if (![...env.options].some(o => o.value === initial)) env.add(new Option(initial, initial));
+  env.value = initial;
+  env.addEventListener('change', () => {
+    try { localStorage.setItem('library-ask-api', env.value); } catch {}
+    loadStatus();
+  });
+
+  for (const s of SAMPLES) {
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = s;
+    b.addEventListener('click', () => { $('q').value = s; ask(); });
+    li.appendChild(b);
+    $('sampleList').appendChild(li);
+  }
+
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  // Minimal, safe rendering of the model's plain-text answer: escape first, then
+  // **bold**, "- " bullets, paragraphs, and [n] citation markers.
+  function render(text, retrieved) {
+    const urlFor = n => (retrieved.find(r => r.n === n) || {}).url;
+    const cite = s => s.replace(/\[(\d+)\]/g, (m, n) => {
+      const u = urlFor(Number(n));
+      return u ? `<sup><a href="#src-${n}" title="${esc((retrieved.find(r => r.n === Number(n)) || {}).page || '')}">[${n}]</a></sup>` : m;
+    });
+    const inline = s => cite(esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'));
+    const out = [];
+    let list = null;
+    for (const raw of text.split('\n')) {
+      const line = raw.trim();
+      const m = line.match(/^(?:[-*•]|\d+\.)\s+(.*)$/);
+      if (m) { (list = list || []).push(`<li>${inline(m[1])}</li>`); continue; }
+      if (list) { out.push(`<ul>${list.join('')}</ul>`); list = null; }
+      if (line) out.push(`<p>${inline(line)}</p>`);
+    }
+    if (list) out.push(`<ul>${list.join('')}</ul>`);
+    return out.join('');
+  }
+
+  async function loadStatus() {
+    $('indexInfo').textContent = '';
+    try {
+      const r = await fetch(env.value + '/agent-library/status');
+      if (!r.ok) throw new Error(r.status);
+      const s = await r.json();
+      $('indexInfo').textContent = ` · index ${s.ready ? 'ready' : s.building ? 'building…' : 'not built yet'} (${s.chunks} chunks, ${s.hash})`;
+    } catch {
+      $('indexInfo').textContent = ' · status unavailable on this backend';
+    }
+  }
+
+  let retryTimer = null;
+
+  async function ask(e) {
+    if (e) e.preventDefault();
+    clearTimeout(retryTimer);
+    const question = $('q').value.trim();
+    if (!question) return;
+    $('go').disabled = true;
+    $('status').className = 'status';
+    $('status').textContent = 'Searching the library…';
+    $('answer').innerHTML = '';
+    const t0 = performance.now();
+    try {
+      const r = await fetch(env.value + '/agent-library/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.status === 503 && data.status === 'indexing') {
+        $('status').textContent = `${data.message} Retrying in ${data.retryAfterSeconds}s…`;
+        retryTimer = setTimeout(() => ask(), (data.retryAfterSeconds || 20) * 1000);
+        loadStatus();
+        return;
+      }
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+
+      const secs = ((performance.now() - t0) / 1000).toFixed(1);
+      $('status').textContent = `Answered in ${secs}s from ${data.retrieved.length} library excerpts (${data.index.answerModel}).`;
+      const sources = data.citations.length
+        ? `<h2>Sources</h2><ol class="sources">${data.citations.map(c =>
+            `<li id="src-${c.n}" value="${c.n}"><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.page)}</a>${c.heading ? ` &rsaquo; ${esc(c.heading)}` : ''} <span class="count">(${esc(c.section)})</span></li>`).join('')}</ol>`
+        : '';
+      const hits = data.retrieved.map(h =>
+        `<div class="hit"><p class="meta">[${h.n}] <a href="${esc(h.url)}" target="_blank" rel="noopener" class="${h.cited ? 'cited' : ''}">${esc(h.page)}</a>${h.heading ? ' &rsaquo; ' + esc(h.heading) : ''} · fused ${h.score} · cosine ${h.similarity} (rank ${h.vecRank || '–'}) · BM25 ${h.bm25} (rank ${h.lexRank || '–'})${h.cited ? ' · cited' : ''}</p><pre>${esc(h.text)}</pre></div>`).join('');
+      $('answer').innerHTML = `<h2>Answer</h2>${render(data.answer, data.retrieved)}${sources}
+        <details><summary>Retrieved excerpts and scores (${data.retrieved.length})</summary>${hits}</details>
+        <details><summary>Timings</summary><pre>${esc(JSON.stringify(data.timings, null, 2))}</pre></details>`;
+    } catch (err) {
+      $('status').className = 'status error';
+      $('status').textContent = `Couldn't get an answer: ${err.message}. If the backend doesn't have the library service yet, switch backends.`;
+    } finally {
+      $('go').disabled = false;
+    }
+  }
+
+  $('ask').addEventListener('submit', ask);
+  $('q').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) ask(e); });
+  if (params.get('q')) { $('q').value = params.get('q'); ask(); }
+  loadStatus();
+})();
+</script>
+</body>
+</html>

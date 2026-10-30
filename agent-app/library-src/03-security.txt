@@ -1,0 +1,444 @@
+@section security | Identity, Privacy & Security | Verifying who you are talking to, protecting client information, online access problems, and recognizing fraud, scams, and exploitation.
+
+@page identity-verification | Verifying client identity
+@summary Who counts as verified, when to re-verify, the questions to ask, and what to do when verification fails.
+
+## Why verification matters
+
+Every action we take on an account and every piece of account information we share assumes we are talking to the account owner or someone the owner has authorized. Verification failures are how fraudsters steal money. Treat verification as a non-negotiable step, explained to the client as protection for them.
+
+## Authenticated chats
+
+Most clients reach a live agent from inside the logged-in client portal. These clients have already signed in with their password and two-factor authentication, so the chat is **authenticated**: the system knows which client profile the chat belongs to, and the client info panel shows it. You do not need to ask an authenticated client verification questions for routine requests.
+
+## When to verify again
+
+Even in an authenticated chat, perform additional verification when:
+
+- The person says they are someone other than the account owner ("I'm calling for my mother").
+- The writing style, name, or details suddenly change partway through the conversation.
+- The request is high risk: changing the email or phone number and requesting a withdrawal in the same chat, adding a new bank and immediately redeeming, sending money to a new address, or adding an authorized user with full access.
+- The client cannot describe their own accounts in basic terms.
+- Anything feels wrong.
+
+## How to verify
+
+Ask the client to provide (never read out to them) two or more of:
+
+- The last four digits of their Social Security number.
+- Their date of birth.
+- The ZIP code of their mailing address on file.
+- The type of an account they hold and its approximate value.
+- A recent transaction (approximate amount and date).
+
+Compare their answers with the profile. Do not reveal which answer was wrong. For high-risk requests, you may also send a one-time code to the verified email or phone on file through the security tools and ask the client to read it back.
+
+## When verification fails
+
+Do not process the request and do not share account information. Say: "For your security I'm not able to make changes to this account in chat right now. Please call us at 1-800-BOB-FUND so we can verify your identity by phone." Note the attempt in ACW. If you suspect fraud, follow [[account-takeover]] and notify your team lead immediately.
+
+## Unauthenticated contacts
+
+If a contact reaches you without an authenticated session (for example, a prospect asking general questions), you may answer general questions about products and rules but must not discuss any specific account. Direct them to sign in or call.
+
+@page authenticated-vs-unauthenticated | What you can discuss with whom
+@summary A matrix of what information you may share with account owners, authorized users at each level, and unverified people.
+
+## The matrix
+
+| Person | General product and rule questions | Account balances and activity | Changes and transactions |
+|---|---|---|---|
+| Verified account owner | Yes | Yes | Yes |
+| Joint owner (verified) | Yes | Yes, for the joint account | Yes, for the joint account (some actions need both owners) |
+| Authorized user, Full access | Yes | Yes | Yes, including withdrawals to outside accounts and closing the account |
+| Authorized user, Limited access | Yes | Yes | Trades and money back to the owner only; no ownership, beneficiary, or account opening/closing changes |
+| Authorized user, View-only | Yes | Yes | No |
+| Agent under power of attorney (on file) | Yes | Yes | As permitted by the POA document |
+| Spouse or relative not on file | Yes | No | No |
+| Unverified person | Yes | No | No |
+
+## Common situations
+
+- **"I'm her husband; she asked me to check."** Unless he is an authorized user or joint owner, you cannot share anything about her account. Offer to explain how she can add him as an authorized user. See [[authorized-users-access-levels]].
+- **"My father has dementia and I handle his finances."** Ask whether a power of attorney is on file. If not, explain the POA process. See [[power-of-attorney]].
+- **The owner is in the chat and asks you to talk to their daughter.** With the owner present and consenting in the chat, you may discuss the account; note the consent in ACW. Transactions still require the owner's confirmation.
+
+## Deceased account holders
+
+When the account owner has died, information may be shared only with the executor, administrator, or named beneficiaries, and only after documentation. See [[death-notification]].
+
+@page third-party-callers | Third parties, advisors, and family members
+@summary How to handle requests from people who are not the account owner, including financial advisors, accountants, and attorneys.
+
+## The default
+
+We serve the account owner. Anyone else must be authorized by the owner through a documented relationship on file: joint owner, authorized user, power of attorney, trusted contact (limited purpose), or court-appointed guardian or conservator.
+
+## Financial advisors and accountants
+
+Outside advisors and CPAs often contact us for clients. They may receive information only if the client has added them as an authorized user (usually view-only) or provided a signed authorization on file. Otherwise, explain that the client can grant them access online at My Account → Account Access, and offer to send the client a link.
+
+## Attorneys
+
+Attorneys representing a client in a legal matter, or an estate, must provide documentation to the Legal department or Estate Services. Do not provide information in chat. Subpoenas and court orders go to Legal.
+
+## Family members in an emergency
+
+If a family member says the client is in hospital or incapacitated and money is needed urgently, be compassionate but do not make exceptions. Explain the options: the client may add them as an authorized user if able; a power of attorney can be submitted; in an emergency, the family can contact Estate Services or ask for a specialist. Watch for exploitation signals. See [[elder-financial-exploitation]].
+
+## Trusted contact person
+
+A trusted contact is someone the client authorizes us to contact if we suspect exploitation or cannot reach the client. A trusted contact cannot transact or see balances. See [[trusted-contact-person]].
+
+@page privacy-reg-sp | Protecting client information
+@summary Privacy rules for chat: what never to type, how to handle sensitive data the client sends, and our privacy obligations.
+
+## Our obligations
+
+Bob's Mutual Funds is required by federal privacy rules (including Regulation S-P) to protect clients' nonpublic personal information: names combined with account numbers, Social Security numbers, balances, transactions, and similar data. Clients receive our privacy notice when they open an account and annually. We do not sell client information.
+
+## What never to type in chat
+
+- A full Social Security number or taxpayer ID.
+- A full account number or bank account number. Use the last four digits or the account type and ID shown in the portal (for example "Roth IRA, acc-301").
+- A full date of birth.
+- Passwords, one-time codes, or security answers. We never ask for a client's password.
+
+## When a client sends sensitive data
+
+Clients sometimes paste a full SSN or bank account number into chat. Do not repeat it. Say: "Thank you. For your security, please don't share full account or Social Security numbers in chat; I have what I need." Report it per your team's procedure so the transcript can be redacted.
+
+## Sharing information
+
+Share account information only with people entitled to it (see [[authenticated-vs-unauthenticated]]). Never confirm whether a person is a client to someone who is not authorized. "I'm not able to discuss whether someone has an account with us" is the correct answer.
+
+## Screens and workspace
+
+Lock your screen whenever you step away. Do not copy client data into personal notes, email, or messaging apps. Use only approved tools.
+
+## Privacy questions from clients
+
+Clients can read the privacy notice in the portal footer. Requests to change marketing preferences can be handled at My Account → Preferences. Questions about data deletion or legal privacy rights go to the Privacy Office through your team lead.
+
+@page account-takeover | Suspected account takeover or unauthorized activity
+@summary Recognizing account takeover, what to do immediately when a client reports unauthorized activity, and how to escalate.
+
+## Warning signs
+
+- A client reports a transaction, login, or change they did not make.
+- Contact details (email, phone, address) changed shortly before a withdrawal or new bank link.
+- A new bank account was linked and an electronic redemption followed within days.
+- The person in chat cannot answer basic questions about the account.
+- The person pressures you to rush ("I need this wired today, it's an emergency").
+- Requests to send money to an address or bank that does not match the owner's name.
+
+## If the client reports unauthorized activity
+
+1. Stay calm and reassuring. "Thank you for telling us right away. I'm going to help you secure your account now."
+2. Verify the client's identity (see [[identity-verification]]).
+3. Do not process any other transactions in the chat.
+4. Escalate immediately to the Fraud team via your team lead. The Fraud team can place a protective hold, block online access, cancel pending transactions, and investigate.
+5. Advise the client to change their password and confirm 2FA is on, using a device they trust. See [[password-reset]] and [[two-factor-auth]].
+6. If the client's email account may be compromised, suggest they secure it too, because password reset links go there.
+7. Document everything in ACW, including times and what the client reported.
+
+## If you suspect the person in chat is not the client
+
+Do not accuse. Decline politely: "I'm not able to complete that request in chat. Please call us at 1-800-BOB-FUND." Notify your team lead immediately so the Fraud team can contact the real owner through verified contact details.
+
+## Reimbursement questions
+
+Clients often ask whether they will be reimbursed. Do not promise reimbursement. Explain that the Fraud team will investigate and contact them, typically within 2 business days, and that protective measures are already in place.
+
+@page phishing-scams | Phishing and investment scams
+@summary The scams that target our clients, what we never ask for, and how to help a client who may have been contacted by a fraudster.
+
+## What Bob's Mutual Funds never does
+
+Tell clients plainly: we will never
+
+- Ask for their password or one-time security code by phone, email, text, or chat.
+- Ask them to move money to a "safe account" to protect it.
+- Change our wire instructions by email.
+- Ask them to pay a fee to release funds.
+- Call them to recommend a specific investment or "special opportunity".
+
+## Common scams
+
+- **Phishing emails and texts** that imitate our logo and link to a fake sign-in page. Our emails come only from noreply@bobsmutualfunds.com and never ask for credentials.
+- **Impersonation calls**: someone claiming to be from Bob's, the bank, or a government agency, warning of a problem and asking for codes.
+- **Tech-support scams**: a pop-up claims the computer is infected and asks the client to install remote-access software.
+- **Romance and friendship scams**: an online acquaintance gradually asks for money, often for an emergency or an "investment".
+- **Investment fraud**: promises of guaranteed high returns, crypto "platforms", or pressure to act fast.
+
+## Helping a client
+
+If a client describes any of these:
+
+1. Tell them not to provide any further information to the contact and not to click links.
+2. If they shared their password or a code, help them reset their password immediately and check their 2FA settings. See [[password-reset]].
+3. Review recent activity with them for anything unfamiliar.
+4. Escalate to the Fraud team if any information was shared or any activity looks wrong.
+5. Encourage them to report scams to the appropriate authorities; their bank can also help.
+
+Phishing reports (forwarded suspicious emails) can be sent to the security mailbox listed on the portal's Security page.
+
+@page password-reset | Password resets
+@summary How clients reset their password, the rules for new passwords, and what to do when the reset email doesn't arrive.
+
+## Self-service reset
+
+1. On the sign-in page, the client clicks **Forgot Password**.
+2. They enter the email address on file.
+3. A reset link arrives from noreply@bobsmutualfunds.com. The link is valid for **30 minutes**.
+4. They create a new password: at least 8 characters, with at least one uppercase letter, one number, and one symbol. It cannot match any of their last five passwords.
+5. They sign in with the new password and complete two-factor authentication.
+
+## Changing a password while signed in
+
+Clients can change their password at My Account → Security. In chat, you can process a password change request through the Update Security Settings task, which sends the client a secure link to set the new password; you never see or set it. See [[update-security-task]].
+
+## The email didn't arrive
+
+- Ask the client to wait 5 minutes and check spam or junk folders.
+- Confirm they are using the email address on file (ask them to tell you the address; do not read it out).
+- If the email on file is out of date, they cannot reset by email. The email can be updated only after identity verification; for a locked-out client, that means a phone call to 1-800-BOB-FUND.
+- Reset links expire after 30 minutes and only the latest link works.
+
+## We never ask for passwords
+
+Never ask a client to tell you their password, and stop them if they start to. See [[phishing-scams]].
+
+@page two-factor-auth | Two-factor authentication (2FA)
+@summary How 2FA works on our accounts, enabling and changing methods, and recovering when a client loses their device.
+
+## Requirement
+
+Two-factor authentication is required for every online account. After entering their password, the client must confirm a one-time code sent by text message or generated by an authenticator app, or approve a sign-in prompt in the mobile app.
+
+## Methods
+
+| Method | How it works | Notes |
+|---|---|---|
+| Text message | A 6-digit code is texted to a verified mobile number | Most common; requires a verified phone |
+| Authenticator app | A rotating code from an app the client sets up with a QR code | Most secure; works without cell service |
+| Mobile app approval | A push prompt in the Bob's Mutual Funds app | Requires the app on a trusted device |
+
+## Changing methods
+
+Clients can add or change methods at My Account → Security. Through chat, the Update Security Settings task can enable 2FA or remove a trusted device. Because 2FA is required, a request to "disable 2FA" is processed only as replacing one method with another; we do not leave an account without a second factor. Explain this to the client.
+
+## Lost device
+
+If a client has lost access to their 2FA device and cannot sign in:
+
+1. They must call 1-800-BOB-FUND; this cannot be completed in chat because the client cannot authenticate.
+2. They will need the last four digits of their SSN, their account number, and their security question answers.
+3. A 2FA reset takes up to **1 business day**.
+
+If the client is already signed in (for example, they have a new phone but the old one still works), they can switch methods themselves at My Account → Security.
+
+@page account-lockouts | Locked accounts
+@summary Why online access locks, how long the lock lasts, and how clients regain access.
+
+## Automatic lockout
+
+After **5 failed sign-in attempts**, the online login locks for **30 minutes**. This protects the client from password-guessing attacks. The account itself (holdings, scheduled transactions) is unaffected; only online access is paused.
+
+## Regaining access
+
+- Wait 30 minutes and try again, or
+- Use **Forgot Password** to reset; a successful reset unlocks the login. See [[password-reset]].
+- If they cannot reset (for example, the email on file is outdated), they should call 1-800-BOB-FUND.
+
+## Security holds
+
+A login can also be locked by the Fraud team as a protective measure. A client in this situation sees a message asking them to call. Chat agents cannot lift a security hold. Route the client to the phone line, and do not speculate about why the hold was placed.
+
+## If a client did not trigger the lockout
+
+If a client says they did not attempt to sign in, someone else may have. Recommend a password reset and review recent activity together. See [[account-takeover]].
+
+## Example
+
+Client: "It says my account is locked."
+
+Agent: "That happens after five unsuccessful sign-in attempts, to protect your account. It unlocks automatically after 30 minutes, or right away if you reset your password using 'Forgot Password' on the sign-in page. Would you like me to walk you through the reset?"
+
+## Repeated lockouts
+
+If a client is locked out repeatedly without trying to sign in, someone may be attempting to access the account. Recommend a password change and review recent activity. See [[account-takeover]].
+
+@page trusted-devices | Trusted devices
+@summary What a trusted device is, how clients manage them, and when to remove one.
+
+## Definition
+
+When a client signs in and completes 2FA on a device, they can mark it as trusted. For 30 days, sign-ins from that device skip the 2FA prompt. Trusted status ends after 30 days, or immediately if removed.
+
+## Managing devices
+
+Clients can see and remove trusted devices at My Account → Security → Trusted Devices. Through chat, the Update Security Settings task includes "Remove trusted device". See [[update-security-task]].
+
+## When to recommend removing devices
+
+- A device was lost, stolen, sold, or given away.
+- The client signed in on a shared or public computer.
+- The client suspects someone else has accessed the account.
+
+In a suspected compromise, remove all trusted devices and reset the password.
+
+## How clients see their devices
+
+The Trusted Devices list shows each device's type (for example "iPhone, Bob's app" or "Windows, Chrome"), the approximate location of its last sign-in, and when it was last used. Clients who don't recognize a device should remove it and reset their password.
+
+## Example
+
+Client: "I sold my old phone. Should I do anything?"
+
+Agent: "Good thinking. Since that phone was a trusted device, I'd recommend removing it so it can't skip the security code. You can do it at My Account → Security → Trusted Devices, or I can remove it for you now."
+
+## Shared computers
+
+Clients should never mark a shared or public computer as trusted, and should sign out fully when finished.
+
+## Relationship to 2FA
+
+Removing a trusted device does not disable 2FA; it means that device must complete 2FA again at the next sign-in. See [[two-factor-auth]].
+
+@page update-security-task | Procedure: Update Security Settings
+@summary Chat procedure for password changes, enabling 2FA, changing 2FA methods, and removing trusted devices.
+
+## What the task collects
+
+| Field | Options |
+|---|---|
+| What to update | Change password; Enable 2FA; Disable 2FA (processed as a method change); Remove trusted device |
+
+## Procedure
+
+1. Confirm the client is authenticated and the request is coming from the owner. Security changes are high risk; if anything seems off, re-verify. See [[identity-verification]].
+2. Let the task expert collect the action, or choose it from the task menu.
+3. Review the Proposed Action and submit.
+4. Explain what happens next:
+   - **Change password**: a secure link is sent to the email on file; the client sets the new password themselves. We never see it.
+   - **Enable 2FA**: the client completes setup at My Account → Security (scan a QR code or verify a phone number).
+   - **Disable 2FA**: 2FA is required, so explain that we can switch the method rather than remove it, and guide them to My Account → Security.
+   - **Remove trusted device**: the device must complete 2FA on its next sign-in.
+
+## Things to watch for
+
+- A request to change security settings immediately before or after a request to change contact details or move money is a fraud signal. Pause and verify.
+- If a client says they are locked out, they are not authenticated, so they cannot use this task. Direct them to [[password-reset]] or [[account-lockouts]].
+
+@page username-recovery | Forgotten usernames and sign-in problems
+@summary Helping clients who forget their username or cannot sign in for other reasons.
+
+## Forgotten username
+
+Most clients sign in with their email address. If the client created a separate username, they can click **Forgot Username** on the sign-in page and enter their email address and the last four digits of their SSN; the username is emailed to them.
+
+## Other sign-in problems
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| "Incorrect password" repeatedly | Wrong password, caps lock, saved old password | Reset password |
+| Locked out | 5 failed attempts | Wait 30 minutes or reset; see [[account-lockouts]] |
+| No 2FA code | Wrong phone, carrier delay, number changed | Wait 2 minutes, request a new code; if the number changed, call to update it |
+| Page won't load | Browser cache, unsupported browser, network | Clear cache, try another browser; see [[website-errors]] |
+| "Account under review" message | Protective hold | Call 1-800-BOB-FUND |
+
+## New clients
+
+Clients who opened an account but have not enrolled for online access can enroll from the sign-in page with their account number, SSN, and date of birth.
+
+## Example
+
+Client: "I don't remember my username."
+
+Agent: "No problem. On the sign-in page, click 'Forgot Username' and enter your email address and the last four digits of your Social Security number. We'll email your username to you. Most clients sign in with their email address, so try that first."
+
+@page security-alerts | Security alerts clients receive
+@summary The automatic security notifications we send and what to tell a client who received one they don't recognize.
+
+## Alerts we send
+
+We automatically notify clients by email (and text if they opt in) when:
+
+- Their password is changed.
+- Their email address, phone number, or mailing address is changed (the notice goes to both the old and the new address).
+- A new bank account is linked.
+- 2FA settings change or a trusted device is added.
+- A new authorized user is added.
+- A sign-in occurs from a new device.
+- A withdrawal or outgoing transfer is requested.
+
+## A client didn't make the change
+
+If a client receives an alert for something they did not do, treat it as possible account takeover. Follow [[account-takeover]]: verify identity, secure the login, escalate to the Fraud team, and review recent activity.
+
+## A client wants fewer alerts
+
+Security alerts for changes to credentials, contact details, banks, and access cannot be turned off. Marketing and informational emails can be managed at My Account → Preferences.
+
+## Example
+
+Client: "I got an email saying my phone number was changed. I didn't do that."
+
+Agent: "Thank you for telling us right away. Let's secure your account. First, I need to verify a few details..." Then follow [[account-takeover]]: verify identity, escalate to Fraud, reset the password, review recent activity, and remove unknown devices.
+
+## Alerts and joint accounts
+
+Changes made by one joint owner to the shared account (for example, adding a bank) generate alerts to both owners.
+
+@page elder-financial-exploitation | Elder financial exploitation and vulnerable clients
+@summary Recognizing signs of exploitation or diminished capacity, what you may do, and how to escalate.
+
+## Why this matters
+
+Older clients and clients with diminished capacity are targeted by scammers and sometimes by people close to them. Federal and state rules allow, and our policy requires, that we act when we see red flags, including placing a temporary hold on a disbursement and contacting a trusted contact person.
+
+## Red flags
+
+- A sudden, unexplained large withdrawal, especially to a new bank or a person.
+- A new "friend", caregiver, or relative directing the conversation or answering for the client.
+- The client seems confused about their accounts, repeats questions, or does not understand a transaction they are requesting.
+- The client mentions an online romance, a lottery win that requires fees, or someone who needs urgent help.
+- The client is afraid, secretive, or says they were told not to tell anyone.
+- Changes to beneficiaries or authorized users that benefit a new person.
+
+## What to do
+
+1. Stay patient and kind. Ask open questions: "Can you tell me what this money is for?"
+2. Do not process a suspicious disbursement in the chat. You do not need to accuse anyone; say you need to complete an additional review.
+3. Escalate to your team lead and the Senior Investor Protection team immediately. They can place a temporary hold, contact the trusted contact person, and if needed report to Adult Protective Services.
+4. Document the specific observations in ACW (quotes, behaviors, amounts).
+
+## Diminished capacity
+
+If a client appears unable to understand a transaction, do not proceed with it, even if no one else is involved. Offer a callback and escalate. A trusted contact, power of attorney, or guardian may need to be involved. See [[trusted-contact-person]] and [[power-of-attorney]].
+
+@page trusted-contact-person | Trusted contact person
+@summary What a trusted contact is, what they can and cannot do, and how clients add one.
+
+## Definition
+
+A trusted contact person is someone a client authorizes us to contact if we cannot reach the client, if we suspect financial exploitation, or if we have concerns about the client's health or capacity. We ask every client aged 18 and over to name one when opening an account, and periodically afterward. It is optional.
+
+## What a trusted contact can and cannot do
+
+| Can | Cannot |
+|---|---|
+| Be contacted by us about our concerns | See balances or activity |
+| Confirm the client's contact details or health status | Place transactions |
+| Help identify a legal guardian, executor, or POA | Change anything on the account |
+
+A trusted contact is not an authorized user and not a power of attorney.
+
+## Adding or changing a trusted contact
+
+Clients can add, update, or remove a trusted contact at My Account → Profile → Trusted Contact, providing the person's name, relationship, and phone or email. The trusted contact must be at least 18. Clients can ask in chat; guide them to the page or note the request for the Account Services team if they cannot do it online.
+
+## Talking to clients about it
+
+Frame it positively: "Many clients name a trusted contact so that if we ever can't reach you or have a concern, there's someone we can check with. They can't see your accounts or make changes."

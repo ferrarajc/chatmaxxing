@@ -1,0 +1,220 @@
+@section escalations | Callbacks & Escalations | When and how to escalate, supervisor requests, specialist teams, scheduling and changing callbacks, warm handoffs, and after-hours requests.
+
+@page escalation-overview | When to escalate
+@summary The situations that require escalation, to whom, and how fast.
+
+## Escalation map
+
+| Situation | Escalate to | Urgency |
+|---|---|---|
+| Suspected fraud or unauthorized activity | Fraud and Security, via team lead | Immediate |
+| Suspected elder exploitation or diminished capacity | Senior Investor Protection | Immediate |
+| Client asks for a supervisor | Team lead / supervisor | Immediate |
+| Formal complaint, regulator or attorney mentioned | Supervisor and Compliance | Immediate |
+| Death of an account holder | Estate Services | Same day |
+| Investment advice requested | Licensed professional callback | At the client's chosen time |
+| Complex IRA issue (excess contribution, recharacterization, 72(t)) | Retirement Specialists | Within 1 business day |
+| Missing money (wire, ACH, check) | Money Movement Operations | Same day |
+| Tax form error | Tax Reporting | Within 2 business days |
+| Our processing error | Team lead, for correction approval | Same day |
+| Legal documents (subpoena, court order, garnishment) | Legal | Same day; never handle in chat |
+| Technical defect | Technical support log | As appropriate |
+
+## How
+
+Use the escalation tools in the workspace or notify your team lead. Always tell the client who will contact them, how, and when. Document the escalation in ACW.
+
+## What escalation is not
+
+Escalation is not a way to avoid a difficult conversation. Handle what you can; escalate what requires someone else's authority or expertise.
+
+@page supervisor-escalation | Supervisor requests
+@summary How to handle a client who asks for a supervisor.
+
+## Steps
+
+1. Don't resist or delay. "Of course. I'll get a supervisor for you."
+2. Briefly ask what the client would like the supervisor to help with, so the supervisor is prepared. Don't make the client justify the request.
+3. Notify your team lead with a one- or two-line summary.
+4. Keep the client informed: "I've asked a supervisor to join. It may be a few minutes."
+5. If no supervisor is available within 5 minutes, offer a supervisor callback within 1 business day.
+
+## While waiting
+
+Stay present. Don't argue the client's points. If the client asks you to continue helping in the meantime, do so.
+
+## Example
+
+Client: "I want to talk to your supervisor."
+
+Agent: "Of course. I'll ask a supervisor to join. So they can help you right away, could you tell me in a sentence what you'd like them to look at?"
+
+Client: "Your company lost my rollover check."
+
+Agent: "Thank you. I've asked a supervisor to join and given them that summary. It may take a few minutes; I'll stay here with you."
+
+## Documenting
+
+Record the request, the reason, and the outcome in ACW. If a complaint was made, also follow [[complaints-handling]].
+
+@page specialist-teams | Routing to specialist teams
+@summary Which specialist team handles which request, and how to hand off cleanly.
+
+## Teams and what they handle
+
+| Team | Requests |
+|---|---|
+| Licensed professionals | Investment advice, portfolio reviews, planning conversations |
+| Retirement Specialists | Excess contributions, recharacterizations, 72(t), complex rollovers, RMD calculation disputes, prior-year recoding |
+| Estate Services | Deaths, inherited accounts, estate accounts, survivorship |
+| Account Services | Registration changes, trust and custodial matters, POA review, name changes, address-unknown flags |
+| Money Movement Operations | Wires, ACH issues, checks, stop payments, returned items |
+| Tax Reporting | Corrected forms, cost basis issues |
+| Fraud and Security | Unauthorized activity, compromised accounts |
+| Senior Investor Protection | Exploitation, diminished capacity |
+| Client Records | Older documents and transcripts |
+
+See also [[department-directory]].
+
+## A clean handoff
+
+1. Summarize the client's request and what you've already confirmed.
+2. Tell the client which team, how they'll be contacted, and when.
+3. Make sure your ACW captures the referral (Referral wrap-up code where the referral is the main outcome).
+
+## Choosing between a referral and a callback
+
+- **Referral (internal)**: the specialist team works the request behind the scenes and contacts the client (excess contribution removals, stop payments, tax form corrections).
+- **Callback**: the client wants a conversation (licensed advice, complex estate discussions).
+
+## Avoiding ping-pong
+
+Before referring, make sure the request truly belongs to that team. If you're unsure, ask your team lead. A client bounced between teams has a bad experience even if every team was helpful.
+
+@page callback-scheduling | Scheduling callbacks
+@summary How callbacks are scheduled through chat, availability, time zones, and what to confirm.
+
+## How
+
+Switch the column to the callback scope, or the client can schedule from the virtual assistant. The flow:
+
+1. Opens with why a callback is the right next step (for example, licensed guidance).
+2. Asks for the client's preferred day and time.
+3. Checks availability and resolves the time correctly (callbacks are scheduled in Eastern Time; the server converts times safely, including across daylight saving changes).
+4. Confirms the phone number to call.
+5. Confirms the appointment.
+
+## Availability
+
+Callbacks are available during phone service hours: Monday–Friday 8:00 AM–8:00 PM ET and Saturday 9:00 AM–5:00 PM ET, excluding holidays. Licensed professional callbacks may have narrower availability. The flow offers only available slots.
+
+## Time zones
+
+Always state the time in the client's time zone and Eastern: "Thursday at 2:00 PM Eastern, which is 11:00 AM your time."
+
+## What happens next
+
+A dossier is prepared for the phone agent from the real conversation. See [[phone-callback-console]]. The client receives a confirmation.
+
+## Changes
+
+See [[cancel-reschedule-callback-task]].
+
+## Example
+
+Agent: "I'd suggest a call with one of our licensed professionals for this. What day and time works for you?"
+
+Client: "Tomorrow after 3."
+
+Agent: "I have 3:30 PM or 4:00 PM Eastern tomorrow. You're in Chicago, so that's 2:30 or 3:00 your time. Which do you prefer?"
+
+## Phone number
+
+Confirm the number to call. If the client wants a number not on file, note it for the callback only; changing their profile phone is a separate request.
+
+@page cancel-reschedule-callback-task | Procedure: Cancel or Reschedule Callback (chat)
+@summary Step-by-step chat procedure for changing an arranged callback.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Action | Cancel, Reschedule |
+| New time | The new day and time (for Reschedule) |
+
+## Procedure
+
+1. Identify the callback: date and time currently scheduled.
+2. Let the task expert collect the action and, for a reschedule, the new time.
+3. Confirm the new time in both Eastern and the client's time zone, and the phone number.
+4. Submit and confirm.
+
+## Tips
+
+- If the client wants to cancel because they no longer need help, ask if there's anything you can help with now.
+- If the client wants an earlier time, check availability; same-day slots may be limited.
+
+## Example
+
+Client: "Can we move my call tomorrow to Friday morning?"
+
+Agent: "Of course. Your call is set for tomorrow, Wednesday, at 2:00 PM Eastern. For Friday morning, would 10:00 AM Eastern work?"
+
+After confirming: "Done. Your call is now Friday at 10:00 AM Eastern at the number ending in 0192."
+
+## If the original time has passed
+
+If the client missed a callback, schedule a new one rather than rescheduling. The phone agent will have noted the missed attempt.
+
+@page warm-handoffs | Warm handoffs and transfers
+@summary How to transfer a chat or hand off to a colleague so the client doesn't have to repeat themselves.
+
+## Principles
+
+- The client should never have to repeat their story.
+- The receiving person should know what's been done and what's needed.
+
+## How
+
+1. Tell the client: "I'm going to connect you with our estate team, who handle this. I'll share what you've told me so you won't have to repeat it."
+2. Send a short internal summary: client, request, facts confirmed, actions taken, what's needed.
+3. Stay with the client until the handoff is complete, or until the callback is confirmed.
+
+## Continued chats
+
+If a client returns later, the "Continue this chat" feature loads prior context. See [[continued-chats]].
+
+## What a good internal summary looks like
+
+"Client: Maria Lopez. Wants to roll over a Fidelity 401(k) (~$85k, pre-tax and Roth portions) into Bob's. Has a Traditional IRA (acc-201) but no Roth IRA. Confirmed: she has requested paperwork from Fidelity. Needs: help opening a Roth IRA for the Roth portion and our receiving details. Prefers phone after 5 PM ET."
+
+## What to tell the client
+
+Tell the client what you've shared, who will contact them, and when. Clients who have had to repeat themselves are often frustrated; this sentence prevents that.
+
+@page after-hours | After-hours requests
+@summary What clients can do outside live-agent hours and how the virtual assistant handles requests.
+
+## Available after hours
+
+- The virtual assistant (24/7): answers, links, starting some tasks, scheduling callbacks.
+- The portal and app: almost all self-service, including trades (priced at the next NAV).
+- Secure messages (answered next business day).
+- Phone service on Saturdays 9:00 AM–5:00 PM ET.
+
+## Urgent after-hours issues
+
+- Suspected fraud: clients can lock their online access from My Account → Security (or by repeated failed logins) and call when lines open. The virtual assistant provides fraud guidance.
+- Lost or stolen device with the app: remove trusted devices online.
+
+## Setting expectations
+
+When a client chats near closing time, tell them honestly if their request can't be completed today and schedule a callback or note the follow-up.
+
+## Example
+
+A client chats at 7:50 PM ET wanting to change beneficiaries. You can complete it before closing if the details are simple. If not, tell them: "We close at 8:00 PM Eastern. I can schedule a callback for tomorrow morning, or you can update beneficiaries any time online at My Account → Beneficiaries."
+
+## Trades after hours
+
+Orders placed after 4:00 PM ET receive the next business day's NAV whether placed in chat, online, or on the weekend. Make this clear to clients chatting in the evening.

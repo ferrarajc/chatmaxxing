@@ -1,0 +1,374 @@
+@section start | Start Here | How the library is organized, what a chat agent is responsible for, and the one-page quick reference of numbers every agent needs.
+
+@page library-guide | How to use this library
+@summary What this library is, how it is organized, how to find an answer fast, and what to do when the library does not have it.
+
+## What this library is
+
+The Agent Knowledge Library is the definitive internal reference for chat agents at Bob's Mutual Funds. It describes every product we offer, every account type we hold, every service task a client can ask for, the rules that govern those tasks, and the language we use when we talk to clients about them. When a client asks you something you do not know, this is where you look. If the library and your memory disagree, the library wins. If the library and a client-facing help page disagree, the library wins and you should report the discrepancy to your team lead so the help page can be corrected.
+
+The library is written for you, not for clients. It contains procedures, internal escalation routes, and judgment guidance that clients should not see. Never paste a library URL into a chat. When a client needs to read something, send them the client-facing help page or resource article instead. The AI support panel's "Relevant resources" list contains only client-safe links.
+
+## How the library is organized
+
+The library is divided into sections that follow the life of a client relationship:
+
+- **Start Here** (this section): orientation, service standards, and the quick reference card.
+- **Agent Workspace & Tools**: how the agent desktop, AI support panel, autopilot, task experts, and Proposed Action card work.
+- **Identity, Privacy & Security**: verifying who you are talking to, protecting client information, and handling fraud.
+- **Company & Contact Directory**: phone numbers, hours, addresses, holidays, and which internal team handles what.
+- **Account Types** and **Opening Accounts**: every registration we offer and how each is opened.
+- **Account Maintenance**: contact information, authorized users, bank links, statements, closing accounts.
+- **Buying**, **Selling**, **Exchanges**, **Automatic Investing & Withdrawals**: everything about transactions.
+- **Dividends & Fund Distributions** and **Money Movement**: how money arrives, leaves, and is paid out.
+- **IRA Contributions**, **IRA Distributions**, **Required Minimum Distributions**, **Rollovers & Transfers**, **Roth Conversions**: retirement accounts in depth.
+- **Beneficiaries**, **Death, Estates & Inheritance**, **Ownership Changes & Life Events**: the sensitive transitions.
+- **Tax Center**: every tax form, cost basis, and where the line sits between tax information and tax advice.
+- **Fund Lineup** and **Fund Documents & Performance**: a profile page for each of our 36 funds, plus how to talk about performance.
+- **Investing Concepts**: educational explanations you can give without crossing into advice.
+- **Compliance & Policies**: the rules that protect clients and the firm.
+- **Statements & Fees**, **Troubleshooting**, **Callbacks & Escalations**, **Scripts & Templates**, and the **Glossary**.
+
+Every page has a stable Page ID (shown under the title). Use the Page ID when you report a content problem or reference a page in a coaching conversation.
+
+## Finding an answer fast
+
+There are three ways in:
+
+1. **Ask the library.** The "Ask the library" page accepts a plain-English question ("can a client contribute to a Roth for last year in March?") and returns an answer drawn from these pages, with links to the pages it used. Always open the cited page before relying on an answer for anything that moves money or changes an account.
+2. **Browse by section.** If you know the topic, the section index pages list every page with a one-line summary.
+3. **The A–Z index.** Every page title, alphabetically. Useful when you know the name of a form or term.
+
+Most pages follow the same shape: a summary box, the rules, the procedure, common client questions, and links to related pages. Procedure pages for chat tasks (for example [[place-purchase-task]]) list each detail the task collects and the checks you should make before you approve the Proposed Action.
+
+## When the library does not have the answer
+
+The library aims to cover nearly every client request, but it cannot cover everything. If you cannot find an answer:
+
+1. Do not guess. A confident wrong answer about taxes, deadlines, or money movement causes real harm.
+2. Tell the client honestly that you are confirming the answer, using the hold language in [[hold-delay-scripts]].
+3. Ask your team lead or post in the agent help channel.
+4. If the answer requires a specialist (estate services, retirement specialists, the licensed brokerage desk), use [[specialist-teams]] to route the client.
+5. After the chat, report the gap so the library can be updated. See [[when-you-cannot-find-it]].
+
+## Keeping the library current
+
+Content owners review every page at least annually and whenever a rule changes: IRS limits each autumn, holiday calendars each December, fund data whenever the catalog changes. The fund profile pages are generated directly from the same fund catalog that drives the client portal, so their numbers always match what clients see. Each page footer shows when the library was last reviewed.
+
+@page agent-role | The chat agent's role
+@summary What chat agents at Bob's Mutual Funds do, what they do not do, and how responsibility is shared between the agent and the AI tools.
+
+## What you are here to do
+
+As a chat agent you are the client's human point of contact for anything the self-service portal and the virtual assistant could not resolve. Clients reach you after the virtual assistant has escalated their chat, when they ask for a person, or when they continue a recent conversation with you. Your job is to understand what the client is trying to accomplish, get it done accurately, and leave the client confident about what happens next.
+
+In practice that means:
+
+- **Answering questions** about accounts, funds, rules, deadlines, forms, and processes, accurately and in plain language.
+- **Completing service tasks** on the client's behalf: purchases, sales, exchanges, beneficiary changes, automatic investment schedules, distributions, RMD settings, rollovers, Roth conversions, tax document requests, contact updates, security changes, and callbacks. The full list is in [[task-experts]].
+- **Protecting the client** by verifying identity, watching for fraud and exploitation, and refusing requests that would harm them or violate policy.
+- **Routing** the client to the right specialist when a request is outside chat scope (complex estates, licensed advice, certain trades by phone).
+- **Documenting** the interaction through after-chat work so the next person who helps the client knows what happened.
+
+## What you do not do
+
+Chat agents are not licensed to give individualized investment, tax, or legal advice. You can explain how products and rules work; you cannot tell a client what they should do with their money. This boundary is explained in detail in [[investment-advice-boundary]], and it is the single most important compliance rule in this job.
+
+You also do not:
+
+- Promise outcomes you do not control (exact settlement dates for another institution's transfer, IRS treatment of a specific return, future fund performance).
+- Bypass verification because a client is in a hurry or upset.
+- Make changes the client has not clearly confirmed, even if the AI support panel suggests them.
+- Share one client's information with another person, including spouses and family members, unless that person is an authorized user with the right access level. See [[authorized-users-access-levels]].
+
+## Working with the AI tools
+
+The agent workspace includes AI assistance: a suggested reply for every turn, predicted topics and questions, relevant client-safe resources, an autopilot that can carry routine parts of a conversation, and task experts that collect the details a service task needs and present them as a Proposed Action for your approval. These tools make you faster. They do not replace your judgment.
+
+The rule is simple: **you are accountable for everything that is sent to the client and everything that is submitted on the client's behalf.** Before you send a suggested reply, read it. Before you approve a Proposed Action, check every field against the transcript (the evidence highlighting helps; see [[evidence-highlighting]]). If autopilot is running and something looks wrong, pause it. See [[autopilot-controls]].
+
+## Handling multiple chats
+
+You may handle up to four chats at once, one per column. Concurrency is a privilege earned by accuracy. If a conversation becomes complex or emotional (a bereavement, a fraud report, a complaint), focus on it. You can let other columns run on autopilot for routine collection or ask your team lead to stop routing new contacts to you. See [[service-standards]] for response-time expectations.
+
+## Your professional standard
+
+Clients trust us with their retirement savings. Every chat should leave the client feeling that someone competent and careful handled their request. That means being accurate before being fast, being plain rather than clever, and being honest about what you do not know.
+
+@page quick-reference | Quick reference card
+@summary The numbers, hours, deadlines, and limits agents look up most often, all on one page.
+
+> Bookmark this page. Every figure here is repeated, with full context, on the page it links to. If you are about to move money or change an account, open the linked page as well.
+
+## Contact and hours
+
+| Item | Value |
+|---|---|
+| Main phone | 1-800-BOB-FUND (1-800-262-3863) |
+| Phone hours | Monday–Friday 8:00 AM–8:00 PM ET; Saturday 9:00 AM–5:00 PM ET |
+| Live chat agents | Monday–Friday 8:00 AM–8:00 PM ET (virtual assistant 24/7) |
+| Licensed brokerage desk (phone) | Monday–Friday 8:00 AM–7:30 PM ET |
+| Estate Services / inheritance team | Monday–Friday 8:00 AM–7:30 PM ET; say "inherited account" |
+| Secure message response | 1 business day standard; 3 business days complex |
+| Regular mail | Bob's Mutual Funds, PO Box 2025, Malvern, PA 19355 |
+| Overnight mail | Bob's Mutual Funds, Client Services Center, 1 Bob's Way, Malvern, PA 19355 |
+| System email sender | noreply@bobsmutualfunds.com |
+
+Details: [[contact-channels]], [[support-hours]], [[mailing-addresses]].
+
+## Trading
+
+| Item | Value |
+|---|---|
+| Trade cutoff | 4:00 PM ET on a business day (orders in good order receive that day's NAV) |
+| After cutoff / weekends / holidays | Next business day's NAV |
+| Settlement | T+1 (next business day) |
+| Fund minimum initial investment | $1 for every fund |
+| Automatic investment minimum | $50 per fund per investment |
+| Transaction fees | $0 to buy, sell, or exchange any BobsFunds fund |
+| Frequent trading restriction | A round trip within 30 days blocks new purchases into that fund for 30 days |
+
+Details: [[trade-cutoff-nav]], [[frequent-trading-policy]].
+
+## Money movement
+
+| Item | Value |
+|---|---|
+| ACH timing | 2–3 business days |
+| ACH limit | $100,000 per day per account |
+| Incoming wire | Free; same-day credit if received before 4:00 PM ET |
+| Outgoing wire | $25; same day if requested before 2:00 PM ET |
+| Wire receiving bank | First National Bank of Funds (FNBF), ABA 031000503, credit the client's account number and full registered name |
+| Bank verification | Instant (online verification) or two micro-deposits in 1–2 business days |
+| Newly linked bank | Electronic redemptions to a bank linked in the last 10 calendar days need a verification call |
+| Overnight check delivery | $25 |
+| Medallion guarantee required | Redemptions over $100,000 by check, payee other than owner, address changed in last 15 days |
+
+Details: [[money-movement-overview]], [[medallion-signature-guarantee]].
+
+## IRA limits (tax year 2026)
+
+| Item | Value |
+|---|---|
+| Traditional + Roth combined limit | $7,500 (under 50); $8,600 with the $1,100 catch-up at 50+ |
+| 2025 limit (contributions accepted until April 15, 2026) | $7,000; $8,000 at 50+ |
+| Roth phase-out, single | $153,000–$168,000 MAGI |
+| Roth phase-out, married filing jointly | $242,000–$252,000 MAGI |
+| SEP-IRA employer contribution | Up to 25% of compensation, maximum $72,000 |
+| 2026 contribution deadline | April 15, 2027 (no extensions) |
+| Excess contribution excise tax | 6% per year until corrected |
+
+Details: [[ira-contribution-limits]], [[roth-income-limits]].
+
+## Distributions and RMDs
+
+| Item | Value |
+|---|---|
+| Default federal withholding, IRA distributions | 10% (client may elect 0%–100%) |
+| Mandatory withholding on eligible rollover paid to client from a plan | 20% |
+| Early withdrawal penalty | 10% before age 59½ unless an exception applies |
+| RMD starting age | 73 if born 1951–1959; 75 if born 1960 or later |
+| First RMD deadline | April 1 of the year after reaching RMD age |
+| Annual RMD deadline | December 31 |
+| Missed RMD excise tax | 25%, reduced to 10% if corrected timely |
+| Indirect rollover deadline | 60 days; one IRA-to-IRA indirect rollover per 12 months |
+
+Details: [[ira-distributions-overview]], [[rmd-overview]], [[indirect-rollovers]].
+
+## Accounts and access
+
+| Item | Value |
+|---|---|
+| Account maintenance fees | None; no IRA annual fee |
+| Paper statement fee | $2 per month, waived with paperless delivery |
+| Statements | Quarterly (monthly if there is activity); annual statement in January |
+| Online document retention | 7 years |
+| Login lockout | 5 failed attempts locks the login for 30 minutes |
+| Password reset link | Valid for 30 minutes |
+| 2FA | Required on every account; a 2FA device reset takes up to 1 business day |
+| Authorized user levels | View-only, Limited access, Full access (owner must approve) |
+
+## Tax forms
+
+| Form | Reports | Available by |
+|---|---|---|
+| 1099-DIV | Dividends and capital gain distributions | January 31 |
+| 1099-R | Retirement account distributions | January 31 |
+| 1099-B / consolidated 1099 | Sales and exchanges in taxable accounts | February 15 |
+| Corrected forms | Late reclassifications | Up to March 15 |
+| Form 5498 | IRA contributions, rollovers, year-end value | May 31 |
+
+Details: [[tax-form-calendar]].
+
+## Timelines
+
+| Process | Typical time |
+|---|---|
+| New account approval | Instant; 1–3 business days if documents are needed |
+| ACAT transfer in | 5–7 business days |
+| Direct rollover from an employer plan | 5–15 business days after the plan releases funds |
+| Change of ownership (estate, divorce) | 5–10 business days after documents are complete |
+| Estate Services first contact after death notification | Within 2 business days |
+| Auto-invest change or cancellation | At least 3 business days before the next scheduled date |
+
+@page service-standards | Service standards and response times
+@summary The response-time, accuracy, and quality expectations for every chat, and how they are measured.
+
+## Why we have standards
+
+Clients judge us by how quickly we respond and whether we get it right the first time. Standards give every agent the same target and give team leads a fair basis for coaching. They are not a reason to rush: an accurate answer delivered thirty seconds later is always better than a fast wrong one.
+
+## Response-time standards
+
+| Moment | Standard |
+|---|---|
+| Accept an incoming contact | Before the alert countdown expires |
+| First message after accepting | Within 30 seconds. The intent summary and suggested greeting are ready when you accept; use them |
+| Reply to each client message | Within 60 seconds on average; never more than 2 minutes without a message |
+| Research that takes longer | Tell the client you are checking and give a time estimate (see [[hold-delay-scripts]]) |
+| Idle client | The system sends a check-in after a period of silence; after a second unanswered check-in you may close the chat with a closing message |
+
+The response timer on each column shows how long the client has been waiting. When it turns amber, send something, even if it is only "I'm still checking that for you."
+
+## Accuracy standards
+
+- **Every factual statement is supportable from this library** or from the client's account data. If you cannot point to the source, do not state it as fact.
+- **Every Proposed Action is checked field by field** against what the client said before you approve it. Accuracy errors on submitted actions are the most serious quality defect.
+- **Every confirmation recap is explicit.** Before submitting a task, recap the account, the fund, the amount, and any timing, and get the client's clear "yes". See [[confirmation-recap-scripts]].
+
+## Quality standards
+
+Quality reviewers and the AI coaching in after-chat work evaluate chats on:
+
+1. **Understanding**: did you identify what the client actually needed, including anything unstated?
+2. **Accuracy**: was every answer correct and complete?
+3. **Compliance**: was identity verified, was advice avoided, were disclosures given?
+4. **Clarity**: plain language, no jargon without explanation, short paragraphs.
+5. **Ownership**: did you finish the job or hand off cleanly with a clear next step?
+6. **Warmth**: did the client feel listened to?
+
+## First-contact resolution
+
+Aim to resolve the client's request in the chat they started. When that is not possible (a specialist team must act, documents are required, an outside institution is involved), the chat still counts as well handled if the client leaves knowing exactly what will happen, when, and what they need to do. Schedule a callback rather than asking the client to "call back later". See [[callback-scheduling]].
+
+## Concurrency
+
+You may hold up to four chats. Your team lead may lower your limit during training or after quality issues. If you feel overloaded, tell your team lead rather than letting response times slip across every column.
+
+@page chat-communication-standards | Chat writing standards
+@summary How to write chat messages: tone, length, formatting, plain language, and phrases to avoid.
+
+## Voice
+
+Bob's Mutual Funds sounds like a knowledgeable, calm neighbor who happens to understand investing: warm, direct, never salesy, never condescending. We use the client's name occasionally (not in every message). We write in the first person ("I've updated...") and refer to the firm as "we".
+
+## Length and structure
+
+- Keep most messages to one to three sentences. Chat is read on phones.
+- Put the answer first, then the explanation. "Yes, you can still contribute for 2025, until April 15, 2026."
+- When you must give several facts, use a short list. When you must give steps, number them.
+- One question per message where possible. If you need three details, ask for them one at a time or as a short numbered list.
+- Never send a wall of text. If an explanation runs long, send the essential part and offer the client-facing article for depth.
+
+## Plain language
+
+Explain financial terms the first time you use them. Say "the price per share, called the NAV" rather than "the NAV". Prefer "take money out" to "effect a distribution". Prefer "sell" to "redeem" unless the client used "redeem". Spell out acronyms the client may not know (RMD, ACAT, QCD).
+
+## Accuracy in wording
+
+- Say "typically" or "usually" for timelines that depend on other parties: "transfers typically complete in 5–7 business days."
+- Never say "guaranteed" about returns, timing, or tax treatment.
+- Distinguish business days from calendar days every time.
+- Quote dollar amounts exactly and with the dollar sign. Quote percentages with the percent sign.
+- When you quote a fund, give its name and ticker the first time: "BobsFunds 500 Index (BF500)".
+
+## Phrases to avoid
+
+| Avoid | Why | Say instead |
+|---|---|---|
+| "You should..." about investments | It is advice | "Some clients in that situation choose... A licensed advisor can help you decide." |
+| "Don't worry" | Dismissive | "I understand why that's concerning. Here's what I see." |
+| "That's not my department" | Unhelpful | "Our estate team handles that. I'll connect you." |
+| "As I said before" | Sounds impatient | Restate the answer kindly |
+| "Unfortunately, policy says..." | Blames rules | Explain the reason: "To protect your account, we..." |
+| "I think..." for facts | Signals uncertainty | Confirm, then state the fact |
+| "Guaranteed", "safe", "can't lose" | Misleading | Describe the risk level factually |
+
+## Formatting
+
+Chat supports bold text and links. Use bold sparingly for the single most important fact (a deadline, an amount). Use links to client-facing pages, never to this library. Do not use all caps. Emojis are not used in agent messages.
+
+## Empathy
+
+Acknowledge emotion before you move to the task, especially in bereavement, fraud, or market-loss conversations. One sincere sentence is enough: "I'm so sorry for your loss. I'll take care of this with you step by step." See [[bereavement-communication]] and [[market-downturn-conversations]].
+
+@page first-contact-checklist | First-contact checklist
+@summary The steps to take in the first two minutes of every chat so nothing is missed later.
+
+## The checklist
+
+1. **Read the intent summary.** When a chat is escalated, the workspace shows an AI-generated intent label and summary of what the client asked the virtual assistant. Read it before you type, so you do not ask the client to repeat themselves.
+2. **Check for a continued chat.** If the column shows a prior transcript marked as a continued conversation, skim the previous recap. The client expects you to remember. See [[continued-chats]].
+3. **Greet the client.** The suggested greeting is drafted from the intent. Edit it if it does not fit, then send. See [[greeting-scripts]].
+4. **Confirm identity.** Clients who reach chat from inside the logged-in portal have already authenticated. If anything suggests you are not talking to the account owner (a different name, a third party, a request that does not fit the profile), follow [[identity-verification]].
+5. **Scan the client info panel.** Note the accounts (types, IDs, balances), any IRA contribution summary, and anything unusual such as a pending transaction or an account on hold.
+6. **Confirm the request in one sentence.** "It sounds like you'd like to move $2,000 from your BF500 holding into the bond fund in your Roth IRA. Is that right?" This catches misunderstandings before they become errors.
+7. **Choose the path.** Is this a question (answer it), a task (start the matching task expert or let autopilot collect details), or a specialist request (route it)?
+8. **Watch the clock.** Keep the response timer out of amber while you work.
+
+## Signals that require extra care
+
+- The client mentions a death, divorce, diagnosis, or financial hardship. Slow down; see [[bereavement-communication]].
+- The client reports a transaction they did not make, or an email or call asking for their password. Treat as possible fraud; see [[account-takeover]].
+- The client sounds confused about recent instructions, or a third party is directing them. See [[elder-financial-exploitation]].
+- The client asks what to buy or sell. That is advice; see [[investment-advice-boundary]].
+- The client is angry or uses the word "complaint". See [[complaints-handling]].
+
+@page when-you-cannot-find-it | When the library doesn't have the answer
+@summary How to handle a question the library does not answer, how to escalate it, and how to report the gap.
+
+## In the chat
+
+If you have searched the library and asked the library's question box and still have no reliable answer:
+
+1. Tell the client you are confirming the answer rather than guessing. "That's a good question. I want to give you an exact answer, so let me confirm it."
+2. Ask your team lead or the agent help channel. Give the client a time estimate and keep the response timer moving.
+3. If no one can answer within a few minutes, offer a callback or a follow-up secure message with a specific timeframe. See [[callback-scheduling]].
+4. If the question needs a specialist (estate, licensed brokerage, retirement specialist), route it. See [[specialist-teams]].
+
+Never invent a policy, a deadline, or a fee. It is far better to say "I'll confirm and get back to you by tomorrow afternoon" than to give an answer that later proves wrong.
+
+## After the chat
+
+Report the gap so the library improves. Include:
+
+- The client's question in their words (no personal information).
+- What you searched for and which pages you checked (use Page IDs).
+- The answer, once you have it, and its source.
+
+Content owners prioritize gaps reported by more than one agent and anything involving money movement, deadlines, or taxes.
+
+## Reporting an error
+
+If a page is wrong, report it the same way and mark it **urgent** if the error could cause a client to lose money, miss a deadline, or receive incorrect tax treatment. Until the page is corrected, your team lead's written guidance takes precedence.
+
+@page whats-new | What's new in the library
+@summary Recent changes to products, rules, and procedures that agents should know about.
+
+## September 2026
+
+- **2026 IRA limits** are in effect: $7,500 base and a $1,100 catch-up at age 50 and older, for a total of $8,600. The Roth income phase-out ranges also rose. See [[ira-contribution-limits]] and [[roth-income-limits]].
+- **The full 36-fund lineup** is tradeable through chat. Earlier versions of some task scripts offered only the six original funds. Clients may buy, sell, exchange, and set up automatic investments in any fund in [[fund-lineup-overview]].
+- **Cash balances are shown separately.** An account's total value is its uninvested cash plus the value of its fund holdings. When a client funds a purchase from "cash in account", only the cash portion is available. See [[purchase-funding-sources]].
+- **IRA contributions summary.** Account pages and the agent info panel show year-to-date IRA contributions against the client's limit, aggregated across all of the client's IRAs at Bob's. See [[contributions-summary-card]].
+- **Client-submitted actions.** Adding an authorized account user must be approved by the account owner in their own chat window. The agent's button reads "Send to client". See [[client-submitted-actions]].
+
+## Earlier in 2026
+
+- The **phone callback console** launched for agents who handle scheduled callbacks. See [[phone-callback-console]].
+- **Continue this chat.** Clients who spoke with an agent in the last 7 days can continue that conversation, and the prior transcript loads into your column. See [[continued-chats]].
+- **Evidence highlighting** on Proposed Action cards shows exactly where in the transcript each value came from. See [[evidence-highlighting]].
+
+## Annual changes to expect
+
+Every autumn the IRS publishes the next year's contribution limits and income ranges; the library is updated before January 1. Every December the next year's holiday calendar is published. The fund catalog changes whenever a fund is added or its prospectus is updated; fund profile pages update automatically.

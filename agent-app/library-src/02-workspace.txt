@@ -1,0 +1,535 @@
+@section workspace | Agent Workspace & Tools | How the agent desktop works: incoming contacts, the client info panel, the AI support panel, autopilot, task experts, Proposed Actions, after-chat work, and callbacks.
+
+@page workspace-overview | The agent workspace at a glance
+@summary A tour of the agent desktop: four chat columns, each with client information, the conversation, AI support, and controls.
+
+## Layout
+
+The agent workspace is a browser application that shows up to four simultaneous client conversations side by side. Each conversation occupies a **column** (sometimes called a slot). A column has four parts, from top to bottom:
+
+1. **Client info panel**: the client's name, the AI-generated intent label, their accounts and balances, and other profile details. See [[client-info-panel]].
+2. **Chat thread**: the full conversation, including what the client said to the virtual assistant before you joined, live messages, typing indicators, and green confirmation cards for completed actions.
+3. **AI support panel**: the suggested reply, predicted topics and questions, relevant client-safe resources, and autopilot controls. See [[ai-support-panel]].
+4. **Composer**: where you type or edit messages. While autopilot is running, the composer is replaced by the Pause Autopilot control.
+
+Above the columns, incoming contacts arrive as alert cards with a countdown. See [[incoming-contacts]].
+
+## Display modes
+
+The workspace offers several layouts. The grid shows all four columns at once. Focus layouts enlarge one conversation and shrink the others to summaries, which is useful during a complex chat. Every layout shows the same information; choose the one you work best in. Some controls (for example, pagination of long chat histories) appear only in the grid layout.
+
+## Connection to the phone system
+
+The workspace connects to our contact center platform through the Contact Control Panel (CCP). Your availability status (Available, Busy, Offline) controls whether new chats are routed to you. Set yourself to Busy before a break so no contact is routed to an empty desk. If the workspace loses its connection, a banner appears; refresh the page, and in-progress chats will reattach.
+
+## Build stamp
+
+The browser console shows a "build" identifier for the version of the workspace you are running. Support may ask for it when you report a technical issue. See [[chat-technical-issues]].
+
+@page incoming-contacts | Incoming contacts and the alert card
+@summary How new chats arrive, what the alert card shows, and when to accept or skip.
+
+## The alert card
+
+When a client is routed to you, an alert card appears with:
+
+- The client's name.
+- The **intent summary**, a one-line AI description of what the client wants, written from their conversation with the virtual assistant (for example, "Wants to roll over a 401(k) from a former employer into a new IRA").
+- The account types the client holds.
+- A **countdown** showing how long you have to accept.
+- A **bonus opportunity badge**, when the contact qualifies for a team incentive (for example, a new-account or rollover conversation).
+
+## Accepting
+
+Click Accept to take the contact. It opens in your first free column with the transcript of the client's virtual-assistant conversation already loaded and a suggested greeting drafted. Read the intent and the transcript before sending your first message so the client does not have to repeat themselves. See [[first-contact-checklist]].
+
+## Skipping
+
+You may skip a contact only when you genuinely cannot take it: all four columns are busy, you are about to go on a scheduled break, or your team lead has asked you to hold. A skipped contact is re-offered to another agent. Skipping to avoid difficult topics is a quality issue.
+
+## Continued conversations
+
+If the client chose "Continue this chat" to return to a conversation from the last 7 days, the alert indicates a continued chat. If the client asked for you specifically and you are available, the contact is routed to you first. See [[continued-chats]].
+
+@page client-info-panel | The client info panel
+@summary What each field in the client info panel means and how to use it during a chat.
+
+## What it shows
+
+The client info panel at the top of each column summarizes the client's profile:
+
+- **Name** and preferred pronouns, if the client has provided them. Use the client's pronouns when you refer to them in after-chat notes or to another agent.
+- **Intent label**: the AI's short description of why the client is here. Treat it as a starting hypothesis, not a fact; confirm it with the client.
+- **Accounts**: each account's type (Roth IRA, Traditional IRA, SEP-IRA, Taxable, and so on), its account ID (for example `acc-302`), and its **total value**. The total includes uninvested cash; where cash is shown separately (for example "total incl. $877 cash"), the remainder is invested in funds.
+- **IRA contributions summary** (for clients with IRAs): contributions made at Bob's for the current and, during January to April, the prior tax year, against the client's personal limit. See [[contributions-summary-card]].
+- **Contact details** on file: email, phone numbers and whether each is verified, mailing address.
+
+## Account values and cash
+
+A client's account value equals their cash plus the market value of their fund holdings. When a client asks "how much cash do I have", quote the cash figure, not the total. When a client funds a purchase "from my account", the available amount is the cash, not the total; to use invested money they must sell or exchange first. See [[purchase-funding-sources]].
+
+## When the panel and the client disagree
+
+If the client describes an account or balance that does not match the panel (for example, "my $50,000 IRA" when the panel shows $41,200), do not argue. Values change daily with the market, pending transactions may not be reflected yet, and the client may be remembering a statement value. Explain the difference neutrally and check pending activity. See [[balance-discrepancy]].
+
+## Privacy
+
+The panel shows sensitive information. Never read out a full account number, Social Security number, or full date of birth in chat. Confirm details by asking the client to provide them, not by stating them. See [[privacy-reg-sp]].
+
+@page ai-support-panel | The AI support panel
+@summary The suggested reply, predicted topics, predicted questions, and relevant resources: what each is and how to use it responsibly.
+
+## Components
+
+The AI support panel sits beneath the chat thread in each column and contains:
+
+- **Suggested reply**: a draft of your next message, written from the whole conversation and the client's profile. See [[suggested-replies]].
+- **Predicted topics**: buttons for the topics the client is most likely to need next, drawn from our knowledge base and the page the client was on.
+- **Predicted questions**: the three questions the client is most likely to ask next. One click puts a question's text into your composer so you can answer it proactively.
+- **Relevant resources**: up to three client-safe help articles chosen for this conversation. Each has a **Send** button that posts the link to the client as a formatted message. Sending a resource does not change the suggested reply.
+- **Autopilot controls**: start, pause, resume, and exit autopilot, and choose its scope. See [[autopilot-overview]].
+
+## How to use it well
+
+- Read every suggestion before sending. The AI is usually right about tone and often right about content, but it can be wrong about facts. Check account-specific details against the info panel and policy details against this library.
+- Prefer sending resources for depth. A short answer plus a link to the full article is better than a long chat message.
+- Use predicted questions to anticipate. If the client asked about RMDs and the panel predicts "When is my RMD due?", answer it before they ask.
+
+## What the AI cannot do
+
+The AI support panel does not know about anything that happened outside the conversation and the profile (for example, a phone call the client made yesterday, or a form in the mail room). It may not know about very recent rule changes. When in doubt, this library is authoritative.
+
+@page suggested-replies | Suggested replies, Change to, and Magic
+@summary How to send, edit, browse, and reshape the AI-suggested reply.
+
+## Sending and editing
+
+The Suggested reply box shows a draft of your next message. You can:
+
+- **Send** it as written. It goes to the client immediately.
+- **Edit** it in place by clicking into the text, then send your edited version.
+- **Ignore** it and type your own message in the composer.
+
+After you send any message, a fresh suggestion is written for your next turn.
+
+## Browsing history
+
+The suggestion box keeps a history of every suggestion in the conversation. Use the ‹ and › arrows to step through earlier suggestions. A spinner shows while the next one is being written, and a small dot indicates a newer suggestion arrived while you were reading an older one.
+
+## Change to
+
+The **Change to** menu offers a few alternative directions that change the meaning of the reply: ask a clarifying question instead of answering, lead with empathy, give a different answer. Picking one writes a new reply along that direction.
+
+## Magic
+
+The **Magic** menu keeps the meaning and restyles the wording: more concise, more detailed, more casual, more formal, or a custom instruction you type ("mention the April 15 deadline"). Use it to fix tone without retyping.
+
+## Feedback loop
+
+The workspace records how each of your messages was produced (sent as suggested, edited, restyled, replaced, or written freehand). This helps improve suggestions over time. It is not used to judge you for editing; editing a suggestion to make it right is exactly what we want.
+
+@page autopilot-overview | Autopilot: what it is and when to use it
+@summary How autopilot carries routine parts of a conversation, its scopes, and the situations where you should never use it.
+
+## What autopilot does
+
+Autopilot lets the AI send messages in your column on a timer, so routine work continues while you focus on another conversation. When a column is on autopilot, each drafted reply waits through a short countdown before it sends, and the client sees a normal typing indicator. You can pause, edit, or send immediately at any point. See [[autopilot-controls]].
+
+## Scopes
+
+Autopilot runs in a scope that defines its job:
+
+- **Task collection (get-intent)**: identifies the service task the client wants, then a task expert collects the required details one question at a time. When every detail is collected and confirmed, a Proposed Action card appears for your review. See [[task-experts]] and [[proposed-action-card]].
+- **Callback**: arranges a phone callback at a time the client chooses, checking availability. Requests for financial advice are routed here, because a callback can be fulfilled by a licensed professional. See [[callback-scheduling]].
+- **Idle check**: sends a gentle check-in when the client has gone quiet.
+
+The scope recommendation in the AI support panel suggests which scope fits the current moment.
+
+## When to use autopilot
+
+- Collecting routine details for a well-understood task (an automatic investment, a tax form request, a contact update).
+- Scheduling a callback.
+- Keeping a quiet conversation alive while you handle a more urgent column.
+
+## When not to use autopilot
+
+- Bereavement conversations, complaints, fraud reports, or any emotionally charged chat.
+- When the client is confused or the request is ambiguous.
+- When the client is asking for advice, other than routing them to a callback.
+- When you are unsure what the client needs.
+
+## Safeguards built in
+
+Autopilot never submits a task on its own. Every task ends in a Proposed Action that you must approve (or, for client-submitted tasks, that the client must approve). Autopilot will not give investment advice, will not discuss topics outside the task, and will tell the client when it cannot help with something. Even so, you remain responsible for every message sent from your column.
+
+@page autopilot-controls | Autopilot controls: pause, resume, exit, send now
+@summary Exactly how the autopilot control bar works so you can intervene in time.
+
+## While autopilot is running
+
+The composer is replaced by a large **Pause Autopilot** button. The pending reply shows a live countdown to auto-send. In the final 10 seconds the countdown flashes red, which is your cue to read the reply if you have not already.
+
+Clicking elsewhere in the column, or dragging the resize handle on the AI panel to read a longer draft, does not stop autopilot. Only the controls do.
+
+## Pausing
+
+**Pause** freezes the countdown without exiting autopilot. While paused, the pending reply becomes a compact control bar:
+
+- **‹ ›** arrows flip between alternative drafts.
+- **Send now** sends the reply shown immediately.
+- **Magic** and **Change to** reshape the reply in place, exactly as on the Suggested reply.
+- **Resume ▶** continues the countdown from where it stopped.
+- **Exit** ends autopilot for that column and returns the normal composer.
+
+Editing the pending reply automatically pauses autopilot, and your edited version is the one that sends.
+
+## Recovery
+
+If the AI has a temporary error, autopilot retries once. If it still cannot continue, it stops and posts a note in the column explaining what happened; you can resume once the issue clears. A client message that arrives while you are editing will never cause a duplicate send.
+
+## When the client leaves
+
+If the client closes the chat, autopilot stops immediately and the column shows "Client closed the chat." See [[client-disconnects]].
+
+@page task-experts | Task experts and the task menu
+@summary The service tasks that can be completed through chat, how a task expert collects details, and how to start one manually.
+
+## What a task expert is
+
+A task expert is an AI specialist for one service task. When autopilot identifies a task (or you pick one), the expert asks the client for each required detail, one at a time, checks the answers against the client's profile, and recaps everything for confirmation. When the client confirms, the expert produces a Proposed Action for your approval.
+
+## The tasks
+
+| Task | What it does | Procedure page |
+|---|---|---|
+| Update Contact Information | Phone, email, or mailing address | [[contact-info-updates]] |
+| Change Beneficiary Designations | Add, update, or remove a beneficiary | [[update-beneficiaries-task]] |
+| Add Authorized Account User | Grant view-only, limited, or full access (client approves) | [[authorized-users-access-levels]] |
+| Open a New Account | Roth IRA, Traditional IRA, SEP-IRA, or Taxable | [[open-account-task]] |
+| Buy / Make a Contribution | Purchase fund shares | [[place-purchase-task]] |
+| Sell Fund Shares | Sell part or all of a holding | [[place-sale-task]] |
+| Exchange Between Funds | Move money between funds in one account | [[exchange-funds-task]] |
+| Change Dividend Reinvestment | Turn DRIP on or off for a fund | [[toggle-drip-task]] |
+| Set Up Automatic Investment | New recurring purchase | [[setup-auto-invest-task]] |
+| Modify Auto-Invest Schedule | Change amount, frequency, or day | [[modifying-auto-invest]] |
+| Pause or Resume Auto-Invest | Suspend or restart a schedule | [[pausing-auto-invest]] |
+| Request a Distribution | One-time withdrawal | [[request-withdrawal-task]] |
+| Set Up Recurring Distributions | Systematic withdrawal plan | [[setup-swp-task]] |
+| Update RMD Settings | RMD delivery, frequency, withholding | [[rmd-settings-task]] |
+| Roll Over From Another Institution | Start an incoming rollover | [[initiate-rollover-task]] |
+| Convert to Roth IRA | Traditional or SEP to Roth | [[roth-conversion-task]] |
+| Request Tax Document | Copy of a 1099 or 5498 | [[request-tax-document-task]] |
+| Cancel or Reschedule Callback | Change an arranged callback | [[cancel-reschedule-callback-task]] |
+| Update Security Settings | Password, 2FA, trusted devices | [[update-security-task]] |
+
+## Starting a task manually
+
+If autopilot misidentifies the task, or you want a specific expert, open the task menu (the ✈ icon) in the AI panel and choose the task. Your choice overrides the AI's identification. The expert then begins collecting details.
+
+## What experts will not do
+
+Task experts stay on their task. They will not recommend funds, comment on whether a transaction is wise, or answer unrelated questions; they will tell the client you can help with other topics once the task is done. If a client asks for advice mid-task, the expert pauses the task and offers a callback with a licensed professional.
+
+@page proposed-action-card | The Proposed Action card
+@summary How to review, edit, and submit the structured action a task expert prepares.
+
+## What appears
+
+When a task expert has collected and confirmed every required detail, a Proposed Action card appears in the AI panel. It lists the task name and each field with the value collected, for example:
+
+| Field | Value |
+|---|---|
+| Account | Roth IRA (acc-301) |
+| Fund | BF500 |
+| Purchase amount | $2,000.00 |
+| Funding source | Linked bank account |
+
+## Your review
+
+Before you submit, check every field:
+
+1. **Is the value what the client said?** Use the locate button (⌖) beside each field to jump to the place in the transcript where it was established. See [[evidence-highlighting]].
+2. **Did the client confirm the recap?** There should be a clear "yes" after a full recap.
+3. **Does the action make sense for this account?** For example, an IRA contribution that would exceed the client's remaining limit, a sale larger than the holding, or a purchase funded from cash larger than the cash balance. Check the relevant procedure page.
+4. **Is anything missing?** Optional details (like tax withholding on a distribution) may matter to the client.
+
+You can edit any field directly on the card. If you change a value, tell the client what you changed and why, and get confirmation.
+
+## Submitting
+
+For most tasks, click **Submit Action**. The action executes, a reference number in the format `REF-XXXXXX` is generated, and the client receives a green confirmation card describing what was done. Give the client any next steps (for example, when the money will arrive).
+
+For tasks the client must approve themselves, the button reads **Send to client**. See [[client-submitted-actions]].
+
+## If something goes wrong
+
+If the submission fails, the card shows an error. Do not resubmit repeatedly. Check whether the action partially completed (look at the client's recent transactions), then try once more. If it fails again, tell the client you will complete it and escalate to your team lead with the reference details. See [[transaction-statuses]].
+
+@page evidence-highlighting | Evidence highlighting
+@summary How the transcript highlights show where each Proposed Action value came from, and what "not located in transcript" means.
+
+## How it works
+
+When a Proposed Action card is showing, the transcript highlights the exact words where each value was established: either the client's own statement ("put $2,000 into the 500 index fund") or an agent recap that the client explicitly confirmed. Later echoes ("great, the $2,000 is all set") are not used as evidence.
+
+Each field on the card has a locate button (⌖). Clicking it scrolls the transcript to that field's highlighted span and flashes it.
+
+## "Not located in transcript"
+
+If a field shows "not located in transcript", the system could not find where that value came from. This is a signal to scrutinize the field. Common reasons:
+
+- The value was inferred from the profile (for example, the only account the client has) rather than stated. That may be fine; confirm it with the client.
+- The client gave the value in an unusual form ("two grand") that the locator could not match. Confirm the exact amount.
+- The value is wrong. Correct it on the card and reconfirm with the client.
+
+If the highlighting service is unavailable, the card simply shows no highlights. Review the transcript manually.
+
+## Why it matters
+
+Most service errors are transcription errors: the wrong fund, the wrong account, an extra zero. Evidence highlighting lets you verify each value in seconds. Use it on every card.
+
+@page client-submitted-actions | Actions the client must submit
+@summary Tasks that only the account owner may authorize, how "Send to client" works, and what the client sees.
+
+## Submission types
+
+Every task has a submission type:
+
+- **Agent-submitted (Type 1)**: any agent may submit on the client's behalf after the client confirms. Most tasks are Type 1.
+- **Licensed-agent (Type 2)**: reserved for tasks that will require a licensed representative. No tasks use this type yet.
+- **Client-submitted (Type 3)**: only the account owner can authorize the action. Adding an authorized account user is the current Type 3 task, because granting someone access to an account is a decision only the owner can make.
+
+## How Send to client works
+
+For a Type 3 task, the Proposed Action button reads **Send to client**. When you click it:
+
+1. A card titled "Your approval is required" appears in the client's chat window, showing the same fields. The client can edit the fields.
+2. Your panel shows "Waiting for client to submit…".
+3. The client clicks **Submit action** or **Decline**.
+4. If submitted, the action executes and the client receives the same green confirmation card as any other action. If declined, nothing changes, and you should ask whether they would like to adjust anything.
+
+## Guidance
+
+Explain to the client before you send it: "For your security, adding someone to your account has to be approved by you. I'm sending a card to your chat window; please review it and click Submit if it looks right." If the client does not see the card, ask them to scroll down in the chat window. If they are not the account owner, they cannot approve it; see [[authorized-users-access-levels]].
+
+@page after-chat-work | After-chat work (ACW)
+@summary What the system writes for you when a chat ends, what you must review, and how to submit.
+
+## What is generated
+
+When a chat ends, the column moves to after-chat work. The system automatically drafts:
+
+- **A wrap-up code** from the standard list. See [[wrap-up-codes]].
+- **A summary** of three to five factual sentences: what the client asked, what was done, and the outcome.
+- **Coaching**: one sentence of specific positive feedback and, where useful, one actionable improvement point, written to you.
+
+## What you must do
+
+Review and submit. You do not write ACW by hand, but you are responsible for it being correct:
+
+- Is the wrap-up code the most specific one that fits the main topic?
+- Does the summary accurately state what was done, including reference numbers and any promised follow-up?
+- If you promised a callback, a secure message, or a specialist contact, is it in the summary?
+
+Edit anything that is wrong before submitting. Accurate summaries matter because the next agent, and the client's "Continue this chat" recap, depend on them.
+
+## Timing
+
+Submit ACW promptly. A column in ACW is not available for a new contact. Aim to finish within one minute of the chat ending.
+
+## Example summary
+
+"Client asked to add her daughter as a view-only user on her Roth IRA. Agent explained access levels; client chose View-only. Agent sent the action for client approval; client submitted (REF-48231). Daughter will receive an email invitation."
+
+## Wrap-up code for that example
+
+Access Authorization.
+
+@page wrap-up-codes | Wrap-up codes
+@summary The standard wrap-up codes, what each means, and how to choose the most specific one.
+
+## Choosing a code
+
+Choose the single most specific code that describes the **primary** reason for the chat. If a client asked a quick balance question and then changed beneficiaries, the code is Beneficiary Change. The summary records secondary topics.
+
+## The codes
+
+| Code | Use when the primary topic was |
+|---|---|
+| Access Authorization | Adding or changing an authorized user or power of attorney |
+| Account Inquiry | General questions about an existing account (balance, holdings, activity) |
+| Address Update | Changing a mailing address |
+| Beneficiary Change | Adding, updating, or removing beneficiaries |
+| Complaint Filed | The client made a formal complaint that was logged |
+| Contribution Question | IRA or account contributions, limits, deadlines |
+| Distribution Request | A one-time withdrawal from any account |
+| Estate Planning | Death of an account holder, inherited accounts, estate questions |
+| Fee Dispute | The client disputed a fee |
+| Fund Comparison | Comparing funds factually |
+| Fund Switch | An exchange between funds |
+| General Information | Questions not tied to the client's own account |
+| Grievance | Dissatisfaction expressed without a formal complaint |
+| Investment Advice | The client sought advice and was referred |
+| IRA Inquiry | IRA rules not covered by a more specific code |
+| Market Question | Market movements, news, volatility |
+| New Account | Opening an account |
+| Password Reset | Login, password, or 2FA issues |
+| Performance Question | Fund or account performance |
+| Portfolio Review | Client wanted their holdings reviewed (referred) |
+| RMD Calculation | RMD amounts, timing, settings |
+| Rebalancing Discussion | Rebalancing questions or requests |
+| Referral | The client was referred to a specialist team |
+| Retirement Planning | Retirement planning questions |
+| SEP-IRA Question | SEP-IRA specific questions |
+| Systematic Withdrawal | Recurring withdrawal plans |
+| Tax Information | Tax forms, cost basis, tax questions |
+| Technical Issue | Website, app, or login technical problems |
+| Transfer Request | Rollovers, ACATs, transfers between institutions |
+| Withdrawal Processing | Status or processing of a withdrawal already requested |
+
+## Complaint versus grievance
+
+Use **Complaint Filed** only when a complaint was logged following [[complaints-handling]]. A client who is unhappy but does not want to file a complaint is a **Grievance**. When unsure, log the complaint; under-recording complaints is a compliance failure.
+
+@page continued-chats | Continued chats
+@summary How "Continue this chat" works for clients and what you see when a client returns.
+
+## The client side
+
+If a client spoke with a live agent within the last 7 days, opening chat shows a card with the date and a one-sentence recap of that conversation and a **Continue this chat** button. Clicking it checks whether the same agent is available. The client can wait for that agent or take the first available agent.
+
+## Your side
+
+When you accept a continued chat, the previous transcript loads into your column, marked as a continued conversation. Read the recap and skim the transcript. Open with continuity: "Welcome back, Maria. Last time we set up your monthly investment into BF500. How can I help today?"
+
+## If you were not the original agent
+
+You inherit the previous agent's commitments. If they promised a follow-up, check whether it happened. Do not contradict a prior agent in front of the client; if you believe something was handled incorrectly, correct it calmly and note it in ACW.
+
+## Privacy
+
+The recap is written in second person for the client ("You granted your wife limited access..."). It is shown only to the client in their authenticated session and to agents.
+
+## Example
+
+The previous agent set up an automatic investment and promised to email a confirmation. When the client continues the chat, you check: the confirmation was sent. You open with: "Welcome back! I see you set up your $200 monthly investment last week; that confirmation went to your email on file. What can I help with today?"
+
+@page chat-history-transcripts | Chat history and transcripts
+@summary What clients can see of past chats, how transcripts are saved, and how to handle transcript requests.
+
+## What is saved
+
+When a chat with a live agent ends, the full transcript is saved with a short recap. Conversations with only the virtual assistant (that never reached an agent) are not saved as transcripts.
+
+## What the client can see
+
+- At the end of a live chat the client sees "Chat ended." and a **Download transcript** button that saves a plain-text copy (date, agent, duration, timestamped messages).
+- The chat menu shows a history of the client's live-agent chats from the last 3 months, newest first, each with date, start time, duration, and recap. Clicking one opens the read-only transcript.
+
+## Requests for older transcripts
+
+If a client needs a transcript older than 3 months, or a certified copy for legal purposes, take the request and route it to Client Records through your team lead. Records requests from attorneys or courts must go to the Legal department; do not provide transcripts to third parties from chat. See [[record-retention]].
+
+## Your conduct
+
+Assume every word you type will be read by the client, a quality reviewer, and possibly a regulator. Never type internal opinions about the client.
+
+## Example
+
+Client: "Can you send me the transcript of my chat from last month?"
+
+Agent: "You can view and download it any time: open the chat menu (the icon at the top left of the chat window), choose 'Chat history', and select the chat from last month. There's a Download link on the transcript."
+
+@page client-disconnects | When the client disconnects
+@summary What happens when a client closes the chat, and how to wrap up correctly.
+
+## What you see
+
+If the client closes or ends the chat on their side, the column does not jump straight to after-chat work. Instead:
+
+- The AI support area is replaced by a notice: "Client closed the chat."
+- The composer is disabled.
+- Any running autopilot stops.
+- An **End chat** button appears.
+
+Click **End chat** to move the column into after-chat work.
+
+## Unfinished tasks
+
+If the client disconnects before confirming a Proposed Action, **do not submit it**. A task without the client's confirmation is not authorized. Note in ACW where the conversation stopped. If the client returns through "Continue this chat", you or the next agent can pick up where it left off.
+
+If the client disconnects after you submitted an action, the action stands, and the confirmation remains visible in their chat history.
+
+## Minimized chats
+
+Clients can minimize the chat to a docked bar without disconnecting. A minimized chat is still live. Messages you send appear with an unread badge. Do not treat a slow reply as a disconnect; use the idle check-in.
+
+## If the client reconnects
+
+A client who closed the chat accidentally can open a new chat; if they spoke with you, "Continue this chat" will offer to reconnect them. The previous transcript loads into the new column.
+
+## Partial tasks
+
+If the client disconnected mid-collection, autopilot stops. Note in ACW what had been collected so the next agent can resume quickly.
+
+@page callbacks-in-workspace | Callbacks from the chat workspace
+@summary How to arrange a phone callback from a chat and what happens after you do.
+
+## When to offer a callback
+
+Offer a callback when:
+
+- The client asks for investment advice, which must come from a licensed professional.
+- The request requires a phone conversation with a specialist (complex estate, some trades by phone).
+- The client would rather talk than type, or must leave now.
+- You need time to research and want to give the client a definite follow-up.
+
+## How to arrange it
+
+Switch the column's autopilot to the **callback** scope, or use the scheduling flow yourself. The client chooses a day and time; the system checks availability, converts the time correctly from Eastern Time, and confirms. Clients can also schedule a callback themselves from the virtual assistant.
+
+## What happens next
+
+When a callback is scheduled, the system prepares a call dossier for the phone agent: a summary of the client's goal written from the real conversation, research on the question, a guided script, and the transcript that led to the callback. The phone agent sees it in the callback console at the scheduled time. See [[phone-callback-console]].
+
+## Changing a callback
+
+Clients can cancel or reschedule through chat. See [[cancel-reschedule-callback-task]].
+
+## Example
+
+Client: "I'd like someone to look at my whole portfolio and tell me if I'm on track."
+
+Agent: "That's a great question for one of our licensed professionals, who can review your full situation. I can schedule a call. What day and time works for you?"
+
+@page phone-callback-console | The phone callback console
+@summary What phone agents see when they handle a scheduled callback, for chat agents who set callbacks up.
+
+## Purpose
+
+The callback console is the workspace for agents who make scheduled outbound calls. Chat agents do not use it directly, but understanding it helps you set up callbacks well.
+
+## The dossier
+
+For each scheduled callback, the system researches the client's request and builds a dossier:
+
+- **The intent**: a summary of the client's underlying goal, taken from the real chat that led to the callback.
+- **A worked answer** with findings and any gaps that need confirmation.
+- **Coaching** for the call.
+- **An editable guided script** with branches for likely responses.
+- **The originating transcript**, with the key passages highlighted.
+- **A client snapshot**: accounts, balances, and recent performance.
+
+## Helping the phone agent
+
+The better the chat that leads to a callback, the better the dossier. Before scheduling, make sure the chat states clearly what the client wants ("Client wants to discuss whether to convert part of her Traditional IRA to Roth this year; she has questions about the tax impact") and any facts you have already confirmed. Promise the client only what the callback can deliver.
+
+## What chat agents should include
+
+- Any facts already verified with the client.
+- The client's preferred callback number and best times.
+- Sensitivities (recent bereavement, hearing difficulty, preference for Spanish).
+
+## Example dossier intent
+
+"Client wants to discuss whether to convert part of her $310,000 Traditional IRA to Roth before retiring in 2027; concerned about tax bracket and Medicare premiums."

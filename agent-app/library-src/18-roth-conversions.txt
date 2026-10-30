@@ -1,0 +1,168 @@
+@section roth-conversions | Roth Conversions | Converting Traditional and SEP IRA money to Roth: how it works, taxes, mechanics, the five-year rule, the chat procedure, and the mistakes to prevent.
+
+@page roth-conversion-overview | Roth conversions: overview
+@summary What a Roth conversion is, who can do one, how it is taxed, and why it can't be undone.
+
+## What it is
+
+A Roth conversion moves money from a Traditional IRA or SEP-IRA (or from a pre-tax employer plan) into a Roth IRA. The pre-tax amount converted is added to the client's taxable income for the year. Afterward, the money grows in the Roth IRA, and qualified withdrawals are tax-free.
+
+## Who can convert
+
+Anyone with a Traditional, SEP, or SIMPLE IRA (after two years) can convert any amount. There is **no income limit** and **no annual limit** on conversions. Conversions do not count toward the contribution limit.
+
+## Taxes
+
+- The converted amount is taxable as ordinary income, except for any nondeductible basis (pro-rata across all of the client's Traditional, SEP, and SIMPLE IRAs). See [[conversion-taxes]].
+- The 10% early-withdrawal penalty does **not** apply to the conversion itself, as long as no tax is withheld from it. Withholding tax from a conversion makes the withheld amount a distribution, which can be penalized for clients under 59½.
+
+## Irreversible
+
+Since 2018, conversions **cannot be recharacterized** (undone). If the market falls after a conversion, or the client's income turns out higher than expected, the conversion stands. Make sure the client understands this before submitting.
+
+## RMDs first
+
+A client subject to RMDs must take the year's RMD before converting; RMD amounts cannot be converted.
+
+## The advice boundary
+
+Whether to convert, and how much, is a tax planning decision. You may explain how conversions work. You may not recommend one. Clients considering conversions are good candidates for a callback with a licensed professional.
+
+## Procedure
+
+See [[roth-conversion-task]] and [[conversion-mechanics]].
+
+@page conversion-taxes | How conversions are taxed
+@summary The taxable amount, the pro-rata rule, withholding, and reporting forms for conversions.
+
+## Taxable amount
+
+The amount converted is taxable as ordinary income in the year of the conversion, valued at the fair market value on the conversion date. If shares are converted in kind, the value on that date is used.
+
+## The pro-rata rule
+
+If the client has made nondeductible (after-tax) contributions to any Traditional IRA, they have basis. When converting, they cannot choose to convert only the basis: the taxable portion is the ratio of pre-tax money to total money across **all** of their Traditional, SEP, and SIMPLE IRAs (at every firm) as of December 31 of the conversion year. See [[backdoor-roth]].
+
+## Withholding
+
+We do **not** withhold tax from conversions by default. A client may elect withholding, but the withheld amount is a distribution (not converted) and may be subject to the 10% penalty if they are under 59½. Most clients pay conversion tax from other funds or through estimated tax payments. Explain these facts; do not advise.
+
+## Reporting
+
+- Form 1099-R from Bob's for the Traditional or SEP IRA, code 2 or 7 (depending on age), showing the conversion as a distribution.
+- Form 5498 for the Roth IRA, showing the conversion amount.
+- The client reports the conversion on IRS Form 8606.
+
+## Effects beyond income tax
+
+Additional income can affect other things: Medicare premiums (IRMAA, based on income two years earlier), taxation of Social Security benefits, eligibility for credits, and state taxes. Mention that conversions can have these effects and that a tax advisor can review them.
+
+@page conversion-mechanics | How a conversion is processed
+@summary Converting in cash or in kind, partial and full conversions, timing, and where the money lands.
+
+## Partial or full
+
+The client can convert a specific dollar amount, a number of shares of a fund, or the entire balance. Many clients convert in pieces over several years.
+
+## In kind or in cash
+
+- **In kind**: shares of a fund move from the Traditional IRA to the Roth IRA. The client remains invested in the same fund. This is our default.
+- **In cash**: shares are sold in the Traditional IRA and the cash moves to the Roth IRA, where the client can buy something else.
+
+## The receiving Roth IRA
+
+If the client has a Roth IRA at Bob's, the conversion goes into it (or the client's choice, if they have more than one). If not, a Roth IRA is opened as part of the conversion. Beneficiaries are not copied from the Traditional IRA; the client should name beneficiaries for the Roth IRA.
+
+## Timing
+
+Conversions are processed the same business day if requested before 4:00 PM ET and are valued at that day's NAVs. The tax year of a conversion is the calendar year in which it is processed. A conversion requested in March 2026 is a 2026 conversion; conversions cannot be designated for the prior year (unlike contributions).
+
+## Year-end
+
+Conversions for a given year must be completed by December 31. Encourage clients to allow time before the holiday week.
+
+@page conversion-5-year | The five-year rule for conversions
+@summary Why each conversion has its own five-year clock for penalty purposes and how it affects clients under 59½.
+
+## The rule
+
+Each conversion starts its own five-year period, beginning January 1 of the year of the conversion. If the client withdraws converted money (under the Roth ordering rules) before that period ends **and** before age 59½, the 10% penalty applies to the portion of the conversion that was taxable, unless an exception applies.
+
+## Examples
+
+- A 45-year-old converts $20,000 in 2026. If they withdraw it in 2028, the penalty may apply. In 2031 or later, no penalty.
+- A 62-year-old converts in 2026 and withdraws in 2027: no penalty because they are over 59½. (Earnings withdrawn may still be taxable if the qualified-distribution test is not met.)
+
+## Separate from the qualified-distribution clock
+
+This conversion clock is different from the clock that determines whether earnings are tax-free. See [[roth-five-year-rules]].
+
+## In chat
+
+If a client under 59½ asks about converting and then using the money soon, explain the rule factually and suggest a tax advisor.
+
+## Why the rule exists
+
+Without it, someone under 59½ could avoid the early-withdrawal penalty by converting and immediately withdrawing. The five-year wait closes that loophole.
+
+## Tracking
+
+Each conversion's year appears on the client's Form 5498 for the Roth IRA. Clients should keep these to track their conversion clocks.
+
+@page roth-conversion-task | Procedure: Convert to Roth IRA (chat)
+@summary Step-by-step chat procedure for a Roth conversion, the fields collected, and the disclosures to make before approval.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Convert from | The client's Traditional IRA, SEP-IRA, or both |
+| Amount | A dollar amount or the full balance |
+| Tax year | The year the conversion is credited to; in practice, the current calendar year |
+
+## Before approving: required disclosures
+
+Confirm the client understands, in plain words:
+
+1. "The amount you convert will be added to your taxable income for this year."
+2. "A conversion can't be undone, even if the market falls afterward."
+3. "We don't withhold tax from conversions unless you ask, and if we withhold, that part isn't converted and may be penalized if you're under 59½."
+4. If the client is subject to RMDs: "This year's RMD must be taken first; it can't be converted."
+
+If the client asks whether to convert or how much, do not answer; offer a callback. See [[advice-decline-scripts]].
+
+## Tax year
+
+Conversions count for the calendar year in which they are processed. If the client asks to credit a conversion to the prior year (for example, "for 2025" in March 2026), explain that only contributions can be designated for the prior year; a conversion processed now is a 2026 conversion. Record 2026.
+
+## Procedure
+
+1. Confirm the source account(s) and the amount.
+2. Confirm the receiving Roth IRA, or that one will be opened.
+3. Give the disclosures above and get clear confirmation.
+4. Check the Proposed Action: source account, amount, tax year.
+5. Submit. Confirm in plain words, and remind the client to name beneficiaries for a new Roth IRA.
+
+## Script
+
+"Your $15,000 conversion from your Traditional IRA to your Roth IRA is done. It's valued at today's closing prices and will be reported as 2026 income on the 1099-R we send in January. Because it's a conversion, it can't be reversed."
+
+@page conversion-mistakes | Conversion mistakes to prevent
+@summary The errors clients make with conversions and how to help them avoid each, without giving advice.
+
+## Common mistakes
+
+| Mistake | What happens | How to help |
+|---|---|---|
+| Expecting to undo it later | Conversions can't be recharacterized | State it before submitting |
+| Converting the RMD | RMDs can't be converted; an excess contribution results | Confirm the RMD is taken first |
+| Withholding tax from the conversion under 59½ | The withheld part is a distribution, possibly penalized | Explain withholding consequences |
+| Expecting to designate the prior year | Conversions count for the year processed | Explain the calendar-year rule |
+| Forgetting the pro-rata rule | More of the conversion is taxable than expected | Mention the rule exists; refer to a tax advisor |
+| Converting SEP money while contributing the same year | Allowed, but the year-end balance affects the pro-rata calculation | Refer to a tax advisor |
+| Forgetting beneficiaries on a new Roth IRA | The Roth IRA has no beneficiary | Remind them to name beneficiaries |
+| Converting from an inherited IRA | Not allowed for non-spouse beneficiaries | Explain; refer to Estate Services |
+
+## Tone
+
+Present these as things to know, not reasons not to convert. The decision is the client's.

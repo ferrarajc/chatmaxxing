@@ -1,0 +1,395 @@
+@section glossary | Glossary | Definitions of the financial, regulatory, and internal terms used throughout the library, A to Z.
+
+@page glossary-a-d | Glossary A–D
+@summary Definitions of terms beginning A through D.
+
+## A
+
+### ACAT
+Automated Customer Account Transfer. The industry system for moving brokerage accounts between firms, started by the receiving firm. See [[acat-incoming]].
+
+### ACH
+Automated Clearing House. The U.S. electronic bank transfer network; free, 2–3 business days. See [[ach-transfers]].
+
+### ACW (after-chat work)
+The wrap-up code, summary, and coaching generated when a chat ends, reviewed and submitted by the agent. See [[after-chat-work]].
+
+### Agent (under a POA)
+The person authorized to act for another under a power of attorney. See [[power-of-attorney]].
+
+### AML
+Anti-money-laundering. Laws and programs to detect and report suspicious financial activity. See [[aml-red-flags]].
+
+### Annualized return
+The average yearly return over a multi-year period. See [[performance-reporting]].
+
+### Asset allocation
+The division of investments among stocks, bonds, and cash. See [[asset-allocation]].
+
+### Authorized user
+A person given view-only, limited, or full access to a client's account by the owner. See [[authorized-users-access-levels]].
+
+### Autopilot
+The agent-workspace feature that sends AI-drafted messages on a timer, within a scope. See [[autopilot-overview]].
+
+### Average cost
+The default cost basis method: the average price of all shares owned. See [[cost-basis-methods]].
+
+## B
+
+### Backdoor Roth
+A nondeductible Traditional IRA contribution followed by a Roth conversion. See [[backdoor-roth]].
+
+### Backup withholding
+24% withholding required when a client's TIN is missing or incorrect. See [[w9-backup-withholding]].
+
+### Basis (cost basis)
+What was paid for shares, used to calculate gains and losses. For IRAs, basis means nondeductible contributions.
+
+### Beneficiary
+A person or entity designated to receive an account at the owner's death. See [[beneficiaries-overview]].
+
+### Benchmark
+The index a fund tracks or is measured against. See [[benchmarks-explained]].
+
+### Beta
+A measure of how much a fund has moved relative to the S&P 500.
+
+### Bond
+A loan to a government or company that pays interest. See [[bonds-and-interest-rates]].
+
+## C
+
+### Capital gain distribution
+A fund's payout of net realized gains, usually in December. See [[capital-gains-distributions]].
+
+### Catch-up contribution
+The additional IRA contribution allowed at age 50+ ($1,100 for 2026). See [[catch-up-contributions]].
+
+### CIP
+Customer Identification Program; identity verification for new accounts. See [[cip-identity-verification]].
+
+### Contingent beneficiary
+A secondary beneficiary who inherits if all primary beneficiaries have died. See [[primary-contingent]].
+
+### Conversion (Roth)
+Moving pre-tax IRA money to a Roth IRA, a taxable event. See [[roth-conversion-overview]].
+
+### Covered shares
+Shares acquired since 2012 whose basis we report to the IRS. See [[covered-noncovered-shares]].
+
+### Custodial account
+An account held for a minor under UTMA or UGMA. See [[custodial-accounts]].
+
+### Cutoff
+4:00 PM ET; orders received before it get that day's NAV. See [[trade-cutoff-nav]].
+
+## D
+
+### Designated beneficiary
+An individual named as an IRA beneficiary; most are subject to the 10-year rule. See [[non-spouse-beneficiaries]].
+
+### Direct rollover
+A rollover paid directly from a plan to an IRA. See [[direct-rollovers]].
+
+### Distribution (fund)
+A payment of dividends or capital gains by a fund. See [[distributions-overview]].
+
+### Distribution (IRA)
+Money taken out of an IRA. See [[ira-distributions-overview]].
+
+### Diversification
+Spreading investments to reduce the impact of any single holding. See [[diversification]].
+
+### Dollar-cost averaging
+Investing a fixed amount at regular intervals. See [[dollar-cost-averaging]].
+
+### DRIP
+Dividend reinvestment; distributions buy more shares automatically. See [[drip]].
+
+### Duration
+A bond fund's sensitivity to interest-rate changes, in years. See [[duration]].
+
+@page glossary-e-l | Glossary E–L
+@summary Definitions of terms beginning E through L.
+
+## E
+
+### Early withdrawal penalty
+The 10% additional tax on IRA distributions before 59½, unless an exception applies. See [[early-withdrawal-penalty]].
+
+### Eligible designated beneficiary (EDB)
+A beneficiary who may stretch inherited IRA payments over life expectancy. See [[eligible-designated-beneficiaries]].
+
+### ESG
+Environmental, social, and governance criteria used to screen investments; BFESG applies such screens.
+
+### Escheatment
+Turning dormant property over to a state. See [[dormant-accounts-escheatment]].
+
+### Evidence highlighting
+Transcript highlights showing where each Proposed Action value came from. See [[evidence-highlighting]].
+
+### Excess contribution
+An IRA contribution above the allowed amount, subject to 6% annual excise tax. See [[excess-contributions]].
+
+### Exchange
+Moving money from one fund to another in the same account. See [[exchanges-overview]].
+
+### Ex-dividend date
+The date a fund's NAV drops by a distribution. See [[ex-dividend-dates]].
+
+### Expense ratio
+A fund's annual operating cost as a percentage of assets. See [[expense-ratios]].
+
+## F
+
+### FIFO
+First in, first out; a cost basis method selling the oldest shares first.
+
+### FINRA
+The Financial Industry Regulatory Authority, which regulates broker-dealers.
+
+### Form 1099-B, 1099-DIV, 1099-R, 5498
+Tax forms we issue. See [[tax-center-overview]].
+
+### Frequent trading policy
+Restricts purchases after a round trip within 30 days. See [[frequent-trading-policy]].
+
+### Full redemption
+Selling all shares of a fund in an account. See [[partial-full-redemptions]].
+
+## G–H
+
+### Good order
+An order with all information needed to process it.
+
+### Growth (style)
+Companies with above-average expected earnings growth. See [[fund-groups-explained]].
+
+### Holding period
+How long shares were held; over one year is long-term.
+
+## I
+
+### In kind
+Moving securities as-is rather than selling for cash.
+
+### Index fund
+A fund that tracks an index. See [[index-vs-active]].
+
+### Indirect rollover
+A 60-day rollover in which the client receives the money first. See [[indirect-rollovers]].
+
+### Inherited IRA
+An IRA held for a beneficiary after the owner's death. See [[inherited-ira]].
+
+### Intent label / intent summary
+The AI-generated description of why a client is chatting, shown at escalation. See [[incoming-contacts]].
+
+### Interested party
+A person who receives duplicate statements. See [[duplicate-statements]].
+
+## J–L
+
+### JTWROS
+Joint tenants with rights of survivorship; the survivor inherits automatically. See [[joint-accounts]].
+
+### Letters Testamentary / of Administration
+Court documents authorizing an executor or administrator. See [[estate-documentation]].
+
+### Limited access
+An authorized-user level allowing trades and payments back to the owner only.
+
+### Linked bank account
+A verified bank account used for electronic transfers. See [[linked-bank-accounts]].
+
+### Long-term capital gain
+A gain on shares held more than a year, taxed at lower rates. See [[capital-gains-rates]].
+
+@page glossary-m-r | Glossary M–R
+@summary Definitions of terms beginning M through R.
+
+## M
+
+### MAGI
+Modified adjusted gross income; used for Roth eligibility and deductibility.
+
+### Medallion signature guarantee
+A stamp from a financial institution guaranteeing a signature. See [[medallion-signature-guarantee]].
+
+### Micro-deposits
+Two small deposits used to verify a bank account. See [[bank-linking-verification]].
+
+### Mutual fund
+A pooled investment owned by its shareholders. See [[mutual-fund-basics]].
+
+## N
+
+### NAV
+Net asset value per share; a mutual fund's daily price. See [[nav-pricing]].
+
+### Net investment income tax
+A 3.8% tax on investment income above certain income levels.
+
+### Noncovered shares
+Shares whose cost basis we don't report to the IRS. See [[covered-noncovered-shares]].
+
+## O–P
+
+### OFAC
+The Treasury office that administers sanctions. See [[ofac-sanctions]].
+
+### Paperless
+Electronic delivery of documents. See [[paperless-delivery]].
+
+### Per stirpes
+A designation passing a deceased beneficiary's share to their descendants. See [[per-stirpes]].
+
+### POA
+Power of attorney. See [[power-of-attorney]].
+
+### Primary beneficiary
+A beneficiary who inherits first. See [[primary-contingent]].
+
+### Pro-rata rule
+Conversions are taxed in proportion to pre-tax and after-tax money across all IRAs. See [[conversion-taxes]].
+
+### Proposed Action
+The structured card a task expert prepares for agent approval. See [[proposed-action-card]].
+
+### Prospectus
+A fund's legal disclosure document. See [[prospectus]].
+
+## Q
+
+### QCD
+Qualified charitable distribution from an IRA at 70½+. See [[qualified-charitable-distributions]].
+
+### QDRO
+Qualified domestic relations order dividing an employer plan in divorce. See [[qdro-vs-divorce-decree]].
+
+### Qualified dividend
+A dividend taxed at long-term capital gain rates. See [[qualified-dividends]].
+
+### Qualified distribution (Roth)
+A tax-free Roth withdrawal meeting the age and five-year tests. See [[roth-distribution-rules]].
+
+## R
+
+### Recharacterization
+Treating a contribution as made to the other IRA type. See [[recharacterizations]].
+
+### Record date
+The date that determines who receives a distribution.
+
+### Redemption
+Selling fund shares. See [[redemptions-overview]].
+
+### Redemption hold
+A hold on proceeds from recently purchased shares until payment clears. See [[redemption-holds]].
+
+### Reference number
+The `REF-XXXXXX` identifier for actions submitted in chat. See [[reference-numbers]].
+
+### Required beginning date
+April 1 of the year after reaching RMD age. See [[first-rmd-timing]].
+
+### Risk level
+The five-step rating on each fund's profile. See [[risk-levels]].
+
+### RMD
+Required minimum distribution. See [[rmd-overview]].
+
+### Rollover
+Moving retirement money from one plan or IRA to another. See [[rollovers-overview]].
+
+### Round trip
+A purchase followed by a sale of the same fund within 30 days.
+
+@page glossary-s-z | Glossary S–Z
+@summary Definitions of terms beginning S through Z.
+
+## S
+
+### SAI
+Statement of Additional Information. See [[sai]].
+
+### SEC
+The Securities and Exchange Commission.
+
+### SECURE Act / SECURE 2.0
+Federal laws (2019, 2022) that changed RMD ages, inherited IRA rules, and more.
+
+### SEP-IRA
+Simplified Employee Pension IRA for self-employed people and small businesses. See [[sep-ira]].
+
+### SEPP / 72(t)
+Substantially equal periodic payments avoiding the early-withdrawal penalty. See [[sepp-72t]].
+
+### Settlement
+The completion of a trade, T+1 for mutual funds. See [[settlement-timing]].
+
+### SIPC
+Securities Investor Protection Corporation. See [[sipc-coverage]].
+
+### Specific identification
+A cost basis method in which the client chooses which shares to sell.
+
+### Spousal IRA
+An IRA funded based on a working spouse's income. See [[spousal-ira]].
+
+### Standard deviation
+A measure of how widely returns have varied.
+
+### Step-up in basis
+Resetting cost basis to the date-of-death value for inherited taxable assets. See [[inherited-taxable-accounts]].
+
+### Suggested reply
+The AI-drafted next message in the agent's support panel. See [[suggested-replies]].
+
+### Systematic withdrawal plan (SWP)
+Recurring withdrawals on a schedule. See [[systematic-withdrawals-overview]].
+
+## T
+
+### T+1
+Settlement one business day after the trade date.
+
+### Task expert
+An AI specialist that collects the details for one service task. See [[task-experts]].
+
+### TOD
+Transfer on death registration for taxable accounts. See [[transfer-on-death]].
+
+### Total return
+Price change plus reinvested distributions. See [[total-return-vs-price]].
+
+### Trusted contact person
+Someone we may contact about exploitation or if we can't reach the client. See [[trusted-contact-person]].
+
+### Turnover
+The share of a fund's holdings replaced in a year.
+
+## U–Z
+
+### UTMA / UGMA
+Uniform Transfers/Gifts to Minors Acts governing custodial accounts.
+
+### Uniform Lifetime Table
+The IRS table used for most owners' RMDs. See [[uniform-lifetime-table]].
+
+### Value (style)
+Companies that appear inexpensive relative to fundamentals.
+
+### Wash sale
+A loss disallowed because the same security was bought within 30 days. See [[wash-sales]].
+
+### Wire
+A same-day bank transfer. See [[incoming-wires]] and [[outgoing-wires]].
+
+### Wrap-up code
+The code classifying a chat's primary topic. See [[wrap-up-codes]].
+
+### Yield
+Income relative to price. See [[yields-explained]].

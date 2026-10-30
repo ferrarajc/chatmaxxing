@@ -1,0 +1,522 @@
+@section troubleshooting | Troubleshooting | Diagnosing the problems clients bring most often: missing deposits, balances that look wrong, pending transactions, missing checks and dividends, tax form errors, website and chat problems.
+
+@page transaction-statuses | Transaction statuses
+@summary The five transaction statuses clients see, what each means, and how long each lasts.
+
+## The lifecycle
+
+Mutual funds price once a day and settle the next business day, so every order moves through the same stages:
+
+| Status | Meaning | Typical duration |
+|---|---|---|
+| Scheduled | A future-dated transaction (an automatic investment or withdrawal, or an order placed on a weekend or holiday) | Until its date |
+| Pending | Placed and waiting for tonight's NAV | Until about 6:00 PM ET on the trade date |
+| Settling | Executed at the NAV, in T+1 settlement | One business day |
+| Completed | Settled and posted to the account | Final |
+| Canceled | Cancelled by the client before the cutoff, or reversed (for example, a returned payment) | Final |
+
+## Common questions
+
+### "My purchase says pending. Did it go through?"
+Yes, it was received. It will be priced at today's closing NAV (if placed before 4:00 PM ET) and show the number of shares tonight.
+
+### "Why is it 'settling' if I already have the shares?"
+The shares are credited when the trade is priced; settlement is the back-office completion the next business day.
+
+### "My order was canceled. I didn't cancel it."
+Check the reason: a returned payment, an IRA contribution over the limit, a frequent-trading block, or an incomplete order. See [[returned-purchases]].
+
+## Reference numbers
+
+Orders placed in chat have a reference number (`REF-XXXXXX`) shown on the confirmation card. See [[reference-numbers]].
+
+@page reference-numbers | Reference numbers
+@summary What reference numbers are, where clients find them, and how to use them to trace an action.
+
+## Format
+
+Every action submitted through the chat Proposed Action flow returns a reference number in the format `REF-XXXXXX`. It appears on the green confirmation card in the client's chat, in the transcript, and in the after-chat summary.
+
+## Using them
+
+- A client referring back to a chat action can quote the reference number; search the client's transcripts or recent activity for it.
+- Include reference numbers in escalations and complaint records.
+- Trade confirmations carry their own confirmation numbers, which may differ from the chat reference number.
+
+## If the client lost it
+
+Find the chat in the client's transcript history (the client can see their last 3 months of live-agent chats in the chat menu) or locate the transaction by date and amount.
+
+## Where the number appears
+
+| Place | What it shows |
+|---|---|
+| Client's chat | The green confirmation card |
+| Client's chat history | The transcript, for 3 months |
+| Agent workspace | The Proposed Action result and transcript |
+| After-chat summary | Included by the ACW generator |
+
+## Quoting them
+
+Read the full reference number to the client in your closing message for any completed action, so they have it even if they don't save the transcript. See [[closing-scripts]].
+
+## When a client calls about an action
+
+Ask for the reference number first; it is the fastest way to find the exact action. If they don't have it, the date, account, and amount are usually enough.
+
+@page missing-deposit | "My deposit isn't showing"
+@summary A diagnostic path for deposits that a client expected but doesn't see, by method.
+
+## Ask
+
+- How was the money sent (ACH from a linked bank, wire, check, transfer from another firm, rollover)?
+- When, and how much?
+- Into which account?
+
+## By method
+
+| Method | What to check | Typical cause |
+|---|---|---|
+| ACH purchase | Recent transactions for the purchase; the client's bank shows the debit 2–3 business days later | The shares are credited before the bank is debited, so a client watching their bank may be confused; or the order was placed after 4:00 PM |
+| Automatic investment | Plan status, the scheduled day, bank link | Paused plan, weekend/holiday, returned payment |
+| Wire | Wire received but unmatched | Missing account number or name mismatch; ask for the federal reference number. See [[incoming-wires]] |
+| Check | Mail time; whether the check was acceptable | Still in the mail; a third-party or starter check returned |
+| Mobile check deposit | Deposit status in the app | Under review; image quality |
+| ACAT transfer | Transfer status | Rejected for mismatch; still in progress. See [[rollover-status-tracking]] |
+| Rollover | Whether the plan sent it, how, when | Plan still processing; check mailed to the client |
+
+## Next steps
+
+If the money left the client's bank or the other institution more than 2 business days ago and nothing appears, escalate to Money Movement Operations with the details (amount, date, method, reference or trace numbers). Tell the client what you've done and when they'll hear back.
+
+@page balance-discrepancy | "My balance looks wrong"
+@summary Common reasons a balance differs from what the client expects and how to explain each.
+
+## Common reasons
+
+| Reason | Explanation |
+|---|---|
+| Market movement | Values change daily with NAVs |
+| A distribution date | The NAV dropped by the distribution; the value moved to cash or new shares. See [[ex-dividend-dates]] |
+| Pending transactions | A purchase or sale placed today isn't priced until tonight |
+| Cash versus invested | The total includes uninvested cash; the client may be looking at holdings only |
+| Statement date | Statements show period-end values |
+| Withholding | An IRA distribution was reduced by tax withholding |
+| A fee | Paper statement fee, wire fee |
+| A returned payment | A purchase was reversed |
+| Looking at the wrong account | Clients with several accounts |
+
+## How to explain
+
+Walk through the activity since the date the client remembers: "On the 1st your account was $41,200. Since then, BF500 paid a dividend that was reinvested, and the market fell about 2%, which brings it to today's $40,600."
+
+## If something is truly wrong
+
+If after review the numbers don't reconcile (a missing transaction, a duplicate), escalate with specifics. See [[duplicate-transactions]].
+
+## Example
+
+Client: "My statement said $41,986 but now the website says $41,650. Where did $336 go?"
+
+Agent: "Your statement shows September 30. Since then, the market has moved: BF500, your largest holding, is down a little over 1% this month, which accounts for about $330. There have been no withdrawals or fees."
+
+@page pending-transactions | Pending and in-process activity
+@summary How to answer questions about orders that haven't completed, including cancellations.
+
+## What's in process
+
+The client's activity shows Scheduled, Pending, and Settling items at the top. See [[transaction-statuses]].
+
+## Can it be canceled?
+
+| Item | Cancel? |
+|---|---|
+| Scheduled automatic investment or withdrawal | Yes, at least 3 business days before the date (pause or skip the plan) |
+| Pending order placed online | Yes, from Pending Orders, before 4:00 PM ET on the trade date |
+| Pending order placed in chat or by phone | Contact us before 4:00 PM ET; we can cancel |
+| Settling or Completed | No; place an offsetting transaction if needed |
+| Outgoing wire already sent | Generally no; recalls are rarely successful |
+
+## Duplicate orders
+
+If a client placed the same order twice by mistake, cancel the duplicate if still pending. If already priced, the client can sell the extra shares (which may create a round trip under the frequent-trading policy; corrections of our errors are exempt).
+
+## Explaining pending orders
+
+"Your order to buy $1,000 of BF500 is pending, which means we've received it and it will be priced at today's closing NAV after 4:00 PM Eastern. Tonight you'll see the number of shares, and tomorrow it will settle."
+
+## Weekend and holiday orders
+
+Orders placed on a weekend or holiday show as Scheduled or Pending until the next business day's close. Clients sometimes worry the order is stuck; explain the next pricing date.
+
+## Large pending withdrawals
+
+A withdrawal can show pending longer if it is under a protective review. Do not speculate; see [[fraud-holds-money-movement]].
+
+@page duplicate-transactions | Duplicate or unexpected transactions
+@summary Handling transactions that appear twice or that the client doesn't recognize.
+
+## Duplicates
+
+1. Confirm whether there are truly two transactions (same amount, fund, date) or one transaction shown in two places (for example, a purchase and its matching bank debit).
+2. If two orders were placed (for example, a client clicked twice online, or both an online and a chat order), see [[pending-transactions]].
+3. If a system error created a duplicate, escalate as an error. See [[error-corrections]].
+
+## Unrecognized transactions
+
+Common legitimate causes: dividend reinvestments, automatic investments, RMD payments, fees, a joint owner's or authorized user's action. Check the transaction type and who initiated it.
+
+If the client still doesn't recognize it, treat it as possible unauthorized activity. See [[account-takeover]].
+
+## Things that look like duplicates but aren't
+
+| Looks like | Actually |
+|---|---|
+| Two purchases of the same amount on the same day | One online, one from an automatic plan |
+| A purchase and a matching "deposit" line | The ACH deposit and the purchase it funded |
+| Two dividend lines | A dividend and its reinvestment |
+| Two withdrawals | A gross distribution and its tax withholding line |
+| The same transaction on two statements | A transaction near the statement cutoff, shown as pending then completed |
+
+## When it is a real duplicate
+
+If the client placed the same order twice (for example, once online and once in chat), and both have priced, the client can sell the extra shares at the current NAV. If the duplicate was caused by our system or by an agent submitting twice, escalate for an as-of correction so the client bears no market loss. See [[error-corrections]].
+
+@page missing-check | "I never got my check"
+@summary Steps when a client hasn't received a redemption, distribution, or other check.
+
+## Steps
+
+1. Confirm the check was issued: date, amount, and the address it was mailed to.
+2. Confirm the address is correct. If not, the check may have gone to an old address; a stop payment and reissue are needed.
+3. Allow 10 business days from the issue date for standard mail.
+4. After 10 business days, request a stop payment and reissue. See [[stop-payments]].
+5. Offer to reissue by ACH (faster) if the client has a linked bank.
+
+## If it was cashed
+
+If the check shows as cashed and the client didn't cash it, start a forgery claim through Money Movement Operations. See [[lost-stale-checks]].
+
+## Questions to ask
+
+- What was the check for: a sale, an IRA distribution, an RMD, a closed-account residual?
+- What date did they expect it, and which address?
+- Did they recently move or change their address with us?
+
+## What to look up
+
+The transaction shows the issue date, amount, payee, and mailing address. If the check was sent overnight ($25), there is a tracking number you can share.
+
+## IRA distribution checks
+
+Remember that an IRA distribution check is still a taxable distribution in the year it was issued, even if it is lost and reissued later. The reissued check does not create a second distribution. Withholding already sent to the IRS stays sent.
+
+## Faster alternatives
+
+Clients who need money quickly may prefer to cancel the check and receive the funds by ACH (2–3 business days) or wire ($25, same day if before 2:00 PM ET). See [[redemption-proceeds-delivery]].
+
+## Address problems
+
+If the check went to an old address, update the address first. Remember the 15-day rule: a reissued check cannot be mailed to a newly changed address within 15 days without a medallion signature guarantee, so ACH is often the better route. See [[address-changes]].
+
+@page missing-dividend | "Where is my dividend?"
+@summary Why a client might not see an expected dividend, and how to check.
+
+## Common reasons
+
+- **Timing**: the fund pays monthly, quarterly, or semiannually; check the schedule. See [[distribution-calendar]].
+- **Reinvested**: with DRIP on, the dividend bought more shares rather than appearing as cash.
+- **Bought after the record date**: the client wasn't a shareholder on the record date.
+- **Sold before the record date**: no longer a shareholder.
+- **Cash to bank**: the dividend went to the linked bank; amounts under $10 accumulate.
+- **IRA**: the dividend stayed in the IRA.
+- **The fund paid none**: capital gain distributions don't occur every year.
+
+## How to check
+
+Look for a "Dividend" or "Reinvestment" transaction in the account activity around the fund's pay date.
+
+## A worked check
+
+Client: "BFBI usually pays me around $180 a month. I didn't see anything this month."
+
+1. BFBI is a bond fund that pays monthly, around the 7th. Today is the 9th.
+2. The client's dividend preference for BFBI is "reinvest", so the payment would appear as a reinvestment purchase, not cash.
+3. The activity shows a reinvestment on the 7th of 1.832 shares. That is the dividend.
+
+## Amounts change
+
+Dividend amounts vary with the income the fund earns and the number of shares the client owns. Bond fund dividends move with interest rates; stock fund dividends move with company payouts. A smaller dividend is not an error.
+
+## Year-end capital gains
+
+Capital gain distributions are not paid every year. A client who received one last December may not receive one this year. That is normal for index funds.
+
+## Changing what happens to dividends
+
+If the client wants dividends paid as cash instead of reinvested, see [[toggle-drip-task]].
+
+@page auto-invest-didnt-run | "My automatic investment didn't happen"
+@summary A quick diagnostic for an automatic investment that didn't occur as expected.
+
+## Checks
+
+1. Is the plan active or paused?
+2. What was the scheduled day, and was it a weekend or holiday (then the next business day)?
+3. Was the plan changed fewer than 3 business days before the date?
+4. Was the purchase made and then reversed by the bank?
+5. For IRAs, has the client reached their contribution limit?
+6. Is the bank account still open and linked?
+
+Full diagnostic: [[auto-invest-failures]].
+
+## Walking the client through it
+
+Most clients notice a missed investment when they look at their bank statement or their holdings. Start by finding out which plan they mean (account, fund, amount, day), then work down the checklist above in order. The first check that fails is almost always the answer.
+
+### Example conversation
+
+Client: "My $200 didn't go into BF500 this month."
+
+Agent: "Let me look. Your plan for $200 into BF500 in your Roth IRA runs on the 15th. This month the 15th was a Saturday, so it ran Monday the 17th; I can see it here, priced at Monday's NAV. Your bank should show the debit by Wednesday."
+
+## If we caused it
+
+If the plan should have run and didn't because of an error on our side (for example, a pause the client never requested), escalate to your team lead. We can process the missed investment as of the original date so the client isn't disadvantaged. See [[error-corrections]].
+
+## If the client wants to make it up
+
+The client can place a one-time purchase now for the missed amount. For an IRA, it counts as a contribution for the current year. See [[place-purchase-task]].
+
+## Preventing repeats
+
+- Remind the client that changes need 3 business days' notice.
+- If the cause was a returned payment, suggest they check their bank balance before the investment date, or move the date to just after payday.
+- If the bank account changed, update the plan to the new bank.
+
+@page cant-see-account | "I can't see one of my accounts"
+@summary Why an account might not appear in a client's portal view, and how to fix it.
+
+## Common reasons
+
+- **The account is under a different login**: a joint account opened by the other owner, a custodial account under the custodian, a trust account under the trustee login, or a second profile created with a different email.
+- **The account was closed** (zero balance for 12 months closes automatically).
+- **New account still pending**: application not yet approved.
+- **Estate or protective hold** restricting access.
+- **Authorized-user access removed** by the owner.
+
+## Fixing it
+
+Linking profiles (for example, a client with two logins) is done by Account Services after verification. Joint owners each have their own login; they can link the joint account to their profile through My Account → Add Existing Account.
+
+## Before you change anything
+
+Verify the client's identity carefully. A request to "add an account to my login" is a request to give someone access to assets, so it must come from an owner of that account.
+
+## Joint owners
+
+Each joint owner has their own login. If the second owner can't see a joint account, they can add it from My Account → Add Existing Account by entering the account number and verifying with their own SSN; the system confirms they are an owner.
+
+## Custodial and trust accounts
+
+The custodian or trustee sees these accounts under their own login. The minor or trust beneficiary does not.
+
+## Closed accounts
+
+Closed accounts disappear from the portfolio view, but their documents remain at My Account → Statements & Documents for 7 years.
+
+## Duplicate profiles
+
+Clients who opened accounts years apart with different email addresses may have two profiles. Account Services can merge them after verification, so all accounts appear under one login.
+
+@page cannot-link-bank | "I can't link my bank"
+@summary Troubleshooting failed bank linking by instant verification and micro-deposits.
+
+## Instant verification fails
+
+- The bank may not support it or may require additional security steps. Use micro-deposits instead.
+- The client's online banking credentials or multi-factor prompt failed; try again on the bank's own site first.
+
+## Micro-deposits issues
+
+| Issue | Fix |
+|---|---|
+| Deposits haven't appeared | Allow 2 business days; check the correct bank account; savings accounts may show them differently |
+| Wrong amounts entered three times | Verification locked; remove and start again |
+| More than 14 days passed | Start again |
+
+## Name or ownership mismatch
+
+The bank account must belong to an owner of the Bob's account. Business accounts and relatives' accounts cannot be linked. See [[linked-bank-accounts]].
+
+## Bank account types
+
+Checking and savings accounts at U.S. banks and credit unions are supported. Prepaid cards, some online-only "neobank" accounts, and brokerage cash accounts may not support ACH debits.
+
+## Business and joint bank accounts
+
+- A business bank account can be linked only to a business-related registration (for example, a sole proprietor's SEP-IRA contributions from their business account are allowed if the client is the account holder of record).
+- A joint bank account can be linked if at least one owner of the bank account is an owner of the Bob's account.
+
+## After linking
+
+Remind the client about the 10-day rule: a newly linked bank can fund purchases right away, but electronic withdrawals to it need a verification call in the first 10 days. See [[linked-bank-accounts]].
+
+## Alternatives while linking is pending
+
+If the client needs to invest today, a wire is the fastest alternative; for slower needs, a check by mail works. See [[funding-new-account]].
+
+@page fund-value-dropped | "Why did my fund go down?"
+@summary How to explain a decline in a fund's value factually, including distribution-date drops.
+
+## Steps
+
+1. Check the date and size of the drop.
+2. **Distribution date?** If the fund paid a distribution that day, the NAV dropped by the amount paid. The client didn't lose that value. See [[ex-dividend-dates]].
+3. **Market movement?** Explain what the fund holds and that its value follows those markets. Use the fund profile for context (group, risk level, past calendar-year ranges).
+4. **Bond fund?** Rising interest rates lower bond prices. See [[bonds-and-interest-rates]].
+5. **International fund?** A stronger dollar lowers the value of foreign holdings.
+
+## What to avoid
+
+Explanations based on news events you can't verify, predictions, and advice. If the client is anxious, see [[market-downturn-conversations]].
+
+## Example explanations
+
+**Distribution day:** "BF500's price dropped $1.64 on March 25 because the fund paid a dividend of $1.64 per share that day. Your dividend was reinvested, so you now own a few more shares. Your total value wasn't reduced by the payment."
+
+**Market day:** "BF500 holds the 500 largest U.S. companies, so it moves with the U.S. stock market. Yesterday the broad market fell about 2%, and the fund fell by a similar amount."
+
+**Bond fund:** "BFLTT holds long-term Treasury bonds, which are sensitive to interest rates. When rates rise, their prices fall. The fund's average duration is about 15.5 years, so a 1 percentage-point rise in rates would lower its price roughly 15%."
+
+**International fund:** "BFEUR holds European stocks. Its value in dollars depends on both European stock prices and the euro's exchange rate."
+
+## Point to history
+
+Each fund profile shows calendar-year returns, which helps clients see that declines have happened before. Pair any history with "past performance doesn't guarantee future results".
+
+@page wrong-tax-form | "My tax form is wrong"
+@summary How to triage a client's report that a tax form is wrong before routing it to Tax Reporting.
+
+## Common misunderstandings (check first)
+
+| Concern | Usually |
+|---|---|
+| "I reinvested, so I shouldn't have dividends" | Reinvested dividends are taxable. See [[form-1099-div]] |
+| "My exchange shows as a sale" | Exchanges are sales in taxable accounts |
+| "My rollover shows as a distribution" | Indirect rollovers are reported as distributions; the 5498 shows the rollover |
+| "My QCD is shown as taxable" | QCDs are reported as normal distributions |
+| "Cost basis is missing" | Noncovered shares. See [[covered-noncovered-shares]] |
+| "The contribution is in the wrong year" | Check the designation. See [[prior-year-contributions]] |
+| "I didn't get a 5498 yet" | It's mailed by May 31 |
+
+## Real errors
+
+If the form appears genuinely wrong (a transaction missing or duplicated, wrong withholding, wrong name or TIN), collect the account, form, box, and the client's explanation, and refer to Tax Reporting. Tell the client that if a correction is needed, a corrected form will be issued and posted. See [[corrected-tax-forms]].
+
+## Example
+
+Client: "My 1099-R says $10,000 but I only got $9,000."
+
+Agent: "The 1099-R shows the gross distribution of $10,000 in box 1. We withheld $1,000 for federal taxes, which appears in box 4, so you received $9,000. You'll get credit for the $1,000 withheld when you file."
+
+## Example: a genuine error
+
+Client: "My 5498 shows my contribution for 2026, but I made it for 2025."
+
+Check the transaction's designation. If the designation is 2026 but the client says they requested 2025, review the transcript or request. If our error, route to Retirement Specialists for recoding and a corrected form.
+
+@page website-errors | Website and app errors
+@summary First-line troubleshooting for portal and mobile app problems.
+
+## Quick fixes
+
+1. Refresh the page or restart the app.
+2. Sign out and back in.
+3. Clear the browser cache and cookies, or try a private/incognito window.
+4. Try a different supported browser (current versions of Chrome, Edge, Safari, Firefox).
+5. Update the mobile app.
+6. Check the internet connection; turn off VPNs or ad blockers that may interfere.
+
+## Known maintenance
+
+The portal has a maintenance window Sundays 1:00–3:00 AM ET. Status messages appear on the sign-in page during outages.
+
+## When to escalate
+
+If the problem persists, collect: the page or feature, the exact error message, device and browser, time it occurred, and steps to reproduce. Log it as a Technical Issue. Help the client complete their task another way in the meantime (often you can do it in chat).
+
+## Common error messages
+
+| Message | Meaning | What to do |
+|---|---|---|
+| "Session expired" | Signed out after inactivity (15 minutes) | Sign in again |
+| "We couldn't complete your request" | A temporary error | Wait a minute and try again; use chat if urgent |
+| "This transaction isn't available for this account" | A restriction (foreign address, frequent-trading block, estate hold) | Check account restrictions |
+| "Verification required" | A security check | Complete the code verification |
+| "Page not found" | An old bookmark | Navigate from the home page |
+
+## Accessibility tools
+
+Clients using screen readers or magnification can use the portal fully; if a page doesn't work with their assistive technology, log it as a Technical Issue and help them complete the task in chat. See [[accessibility-accommodations]].
+
+@page email-not-received | "I'm not getting your emails"
+@summary Why clients don't receive our emails and how to fix it.
+
+## Checks
+
+- Is the email address on file correct and verified? (Ask the client to tell you the address.)
+- Spam or junk folders; add noreply@bobsmutualfunds.com to safe senders.
+- Corporate or school email filters.
+- Did the client unsubscribe from that type of email? Security alerts and document notifications can't be unsubscribed, but marketing can.
+- Bounced emails: if our emails bounce, paperless delivery is switched to paper and the client is notified by mail.
+
+## Password reset emails
+
+Reset links expire after 30 minutes and only the latest link works. See [[password-reset]].
+
+## Statement and tax form notifications
+
+Paperless clients receive a notification email when documents are ready. If they missed one, the document is still available online at My Account → Statements & Documents. Offer to send the link.
+
+## Security codes by email
+
+Some verification codes are sent by email. Codes expire after 10 minutes; ask the client to request a new one and to check that they are looking at the newest message.
+
+## Changing the email address
+
+If the client's email address has changed, they can update it at My Account → Profile and confirm the code sent to the new address. See [[email-phone-changes]].
+
+## Phishing caution
+
+Clients sometimes find an email that looks like ours in their spam folder and are unsure whether it is genuine. Our emails never ask for passwords and never contain account numbers. If in doubt, they should sign in directly rather than clicking a link. See [[phishing-scams]].
+
+@page chat-technical-issues | Chat and workspace technical problems
+@summary Problems clients and agents have with chat itself, and how to recover.
+
+## Client side
+
+| Problem | Fix |
+|---|---|
+| Messages not sending | Check connection; reload the page (the chat resumes) |
+| Chat disappeared after navigating | Chat persists per browser tab; returning to the site in the same tab resumes it. A new tab starts a new chat |
+| Can't find the chat | It may be minimized to the bar at the bottom of the screen |
+| Card "Your approval is required" not visible | Scroll down in the chat; reload if needed |
+| Transcript download didn't work | Allow downloads for the site; the chat history menu also has transcripts for 3 months |
+
+## Agent side
+
+| Problem | Fix |
+|---|---|
+| Workspace disconnected banner | Refresh; chats reattach |
+| AI suggestions not loading | Continue manually; suggestions resume when the service recovers |
+| Autopilot stopped with an error | Read the note, resume when ready, or continue manually |
+| Proposed Action failed | Check whether it partially completed before retrying. See [[proposed-action-card]] |
+
+Report persistent issues with the build stamp from the browser console. See [[workspace-overview]].
+
+## Example
+
+Client: "My chat keeps disappearing when I go to another page."
+
+Agent: "The chat stays with your browser tab. If you open a page in a new tab, it starts fresh. Navigate within the same tab and our conversation will stay right here, and you can minimize it to the bar at the bottom of your screen."

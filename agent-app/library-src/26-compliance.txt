@@ -1,0 +1,521 @@
+@section compliance | Compliance & Policies | The rules that protect clients and the firm: the investment advice boundary, communications standards, complaints, anti-money-laundering, sanctions, record retention, error corrections, accessibility, language services, gifts, and proactive service.
+
+@page investment-advice-boundary | The investment advice boundary
+@summary The single most important compliance rule for chat agents: what counts as advice, why we can't give it, and what to do instead.
+
+## The rule
+
+Chat agents are not licensed to provide individualized investment recommendations. You may give **information and education**; you may not give **advice**, meaning a recommendation about what a specific client should do with their money.
+
+## What counts as advice
+
+Any statement that tells or suggests to a client what to buy, sell, hold, or how to allocate, given their situation:
+
+- "You should buy BF500."
+- "That fund is a good fit for you."
+- "I'd move to bonds if I were you."
+- "At your age, you should be more conservative."
+- "Now's a good time to buy."
+- "Don't sell now; it'll come back."
+- "Most people in your situation choose the Roth."
+
+## What is allowed
+
+- Explaining how funds, accounts, and rules work.
+- Describing a fund's published characteristics, including risk and history.
+- Comparing funds factually on published data.
+- Doing arithmetic on the client's own stated targets.
+- Sharing the firm's general philosophy and educational materials (Library guides, Bob's View columns), clearly as general education.
+- Processing the transactions the client decides on.
+
+## What to do instead
+
+1. Acknowledge the question: "That's an important decision."
+2. State the boundary simply: "I'm not able to recommend investments, but I can explain how these options work."
+3. Offer education and facts.
+4. Offer a callback with a licensed professional who can give personalized guidance. See [[callback-scheduling]].
+
+Scripts: [[advice-decline-scripts]].
+
+## Why it matters
+
+Advice must be based on the client's full financial picture, and must meet suitability and best-interest obligations that only licensed, supervised professionals can fulfill. Giving advice without that basis can harm clients and expose the firm to regulatory action.
+
+## The AI tools follow the same rule
+
+The virtual assistant and task experts are designed to route advice requests to a callback. If a suggested reply ever crosses the line, edit it before sending.
+
+## Wrap-up
+
+Use the Investment Advice wrap-up code when a client sought advice and was referred.
+
+@page advice-examples | Advice or information? Worked examples
+@summary Twenty realistic client questions, with compliant answers and the lines to avoid.
+
+## Examples
+
+| Client asks | Compliant response | Avoid |
+|---|---|---|
+| "Which fund should I buy?" | Explain the lineup groups; offer a callback | Naming a fund |
+| "Is BFGR riskier than BF500?" | Compare risk levels, standard deviation, worst years | "Yes, too risky for you" |
+| "Should I sell before it drops more?" | Acknowledge concern; explain options; callback | "Hold on" or "Sell now" |
+| "Is a Roth better for me?" | Explain differences; callback | "Yes, go Roth" |
+| "What's the best bond fund?" | Explain differences by duration and credit | "BFST is safest" |
+| "How much should I keep in cash?" | Explain cash isn't invested; callback | Any amount |
+| "What did BF500 return last year?" | Quote with date and disclaimer | Projecting next year |
+| "Should I max out my IRA?" | State the limit and remaining room | "Yes, always max out" |
+| "Is now a good time to invest?" | Explain DCA and lump-sum concepts neutrally | Market timing views |
+| "What do most people pick?" | Describe what the options are for | Popularity as endorsement |
+| "Can you look at my portfolio?" | Show holdings and allocation facts; callback for review | Judging the allocation |
+| "Should I convert to Roth this year?" | Explain conversion mechanics and tax effects generally | Recommending |
+| "Is ESG a good investment?" | Describe BFESG's screens and history | Value judgments |
+| "Will the market crash?" | "No one can predict markets"; share history | Any forecast |
+| "Should I rebalance?" | Explain rebalancing; calculate to the client's own target | Setting a target |
+| "Is my withdrawal rate too high?" | Explain the arithmetic of withdrawals versus returns | "Yes, lower it" |
+| "Should I take my RMD now or in December?" | Explain both are allowed | Recommending timing |
+| "Should I roll over my 401(k)?" | Explain options and considerations | Recommending |
+| "Is BFTEC overvalued?" | Quote P/E from the profile without judgment | Valuation opinions |
+| "What would you do?" | "I'm not able to say, but a licensed professional can help." | Personal opinions |
+
+## The test
+
+Before sending, ask: does my message tell this client, directly or by implication, what they should do with their investments? If yes, rewrite it.
+
+@page suitability-referrals | Referrals for advice and planning
+@summary How to refer clients who want advice, what the licensed professional will do, and how to set expectations.
+
+## When to refer
+
+- The client asks for a recommendation.
+- The client wants a portfolio review or retirement plan.
+- The client wants help with complex tax-sensitive decisions (conversions, withdrawal strategies).
+- The client is making a major decision and wants a second opinion.
+
+## How to refer
+
+Schedule a callback with a licensed professional through the callback scope (see [[callback-scheduling]]). Make sure the chat captures the client's goal and key facts so the callback dossier is accurate.
+
+## Setting expectations
+
+"I've scheduled a call with one of our licensed professionals for Thursday at 2:00 PM Eastern. They'll be able to talk through your options and give you personalized guidance. They'll have a summary of our conversation, so you won't need to start from scratch."
+
+## What not to promise
+
+Don't promise a specific recommendation, an outcome, or that the call will be free of any cost if advisory services have fees (our service callbacks are free).
+
+## Wrap-up
+
+Use Referral or Investment Advice.
+
+## What makes a good callback request
+
+The phone dossier is built from the chat. Before scheduling, capture in the chat:
+
+- The client's goal in their words ("I'm 61 and want to know whether to convert some of my IRA to Roth before I retire").
+- Relevant facts the client shared (timeline, other accounts, concerns).
+- What you've already explained.
+
+## Example
+
+"I've set up a call for Thursday at 2:00 PM Eastern with a licensed professional. They'll see that you're thinking about converting part of your Traditional IRA this year and want to understand the tax impact. Is there anything else you'd like them to know?"
+
+@page communications-standards | Communications standards
+@summary The regulatory rules that govern what we say to clients: fair and balanced, no promises, no misleading statements.
+
+## The principles
+
+Communications with clients must be:
+
+- **Fair and balanced**: benefits are never presented without the corresponding risks.
+- **Not misleading**: no exaggerated, promissory, or unwarranted claims.
+- **Clear**: in plain language the client can understand.
+
+These standards come from FINRA rules on communications with the public and apply to chat.
+
+## Specific rules
+
+- **No predictions or projections** of performance.
+- **No guarantees** ("guaranteed", "can't lose", "safe").
+- **Performance** must include the period, date, and a past-performance disclaimer. See [[performance-reporting]].
+- **Comparisons** must be fair and use comparable data.
+- **No testimonials** about our funds.
+- **No promissory language** about timing we don't control.
+
+## Approved materials
+
+Client-facing articles in the Help pages and the Library have been reviewed. Prefer sending them over composing long explanations.
+
+## Templates
+
+Scripts in this library comply with these standards. See [[greeting-scripts]] and related pages.
+
+## Examples
+
+| Not compliant | Compliant |
+|---|---|
+| "BFGR is a great performer." | "BFGR returned 46.8% in 2023 and −33.2% in 2022. Past performance doesn't guarantee future results." |
+| "Bond funds are safe." | "BFST is rated Low risk, but all funds can lose value." |
+| "You'll get your money in two days." | "ACH typically arrives within 2–3 business days." |
+| "Our funds beat [competitor]." | "Our expense ratios range from 0.03% to 0.13%." |
+| "This is guaranteed to be tax-free." | "Qualified Roth distributions are tax-free; your tax advisor can confirm your situation." |
+
+## AI-drafted messages
+
+Suggested replies are designed to meet these standards, but you are responsible for what you send. Edit any message that overstates, predicts, or promises.
+
+@page complaints-handling | Handling complaints
+@summary What counts as a complaint, how to respond, how to log it, and the regulatory obligations.
+
+## What counts as a complaint
+
+A complaint is any statement by a client (or someone acting for them) expressing a grievance about our service, products, or people, especially involving an allegation of harm, error, or wrongdoing. Signals: "I want to complain", "this is unacceptable", "I lost money because of you", "I'm going to report you", or a request for compensation.
+
+When unsure, treat it as a complaint. Under-recording complaints is a compliance failure.
+
+## How to respond
+
+1. **Listen and acknowledge**: "I'm sorry this happened. I want to make sure I understand everything."
+2. **Get the facts**: what happened, when, which account, what outcome the client wants.
+3. **Fix what you can**, if within your authority (a clear error, a misunderstanding).
+4. **Do not admit legal liability** or speculate about fault. "Let me look into what happened" is appropriate; "That's our fault and we'll pay you back" is not, unless your team lead has authorized it.
+5. **Log the complaint** using the complaint form in the workspace, with the client's words.
+6. **Explain next steps**: "I've recorded your complaint. Our team will review it and respond within 5 business days."
+
+## Written complaints
+
+Written complaints (secure messages, letters, emails) must be forwarded to Compliance the same day. Compliance reports written complaints to regulators as required.
+
+## Escalation
+
+If the client asks for a supervisor, or the complaint involves alleged misconduct, fraud, or a large financial loss, escalate immediately. See [[complaint-escalation]].
+
+## Wrap-up
+
+Complaint Filed if logged; Grievance if the client expressed dissatisfaction without a complaint.
+
+## Scripts
+
+See [[complaint-scripts]].
+
+@page complaint-escalation | Escalating complaints
+@summary When and how to escalate a complaint to a supervisor or Compliance, and the response timelines.
+
+## Escalate immediately when
+
+- The client asks for a supervisor or manager.
+- The complaint alleges misconduct by an employee.
+- The complaint involves alleged fraud or unauthorized activity.
+- The client mentions an attorney, regulator (FINRA, SEC, state), or the media.
+- The client claims a financial loss and asks for compensation.
+- The client is a senior or vulnerable adult and the complaint involves a third party.
+
+## How
+
+1. Tell the client you are escalating and what to expect.
+2. Notify your team lead in the workspace (or by the escalation channel).
+3. If the supervisor joins, brief them in a sentence or two.
+4. If no supervisor is immediately available, schedule a supervisor callback within 1 business day.
+
+## Timelines
+
+- Acknowledgment: same day.
+- Supervisor contact: within 1 business day.
+- Resolution or written response: typically within 5 business days for routine complaints; Compliance handles complex cases.
+
+## Regulator references
+
+If a client says they will complain to FINRA or the SEC, do not discourage them. They have the right to. Log it and escalate.
+
+## Example
+
+Client: "If this isn't fixed, I'm reporting you to FINRA."
+
+Agent: "I understand, and you have every right to contact FINRA. I want to help resolve this too. I've logged your complaint and asked a supervisor to contact you by tomorrow."
+
+## After escalation
+
+Note the complaint and the escalation in ACW, with the complaint reference.
+
+@page aml-red-flags | Anti-money-laundering red flags
+@summary Signs of possible money laundering or terrorist financing that agents must report, and how to report without tipping off.
+
+## Our obligation
+
+Federal law requires financial firms to have an anti-money-laundering (AML) program, including identifying and reporting suspicious activity. Every employee must escalate red flags.
+
+## Red flags
+
+- Large deposits immediately followed by withdrawals, with little investment activity.
+- Deposits from or withdrawals to unrelated third parties.
+- Deposits structured just under reporting thresholds.
+- Reluctance to provide identity information, or inconsistent information.
+- Requests to move money to or from high-risk jurisdictions.
+- A client asking how to avoid reporting requirements.
+- Activity inconsistent with the client's stated occupation or profile.
+- Multiple accounts with shared addresses or bank accounts and no apparent relationship.
+
+## How to report
+
+Report to the AML team through the internal referral (via your team lead). Include what you observed and why it seemed unusual.
+
+## Do not tip off
+
+It is illegal to tell a client that a suspicious activity report is being or may be filed. Do not mention AML reviews or reports. If a transaction is delayed for review, use neutral language: "This request needs an additional review."
+
+## Example
+
+A new client funds a taxable account with three $9,500 checks from different people, then asks two weeks later to wire the money to an unrelated person. Several red flags: structured amounts, third-party sources, and a third-party destination. Report to AML through your team lead; tell the client only that the request is under review.
+
+## Your protection
+
+Reporting suspicious activity in good faith is protected. When in doubt, report.
+
+@page ofac-sanctions | Sanctions screening (OFAC)
+@summary Why we screen clients and transactions against sanctions lists, and what agents should know.
+
+## What it is
+
+The U.S. Treasury's Office of Foreign Assets Control (OFAC) maintains lists of individuals, entities, and countries subject to sanctions. We screen all clients, beneficiaries, and money movements against these lists.
+
+## What agents see
+
+Occasionally, an application or transaction is held because of a potential match (often a common name). Compliance reviews and clears false matches.
+
+## What to say
+
+Do not mention sanctions screening to the client. "Your request needs an additional review; we'll contact you if we need anything." Never speculate about why.
+
+## Prohibited activity
+
+We cannot process transactions involving sanctioned countries or persons. If a client asks about sending money to a sanctioned country, decline and escalate to Compliance.
+
+## Common situations
+
+- An application pends because the applicant's name resembles a listed name. Compliance clears false matches, usually within 1–2 business days.
+- A beneficiary claim pends for the same reason.
+- A client asks to send a wire abroad; we don't send foreign wires in any case. See [[international-money-movement]].
+
+## What not to do
+
+Never suggest a client change details (for example, a middle name) to avoid a screening match, and never describe screening criteria.
+
+@page record-retention | Recordkeeping and retention
+@summary What records we keep, for how long, and the rules about records requests.
+
+## What we keep
+
+- Chat transcripts with live agents (all messages, including AI-drafted messages sent).
+- After-chat work (wrap-up code, summary).
+- Account records, transactions, statements, confirmations, and tax forms.
+- Complaints and their resolution.
+
+Regulations require most records to be kept for at least 3 to 6 years; we retain client statements and documents online for 7 years and archive longer.
+
+## Your responsibility
+
+- Use only approved channels to communicate with clients (the chat workspace, phone, secure messages). Never use personal email, text messages, or social media to communicate with clients.
+- Do not delete or alter records.
+- Write as though every message will be reviewed.
+
+## Records requests
+
+- Clients: statements and tax forms for 7 years online; chat history for 3 months in the chat menu. Older records via Client Records.
+- Third parties (attorneys, courts, government agencies): Legal department only.
+
+## Off-channel communication
+
+Communicating with clients through personal phones, personal email, or messaging apps is prohibited, because those messages can't be retained and supervised as the rules require. If a client asks for your direct number or email, refer them to our official channels.
+
+## Corrections in chat
+
+If you send a message with an error, correct it in a new message rather than asking the client to ignore it. The full record, including the correction, is retained.
+
+@page error-corrections | Correcting errors (as-of trades)
+@summary How errors in transactions are corrected, who pays, and how to handle a client who reports a mistake.
+
+## Kinds of errors
+
+- **Our error**: we processed something differently from what the client authorized (wrong fund, wrong amount, wrong account, missed deadline).
+- **Client error**: the client entered or authorized the wrong instruction.
+
+## Our errors
+
+When we make an error, we correct it so the client is in the position they would have been in had the error not occurred. This often means an **as-of trade**: processing the correct transaction at the NAV of the original date and reversing the wrong one. Any market loss from the correction is absorbed by the firm. Corrections require supervisor approval.
+
+## Client errors
+
+If a client made the mistake, we can help them correct it going forward (for example, exchanging back), but the transaction is processed at the current NAV, and market movements are the client's. For IRA contributions designated for the wrong year or type, see [[prior-year-contributions]] and [[recharacterizations]].
+
+## Procedure
+
+1. Gather facts: what was requested, what happened, the reference numbers and dates.
+2. Check the transcript or records to determine what the client authorized.
+3. Escalate to your team lead with the details. Do not promise a correction until it is approved.
+4. Tell the client: "I've sent this to our team to review. If we made an error, we'll correct it so you're not harmed by it."
+
+## Chat-originated errors
+
+For actions submitted in chat, the transcript and evidence highlighting show what the client confirmed. That is why accurate confirmation recaps matter. See [[confirmation-recap-scripts]].
+
+@page market-timing-policy | Market timing and excessive trading
+@summary The firm's policy against market timing, how it is enforced, and how to explain it.
+
+## Policy
+
+The BobsFunds funds are intended for long-term investors. Frequent trading to profit from short-term price movements harms other shareholders through higher costs and dilution. The funds' prospectuses describe the restrictions.
+
+## Enforcement
+
+- Automated round-trip restrictions: see [[frequent-trading-policy]].
+- Monitoring for patterns across accounts and households.
+- Clients who repeatedly attempt to time the market may have purchase or exchange privileges restricted or be limited to purchases by mail.
+
+## Explaining it
+
+"Our funds are designed for long-term investing, and they limit short-term trading to protect all shareholders from extra costs."
+
+## What counts as a pattern
+
+Compliance looks for repeated round trips, large exchanges timed around market events, and coordinated trading across accounts in a household. Isolated trades do not trigger review.
+
+## Exempt activity
+
+Automatic investments, systematic withdrawals, dividend reinvestments, RMDs, and transactions in BFST are exempt from round-trip restrictions. See [[frequent-trading-policy]].
+
+## If a client is restricted
+
+Explain the restriction neutrally and the date it ends. Do not discuss surveillance methods. If the client disputes the restriction, take the details and route to Compliance.
+
+@page accessibility-accommodations | Accessibility and accommodations
+@summary How we serve clients with disabilities, including vision, hearing, cognitive, and mobility needs.
+
+## Commitments
+
+We provide equal access to our services. Clients may request accommodations at any time.
+
+## Available accommodations
+
+| Need | What we offer |
+|---|---|
+| Vision | Screen-reader-compatible portal; large-print and Braille statements on request; documents in accessible formats |
+| Hearing | Chat and secure messaging; relay service calls to 1-800-BOB-FUND |
+| Cognitive | Patient, plain-language communication; written follow-ups; extra time |
+| Mobility | All services available remotely; forms can be signed electronically |
+
+## Requesting
+
+Clients can request large-print or Braille documents and accessible formats at My Account → Preferences or by asking any agent. Note the request and route it to Client Services fulfillment.
+
+## In chat
+
+Adapt to the client: shorter sentences, one step at a time, confirm understanding. Don't make assumptions; ask what works best.
+
+## Example requests
+
+- "Can I get my statements in large print?" Yes; note the request for fulfillment.
+- "I'm deaf; can I call?" Yes, through any relay service, or keep using chat and secure messages.
+- "Your website doesn't work with my screen reader." Help with the task in chat and log a Technical Issue with details.
+
+## Paper fees
+
+Clients with an accessibility accommodation for printed documents are not charged the paper statement fee. See [[paper-fees]].
+
+## Communication approach
+
+Ask what works best rather than assuming. Some clients with cognitive or memory challenges appreciate a written recap at the end of the chat; offer to send one by secure message.
+
+@page language-services | Language services
+@summary How we serve clients who prefer a language other than English.
+
+## Available
+
+- Phone service in Spanish (select Spanish at the start of the call).
+- Telephone interpretation in over 100 languages through an interpreter service, arranged by phone agents.
+- Some key forms and documents in Spanish.
+
+## In chat
+
+Chat is in English. If a client writes in another language:
+
+1. Respond briefly in English (and in their language if you are certified to communicate in it).
+2. Offer a phone call with Spanish service or an interpreter.
+3. Do not use machine translation for account actions or disclosures.
+
+Agents who are bilingual may support clients in that language only if certified through our language proficiency program.
+
+## Example
+
+Client writes in Spanish: "Hola, necesito ayuda con mi cuenta."
+
+Agent (not Spanish-certified): "Hello! I'm happy to help in English here in chat. If you'd prefer Spanish, our phone team can help at 1-800-BOB-FUND (choose Spanish), or I can schedule a callback with a Spanish-speaking representative."
+
+## Documents
+
+Some forms (account application, beneficiary designation) are available in Spanish from the Forms page. Statements are in English.
+
+## Interpreters for other languages
+
+Phone representatives can add a professional interpreter to a call. Clients should not rely on family members to interpret for account changes when an interpreter is available.
+
+@page conflicts-gifts | Gifts, entertainment, and conflicts of interest
+@summary Rules for accepting gifts from clients and avoiding conflicts.
+
+## Gifts from clients
+
+Clients sometimes offer thanks in the form of gifts. Agents may not accept cash or cash equivalents (gift cards) in any amount. Non-cash gifts must be reported to your team lead and may be accepted only within firm limits (currently $100 per person per year). Politely decline anything beyond: "That's so kind, but we're not able to accept gifts. Your thanks means a lot."
+
+## Bequests and beneficiary designations
+
+An agent may never be named as a client's beneficiary, executor, trustee, or power of attorney (unless a family member, with Compliance approval). If a client suggests this, decline and inform your team lead.
+
+## Personal dealings
+
+Do not lend money to or borrow from clients, share in their accounts, or do business with them outside the firm.
+
+## Conflicts
+
+Disclose any personal relationship with a client (a relative, a friend) to your team lead and do not service their accounts.
+
+## Example
+
+Client: "You've been so helpful. Can I send you a gift card?"
+
+Agent: "That's very kind of you, but we're not able to accept gifts. Your thanks really does mean a lot."
+
+## Holiday cards and small tokens
+
+Cards and notes of thanks are welcome. Non-cash items must be reported to your team lead.
+
+@page cross-sell-and-proactive-service | Proactive service and cross-sell
+@summary Why helping clients discover relevant services is good service, how to do it naturally, and where the line is.
+
+## The principle
+
+Good service anticipates needs. When a client's situation makes a feature or service relevant, mentioning it is helpful, not pushy. The AI tools often surface these moments (for example, the predicted questions or a suggested reply that mentions automatic investing after a purchase). Use them.
+
+## Natural moments
+
+| Client situation | Helpful mention |
+|---|---|
+| Just made a one-time purchase | Automatic investing, if they plan to invest regularly |
+| Opened an IRA | Naming beneficiaries; automatic contributions |
+| Mentioned a new job | Rolling over the old 401(k) |
+| Mentioned a new child or grandchild | Reviewing beneficiaries; custodial accounts |
+| Receives paper statements | Paperless delivery (and the waived fee) |
+| Approaching 73 | RMD settings |
+| Has uninvested cash | That cash isn't invested (neutrally) |
+| Multiple tasks in one chat | Handle them all; offer anything related |
+
+## How to do it
+
+- One relevant mention, at a natural pause, after the client's main request is done.
+- Frame it as information: "Since you're investing each month anyway, some clients set up an automatic investment so it happens on its own. Want me to show you how?"
+- Respect a "no" immediately.
+
+## The line
+
+Proactive service describes **our services**; it never recommends **investments**. "You might find automatic investing convenient" is fine; "You should put more into growth funds" is advice.
+
+## Bonus opportunities
+
+Some conversations show a bonus opportunity badge (for example, rollovers or new accounts). Bonuses reward service, never pressure. A client who declines must receive the same quality of service.

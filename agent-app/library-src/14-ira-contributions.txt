@@ -1,0 +1,428 @@
+@section ira-contributions | IRA Contributions | Contribution limits by year, catch-up contributions, deadlines, prior-year contributions, the earned income rule, spousal contributions, Roth income limits, deductibility, backdoor Roth, excess contributions, recharacterizations, SEP contributions, and the contributions summary.
+
+@page ira-contribution-limits | IRA contribution limits
+@summary The 2026 and 2025 Traditional and Roth IRA limits, how the shared limit works, and how to check a client's remaining room.
+
+## Current limits
+
+| Tax year | Under 50 | Age 50 or older (with catch-up) | Contribution deadline |
+|---|---|---|---|
+| 2026 | $7,500 | $8,600 ($7,500 + $1,100) | April 15, 2027 |
+| 2025 | $7,000 | $8,000 ($7,000 + $1,000) | April 15, 2026 (passed) |
+
+A client is eligible for the catch-up for a tax year if they turn 50 at any time during that year, even on December 31.
+
+## One limit, shared
+
+The limit applies to the **total** of the client's Traditional and Roth IRA contributions for the year, across **every** IRA they own at every firm. It is not per account. A client who contributes $4,000 to a Roth at Bob's and $3,500 to a Traditional IRA elsewhere has used the full $7,500 for 2026.
+
+## Other constraints
+
+- Contributions cannot exceed the client's **taxable compensation** for the year (or the couple's combined compensation for a spousal IRA). See [[earned-income-rule]].
+- Roth contributions phase out at higher incomes. See [[roth-income-limits]].
+- SEP-IRA employer contributions have a separate, much higher limit. See [[sep-contributions]].
+- Rollovers, transfers, and conversions do **not** count toward the limit.
+
+## Checking remaining room
+
+The contributions summary in the client info panel and on IRA account pages shows contributions made **at Bob's** for the tax year, against the client's limit based on their age. Remaining room = limit − contributions shown − contributions the client made elsewhere. We cannot see contributions at other firms; ask the client if it matters. See [[contributions-summary-card]].
+
+## Common questions
+
+### "How much more can I put in this year?"
+"You've contributed $3,000 to IRAs with us for 2026, and your limit is $7,500, so you can contribute up to $4,500 more, as long as you haven't made IRA contributions anywhere else this year."
+
+### "Is the limit per account?"
+No. One limit across all Traditional and Roth IRAs.
+
+### "My spouse and I both have IRAs."
+Each spouse has their own limit.
+
+@page contribution-limits-history | Contribution limits by year
+@summary IRA, catch-up, SEP, and Roth phase-out figures for 2023 through 2026, for questions about past years and corrections.
+
+## IRA limits
+
+| Year | Base limit | Catch-up (50+) | Total at 50+ |
+|---|---|---|---|
+| 2023 | $6,500 | $1,000 | $7,500 |
+| 2024 | $7,000 | $1,000 | $8,000 |
+| 2025 | $7,000 | $1,000 | $8,000 |
+| 2026 | $7,500 | $1,100 | $8,600 |
+
+## Roth IRA income phase-out ranges (modified AGI)
+
+| Year | Single / head of household | Married filing jointly | Married filing separately |
+|---|---|---|---|
+| 2023 | $138,000–$153,000 | $218,000–$228,000 | $0–$10,000 |
+| 2024 | $146,000–$161,000 | $230,000–$240,000 | $0–$10,000 |
+| 2025 | $150,000–$165,000 | $236,000–$246,000 | $0–$10,000 |
+| 2026 | $153,000–$168,000 | $242,000–$252,000 | $0–$10,000 |
+
+## SEP-IRA limits
+
+| Year | Maximum contribution | Compensation cap |
+|---|---|---|
+| 2023 | $66,000 | $330,000 |
+| 2024 | $69,000 | $345,000 |
+| 2025 | $70,000 | $350,000 |
+| 2026 | $72,000 | $360,000 |
+
+## Why history matters
+
+Clients correcting a past-year excess contribution, reviewing an old Form 5498, or asking about a missed year need the correct historical figure. Note that IRA contributions for a past year can only be made until that year's April deadline; a client cannot "catch up" a missed year.
+
+@page catch-up-contributions | Catch-up contributions
+@summary Who qualifies for the age-50 catch-up, the amounts by year, and how it's applied.
+
+## Rule
+
+Clients who are age 50 or older by the end of the tax year can contribute an additional catch-up amount to their IRAs: $1,100 for 2026 ($1,000 for 2025 and earlier years). The catch-up is now indexed for inflation, so it can rise in future years.
+
+## How it's applied
+
+The catch-up simply raises the client's total limit: $8,600 for 2026 instead of $7,500. It is not a separate contribution type; the client does not need to designate it. It applies to Traditional and Roth IRAs together.
+
+## Birthday timing
+
+A client born on December 31, 1976 turns 50 on December 31, 2026 and qualifies for the 2026 catch-up, and can make the full $8,600 contribution any time from January 1, 2026 to April 15, 2027.
+
+## Age unknown
+
+If the client's date of birth is not on file, the contributions summary shows the base limit without the catch-up and marks the limit as estimated. Ask the client to update their profile.
+
+## SEP-IRAs
+
+There is no catch-up for SEP-IRA employer contributions. A SEP-IRA owner can still make regular IRA contributions, including catch-up, to the SEP-IRA or another IRA, subject to the regular limit.
+
+@page contribution-deadlines | Contribution deadlines
+@summary When contributions for each tax year must be made, why extensions don't help, and how to handle last-day contributions.
+
+## The deadline
+
+IRA contributions for a tax year can be made from January 1 of that year until the federal tax-filing deadline of the following year, normally **April 15**. Filing an extension does **not** extend the IRA contribution deadline.
+
+| Tax year | Contribution window |
+|---|---|
+| 2025 | January 1, 2025 – April 15, 2026 (closed) |
+| 2026 | January 1, 2026 – April 15, 2027 |
+
+If April 15 falls on a weekend or holiday, or the IRS postpones the deadline (for example, for a disaster area), the deadline moves accordingly.
+
+## SEP-IRAs
+
+SEP contributions can be made until the business's tax return due date **including extensions** (for many sole proprietors, October 15 with an extension). See [[sep-contributions]].
+
+## Last-minute contributions
+
+To count for the prior year, a contribution must be **received** by the deadline and designated for that year:
+
+- Online or in chat with ACH from a linked bank: the order date counts, even though the bank is debited later.
+- By wire: must arrive by the deadline.
+- By mail: a check postmarked by the deadline is accepted for the prior year if the deposit slip or note designates the prior year and the check arrives within a reasonable time; advise against relying on mail at the last minute.
+
+## Advising on the deadline
+
+You may explain the deadline. You may not advise whether to make a contribution.
+
+@page prior-year-contributions | Prior-year contributions (January to April)
+@summary How to make and record a contribution for the previous tax year during the overlap period, and how to correct a wrong year.
+
+## The overlap period
+
+From January 1 to April 15, a client can contribute for either the current year or the prior year. Every contribution in that window must be designated:
+
+- Online, the purchase screen asks "Tax year" for IRA contributions during the overlap.
+- In chat, ask the client which year before approving the Proposed Action, and record it.
+- By check or wire, the client writes the year in the note or reference.
+
+If no year is designated, the contribution is recorded for the current year.
+
+## Contributions summary
+
+From January to April, the contributions summary shows both years, so you can see the remaining room for each. After April 15 it shows only the current year.
+
+## Correcting the year
+
+If a contribution was recorded for the wrong year, it can be recoded if the client asks before the prior-year deadline (or, if the mistake was ours, later). Route the request to Retirement Specialists or Account Services with the transaction details. Recoding changes the client's Form 5498. See [[error-corrections]].
+
+## Automatic investments
+
+Automatic investments during January–April always count for the current year. See [[auto-invest-ira-limits]].
+
+@page earned-income-rule | The earned income (compensation) rule
+@summary Who can contribute to an IRA: what counts as compensation, what doesn't, and the rule for children and retirees.
+
+## The rule
+
+An IRA contribution for a year cannot exceed the client's taxable compensation for that year (or the couple's combined compensation for a spousal IRA). If a client earned $3,000, their maximum IRA contribution is $3,000.
+
+## What counts
+
+- Wages, salaries, tips, bonuses, commissions.
+- Net earnings from self-employment.
+- Taxable alimony under divorce agreements made before 2019.
+- Nontaxable combat pay.
+- Certain fellowship and stipend payments to graduate students.
+
+## What does not count
+
+- Investment income: interest, dividends, capital gains.
+- Pension and annuity income, Social Security, IRA distributions.
+- Rental income (unless the client is in the real estate business).
+- Unemployment benefits.
+- Alimony under agreements made after 2018.
+
+## Common situations
+
+- **Retirees with no earnings** cannot contribute, unless their spouse has earned income (spousal IRA). See [[spousal-ira]].
+- **Children with summer jobs** can contribute up to what they earned; a custodial Roth IRA is common. See [[opening-joint-custodial]].
+- **People who stop working mid-year** can contribute based on what they earned that year.
+
+## Our role
+
+We do not verify a client's income. The client is responsible for eligibility. If a client tells you they had no earned income, explain the rule before processing a contribution.
+
+@page spousal-ira-contributions | Spousal IRA contributions
+@summary Contribution rules for a non-working or low-earning spouse, and how to process them.
+
+## Rules
+
+- The couple must file a joint federal tax return.
+- Each spouse may contribute up to the annual limit ($7,500 for 2026, plus $1,100 if 50+), to IRAs in their own names.
+- Together, their contributions cannot exceed their combined taxable compensation.
+- Roth eligibility is based on the couple's joint MAGI.
+
+## Example
+
+One spouse earns $90,000; the other has no earnings. Both are under 50. Each can contribute $7,500 for 2026, a combined $15,000, which is less than the $90,000 combined compensation.
+
+## Processing
+
+The contribution goes into the non-working spouse's own Traditional or Roth IRA. It can be funded from a joint bank account linked to that IRA. In chat, the account owner (the non-working spouse) must be the client making the request, or the request comes from an authorized user with appropriate access.
+
+See [[spousal-ira]].
+
+## Common questions
+
+### "My spouse retired last year. Can she still contribute?"
+Yes, if the couple files jointly and the working spouse has enough earned income to cover both contributions.
+
+### "Does the non-working spouse need their own IRA?"
+Yes. Contributions go into an IRA owned by the non-working spouse.
+
+### "Can we both contribute the catch-up?"
+Each spouse aged 50 or older at year end can contribute their own catch-up.
+
+@page roth-income-limits | Roth IRA income limits
+@summary The income ranges that limit direct Roth contributions, how the partial contribution works, and how to talk about it.
+
+## The phase-out ranges (modified adjusted gross income)
+
+| Filing status | 2026 full contribution if MAGI below | Partial contribution | No direct contribution if MAGI at or above |
+|---|---|---|---|
+| Single, head of household | $153,000 | $153,000–$168,000 | $168,000 |
+| Married filing jointly | $242,000 | $242,000–$252,000 | $252,000 |
+| Married filing separately (lived with spouse) | — | $0–$10,000 | $10,000 |
+
+2025 figures: single $150,000–$165,000; married filing jointly $236,000–$246,000.
+
+## Partial contributions
+
+Within the range, the allowed contribution is reduced proportionally. For example, a single filer with 2026 MAGI of $160,500 is halfway through the $15,000 range, so they can contribute about half the limit ($3,750 if under 50). The IRS worksheet rounds to the nearest $10. Suggest the client confirm the exact figure with their tax preparer.
+
+## Our role
+
+We do not collect or verify income. The client certifies their eligibility. If a client tells you their income and it is above the limit, tell them before processing a Roth contribution. If they contribute anyway and are ineligible, it becomes an excess contribution that must be corrected. See [[excess-contributions]].
+
+## When clients exceed the limit
+
+Options include contributing to a Traditional IRA instead (anyone with earned income can, though the deduction may be limited) or a recharacterization. Some clients use a "backdoor Roth"; see [[backdoor-roth]] for how to discuss it. Never recommend a strategy.
+
+## MAGI
+
+Modified adjusted gross income for Roth purposes is generally the client's adjusted gross income with certain items added back. The client's tax preparer can calculate it; we cannot.
+
+@page traditional-ira-deductibility | Traditional IRA deductibility
+@summary When a Traditional IRA contribution is tax-deductible, the 2026 income ranges, and nondeductible contributions.
+
+## Who can deduct
+
+Anyone with earned income can contribute to a Traditional IRA. Whether the contribution is deductible depends on whether the client (or their spouse) is covered by a workplace retirement plan, and on income.
+
+## 2026 phase-out ranges (MAGI)
+
+| Situation | Full deduction below | Partial deduction | No deduction at or above |
+|---|---|---|---|
+| Not covered by a workplace plan (and spouse not covered, or single) | Any income | — | — |
+| Covered by a workplace plan, single or head of household | $81,000 | $81,000–$91,000 | $91,000 |
+| Covered by a workplace plan, married filing jointly | $129,000 | $129,000–$149,000 | $149,000 |
+| Not covered, but spouse is covered, married filing jointly | $242,000 | $242,000–$252,000 | $252,000 |
+| Covered, married filing separately | — | $0–$10,000 | $10,000 |
+
+2025 ranges: single covered $79,000–$89,000; joint covered $126,000–$146,000; spouse covered $236,000–$246,000.
+
+## Nondeductible contributions
+
+A contribution that is not deductible is still allowed. The client reports it on IRS Form 8606, creating "basis" so they are not taxed on that money again when they withdraw it. Tracking basis is the client's responsibility; we report contributions but do not know whether the client deducted them.
+
+## Our role
+
+We record contributions and report them on Form 5498. We do not determine deductibility. The client claims the deduction on their tax return. See [[tax-advice-boundary]].
+
+@page backdoor-roth | The "backdoor Roth" strategy
+@summary What clients mean by a backdoor Roth, the mechanics we support, the pro-rata rule, and the advice boundary.
+
+## What it is
+
+A "backdoor Roth" is a two-step strategy some investors with incomes above the Roth limits use: make a nondeductible contribution to a Traditional IRA, then convert it to a Roth IRA. Since conversions have no income limit, the money ends up in a Roth.
+
+## What we support
+
+Both steps are ordinary transactions we support:
+
+1. A Traditional IRA contribution (see [[place-purchase-task]]), and
+2. A Roth conversion (see [[roth-conversion-task]]).
+
+We do not offer a single "backdoor Roth" transaction, and we do not advise on whether to do it.
+
+## The pro-rata rule
+
+If the client has other pre-tax money in any Traditional, SEP, or SIMPLE IRA (at any firm), the conversion is taxed proportionally: they cannot choose to convert only the nondeductible part. For example, with $7,500 nondeductible and $92,500 pre-tax across their IRAs, about 92.5% of any conversion is taxable. This often surprises clients. Mention that the rule exists and that their tax advisor can calculate the effect.
+
+## Reporting
+
+The client reports the nondeductible contribution and the conversion on Form 8606. We issue a Form 5498 for the contribution and the conversion and a 1099-R for the conversion.
+
+## The advice boundary
+
+Explaining that the strategy exists and how the two transactions work is information. Telling a client to do it, or that it will save them taxes, is advice. If the client wants to know whether it makes sense for them, offer a callback.
+
+@page excess-contributions | Excess contributions and how to fix them
+@summary What makes a contribution excess, the 6% excise tax, the correction options and deadlines, and how to route a removal request.
+
+## What counts as excess
+
+An excess contribution is any amount above what the client was allowed to contribute for the year, for example:
+
+- Total contributions above the annual limit (often because of contributions at two firms).
+- A Roth contribution when income was above the phase-out.
+- Contributions above the client's earned income.
+- A rollover recorded incorrectly as a contribution.
+- An ineligible rollover (for example, a second indirect IRA rollover within 12 months).
+
+## The cost
+
+The excess is subject to a **6% excise tax** for every year it remains in the IRA at the end of the year.
+
+## Correction options
+
+| Option | Deadline | Effect |
+|---|---|---|
+| Remove the excess plus the net income attributable (NIA) | Tax filing deadline including extensions (October 15 of the next year, if the client files on time or extends) | No 6% tax. The earnings are taxable in the year of the contribution and may be subject to the 10% early-withdrawal penalty if the client is under 59½ |
+| Recharacterize to the other IRA type | Same deadline | Treated as if originally contributed to the other type. See [[recharacterizations]] |
+| Apply the excess to the next year's limit | Any time | 6% tax for each year it remained excess; then counts toward the next year's limit |
+| Remove the excess (no earnings) after the deadline | Any time | 6% tax applies for each year it remained |
+
+## Procedure
+
+Excess contribution removals are handled by Retirement Specialists, because the NIA calculation and tax reporting are specific. In chat:
+
+1. Gather the facts: which account, which tax year, the amount the client believes is excess, and why.
+2. Explain the options in general terms, without recommending one.
+3. Submit a referral to Retirement Specialists or have the client complete the Excess Contribution Removal form.
+4. Tell the client the specialist will calculate the earnings and confirm the amount before anything is distributed.
+
+## Reporting
+
+A removal is reported on Form 1099-R with specific codes. The client may need to file amended or additional forms. Refer tax questions to their tax advisor.
+
+@page recharacterizations | Recharacterizations
+@summary Moving a contribution from one IRA type to the other, the deadline, and what can no longer be recharacterized.
+
+## What it is
+
+A recharacterization treats a contribution made to one type of IRA (for example, a Roth) as if it had been made to the other type (a Traditional), by moving the contribution plus its earnings or losses. It is commonly used when a client discovers their income was too high for a Roth contribution.
+
+## Deadline
+
+The tax filing deadline for the year of the contribution, including extensions (generally October 15 of the following year).
+
+## What can't be recharacterized
+
+Since 2018, **Roth conversions cannot be recharacterized** (undone). A client who converts and regrets it cannot reverse the conversion. Mention this whenever a client is considering a conversion. See [[conversion-mistakes]].
+
+## Procedure
+
+Recharacterizations are processed by Retirement Specialists, who calculate the earnings attributable. The client completes the Recharacterization form or requests it through a secure message. In chat, collect the account, tax year, and amount, explain the process, and route it.
+
+## Reporting
+
+The client reports the recharacterization on their tax return and attaches an explanation. We report it on Form 1099-R and Form 5498.
+
+## Example
+
+A client contributed $7,000 to a Roth IRA for 2025, then learned their 2025 income was too high. Before October 15, 2026 they can recharacterize the contribution, plus earnings, to a Traditional IRA. It is treated as a Traditional contribution made on the original date.
+
+## Not to be confused with
+
+Converting (Traditional to Roth) moves money in the other direction and is permanent. A recharacterization corrects a contribution.
+
+@page sep-contributions | SEP-IRA contributions
+@summary Limits, deadlines, employer obligations, and how to record SEP contributions.
+
+## Limits
+
+- Up to **25% of compensation** for employees. For a self-employed owner, the effective rate is about 20% of net self-employment earnings (after the deduction for half of self-employment tax and the SEP contribution itself).
+- Maximum **$72,000 for 2026** ($70,000 for 2025).
+- Compensation above **$360,000** (2026) is not considered.
+- No catch-up contributions for SEP employer contributions.
+
+## Deadline
+
+The employer's tax-return due date **including extensions**. For a sole proprietor filing Schedule C, generally April 15, or October 15 with an extension.
+
+## Equal percentage rule
+
+If the business has eligible employees, it must contribute the same percentage of compensation for each eligible employee as for the owner. Eligibility rules are defined in the SEP plan document (commonly age 21, three of the last five years of service, and minimum compensation).
+
+## Recording
+
+SEP contributions are recorded as **employer contributions** for a specific tax year. They are reported on Form 5498 in box 8. In chat, when a client contributes to their SEP-IRA, confirm that it is a SEP employer contribution and the tax year.
+
+## Regular IRA contributions to a SEP-IRA
+
+A SEP-IRA can also accept regular (Traditional) IRA contributions up to the regular limit. If a client says "my regular IRA contribution" into a SEP-IRA, record it as a regular Traditional IRA contribution, which counts toward the $7,500/$8,600 limit.
+
+## Calculation questions
+
+The exact maximum depends on the client's tax return. Explain the rule and suggest the client's tax preparer confirm the amount.
+
+@page contributions-summary-card | The IRA contributions summary
+@summary What the contributions summary on account pages and in the agent info panel shows, how it's calculated, and its limitations.
+
+## What it shows
+
+For clients with Traditional or Roth IRAs, the contributions summary shows:
+
+- Contributions made **at Bob's Mutual Funds** for the tax year, totaled across all of the client's IRAs (because the IRS limit is shared).
+- The client's limit for the year, based on their age at year end (with catch-up if eligible).
+- The remaining room at Bob's.
+- From January to April 15, both the prior and current tax years.
+
+The same summary appears on IRA account pages in the client portal, in your info panel, and is available to the AI assistants, so everyone sees the same numbers.
+
+## How it is calculated
+
+It adds every contribution transaction designated for the tax year in the client's Traditional and Roth IRAs. Rollovers, transfers, conversions, and SEP employer contributions are excluded, because they do not count toward the regular limit.
+
+## Limitations
+
+- It includes only contributions at Bob's. Contributions made at other firms also count toward the limit. The summary says so.
+- It does not check income limits for Roth or deductibility.
+- If the client's date of birth is missing, the limit shown omits the catch-up and is marked as estimated.
+- Contributions still pending (for example, a check in the mail) are not included until processed.
+
+## Using it in chat
+
+Quote it accurately and add the caveat: "You've contributed $5,000 to your IRAs with us for 2026, out of your $7,500 limit. If you contributed to an IRA anywhere else this year, that counts toward the same limit."

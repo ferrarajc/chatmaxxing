@@ -1,0 +1,600 @@
+@section tax | Tax Center | Every tax form we issue and when, consolidated and corrected forms, cost basis, wash sales, qualified dividends, capital gains rates, foreign tax credit, state tax on Treasury interest, W-9 and backup withholding, the tax document request procedure, and the line between tax information and tax advice.
+
+@page tax-center-overview | Tax center overview
+@summary Which tax forms each account type produces, where clients find them, and how to handle tax-season questions.
+
+## Forms by account type
+
+| Account | Forms | What they report |
+|---|---|---|
+| Taxable (individual, joint, trust, custodial) | Consolidated Form 1099 (1099-DIV, 1099-B, 1099-INT if any) | Dividends, capital gain distributions, sales and exchanges, foreign tax paid |
+| Traditional, Roth, SEP, inherited IRA | Form 1099-R (if there was a distribution) | Distributions, conversions, excess removals |
+| Traditional, Roth, SEP, inherited IRA | Form 5498 | Contributions, rollovers, conversions, year-end value, RMD for next year |
+
+IRA dividends and trades are **not** reported each year; nothing is taxable until a distribution.
+
+## Where to find forms
+
+My Account → Tax Documents. Forms stay online for 7 years. Paperless clients receive an email when forms are ready; others receive paper by mail by the deadlines. See [[tax-form-calendar]].
+
+## Not every client gets every form
+
+- No 1099-DIV if the account received less than $10 of dividends (but the income is still taxable).
+- No 1099-B if there were no sales or exchanges in a taxable account.
+- No 1099-R if there were no IRA distributions.
+- Form 5498 is produced for every IRA with a year-end balance.
+
+## Tax season tips
+
+- Forms can't be produced earlier than their availability date. Clients who file very early may need a corrected return if a form changes. See [[corrected-tax-forms]].
+- Clients who say a form is "missing" usually had no reportable activity on that account or are looking at the wrong year.
+
+## The advice boundary
+
+Explain what each form shows and where the numbers come from. Do not tell clients how to file, what is deductible, or how much they will owe. See [[tax-advice-boundary]].
+
+@page tax-form-calendar | Tax form calendar
+@summary When each tax form is available, mailing deadlines, and the dates clients ask about most.
+
+## Calendar for tax year 2025 (forms issued in 2026)
+
+| Form | Available online | Mailed by |
+|---|---|---|
+| 1099-R (IRA distributions) | Mid-January | January 31, 2026 |
+| 1099-DIV (if not consolidated) | Mid-January | January 31, 2026 |
+| Consolidated 1099 (DIV, B, INT) | Early February | February 15, 2026 |
+| Corrected consolidated 1099s | As needed | Up to March 15, 2026 |
+| Form 5498 (IRA contributions and values) | May | May 31, 2026 |
+| RMD notice for 2026 | January | January 31, 2026 |
+
+Forms for tax year 2026 follow the same pattern in 2027.
+
+## Why 5498 comes in May
+
+Clients can make prior-year IRA contributions until April 15, so the 5498 is produced after the deadline to include them. Clients do not need the 5498 to file; their own records of contributions are enough.
+
+## Why the consolidated 1099 comes later
+
+Funds finalize the character of distributions (for example, how much was qualified dividend or return of capital) in January, so consolidated forms are produced after that information is final.
+
+## Questions in January
+
+### "Where's my 1099?"
+1099-R and 1099-DIV forms (when not consolidated) are mailed by January 31; consolidated forms by February 15. Online availability is often a little earlier.
+
+### "Can I file without the 5498?"
+Yes. It is informational and arrives in May.
+
+### "I need my RMD amount for this year."
+The RMD notice is mailed in January and the amount is shown on the retirement account page. See [[rmd-overview]].
+
+@page form-1099-div | Form 1099-DIV
+@summary What each box on the 1099-DIV means for our funds, and common client questions.
+
+## What it reports
+
+Dividends and capital gain distributions paid in a taxable account during the year, whether paid in cash or reinvested.
+
+## Key boxes
+
+| Box | Meaning |
+|---|---|
+| 1a Total ordinary dividends | All dividends, including qualified dividends and short-term capital gain distributions |
+| 1b Qualified dividends | The portion of 1a eligible for lower long-term capital gain rates. See [[qualified-dividends]] |
+| 2a Total capital gain distributions | Long-term capital gain distributions |
+| 3 Nondividend distributions | Return of capital (reduces cost basis; not currently taxable) |
+| 4 Federal income tax withheld | Backup withholding, if any. See [[w9-backup-withholding]] |
+| 5 Section 199A dividends | REIT dividends from BFREI that may qualify for a deduction |
+| 7 Foreign tax paid | For international funds. See [[foreign-tax-credit]] |
+| 12 Exempt-interest dividends | Not applicable to our funds |
+
+## Common questions
+
+### "I reinvested everything. Why is this taxable?"
+Reinvested distributions are taxable in a taxable account. They also increase cost basis. See [[drip]].
+
+### "Why is the bond fund income not qualified?"
+Bond interest is never a qualified dividend; it is ordinary income.
+
+### "My fund lost value. Why do I have dividends?"
+Dividends and the fund's price change are separate. The fund paid out income it earned.
+
+### "What about my IRA?"
+No 1099-DIV for IRAs. Nothing is taxed until distributions.
+
+@page form-1099-b | Form 1099-B
+@summary How sales and exchanges in taxable accounts are reported, including cost basis, holding period, and covered status.
+
+## What it reports
+
+Every sale and exchange in a taxable account during the year: the date sold, proceeds, cost basis (for covered shares), date acquired, whether the gain or loss is short-term or long-term, and any wash-sale adjustments.
+
+## Covered and noncovered
+
+- **Covered shares** (fund shares acquired since January 1, 2012): we report cost basis to the IRS.
+- **Noncovered shares** (acquired before 2012, or transferred in without basis): we may show basis if we have it, but do not report it to the IRS; the client is responsible.
+
+See [[covered-noncovered-shares]].
+
+## Sections of the form
+
+The 1099-B is organized by short-term and long-term, and covered and noncovered, matching the categories the client reports on IRS Form 8949.
+
+## Cost basis method
+
+The basis shown depends on the method in effect when the shares were sold: average cost (default), FIFO, or specific identification. See [[cost-basis-methods]].
+
+## Exchanges
+
+An exchange appears as a sale of the "from" fund. Clients often forget this.
+
+## Common questions
+
+### "The basis is missing."
+The shares may be noncovered. The client can use their own records, or contact us for any historical information we have (Tax Reporting).
+
+### "The gain looks too high."
+Check whether reinvested dividends are included in the basis (they are, for covered shares) and whether the method is what the client expected. Refer suspected errors to Tax Reporting.
+
+@page form-1099-r | Form 1099-R
+@summary How IRA distributions, conversions, and corrections are reported on the 1099-R, and what the distribution codes mean.
+
+## What it reports
+
+Any distribution from an IRA during the year: withdrawals, RMDs, conversions to Roth, removals of excess contributions, QCDs (shown as normal distributions), and inherited IRA distributions.
+
+## Key boxes
+
+| Box | Meaning |
+|---|---|
+| 1 Gross distribution | The total amount distributed, before withholding |
+| 2a Taxable amount | Often the same as box 1 for Traditional IRAs; may be blank or "not determined" (box 2b) when we can't know the client's basis |
+| 4 Federal income tax withheld | Withholding we sent to the IRS |
+| 7 Distribution code | Why the distribution was made |
+| 7 IRA/SEP/SIMPLE checkbox | Checked for Traditional, SEP, SIMPLE IRAs |
+| 14 State tax withheld | If any |
+
+## Common codes in box 7
+
+| Code | Meaning |
+|---|---|
+| 1 | Early distribution, no known exception |
+| 2 | Early distribution, exception applies (includes Roth conversions under 59½) |
+| 3 | Disability |
+| 4 | Death (beneficiary) |
+| 7 | Normal distribution |
+| G | Direct rollover from a plan |
+| J | Early distribution from a Roth IRA |
+| Q | Qualified distribution from a Roth IRA |
+| T | Roth distribution, exception applies |
+| 8 or P | Excess contribution removal (year of the contribution) |
+
+## Common questions
+
+### "I rolled it over. Why did I get a 1099-R?"
+An indirect rollover is reported as a distribution; the client reports the rollover on their return, and our 5498 shows the rollover deposit.
+
+### "I gave to charity (QCD). Why does the 1099-R show it as taxable?"
+QCDs are reported as normal distributions. The client excludes it on their return. See [[qualified-charitable-distributions]].
+
+### "Is my Roth withdrawal taxable?"
+Often box 2a is blank because we don't know their basis. They determine it on Form 8606.
+
+@page form-5498 | Form 5498
+@summary What the 5498 reports, why it arrives in May, and why clients usually don't need it to file.
+
+## What it reports
+
+For each IRA, for the tax year:
+
+| Box | Meaning |
+|---|---|
+| 1 IRA contributions | Traditional IRA contributions for the year, including those made January–April of the next year |
+| 2 Rollover contributions | Rollovers received |
+| 3 Roth conversion amount | Amounts converted into a Roth IRA |
+| 4 Recharacterized contributions | Recharacterizations |
+| 5 Fair market value | Account value on December 31 |
+| 8 SEP contributions | SEP employer contributions |
+| 10 Roth IRA contributions | Roth contributions for the year |
+| 11–12 RMD | Whether an RMD is required for the next year, and the amount |
+
+## Timing
+
+Mailed by May 31, after the prior-year contribution deadline. Clients can file their tax returns without it; their contribution records are enough. It is informational: the client doesn't file it.
+
+## Common questions
+
+### "My 5498 shows the wrong year for my contribution."
+Contributions are reported for the tax year designated. If the designation was wrong, see [[prior-year-contributions]].
+
+### "Why didn't I get one?"
+Every IRA with a balance gets one. If the account was opened and closed in the same year with no contributions, there may be none.
+
+## Example
+
+A client made a $7,000 Roth contribution for 2025 on March 15, 2026. It appears in box 10 of the **2025** Form 5498, mailed by May 31, 2026.
+
+## RMD boxes
+
+For clients subject to RMDs, boxes 11 and 12 show that an RMD is due for the next year and its amount (or that one is required). This is also how the IRS knows an RMD is due.
+
+@page consolidated-1099 | The consolidated Form 1099
+@summary How the combined 1099 package for taxable accounts is organized and how to help clients read it.
+
+## What it is
+
+For each taxable account, we combine the 1099-DIV, 1099-B, and 1099-INT (if any) into one document, the consolidated Form 1099, with a summary page and detail pages.
+
+## Structure
+
+1. **Summary**: totals from each form.
+2. **1099-DIV detail**: dividends and capital gains by fund.
+3. **1099-B detail**: each sale and exchange, grouped by short-term/long-term and covered/noncovered.
+4. **Supplemental information** (not reported to the IRS): Treasury interest percentages for state tax, foreign source income, and other details that help with filing.
+
+## Delivery
+
+Available online in early February; mailed by February 15. Corrections may be issued until March 15.
+
+## Tax software
+
+Most tax software can import the consolidated 1099 directly using the client's online credentials or a downloaded file (My Account → Tax Documents → Download for tax software).
+
+## Questions
+
+Help clients find numbers on the form; do not tell them where to enter numbers on their return.
+
+## Common questions
+
+### "I have two accounts. Do I get two forms?"
+Each taxable account has its own consolidated 1099. IRAs produce their own 1099-R and 5498.
+
+### "The summary and detail pages don't match."
+The summary totals each category; the detail lists each transaction. Short-term and long-term, covered and noncovered sales are totaled separately.
+
+### "Why does it say 'supplemental information, not reported to the IRS'?"
+Those pages help with filing (for example, Treasury percentages) but are not part of what we report to the IRS.
+
+@page corrected-tax-forms | Corrected tax forms
+@summary Why tax forms are sometimes corrected, how clients are notified, and what they should do.
+
+## Why corrections happen
+
+- Funds reclassify distributions after year end (for example, part of a dividend turns out to be return of capital).
+- A cost basis adjustment (a transfer-in with late basis information, a wash-sale correction).
+- A transaction correction (an as-of trade, a contribution recoded to another year).
+- A client's tax ID or name was wrong.
+
+## Notification
+
+Corrected forms are marked "CORRECTED" and posted online, with an email to paperless clients, and mailed to others. Most corrections occur by March 15.
+
+## What the client should do
+
+If they have not filed, use the corrected form. If they already filed, they may need to amend their return; whether the change matters is a question for their tax advisor.
+
+## Requesting a correction
+
+If a client believes a form is wrong, collect the account, the form, the box, and why they think it is wrong, and refer to Tax Reporting. Do not promise a correction. See [[wrong-tax-form]].
+
+## Example
+
+In February a client files using their consolidated 1099. In March, a fund reclassifies part of a December distribution as return of capital, and we issue a corrected 1099-DIV with a slightly lower box 1a. The client should ask their tax preparer whether an amended return is needed; small changes often don't warrant one, but that is their decision.
+
+## Delaying filing
+
+Some clients with taxable accounts wait until mid-March to file, to reduce the chance of corrections. That's a common practice you can mention as information.
+
+@page cost-basis-methods | Cost basis methods
+@summary The three methods available (average cost, FIFO, specific identification), how to change, and how each works.
+
+## What cost basis is
+
+Cost basis is what the client paid for their shares, including reinvested dividends and capital gains. When they sell, the gain or loss is proceeds minus basis.
+
+## Methods
+
+| Method | How it works | Notes |
+|---|---|---|
+| Average cost (default) | The basis per share is the average of all shares owned | Simple; most common for mutual funds |
+| FIFO (first in, first out) | The oldest shares are sold first | Oldest shares often have the lowest basis (larger gains) but are long-term |
+| Specific identification | The client chooses which lots to sell | Requires choosing lots at the time of each sale |
+
+## Changing the method
+
+Clients change the method at My Account → Tax Settings, per fund or for the account. The method must be in place **before** a sale; it cannot be changed retroactively for shares already sold. Changing away from average cost applies to future sales; the basis of shares already averaged may remain averaged.
+
+## Example
+
+A client bought 10 shares at $100 and 10 at $150 and sells 10 at $160.
+- Average cost: basis $125/share; gain $350.
+- FIFO: basis $100/share; gain $600.
+- Specific ID (choosing the $150 shares): gain $100.
+
+## What you can say
+
+Explain the methods and how to change them. Which method to use is a tax decision.
+
+@page covered-noncovered-shares | Covered and noncovered shares
+@summary Which shares have cost basis reported to the IRS, why, and what clients need for older shares.
+
+## Definitions
+
+- **Covered**: mutual fund shares acquired on or after January 1, 2012. We track and report their basis to the IRS on Form 1099-B.
+- **Noncovered**: shares acquired before 2012, or transferred from another firm without basis information. Basis is the client's responsibility.
+
+## Transfers in
+
+When shares transfer to us from another firm (where the shares are BobsFunds shares), the delivering firm should send basis information for covered shares within 15 days. If it doesn't arrive, the shares are treated as noncovered until updated.
+
+## Inherited and gifted shares
+
+Inherited shares receive date-of-death basis, which we record when Estate Services processes the transfer. Gifted shares carry the giver's basis, which the giver should provide.
+
+## Finding old basis
+
+For noncovered shares, clients can use old statements and confirmations. We may have historical records; requests go to Tax Reporting.
+
+## Example
+
+A client has owned BF500 since 2008 and kept buying through 2026. Shares bought before 2012 are noncovered; shares bought since are covered. When they sell, the 1099-B shows covered and noncovered sales in separate sections. For noncovered shares, we may show basis "for information only", which the client should verify.
+
+## Average cost and the 2012 split
+
+Under average cost, covered and noncovered shares are averaged separately. Clients who switch methods should ask their tax advisor about the effect.
+
+@page wash-sales | The wash-sale rule
+@summary What a wash sale is, how it can affect clients who sell at a loss, and what we report.
+
+## The rule
+
+If a client sells shares at a **loss** and buys the same or a "substantially identical" security within **30 days before or after** the sale, the loss is disallowed (deferred). The disallowed loss is added to the basis of the replacement shares.
+
+## Common triggers
+
+- Selling a fund at a loss while an automatic investment buys more of the same fund within 30 days.
+- Dividend reinvestments within 30 days of the loss sale.
+- Buying the same fund in an IRA within 30 days (the loss is permanently disallowed in that case).
+
+## What we report
+
+On Form 1099-B, we report wash sales we can identify within the same account for the same fund. We do not track purchases at other firms or in other accounts; the client is responsible for those.
+
+## "Substantially identical"
+
+Whether two different funds (for example, two different S&P 500 index funds) are substantially identical is not clearly defined. It is a question for the client's tax advisor.
+
+## In chat
+
+Explain the rule if asked, and note that automatic investments and dividend reinvestment can trigger it. Do not advise how to structure sales.
+
+## Example
+
+A client sells 100 shares of BF500 at a $1,000 loss on November 10. Their automatic investment buys 2 shares of BF500 on November 15. The loss on 2 of the 100 shares (about $20) is disallowed and added to the basis of the 2 new shares; the remaining $980 loss is allowed.
+
+## Reinvested dividends
+
+A December dividend reinvestment within 30 days of a loss sale can create a small wash sale. Clients who want to avoid this sometimes turn off reinvestment temporarily; that is the client's choice.
+
+## Reporting
+
+Form 1099-B shows "wash sale loss disallowed" amounts for wash sales we identify. The adjusted basis carries to the replacement shares.
+
+@page qualified-dividends | Qualified dividends
+@summary What makes a dividend qualified, which of our funds pay them, and the holding period requirement.
+
+## Definition
+
+Qualified dividends are taxed at long-term capital gain rates (0%, 15%, or 20%) instead of ordinary income rates. Most dividends from U.S. companies and many foreign companies qualify.
+
+## Which funds
+
+- U.S. stock funds (BF500, BFTM, BFGR, and others): mostly qualified.
+- International funds: largely qualified (dividends from companies in treaty countries).
+- REIT fund (BFREI): REIT dividends are mostly **not** qualified (but may qualify for the Section 199A deduction).
+- Bond funds: interest is **not** qualified.
+
+The fund reports the qualified portion in box 1b of Form 1099-DIV.
+
+## Holding period
+
+The client must hold the fund shares for more than 60 days during the 121-day period around the ex-dividend date for dividends to be treated as qualified. Most long-term holders meet this; very short-term holders might not.
+
+## Examples
+
+| Fund | Typical treatment of its dividends |
+|---|---|
+| BF500, BFTM, BFDGA, BFHDY | Mostly qualified |
+| BFIN, BFDEV, BFEUR, BFPAC | Largely qualified |
+| BFEMG | Partly qualified (depends on countries) |
+| BFREI | Mostly not qualified; may be Section 199A dividends |
+| BFBI, BFST, and other bond funds | Not qualified (interest income) |
+
+## Where the client sees it
+
+Box 1a of Form 1099-DIV shows total ordinary dividends; box 1b shows the qualified portion included in 1a.
+
+@page capital-gains-rates | Capital gains tax rates
+@summary Federal long-term and short-term capital gains rates, the net investment income tax, and how to discuss them.
+
+## Long-term rates (2025 tax year)
+
+| Rate | Single | Married filing jointly |
+|---|---|---|
+| 0% | Taxable income up to $48,350 | Up to $96,700 |
+| 15% | $48,351–$533,400 | $96,701–$600,050 |
+| 20% | Above $533,400 | Above $600,050 |
+
+Thresholds are adjusted for inflation each year; 2026 thresholds are slightly higher.
+
+## Short-term gains
+
+Gains on shares held one year or less are taxed as ordinary income, at rates up to 37%.
+
+## Net investment income tax
+
+An additional 3.8% applies to investment income for clients with modified AGI above $200,000 (single) or $250,000 (married filing jointly).
+
+## State taxes
+
+Most states tax capital gains as ordinary income. A few have no income tax.
+
+## How to discuss
+
+These are published facts you may share. Do not estimate a client's tax or suggest timing sales for tax purposes.
+
+## Holding period examples
+
+- Shares bought March 3, 2025 and sold March 3, 2026: held exactly one year, which is short-term. Long-term requires more than one year (sold March 4, 2026 or later).
+- Under average cost, the holding period uses the first-in shares for the shares sold, so a mix of long- and short-term may be reported.
+
+## Capital gain distributions
+
+Long-term capital gain distributions from a fund are long-term regardless of how long the client has owned the fund.
+
+@page foreign-tax-credit | Foreign tax credit
+@summary Why international funds report foreign taxes paid, and how clients may use the credit.
+
+## Why it exists
+
+Foreign countries often withhold tax on dividends paid by their companies. When our international funds (BFIN, BFDEV, BFEMG, BFEUR, BFPAC) pay foreign taxes, they can pass the taxes through to shareholders, who may claim a **foreign tax credit** or deduction on their U.S. return.
+
+## What we report
+
+Box 7 of Form 1099-DIV shows the client's share of foreign tax paid. The supplemental information shows foreign-source income by country, which some clients need for IRS Form 1116.
+
+## Simplified election
+
+Clients with $300 or less of creditable foreign taxes ($600 married filing jointly) can often claim the credit directly without Form 1116.
+
+## IRAs
+
+Foreign taxes paid inside an IRA cannot be claimed. That's a fact clients sometimes ask about; whether to hold international funds in taxable or IRA accounts is a planning question.
+
+## Example
+
+A client receives $1,200 in dividends from BFIN in a taxable account. The 1099-DIV shows $85 of foreign tax paid in box 7. The client may be able to claim an $85 credit on their federal return, or deduct it if they itemize. Which to choose is a tax question.
+
+## Where the numbers come from
+
+The international funds report each country's share of income and foreign tax in the annual supplemental information. Clients filing Form 1116 need these figures.
+
+@page treasury-interest-state-tax | State tax on Treasury fund income
+@summary How interest from U.S. Treasury obligations is exempt from state tax and how clients find the percentage for each fund.
+
+## The exemption
+
+Interest from U.S. Treasury securities is exempt from state and local income taxes in all states, though a few states require a minimum percentage of a fund's assets in Treasuries for the fund's dividends to qualify.
+
+## Which funds
+
+- BFST (Short-Term Treasury), BFITT (Intermediate Treasury), BFLTT (Long-Term Treasury): nearly all income is from Treasuries.
+- BFBI (Bond Income): a portion comes from Treasuries (about 45% of holdings).
+- Corporate bond funds and stock funds: no Treasury interest.
+
+## The percentage
+
+Each January we publish the percentage of each fund's income from U.S. government obligations in the supplemental information of the consolidated 1099 and on the Tax Center page. The client applies it to their dividends from that fund on their state return. Specific state requirements (for example, minimum thresholds in California, Connecticut, and New York) are a question for the client's tax preparer.
+
+## IRAs
+
+Not applicable; IRA distributions are taxed by states as ordinary income regardless of the source.
+
+## Example
+
+A client received $1,000 in dividends from BFITT. If 98% of BFITT's income came from U.S. Treasury obligations, $980 may be excluded from the client's state taxable income, subject to state rules.
+
+## Where to find the percentage
+
+The consolidated 1099 supplemental information and the Tax Center page list the percentage for each fund each year.
+
+@page w9-backup-withholding | Form W-9 and backup withholding
+@summary Taxpayer ID certification, TIN mismatches, and why backup withholding happens.
+
+## Form W-9
+
+Every U.S. client certifies their name and taxpayer identification number (SSN or EIN) on a Form W-9 at account opening. This certification also states they are not subject to backup withholding.
+
+## Backup withholding
+
+We must withhold **24%** of dividends and sale proceeds in a taxable account (backup withholding) if:
+
+- The client has not provided a certified TIN.
+- The IRS notifies us that the name and TIN don't match (a "B notice").
+- The IRS notifies us that the client is subject to backup withholding for under-reporting.
+
+Backup withholding is reported on Form 1099 and is credited against the client's tax.
+
+## Fixing a TIN mismatch
+
+The client must confirm their name and SSN match Social Security records (often a name change not reported to SSA) and submit a new Form W-9, or in some cases a copy of their Social Security card. Account Services processes it. See [[legal-name-change]].
+
+## Non-U.S. persons
+
+Non-resident clients provide Form W-8BEN instead. See [[non-us-persons]].
+
+## B notices
+
+When the IRS tells us a client's name and TIN don't match, we send the client a "B notice" letter with instructions. If the client doesn't fix it in time, backup withholding begins. A second B notice within three years requires the client to validate their TIN with the IRS or SSA.
+
+## Stopping backup withholding
+
+Once the client provides a corrected, certified TIN (and any required validation), backup withholding stops for future payments. Amounts already withheld are credited on the client's tax return.
+
+@page request-tax-document-task | Procedure: Request Tax Document (chat)
+@summary Step-by-step chat procedure for sending a client a copy of a tax form, and what to check first.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Form type | 1099-R, 1099-B, 1099-DIV, 5498 |
+| Tax year | The year the client needs |
+
+## Before you start
+
+- **Check availability**: forms are not available before their dates. A 2026 Form 5498 requested in March 2027 does not exist yet. See [[tax-form-calendar]].
+- **Check the account type**: IRAs produce 1099-R and 5498; taxable accounts produce the consolidated 1099 (DIV and B). A client asking for a "1099" for their Roth IRA with no distributions will not have one.
+- **Self-service first**: the client can download any form from the last 7 years at My Account → Tax Documents in seconds. Offer the link; if they prefer, proceed with the task.
+
+## Procedure
+
+1. Confirm the form and year.
+2. Let the task expert collect them, or choose the task from the menu.
+3. Review the Proposed Action and submit.
+4. Tell the client how they will receive it: posted to Tax Documents and emailed (paperless) or mailed within 5 business days.
+
+## Older years
+
+The task offers recent years. For forms older than 7 years, route to Client Records.
+
+## Questions about the contents
+
+If the client asks what a number means, see the form pages in this section. If they believe it is wrong, see [[corrected-tax-forms]].
+
+@page tax-advice-boundary | Tax information versus tax advice
+@summary Exactly where the line is between explaining tax rules and giving tax advice, with examples.
+
+## The rule
+
+Chat agents may explain tax rules, forms, deadlines, and how our accounts are taxed. Chat agents may not tell a client how to handle their own taxes, what they will owe, or what to do to reduce taxes.
+
+## Examples
+
+| Information (allowed) | Advice (not allowed) |
+|---|---|
+| "Traditional IRA withdrawals are taxed as ordinary income." | "You'll owe about $1,200 on this withdrawal." |
+| "The 2026 contribution limit is $7,500." | "You should max out your Roth this year." |
+| "Box 1b shows qualified dividends." | "Enter this on line 3a of your 1040." |
+| "Conversions are added to taxable income." | "Convert $20,000 to stay in the 22% bracket." |
+| "The wash-sale rule disallows losses if you rebuy within 30 days." | "Sell now and buy BFTM instead to harvest the loss." |
+| "You can choose 0% to 100% withholding." | "Withhold 15%; that should cover it." |
+| "QCDs are excluded from income." | "A QCD would be better than taking your RMD." |
+
+## How to respond
+
+"I can explain how this works, but for how it applies to your taxes, a tax professional is the right person to ask." Offer the relevant client-facing article.
+
+## Tax Information wrap-up
+
+Use the Tax Information wrap-up code for chats mainly about taxes.

@@ -1,0 +1,306 @@
+@section beneficiaries | Beneficiaries | Naming who inherits an account: primary and contingent beneficiaries, percentages, per stirpes, minors, trusts and estates, spousal consent, transfer on death for taxable accounts, life events, and the chat beneficiary procedure.
+
+@page beneficiaries-overview | Beneficiaries: overview
+@summary Why beneficiary designations matter, which accounts have them, how they interact with a will, and how clients manage them.
+
+## Why they matter
+
+A beneficiary designation tells us who receives an account when the owner dies. For IRAs and accounts with transfer-on-death (TOD) registration, the designation **overrides the client's will**: the assets go directly to the named beneficiaries without probate. An outdated designation can send money to an ex-spouse or a person who has died. Encourage clients to review beneficiaries after any major life event. See [[beneficiary-life-events]].
+
+## Which accounts
+
+| Account | Beneficiaries |
+|---|---|
+| Traditional, Roth, SEP IRAs | Yes, designated per account |
+| Inherited IRA | Yes (successor beneficiaries) |
+| Individual taxable | Optional, through TOD registration. See [[transfer-on-death]] |
+| Joint taxable (JTWROS) | Optional TOD, effective after the last owner dies |
+| Custodial (UTMA/UGMA) | No; the account belongs to the minor and passes under state law |
+| Trust | No; the trust document governs |
+
+## Each account is separate
+
+Beneficiaries are designated separately for each account. A client with a Roth IRA and a Traditional IRA must name beneficiaries on each. Ask which account(s) a change applies to.
+
+## Where clients manage them
+
+Online at My Account → Beneficiaries, or through chat with the Change Beneficiary Designations task (see [[update-beneficiaries-task]]). Some designations (trusts with complex terms, designations with conditions) require a paper form.
+
+## If there is no beneficiary
+
+If an IRA owner dies with no living beneficiary named, the IRA's governing agreement directs payment to the surviving spouse, or if none, the estate. Estate beneficiaries have less favorable distribution options. This is a good reason to name beneficiaries, which you may point out.
+
+## What you may say
+
+You can explain how designations work. You cannot advise whom to name or how to divide the account. For estate planning advice, suggest an estate planning attorney.
+
+@page primary-contingent | Primary and contingent beneficiaries
+@summary The difference between primary and contingent (secondary) beneficiaries and how shares pass when a beneficiary dies first.
+
+## Primary beneficiaries
+
+Primary beneficiaries inherit first. The client can name one or several, each with a percentage. Percentages for all primary beneficiaries must total **100%**.
+
+## Contingent beneficiaries
+
+Contingent beneficiaries (also called secondary) inherit only if **all** primary beneficiaries have died before the owner, or disclaim. Their percentages must also total 100%. Naming contingents is strongly encouraged as a backstop.
+
+## When one primary beneficiary dies first
+
+If one of several primary beneficiaries dies before the owner, their share is divided among the surviving primary beneficiaries in proportion to their percentages, unless the designation says "per stirpes". See [[per-stirpes]].
+
+Example: primary beneficiaries are three children at 33.33%, 33.33%, 33.34%. One dies before the owner. Without per stirpes, the two surviving children each receive 50%. With per stirpes, the deceased child's share goes to that child's descendants.
+
+## Terminology
+
+In the chat task, "primary" and "secondary" are used. Clients may say "backup", "alternate", or "contingent"; all mean the same as secondary.
+
+## Example
+
+Primary: spouse 100%. Contingent: two children at 50% each. If the spouse survives the owner, the spouse receives everything. If the spouse has already died, the children receive 50% each.
+
+## Common mistakes
+
+- Naming children as primary alongside the spouse, when the client meant them as backups.
+- Contingent percentages that don't add up to 100%.
+- Forgetting to name contingents at all.
+
+@page beneficiary-percentages | Beneficiary percentages and rules
+@summary How percentages work, rounding, the 100% rule, and the information we need for each beneficiary.
+
+## The 100% rule
+
+At each level (primary and contingent), percentages must add up to exactly 100%. The system will not save a designation that doesn't. When a client adds a beneficiary, the existing beneficiaries' percentages usually need to change too. Ask: "With Maria added at 25%, how should the remaining 75% be divided?"
+
+## Rounding
+
+Percentages can have up to two decimal places. For three equal beneficiaries, use 33.33%, 33.33%, and 33.34%.
+
+## Information for each beneficiary
+
+| Field | Required? |
+|---|---|
+| Full legal name | Required |
+| Relationship (spouse, child, sibling, parent, friend, trust, charity, estate) | Required |
+| Percentage | Required |
+| Primary or contingent | Required |
+| Date of birth | Requested; important for inherited IRA rules |
+| SSN or tax ID | Optional but recommended; speeds up payment |
+| Contact information | Optional |
+
+For a trust beneficiary, we need the trust's exact name, date, and tax ID. For a charity, its legal name and tax ID.
+
+## Changes replace the previous designation
+
+Each update replaces the entire designation for that account. Confirm the full resulting list with the client: "After this change, your Roth IRA's primary beneficiaries will be David at 50% and Maria at 50%, and there are no contingent beneficiaries. Is that right?"
+
+@page per-stirpes | Per stirpes designations
+@summary What per stirpes means, how it differs from the default, and how clients elect it.
+
+## Definition
+
+**Per stirpes** ("by the branch") means that if a beneficiary dies before the owner, that beneficiary's share passes to their descendants (children, then grandchildren), rather than to the other named beneficiaries.
+
+## Default versus per stirpes
+
+| Situation | Default (per capita among survivors) | Per stirpes |
+|---|---|---|
+| Owner names children A and B at 50% each; A dies first, leaving two children | B receives 100% | B receives 50%; A's two children receive 25% each |
+
+## How to elect it
+
+Per stirpes can be elected for a beneficiary online (a checkbox when adding the beneficiary) or on the paper beneficiary form. The chat task does not capture per stirpes; if the client wants it, guide them to the online page after the update, or note it for Account Services.
+
+## Explaining it
+
+"Per stirpes means that if one of your beneficiaries passes away before you, their share would go to their children instead of being split among your other beneficiaries." Whether to choose it is the client's decision; estate planning attorneys can advise.
+
+## When clients ask about it
+
+Clients with children often want each child's share to stay in that child's family line. Per stirpes does that. Clients who would rather the surviving beneficiaries share everything use the default.
+
+## Example designation
+
+"My three children, equally, per stirpes."
+
+@page minors-as-beneficiaries | Minors as beneficiaries
+@summary What happens when a minor inherits, the need for a guardian or custodian, and alternatives clients can consider.
+
+## The problem
+
+Minors cannot legally take control of inherited assets. If a minor is named directly, a court may need to appoint a guardian of the minor's property to manage the inheritance until adulthood, which takes time and cost.
+
+## Alternatives clients use
+
+- Naming a **custodian under the Uniform Transfers to Minors Act** (UTMA) for the minor: "Jane Smith as custodian for Emma Smith under the [State] UTMA". The custodian manages the inheritance until the age of termination.
+- Naming a **trust** for the minor's benefit. See [[trusts-estates-as-beneficiaries]].
+
+## Inherited IRA rules for minors
+
+A minor child **of the IRA owner** is an eligible designated beneficiary and can take life-expectancy RMDs until age 21, after which the 10-year rule applies. Grandchildren and other minors are not eligible designated beneficiaries on that basis; the 10-year rule applies. See [[eligible-designated-beneficiaries]].
+
+## In chat
+
+You can process a minor as beneficiary if the client wishes. Mention, neutrally, that minors can't take control of the assets directly and that clients often name a UTMA custodian or trust; suggest an estate planning attorney for guidance.
+
+## Example
+
+A grandmother names her 10-year-old grandson as 25% beneficiary of her Traditional IRA. If she dies while he is a minor, his parent typically needs to be appointed guardian of his property (or the grandmother can name "his mother, as UTMA custodian") before the inherited IRA can be set up. The grandson, not being the owner's own child, is subject to the 10-year rule.
+
+@page trusts-estates-as-beneficiaries | Trusts, estates, and charities as beneficiaries
+@summary Naming a trust, the estate, or a charity as beneficiary, and the distribution consequences for IRAs.
+
+## Trusts
+
+A client can name a trust as beneficiary. We need the trust's exact name, date, trustee name(s), and tax ID. For IRAs, how the trust is treated depends on whether it qualifies as a "see-through" trust, which depends on the trust's terms. Distribution rules can be complex. Refer the client to their estate planning attorney, and route any detailed questions to Retirement Specialists.
+
+## The estate
+
+Naming "my estate" is allowed. For IRAs, an estate is not a designated beneficiary, so the distribution options are less favorable (generally the 5-year rule or the owner's remaining life expectancy). The assets also go through probate. Explain these facts if the client asks.
+
+## Charities
+
+Charities can be named as full or partial beneficiaries. Because charities do not pay income tax, naming a charity as IRA beneficiary is common in charitable planning. We need the charity's legal name and tax ID. A charity named alongside individuals can complicate the individuals' options unless its share is paid out promptly after death; Estate Services handles this.
+
+## Processing
+
+Trust and charity beneficiaries can be added online or through the chat task (relationship "trust" or "charity"). Complex trust provisions may require the paper form.
+
+## Example designation
+
+"The Lee Family Trust dated March 14, 2019, Margaret Lee, Trustee — 100% primary."
+
+## Charities
+
+"Philadelphia Children's Hospital Foundation, EIN 23-XXXXXXX — 10% primary."
+
+## Common question
+
+### "Should I name my trust or my children?"
+That's an estate planning decision. An estate planning attorney can help.
+
+@page spousal-consent | Spousal consent
+@summary When a spouse must consent to a beneficiary designation that names someone else, especially in community property states.
+
+## Community property states
+
+In community property states (Arizona, California, Idaho, Louisiana, Nevada, New Mexico, Texas, Washington, Wisconsin), a married client's spouse may have a legal interest in an IRA funded with marital earnings. If a married client in these states names someone other than their spouse as primary beneficiary of more than 50% of an IRA, we require the spouse's written consent.
+
+## How it works
+
+- The online beneficiary page asks about marital status and state.
+- If consent is needed, the system generates a Spousal Consent form for the spouse to sign (notarized).
+- Until consent is received, the designation is pending and the previous designation remains in effect.
+
+## In chat
+
+If a married client in a community property state names a non-spouse as primary, mention that spousal consent may be required and that they will receive instructions. Do not discuss whether the spouse would consent.
+
+## Other states
+
+Outside community property states, IRAs do not require spousal consent, although clients may wish to talk with their spouse. Employer plans such as 401(k)s have their own spousal consent rules, which do not apply to IRAs.
+
+## Example
+
+A married client in California wants to name their two adult children as 50% primary beneficiaries each on a Traditional IRA funded during the marriage. Because California is a community property state and the spouse is not the primary beneficiary of at least 50%, spousal consent is required. The client receives the consent form to have their spouse sign before a notary.
+
+@page transfer-on-death | Transfer on death (TOD) for taxable accounts
+@summary How TOD registration lets individual and joint taxable accounts pass directly to beneficiaries without probate.
+
+## What it is
+
+A transfer-on-death registration adds beneficiaries to an individual or joint (JTWROS) taxable account. When the owner (or last surviving joint owner) dies, the account passes directly to the TOD beneficiaries, avoiding probate, under the Uniform TOD Security Registration Act adopted in nearly every state.
+
+## How it differs from IRA beneficiaries
+
+- The account remains a taxable account; the beneficiaries' new accounts are regular taxable accounts.
+- Beneficiaries receive a step-up in cost basis to the date-of-death value. See [[inherited-taxable-accounts]].
+- There are no distribution requirements.
+
+## Setting it up
+
+The client adds TOD beneficiaries online at My Account → Beneficiaries by selecting the taxable account, or with the TOD Registration form. Primary and contingent beneficiaries with percentages, as for IRAs.
+
+## Chat limitation
+
+The chat beneficiary task supports IRA accounts. For TOD on a taxable account, guide the client to the online Beneficiaries page (it supports taxable accounts) or send the TOD form. Do not tell the client that taxable accounts can't have beneficiaries; they can.
+
+## Not available for
+
+Custodial accounts, trust accounts (the trust document governs), and tenants-in-common accounts (each owner's share passes through their estate).
+
+## Example
+
+An individual taxable account with TOD to "Sam Park 50%, Jo Park 50%". When the owner dies, Sam and Jo each provide a death certificate copy and open accounts; each receives half the shares, with stepped-up basis.
+
+## TOD and wills
+
+A TOD registration overrides the will for that account. Clients should coordinate TOD registrations with their estate plan.
+
+@page beneficiary-life-events | Reviewing beneficiaries after life events
+@summary The life events that should prompt a beneficiary review and how to raise the topic naturally.
+
+## Events
+
+- Marriage or a new domestic partnership.
+- Divorce or separation. In some states, divorce automatically revokes an ex-spouse designation for certain assets, but not always for IRAs; clients should not rely on it.
+- Birth or adoption of a child or grandchild.
+- Death of a named beneficiary.
+- A beneficiary becoming disabled or needing special-needs planning.
+- Creating a trust or a new estate plan.
+- Opening a new IRA (beneficiaries do not carry over from other accounts).
+
+## Raising it naturally
+
+When a client mentions one of these events, it is appropriate (and helpful) to say: "Congratulations! Since you mentioned your new grandchild, some clients use moments like this to review their beneficiaries. Would you like me to show you who's currently listed?" This is a service reminder, not advice. See [[cross-sell-and-proactive-service]].
+
+## Showing current beneficiaries
+
+Beneficiaries are visible to the client at My Account → Beneficiaries and in the client profile. You may tell the client who is listed on their own account after confirming identity.
+
+## Example
+
+Client: "I just got divorced and I want to take my ex off everything."
+
+Agent: "I can help. Let's start with your IRAs, where beneficiary designations override your will. Your Traditional IRA currently lists your former spouse as 100% primary. Who would you like to name instead?"
+
+## After death of a beneficiary
+
+If a named beneficiary has died, their share passes to other beneficiaries at that level (or their descendants, if per stirpes). The client should update the designation so their wishes are explicit.
+
+@page update-beneficiaries-task | Procedure: Change Beneficiary Designations (chat)
+@summary Step-by-step chat procedure for adding, updating, or removing an IRA beneficiary, the fields collected, and the checks before approval.
+
+## What the task collects
+
+| Field | Options or format |
+|---|---|
+| Account | The IRA to update (asked if more than one) |
+| Action | Add, Update, Remove |
+| Beneficiary name | Full legal name |
+| Relationship | Spouse, child, sibling, parent, etc. (not asked for Remove) |
+| Percentage | Share of the account (not asked for Remove) |
+| Primary or secondary | Primary or Secondary (not asked for Remove) |
+
+## Scope
+
+The chat task changes beneficiaries on **IRA accounts**. For a taxable account, see [[transfer-on-death]]: the client can do it online. Do not refer the client to "the support team" for a taxable-account TOD request; you are the support team. Guide them to My Account → Beneficiaries or the TOD form.
+
+## Procedure
+
+1. Confirm the account. Each IRA has its own designations.
+2. Show (or ask about) the current beneficiaries so the result is clear.
+3. Let the task expert collect the details.
+4. Check the percentages: after the change, primaries must total 100% and secondaries must total 100%. If adding a beneficiary, ask how existing percentages change. The final designation replaces the old one.
+5. Check spousal consent for married clients in community property states naming a non-spouse. See [[spousal-consent]].
+6. Recap the **complete resulting designation** and get clear confirmation.
+7. Review the Proposed Action: account, name spelling, relationship, percentage, level. Use the locate buttons.
+8. Submit. The change takes effect immediately; the client receives a confirmation and a security alert.
+
+## Sensitivity
+
+Beneficiary conversations often follow a death, divorce, or diagnosis. Be warm and unhurried. Watch for exploitation: a new acquaintance replacing family as beneficiary, especially with someone else present in the conversation, warrants care. See [[elder-financial-exploitation]].
+
+## Removing the last beneficiary
+
+If the client removes all primary beneficiaries, contingent beneficiaries (if any) become primary in effect, or the account defaults to the spouse or estate. Point this out.
