@@ -16,9 +16,14 @@
 // {status:'indexing'} and the build runs as an async self-invocation.
 //
 // Routes:
-//   POST /agent-library/ask     {question, topK?} → {answer, citations, retrieved, ...}
+//   POST /agent-library/ask     {accessCode, question, topK?} → {answer, citations, retrieved, ...}
+//   POST /agent-library/ask     {accessCode, verify: true}    → {ok: true}   (the page's code prompt)
 //   GET  /agent-library/status  → {hash, chunks, ready, building}
 //   async event {mode:'build'}  → builds and stores the embedding index
+//
+// Every ask needs the demo access code (LIBRARY_ACCESS_CODE; same code and matching rule as the
+// customer site's gate). It's checked before any OpenAI call or index build, so the public URL
+// can't run up the OpenAI bill. No code configured ⇒ every ask is refused.
 
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { S3Client, GetObjectCommand, PutObjectCommand, HeadObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
@@ -42,6 +47,7 @@ const EMBED_MODEL = process.env.OPENAI_MODEL_LIBRARY_EMBED ?? 'text-embedding-3-
 const EMBED_DIMS = Number(process.env.LIBRARY_EMBED_DIMS ?? 1024);
 const ANSWER_MODEL = process.env.OPENAI_MODEL_LIBRARY_RAG ?? 'gpt-4o';
 const BUCKET = process.env.LIBRARY_INDEX_BUCKET ?? '';
+const ACCESS_CODE = (process.env.LIBRARY_ACCESS_CODE ?? '').trim().toUpperCase();
 const INDEX_KEY = `embeddings/${CONTENT_HASH}-${EMBED_MODEL}-${EMBED_DIMS}.f32`;
 const LOCK_KEY = `${INDEX_KEY}.building`;
 const LOCK_TTL_MS = 6 * 60 * 1000;
@@ -330,12 +336,15 @@ export const handler = async (event: APIGatewayProxyEventV2 | BuildEvent): Promi
 
   if (method !== 'POST') return json(405, { error: 'POST a JSON body: {"question": "..."}' });
 
-  let body: { question?: unknown; topK?: unknown };
+  let body: { accessCode?: unknown; verify?: unknown; question?: unknown; topK?: unknown };
   try {
     body = JSON.parse(http.isBase64Encoded ? Buffer.from(http.body ?? '', 'base64').toString() : (http.body ?? '{}'));
   } catch {
     return json(400, { error: 'Body must be JSON' });
   }
+  const code = typeof body.accessCode === 'string' ? body.accessCode.trim().toUpperCase() : '';
+  if (!ACCESS_CODE || code !== ACCESS_CODE) return json(401, { error: 'access_denied', message: 'A valid access code is required.' });
+  if (body.verify === true) return json(200, { ok: true });
   const question = typeof body.question === 'string' ? body.question.trim() : '';
   if (!question) return json(400, { error: 'question is required' });
   if (question.length > 1000) return json(400, { error: 'question must be 1,000 characters or fewer' });

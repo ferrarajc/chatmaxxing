@@ -27,6 +27,9 @@
   .hit { border-top: 1px solid var(--rule); padding: 8px 0; }
   .hit .meta { margin: 0; }
   .cited { font-weight: 600; }
+  #gate { max-width: 360px; border: 1px solid var(--rule); border-radius: 6px; padding: 12px 16px 16px; }
+  #gate input { width: 100%; box-sizing: border-box; margin-top: 6px; }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
@@ -39,6 +42,16 @@
 <h1>Ask the library</h1>
 <p class="summary">Ask a question in plain English. The answer is written only from library pages, with numbered citations. Always open the cited page before acting on anything that moves money or changes an account.</p>
 
+<form id="gate" hidden>
+  <label for="code"><strong>Access code</strong></label>
+  <input id="code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+  <div class="row">
+    <button id="unlock" type="submit">Unlock the page</button>
+  </div>
+  <p id="gateMsg" class="status" role="status"></p>
+</form>
+
+<div id="app" hidden>
 <form id="ask">
   <label for="q"><strong>Your question</strong></label>
   <textarea id="q" name="q" maxlength="1000" placeholder="e.g. Can a client still make a 2025 Roth contribution in March 2026?" required></textarea>
@@ -62,6 +75,7 @@
 
 <p id="status" class="status" role="status"></p>
 <section id="answer" aria-live="polite"></section>
+</div>
 </main>
 <footer>
 <p>Internal reference for Bob's Mutual Funds service agents. Answers are generated from library content and may be incomplete; the cited library pages are authoritative.</p>
@@ -105,6 +119,52 @@
     b.addEventListener('click', () => { $('q').value = s; ask(); });
     li.appendChild(b);
     $('sampleList').appendChild(li);
+  }
+
+  // Access code (the demo code, same as the customer site's). The backend checks it on every
+  // ask; once accepted it's remembered per browser. A 401 later sends you back to the prompt.
+  const CODE_KEY = 'library-ask-code';
+  let accessCode = '';
+  try { accessCode = localStorage.getItem(CODE_KEY) || ''; } catch {}
+
+  function showGate(message) {
+    $('app').hidden = true;
+    $('gate').hidden = false;
+    $('gateMsg').className = message ? 'status error' : 'status';
+    $('gateMsg').textContent = message || '';
+    $('code').focus();
+  }
+
+  function showApp() {
+    $('gate').hidden = true;
+    $('app').hidden = false;
+    loadStatus();
+    if (params.get('q') && !$('q').value) { $('q').value = params.get('q'); ask(); }
+  }
+
+  async function unlock(e) {
+    e.preventDefault();
+    const code = $('code').value.trim();
+    if (!code) return;
+    $('unlock').disabled = true;
+    $('gateMsg').className = 'status';
+    $('gateMsg').textContent = 'Checking…';
+    try {
+      const r = await fetch(env.value + '/agent-library/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ accessCode: code, verify: true }),
+      });
+      if (r.status === 401) return showGate("That code isn't right. Try again.");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      accessCode = code;
+      try { localStorage.setItem(CODE_KEY, code); } catch {}
+      showApp();
+    } catch (err) {
+      showGate(`Couldn't check the code: ${err.message}.`);
+    } finally {
+      $('unlock').disabled = false;
+    }
   }
 
   const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -159,9 +219,15 @@
       const r = await fetch(env.value + '/agent-library/ask', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ accessCode, question }),
       });
       const data = await r.json().catch(() => ({}));
+      if (r.status === 401) {
+        try { localStorage.removeItem(CODE_KEY); } catch {}
+        accessCode = '';
+        $('status').textContent = '';
+        return showGate('Enter the access code to keep asking.');
+      }
       if (r.status === 503 && data.status === 'indexing') {
         $('status').textContent = `${data.message} Retrying in ${data.retryAfterSeconds}s…`;
         retryTimer = setTimeout(() => ask(), (data.retryAfterSeconds || 20) * 1000);
@@ -189,10 +255,10 @@
     }
   }
 
+  $('gate').addEventListener('submit', unlock);
   $('ask').addEventListener('submit', ask);
   $('q').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) ask(e); });
-  if (params.get('q')) { $('q').value = params.get('q'); ask(); }
-  loadStatus();
+  if (accessCode) showApp(); else showGate();
 })();
 </script>
 </body>

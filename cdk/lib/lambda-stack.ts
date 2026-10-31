@@ -742,6 +742,8 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         OPENAI_API_KEY: baseEnv.OPENAI_API_KEY,
         LIBRARY_INDEX_BUCKET: libraryIndexBucket.bucketName,
+        // The demo access code (same as the customer site's gate); every ask must carry it.
+        LIBRARY_ACCESS_CODE: 'BOBS2025',
       },
       bundling: { minify: true, forceDockerBundling: false, externalModules: ['@aws-sdk/*'] },
     });
